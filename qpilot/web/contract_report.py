@@ -141,6 +141,10 @@ class FigureInfo(BaseModel):
     ci95_low: float | None
     ci95_high: float | None
     p: float | None
+    p_adjusted: float | None = Field(
+        default=None,
+        description="Several comparisons with a correction: the corrected p the call used.",
+    )
     n_a: int | None
     n_b: int | None
     groups: list[FigureGroup]

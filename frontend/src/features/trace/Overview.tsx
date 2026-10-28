@@ -30,6 +30,7 @@ import { count, fixed, fold, pValue } from "@/lib/format";
 import { asConclusion } from "@/lib/vocab";
 import type { GeneRow, Missing, Overview, Suspect, TraceScope } from "./api";
 import { useTraceStudy } from "./api";
+import { TraceComparisons } from "./Comparisons";
 import { FactText } from "./FactText";
 import { TraceWaiting } from "./Waiting";
 import { WhereToLook } from "./WhereToLook";
@@ -56,6 +57,8 @@ export function OverviewPage({ workspace, scope }: { workspace: Workspace; scope
     return (
       <>
         <Header />
+        <TraceComparisons scope={scope} rule={view.trace.rule} />
+        <TraceComparisons scope={scope} />
         {q.error ? (
           <TraceWaiting error={q.error} onRetry={() => void q.refetch()} what="the study" />
         ) : (
@@ -177,6 +180,8 @@ function Ladder({ trace }: { trace: Overview }) {
 function FragileGenes({ workspace, trace }: { workspace: Workspace; trace: Overview }) {
   const [, navigate] = useLocation();
   const limit = trace.thresholds.flip_search_limit ?? 20;
+  // several comparisons with a correction: the call uses the corrected p, so the table shows it
+  const corrected = trace.genes.some((g) => g.p_adjusted != null);
   const columns = useMemo<ColumnDef<GeneRow, unknown>[]>(
     () => [
       { id: "rank", header: "#", accessorKey: "rank", meta: { numeric: true, width: "3.5rem" } },
@@ -201,13 +206,21 @@ function FragileGenes({ workspace, trace }: { workspace: Workspace; trace: Overv
         meta: { numeric: true, width: "5rem" },
         cell: ({ row }) => fold(row.original.fc),
       },
-      {
-        id: "p",
-        header: "p",
-        accessorKey: "p",
-        meta: { numeric: true, width: "5rem" },
-        cell: ({ row }) => pValue(row.original.p),
-      },
+      corrected
+        ? {
+            id: "p",
+            header: "Corrected p",
+            accessorKey: "p_adjusted",
+            meta: { numeric: true, width: "6rem" },
+            cell: ({ row }) => pValue(row.original.p_adjusted),
+          }
+        : {
+            id: "p",
+            header: "p",
+            accessorKey: "p",
+            meta: { numeric: true, width: "5rem" },
+            cell: ({ row }) => pValue(row.original.p),
+          },
       {
         id: "k",
         header: "Samples that change it",
@@ -239,7 +252,7 @@ function FragileGenes({ workspace, trace }: { workspace: Workspace; trace: Overv
           ),
       },
     ],
-    [limit],
+    [limit, corrected],
   );
   return (
     <Card as="section" aria-labelledby="trace-o-genes" className="min-w-0">

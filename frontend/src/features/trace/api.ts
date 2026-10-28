@@ -20,34 +20,51 @@ export interface TraceScope {
   /** The study traced (null until a session's results exist). */
   studyId: string | null;
   kind: Schemas["WorkspaceView"]["kind"];
+  /** A study with several comparisons: the one traced (null: the first). */
+  comparison?: string | null;
 }
 
-export function scopeOf(workspace: Schemas["WorkspaceView"]): TraceScope {
+export function scopeOf(
+  workspace: Schemas["WorkspaceView"],
+  comparison: string | null = null,
+): TraceScope {
   return {
     key: workspace.key,
     studyId: workspace.study_id ?? (workspace.kind === "study" ? workspace.key : null),
     kind: workspace.kind,
+    comparison,
   };
 }
 
 const wkey = (s: TraceScope, ...rest: unknown[]) =>
-  ["w", s.key, s.studyId, "trace", ...rest] as const;
+  ["w", s.key, s.studyId, "trace", s.comparison ?? null, ...rest] as const;
 const studyPath = (studyId: string) => ({ params: { path: { study_id: studyId } } });
+/** The comparison traced, as the routes' `?comparison=` (none: the first). */
+const shown = (comparison: string | null | undefined) => (comparison ? { comparison } : {});
 
-function fetchStudy(studyId: string) {
-  return unwrap(api.GET("/api/studies/{study_id}/trace", studyPath(studyId)));
-}
-function fetchGene(studyId: string, gene: string) {
+function fetchStudy(studyId: string, comparison?: string | null) {
   return unwrap(
-    api.GET("/api/studies/{study_id}/trace/{gene}", {
-      params: { path: { study_id: studyId, gene } },
+    api.GET("/api/studies/{study_id}/trace", {
+      params: { path: { study_id: studyId }, query: shown(comparison) },
     }),
   );
 }
-function fetchWithout(studyId: string, gene: string, samples: string[]) {
+function fetchGene(studyId: string, gene: string, comparison?: string | null) {
+  return unwrap(
+    api.GET("/api/studies/{study_id}/trace/{gene}", {
+      params: { path: { study_id: studyId, gene }, query: shown(comparison) },
+    }),
+  );
+}
+function fetchWithout(
+  studyId: string,
+  gene: string,
+  samples: string[],
+  comparison?: string | null,
+) {
   return unwrap(
     api.POST("/api/studies/{study_id}/trace/{gene}/without", {
-      params: { path: { study_id: studyId, gene } },
+      params: { path: { study_id: studyId, gene }, query: shown(comparison) },
       body: { samples },
     }),
   );
@@ -66,7 +83,7 @@ export interface WhereRoot {
   id: string;
 }
 
-function fetchWhere(studyId: string, root: WhereRoot, top: number) {
+function fetchWhere(studyId: string, root: WhereRoot, top: number, comparison?: string | null) {
   return unwrap(
     api.GET("/api/studies/{study_id}/where-to-look", {
       params: {
@@ -76,6 +93,7 @@ function fetchWhere(studyId: string, root: WhereRoot, top: number) {
           sample: root.kind === "sample" ? root.id : undefined,
           well: root.kind === "well" ? root.id : undefined,
           top,
+          ...shown(comparison),
         },
       },
     }),
@@ -85,7 +103,13 @@ function fetchWhere(studyId: string, root: WhereRoot, top: number) {
 /** A person's Decide…: the place at `rank` opens as a Decision Card (sent with the view's head). */
 export function openPlace(
   studyId: string,
-  body: { kind: WhereKind; id: string; rank: number; expected_head: string },
+  body: {
+    kind: WhereKind;
+    id: string;
+    rank: number;
+    expected_head: string;
+    comparison?: string | null;
+  },
 ) {
   return unwrap(
     api.POST("/api/studies/{study_id}/where-to-look/open", {
@@ -110,6 +134,7 @@ export function decidePlace(
     reason: string;
     expected_head: string;
     expected_inbox: string | null;
+    comparison?: string | null;
   },
 ) {
   return unwrap(
@@ -195,7 +220,7 @@ export function useTraceStudy(s: TraceScope) {
   return useQuery({
     queryKey: wkey(s, "study"),
     enabled: Boolean(s.studyId),
-    queryFn: () => fetchStudy(s.studyId!),
+    queryFn: () => fetchStudy(s.studyId!, s.comparison),
     refetchInterval: whileLoading,
     retry,
   });
@@ -205,7 +230,7 @@ export function useTraceGene(s: TraceScope, gene: string | null) {
   return useQuery({
     queryKey: wkey(s, "gene", gene),
     enabled: Boolean(s.studyId && gene),
-    queryFn: () => fetchGene(s.studyId!, gene!),
+    queryFn: () => fetchGene(s.studyId!, gene!, s.comparison),
     placeholderData: keepPreviousData,
     refetchInterval: whileLoading,
     retry,
@@ -218,7 +243,7 @@ export function useWithout(s: TraceScope, gene: string | null, samples: readonly
   return useQuery({
     queryKey: wkey(s, "without", gene, sorted),
     enabled: Boolean(s.studyId && gene && sorted.length),
-    queryFn: () => fetchWithout(s.studyId!, gene!, sorted),
+    queryFn: () => fetchWithout(s.studyId!, gene!, sorted, s.comparison),
     placeholderData: keepPreviousData,
     staleTime: 60_000,
     retry,
@@ -240,7 +265,7 @@ export function useWhere(s: TraceScope, root: WhereRoot | null, top: number) {
   return useQuery({
     queryKey: wkey(s, "where", root?.kind ?? null, root?.id ?? null, top),
     enabled: Boolean(s.studyId && root),
-    queryFn: () => fetchWhere(s.studyId!, root!, top),
+    queryFn: () => fetchWhere(s.studyId!, root!, top, s.comparison),
     // asking for more places keeps the shown ones until the answer comes; another root does not
     placeholderData: (prev) => (prev && root && sameRoot(prev.root, root) ? prev : undefined),
     refetchInterval: whileLoading,

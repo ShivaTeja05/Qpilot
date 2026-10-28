@@ -12,6 +12,7 @@ import { sectionPath, type SectionProps } from "@/shell/sections";
 import { Button, EmptyState, ErrorPanel, PageHeader, Skeleton } from "@/ui";
 import { isWarming, useCards, useComparisons, useFlips, useResults, type ResultsView } from "./api";
 import { ChoicesConfirm } from "./ChoicesConfirm";
+import { useShownComparison } from "./comparison";
 import { ComparisonPicker, ComparisonsPanel } from "./ComparisonsPanel";
 import { DecisionCards } from "./DecisionCards";
 import { EvidencePanel } from "./EvidencePanel";
@@ -64,18 +65,15 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
   const [, navigate] = useLocation();
   const key = workspace?.key ?? "";
   const studyId = workspace?.results_visible ? workspace.study_id : null;
-  // The comparison the page shows, in a study with several (null: the first, as the API says).
-  const [picked, setPicked] = useState<{ study: string; id: string } | null>(null);
-  const comparison = picked && picked.study === studyId ? picked.id : null;
+  // The comparison the page shows, in a study with several (null: the first, as the API says);
+  // shared with Trace and the gene's page.
+  const [comparison, setComparison] = useShownComparison(studyId);
   const results = useResults(key, studyId, comparison);
   const cards = useCards(key, studyId);
   const flips = useFlips(key, studyId, comparison);
   const several = (results.data?.comparisons.length ?? 0) > 1;
   const comparisons = useComparisons(key, studyId, several);
-  const show = useCallback(
-    (id: string) => (studyId ? setPicked({ study: studyId, id }) : undefined),
-    [studyId],
-  );
+  const show = useCallback((id: string) => setComparison(id), [setComparison]);
   const [by, setBy] = useState<MapEncoding>("conclusion");
   const [filter, setFilter] = useState<GeneFilter>(NO_FILTER);
 

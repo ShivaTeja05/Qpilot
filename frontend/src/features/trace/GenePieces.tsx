@@ -66,11 +66,22 @@ export function CallFacts({ call, labels }: { call: CallView; labels: readonly s
       <Fact label="95 % CI">
         <span className="tabular">{ci(lo, hi)}</span>
       </Fact>
-      <Fact label="p · samples">
-        <span className="tabular">
-          {pValue(call.p)} · {count(call.n_a)} vs {count(call.n_b)}
-        </span>
-      </Fact>
+      {call.p_adjusted != null && call.correction ? (
+        <Fact label={`Corrected p (${call.correction}) · samples`}>
+          <span className="tabular">
+            {pValue(call.p_adjusted)} · {count(call.n_a)} vs {count(call.n_b)}
+          </span>
+          <span className="tabular mt-0.5 block text-[12px] text-muted">
+            {call.q != null ? `q ${pValue(call.q)} · ` : ""}p before correction {pValue(call.p)}
+          </span>
+        </Fact>
+      ) : (
+        <Fact label="p · samples">
+          <span className="tabular">
+            {pValue(call.p)} · {count(call.n_a)} vs {count(call.n_b)}
+          </span>
+        </Fact>
+      )}
     </dl>
   );
 }

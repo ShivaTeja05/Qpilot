@@ -7267,6 +7267,11 @@ export type components = {
             note: string;
             /** P */
             p: number | null;
+            /**
+             * P Adjusted
+             * @description Several comparisons with a correction: the corrected p the call used.
+             */
+            p_adjusted?: number | null;
             /** Study Id */
             study_id: string;
         };
@@ -14847,6 +14852,18 @@ export type components = {
              */
             at_plan: boolean;
             /**
+             * Comparison
+             * @description A study with several comparisons: the one shown (its id).
+             */
+            comparison?: string | null;
+            /** Comparison Label */
+            comparison_label?: string | null;
+            /**
+             * Correction
+             * @description The correction's short name.
+             */
+            correction?: string | null;
+            /**
              * Fold
              * @description The fold change between the group means, in words.
              */
@@ -14887,8 +14904,24 @@ export type components = {
             most_wells: number;
             /** P */
             p: number | null;
+            /**
+             * P Adjusted
+             * @description Several comparisons: the corrected p the call used.
+             */
+            p_adjusted?: number | null;
+            /**
+             * Paired
+             * @description The comparison is paired: its fold change is within pairs.
+             * @default false
+             */
+            paired: boolean;
             /** Points */
             points: components["schemas"]["UnitPoint"][];
+            /**
+             * Q
+             * @description Benjamini-Hochberg q over this comparison's genes.
+             */
+            q?: number | null;
             /**
              * Refs
              * @description The control genes each unit is divided by.
@@ -19150,7 +19183,10 @@ export interface operations {
     };
     get_gene_units: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A study with several comparisons: the one shown (its id; the first). */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 gene: string;
