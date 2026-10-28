@@ -23,8 +23,13 @@ linked to the plate, else the plate's run file in the instrument export the stud
 from, else the study's own file), and ``melt_products`` (G-MELT: whether each amplified study
 well melts as one product at its assay's melting temperature, and what melted in each
 no-template control, from the file's melt curves as :mod:`qpilot.qpcr.melt` reads them; G-NTC-1
-grades a control's amplification with that class). Rules label; they never drop a well. What
-leaving wells out would do is the consequence test (:func:`run_gate`).
+grades a control's amplification with that class), and ``ipc_inhibition`` (G-IPC: in multiplex
+wells, an internal positive control that comes up much later than in the no-template wells, a
+sign of inhibition; :mod:`qpilot.qpcr.multiplex`). Every rule works per target, so the curves of a
+multiplex well are judged one dye at a time; an internal positive control is meant to amplify in
+the no-template wells, so G-NTC-1 does not judge it. Rules label; they never drop a well. What
+leaving wells out would do is the consequence test (:func:`run_gate`); in a multiplex well it
+leaves out every curve of the well together (one reaction).
 """
 
 from __future__ import annotations
@@ -56,6 +61,7 @@ from qpilot.core.rules import (
     pack_from_json,
 )
 from qpilot.core.validator import TOKEN
+from qpilot.qpcr import multiplex as mx
 from qpilot.qpcr.gate_instr import DEFAULT_HOLD_LIMIT_C
 from qpilot.qpcr.gate_rt import RT_RANGE_LIMIT
 from qpilot.qpcr.instrument_context import RunContext
@@ -134,16 +140,37 @@ class GateContext:
     runs: Mapping[str, RunFile] | None = None
     melt: MeltData | None = None
     melt_params: MeltParams = field(default_factory=MeltParams)
+    internal: pd.DataFrame | None = None
     facts: FactRegistry = field(default_factory=FactRegistry)
     _std_fits: dict[tuple[str, str], dict[str, Any]] = field(default_factory=dict)
     _melt: dict[tuple[str, str], AssayMelt] | None = None
+    _multiplex: frozenset[str] | None = None
 
     def __post_init__(self) -> None:
-        t = self.table
-        self.table = t.assign(
-            key=t["run_id"] + "/" + t["well"],
-            amplified=t["amplification"].eq(True) & t["cq"].notna(),
-        )
+        self.table = _keyed(self.table)
+        if self.internal is not None:
+            self.internal = _keyed(self.internal)
+
+    def multiplex_keys(self) -> frozenset[str]:
+        """The keys of the wells that hold more than one target's curve (computed once)."""
+        if self._multiplex is None:
+            self._multiplex = mx.multiplex_keys(self.table)
+        return self._multiplex
+
+    def control_rows(self) -> pd.DataFrame:
+        """The internal positive controls' curves (G-IPC), with the wells' other curves.
+
+        ``internal`` holds them when the design leaves the control out of the analysis
+        (``run_gate`` keeps its curves for this rule); otherwise they are in ``table``.
+        """
+        if self.internal is None:
+            return self.table
+        others = self.table[~self.table["target"].isin(set(self.internal["target"]))]
+        return pd.concat([others, self.internal], ignore_index=True)
+
+    def internal_controls(self) -> list[str]:
+        """The targets that are internal positive controls (:func:`multiplex.internal_controls`)."""
+        return mx.internal_controls(self.control_rows())
 
     def plates(self) -> list[str]:
         """Plate ids in table order."""
@@ -190,6 +217,14 @@ class GateContext:
         path = "gate/" + "/".join([rule.id, *(f"{k}={scope[k]}" for k in sorted(scope)), name])
         self.facts.add(Fact(id=fid, value=value, fmt=fmt, unit=unit, path=path))
         return fid
+
+
+def _keyed(t: pd.DataFrame) -> pd.DataFrame:
+    """The table with each row's well key and the engine's amplification call."""
+    return t.assign(
+        key=t["run_id"] + "/" + t["well"],
+        amplified=t["amplification"].eq(True) & t["cq"].notna(),
+    )
 
 
 def _na(scope: dict[str, str], code: str, reason: str) -> Finding:
@@ -255,10 +290,14 @@ def ntc_gap(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
     k = _param(rule, "k_cycles", 5.0)
     findings, untyped = _untyped(ctx, rule)
     yield from findings
+    controls = set(ctx.internal_controls())
     for plate, target, rows in ctx.plate_targets():
         if plate in untyped:
             continue
         scope = {"plate": plate, "target": target}
+        if target in controls:
+            yield _na(scope, "internal_control", INTERNAL_CONTROL_NTC)
+            continue
         ntc = rows[rows["sample_type"].isin(("ntc", "ntp"))]
         unkn = rows[rows["sample_type"] == ANALYSED]
         if ntc.empty:
@@ -360,6 +399,13 @@ def ntc_gap(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
             flagged=sorted(tainted["key"]),
             options={"exclude_flagged": sorted(tainted["key"])},
         )
+
+
+#: Why G-NTC-1 does not judge an internal positive control.
+INTERNAL_CONTROL_NTC = (
+    "This target is the internal positive control: it is added to every well, the no-template "
+    "controls too, and is meant to amplify there (G-IPC reads it)."
+)
 
 
 #: How G-NTC-1 says G-MELT's class of the product in the no-template wells that amplified.
@@ -1544,6 +1590,159 @@ def _melt_assay(
 
 # ---------- registry ----------
 
+# ---------- G-IPC ----------
+
+#: G-IPC's outcomes and their verdicts.
+IPC_OUTCOMES = {"ipc_ok": "pass", "ipc_delayed": "warn", "ipc_failed": "warn"}
+
+
+def ipc_inhibition(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
+    """An internal positive control much later than in the no-template wells (G-IPC).
+
+    Per plate and internal control (:func:`qpilot.qpcr.multiplex.internal_controls`): its
+    expected Cq is the median over the no-template wells where it amplified (nothing there to
+    compete with it or to inhibit it), else, with fewer than ``min_reference_wells`` of them, the
+    median over the plate's study wells. A study well whose control is ``delay_cycles`` or more
+    later suggests inhibition; a well where the control did not amplify while no other target of
+    the well did either cannot tell a negative from an inhibited reaction. A control that did not
+    amplify beside a target that did is not read as inhibition: a strongly amplifying target can
+    use up the reaction before the control rises. The consequence test leaves out the flagged
+    wells, every curve of each (one reaction).
+    """
+    delay = _param(rule, "delay_cycles", 3.0)
+    min_reference = int(_param(rule, "min_reference_wells", 2))
+    table = ctx.control_rows()
+    controls = mx.internal_controls(table)
+    if not controls:
+        yield _na(
+            {},
+            "no_internal_control",
+            "No internal positive control is measured in the same wells as the targets, so "
+            "inhibition is not checked this way.",
+        )
+        return
+    for (plate, target), rows in table.groupby(["run_id", "target"], sort=False):
+        if target not in controls:
+            continue
+        scope = {"plate": str(plate), "target": str(target)}
+        on_plate = table[table["run_id"] == plate]
+        others = mx.partners(on_plate, str(target))
+        others = others[~others["target"].isin(controls)]
+        partner_amplified = others.groupby("key")["amplified"].any()
+        blank = rows[rows["sample_type"].isin(("ntc", "ntp")) & rows["amplified"]]
+        study = rows[rows["sample_type"] == ANALYSED]
+        if study.empty:
+            yield _na(scope, "no_unknowns", "No study samples for this control on this plate.")
+            continue
+        if len(blank) >= min_reference:
+            expected = float(blank["cq"].median())
+            basis = "no-template wells where it amplified"
+            n_basis = len(blank)
+        else:
+            seen = study[study["amplified"]]
+            if len(seen) < 3:
+                yield _na(
+                    scope,
+                    "too_few_controls",
+                    "The control amplified in too few wells here to say what its Cq should be.",
+                )
+                continue
+            expected = float(seen["cq"].median())
+            basis = "study wells where it amplified (too few no-template wells had it)"
+            n_basis = len(seen)
+        amp = study[study["amplified"]]
+        late = amp[amp["cq"] - expected >= delay]
+        silent = study[~study["amplified"]]
+        rescued = silent["key"].map(partner_amplified).fillna(False).astype(bool)
+        failed, outcompeted = silent[~rescued], silent[rescued]
+        f_n = ctx.fact(rule, scope, "nstudy", int(len(study)))
+        f_e = ctx.fact(rule, scope, "expected", expected, "{:.2f}")
+        f_b = ctx.fact(rule, scope, "nbasis", int(n_basis))
+        f_d = ctx.fact(rule, scope, "delay", delay, "{:g}")
+        facts = [f_n, f_e, f_b, f_d]
+        evidence: dict[str, Any] = {
+            "expected_cq": expected,
+            "basis": "no_template" if basis.startswith("no-template") else "study",
+            "n_study_wells": int(len(study)),
+            "n_delayed": int(len(late)),
+            "n_failed": int(len(failed)),
+            "n_outcompeted": int(len(outcompeted)),
+            "delay_cycles": delay,
+        }
+        said = (
+            f"The control's expected Cq is {{{{{f_e}}}}}, its median over the {{{{{f_b}}}}} "
+            f"{basis}."
+        )
+        extra = ""
+        if len(outcompeted):
+            f_o = ctx.fact(rule, scope, "noutcompeted", int(len(outcompeted)))
+            facts.append(f_o)
+            extra = (
+                f" In {{{{{f_o}}}}} wells it did not amplify beside a target that did: a strongly "
+                "amplifying target can use up the reaction first, which is not inhibition."
+            )
+        if late.empty and failed.empty:
+            yield Finding(
+                scope=scope,
+                outcome="ipc_ok",
+                reason=(
+                    f"{said} In every one of the {{{{{f_n}}}}} study wells where it amplified, it "
+                    f"came up less than {{{{{f_d}}}}} cycles later than that.{extra}"
+                ),
+                facts=facts,
+                evidence=evidence,
+            )
+            continue
+        parts = []
+        if len(late):
+            shift = float((late["cq"] - expected).max())
+            f_l = ctx.fact(rule, scope, "ndelayed", int(len(late)))
+            f_s = ctx.fact(rule, scope, "maxshift", shift, "{:.2f}")
+            facts += [f_l, f_s]
+            evidence["max_delay"] = shift
+            parts.append(
+                f"In {{{{{f_l}}}}} of the {{{{{f_n}}}}} study wells it came up {{{{{f_d}}}}} or "
+                f"more cycles later (up to {{{{{f_s}}}}}): something in those samples may have "
+                "slowed the reaction (inhibition), so the targets measured with it may be "
+                "underestimated."
+            )
+        if len(failed):
+            f_f = ctx.fact(rule, scope, "nfailed", int(len(failed)))
+            facts.append(f_f)
+            parts.append(
+                f"In {{{{{f_f}}}}} study wells neither the control nor any target amplified: an "
+                "inhibited reaction cannot be told from a negative one there."
+            )
+        flagged = sorted({*late["key"], *failed["key"]})
+        evidence["samples"] = ", ".join(
+            dict.fromkeys(str(s) for s in rows.loc[rows["key"].isin(flagged), "sample"])
+        )
+        yield Finding(
+            scope=scope,
+            outcome="ipc_delayed" if len(late) else "ipc_failed",
+            reason=" ".join([said, *parts]) + extra,
+            facts=facts,
+            evidence=evidence,
+            flagged=flagged,
+            options={"exclude_inhibited": flagged},
+        )
+
+
+#: Added to a finding whose options leave out multiplex wells.
+MULTIPLEX_OPTION_NOTE = (
+    "These wells hold more than one dye (multiplex): leaving a well out leaves out every curve "
+    "in it, so each gene keeps the reference measured in the same reaction."
+)
+
+
+def _multiplex_words(ev: RuleEval, ctx: GateContext) -> RuleEval:
+    """``ev`` with :data:`MULTIPLEX_OPTION_NOTE` when one of its options leaves out such wells."""
+    shared = ctx.multiplex_keys()
+    if not shared or not any(shared.intersection(keys) for keys in ev.options.values()):
+        return ev
+    return ev.model_copy(update={"reason": f"{ev.reason} {MULTIPLEX_OPTION_NOTE}"})
+
+
 CHECKS: dict[str, Check] = {
     c.name: c
     for c in (
@@ -1612,6 +1811,12 @@ CHECKS: dict[str, Check] = {
             outcomes=MELT_OUTCOMES,
             options=("exclude_flagged",),
         ),
+        Check(
+            name="ipc_inhibition",
+            evaluate=ipc_inhibition,
+            outcomes=IPC_OUTCOMES,
+            options=("exclude_inhibited",),
+        ),
     )
 }
 
@@ -1624,6 +1829,7 @@ OPTION_LABELS = {
     "exclude_unit_target": "Leave out this unit's wells for this target",
     "drop_rt_replicate": "Leave out the reverse-transcription replicate farthest from the others",
     "exclude_run": "Leave out this run's study wells",
+    "exclude_inhibited": "Leave out the wells whose internal control suggests inhibition",
 }
 
 
@@ -1659,8 +1865,12 @@ def resolve_pack(pack: RulePack | str | Path | None = None) -> RulePack:
 
 
 def evaluate(pack: RulePack, ctx: GateContext) -> list[RuleEval]:
-    """Every rule of ``pack`` on ``ctx``: pack order, then plate/target order."""
-    return evaluate_pack(pack, CHECKS, ctx)
+    """Every rule of ``pack`` on ``ctx``: pack order, then plate/target order.
+
+    A finding whose options leave out multiplex wells says that every curve of such a well is
+    left out with it (:data:`MULTIPLEX_OPTION_NOTE`).
+    """
+    return [_multiplex_words(ev, ctx) for ev in evaluate_pack(pack, CHECKS, ctx)]
 
 
 def plate_status(evals: Collection[RuleEval]) -> dict[str, str]:
@@ -1717,6 +1927,7 @@ def run_gate(
     table = design_curves(curves, settings.design) if settings.design is not None else curves
     ctx = GateContext(
         table=table,
+        internal=_left_out_controls(curves, settings.design),
         quantities=dict(quantities or {}),
         rawness=rawness,
         confirmed_no_controls=frozenset(confirmed_no_controls),
@@ -1765,6 +1976,30 @@ def run_gate(
         OPTION_LABELS,
         headline,
     )
+
+
+def _left_out_controls(curves: pd.DataFrame, design: Any) -> pd.DataFrame | None:
+    """The curves of internal positive controls the design leaves out of the analysis (G-IPC).
+
+    A person may leave an IPC out of the study (role ``ignore``: it is not a gene to compare),
+    and the engine then never sees it; G-IPC still reads its curves, typed as the design types
+    the wells. ``None`` when the design leaves no such control out.
+    """
+    from qpilot.qpcr.designs import design_curves
+
+    if design is None:
+        return None
+    ignored = {
+        t
+        for t, d in design.targets.items()
+        if d.role == "ignore" and mx.is_internal_control_name(t)
+    }
+    if not ignored:
+        return None
+    targets = {t: d for t, d in design.targets.items() if t not in ignored}
+    kept = design_curves(curves, design.model_copy(update={"targets": targets}))
+    rows = kept[kept["target"].isin(ignored)]
+    return rows if not rows.empty else None
 
 
 def melt_params(pack: RulePack) -> MeltParams:

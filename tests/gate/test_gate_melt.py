@@ -1,4 +1,4 @@
-"""G-MELT, and G-NTC-1's class of a control's product, in the pack (research-default 1.2.0).
+"""G-MELT, and G-NTC-1's class of a control's product, in the pack (research-default 1.2.0 on).
 
 G-MELT reads each well's melt curve (``qpcr/melt.py``): per study sample x target x plate, one
 product at the assay's melting temperature passes, an extra peak warns, no product at the
@@ -282,7 +282,7 @@ def test_leaving_the_flagged_wells_out_is_priced_by_the_consequence_test():
         assert option.option == "exclude_flagged" and len(option.excluded) == 1
     evals = [ev for ev in report.evals if ev.rule_id == "G-MELT"]
     assert {ev.verdict for ev in evals if ev.scope.get("sample", "").startswith("u2")} == {"fail"}
-    assert report.pack["version"] == "1.2.0"
+    assert report.pack["version"] == "1.3.0"
 
 
 def test_the_cfx_exports_late_no_template_controls(tmp_path):

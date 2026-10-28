@@ -128,7 +128,7 @@ def test_rt_replicates_are_checked_per_unit_and_target(rt):
     assert sorted(option["excluded"]) == sorted(warn["flagged"])
     rule = next(r for r in body["pack"]["rules"] if r["rule_id"] == "G-RT")
     assert rule["sources"][0]["key"] == "bustin_2015" and not rule["informational"]
-    assert body["pack"]["version"] == "1.2.0"
+    assert body["pack"]["version"] == "1.3.0"
 
 
 # ---- G-INSTR and linked run files ------------------------------------------------------------

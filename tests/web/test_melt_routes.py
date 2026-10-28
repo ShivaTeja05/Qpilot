@@ -124,7 +124,7 @@ def _names_a_group(value, groups: set[str]) -> bool:
 
 def test_the_plates_assays_and_every_wells_call(lc96):
     view = get(lc96["client"], f"/api/sessions/{lc96['sid']}/melt")
-    assert view["plates"] == [PLATE] and view["pack"] == "research-default 1.2.0"
+    assert view["plates"] == [PLATE] and view["pack"] == "research-default 1.3.0"
     assert view["params"] == {
         "tm_tolerance_c": 1.0,
         "extra_peak_share": 0.05,
@@ -203,7 +203,7 @@ def test_the_study_says_what_the_session_says_and_the_gate_weighs_it(lc96):
         ("pass", "ntc_clean"),
     }
     assert len([e for e in melt if e["outcome"] == "one_product"]) == 12  # 6 samples x 2 targets
-    assert body["pack"]["version"] == "1.2.0"
+    assert body["pack"]["version"] == "1.3.0"
     assert "G-MELT" in [r["rule_id"] for r in body["pack"]["rules"]]
 
 
