@@ -355,7 +355,7 @@ def _print_study(result, cards, settings) -> None:
     )
     rule = settings.rule.describe()
     found = result.comparisons
-    if found is not None and len(found.comparisons) > 1 and found.correction == "holm":
+    if found is not None and len(found.comparisons) > 1 and found.correction != "none":
         rule = rule.replace("only if p <", "only if the corrected p <")
     print(f"Rule: {rule}")
     _print_efficiency(result)

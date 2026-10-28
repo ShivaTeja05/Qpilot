@@ -1,0 +1,1224 @@
+{
+ "study_id": "7ade8b21e05c",
+ "session": null,
+ "head": "78dd8c13f19464ece5d045db7342f447474dee0e123f1e4d80a71f885ce103c7",
+ "title": {
+  "plain": "Run Review of study 7ade8b21e05c: 5 plates, 12 samples, 180 reactions.",
+  "segments": [
+   {
+    "text": "Run Review of study ",
+    "fact": null
+   },
+   {
+    "text": "7ade8b21e05c",
+    "fact": "f_rr_study_id"
+   },
+   {
+    "text": ": ",
+    "fact": null
+   },
+   {
+    "text": "5",
+    "fact": "f_n_plates"
+   },
+   {
+    "text": " plates, ",
+    "fact": null
+   },
+   {
+    "text": "12",
+    "fact": "f_n_samples"
+   },
+   {
+    "text": " samples, ",
+    "fact": null
+   },
+   {
+    "text": "180",
+    "fact": "f_n_reactions"
+   },
+   {
+    "text": " reactions.",
+    "fact": null
+   }
+  ],
+  "facts": [
+   {
+    "id": "f_rr_study_id",
+    "text": "7ade8b21e05c",
+    "value": "7ade8b21e05c",
+    "unit": "",
+    "path": "review.study_id"
+   },
+   {
+    "id": "f_n_plates",
+    "text": "5",
+    "value": 5,
+    "unit": "",
+    "path": "study"
+   },
+   {
+    "id": "f_n_samples",
+    "text": "12",
+    "value": 12,
+    "unit": "",
+    "path": "study"
+   },
+   {
+    "id": "f_n_reactions",
+    "text": "180",
+    "value": 180,
+    "unit": "",
+    "path": "study"
+   }
+  ],
+  "source": "template"
+ },
+ "purpose": "qPilot does not pass or fail a run; it shows what the data can and cannot show, and a person signs off.",
+ "headline": [
+  {
+   "gene": "IL6",
+   "conclusion": "up",
+   "line": {
+    "plain": "IL6: called up, 6.1× (Moderate confidence; holds in 100 % of 6 analyses).",
+    "segments": [
+     {
+      "text": "IL6",
+      "fact": "f_rr_headline_1_gene"
+     },
+     {
+      "text": ": ",
+      "fact": null
+     },
+     {
+      "text": "called up",
+      "fact": "f_rr_headline_1_call"
+     },
+     {
+      "text": ", ",
+      "fact": null
+     },
+     {
+      "text": "6.1×",
+      "fact": "f_fc_il6_recommended"
+     },
+     {
+      "text": " (",
+      "fact": null
+     },
+     {
+      "text": "Moderate",
+      "fact": "f_level_il6"
+     },
+     {
+      "text": " confidence; holds in ",
+      "fact": null
+     },
+     {
+      "text": "100 %",
+      "fact": "f_holds_il6"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "6",
+      "fact": "f_n_cells"
+     },
+     {
+      "text": " analyses).",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_rr_headline_1_gene",
+      "text": "IL6",
+      "value": "IL6",
+      "unit": "",
+      "path": "review.headline[0].gene"
+     },
+     {
+      "id": "f_rr_headline_1_call",
+      "text": "called up",
+      "value": "called up",
+      "unit": "",
+      "path": "robustness.IL6.conclusion"
+     },
+     {
+      "id": "f_fc_il6_recommended",
+      "text": "6.1×",
+      "value": 6.114555706124383,
+      "unit": "×",
+      "path": "contrasts.IL6.fc"
+     },
+     {
+      "id": "f_level_il6",
+      "text": "Moderate",
+      "value": "Moderate",
+      "unit": "",
+      "path": "confidence.IL6.level"
+     },
+     {
+      "id": "f_holds_il6",
+      "text": "100 %",
+      "value": 1.0,
+      "unit": "",
+      "path": "robustness.IL6.holds"
+     },
+     {
+      "id": "f_n_cells",
+      "text": "6",
+      "value": 6,
+      "unit": "",
+      "path": "study"
+     }
+    ],
+    "source": "template"
+   }
+  },
+  {
+   "gene": "MYC",
+   "conclusion": "none",
+   "line": {
+    "plain": "MYC: not called, 1.1× (Low confidence; holds in 100 % of 6 analyses).",
+    "segments": [
+     {
+      "text": "MYC",
+      "fact": "f_rr_headline_2_gene"
+     },
+     {
+      "text": ": ",
+      "fact": null
+     },
+     {
+      "text": "not called",
+      "fact": "f_rr_headline_2_call"
+     },
+     {
+      "text": ", ",
+      "fact": null
+     },
+     {
+      "text": "1.1×",
+      "fact": "f_fc_myc_recommended"
+     },
+     {
+      "text": " (",
+      "fact": null
+     },
+     {
+      "text": "Low",
+      "fact": "f_level_myc"
+     },
+     {
+      "text": " confidence; holds in ",
+      "fact": null
+     },
+     {
+      "text": "100 %",
+      "fact": "f_holds_myc"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "6",
+      "fact": "f_n_cells"
+     },
+     {
+      "text": " analyses).",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_rr_headline_2_gene",
+      "text": "MYC",
+      "value": "MYC",
+      "unit": "",
+      "path": "review.headline[1].gene"
+     },
+     {
+      "id": "f_rr_headline_2_call",
+      "text": "not called",
+      "value": "not called",
+      "unit": "",
+      "path": "robustness.MYC.conclusion"
+     },
+     {
+      "id": "f_fc_myc_recommended",
+      "text": "1.1×",
+      "value": 1.082832489880625,
+      "unit": "×",
+      "path": "contrasts.MYC.fc"
+     },
+     {
+      "id": "f_level_myc",
+      "text": "Low",
+      "value": "Low",
+      "unit": "",
+      "path": "confidence.MYC.level"
+     },
+     {
+      "id": "f_holds_myc",
+      "text": "100 %",
+      "value": 1.0,
+      "unit": "",
+      "path": "robustness.MYC.holds"
+     },
+     {
+      "id": "f_n_cells",
+      "text": "6",
+      "value": 6,
+      "unit": "",
+      "path": "study"
+     }
+    ],
+    "source": "template"
+   }
+  }
+ ],
+ "comparisons": [
+  {
+   "plain": "Drug A vs Control (the first comparison): IL6 called up (6.1×, corrected p 0.0011, holds in 100 %); MYC not called (1.1×, corrected p 0.81, holds in 100 %).",
+   "segments": [
+    {
+     "text": "Drug A vs Control",
+     "fact": "f_rr_cmp1_label"
+    },
+    {
+     "text": " (the first comparison): ",
+     "fact": null
+    },
+    {
+     "text": "IL6",
+     "fact": "f_rr_cmp1_gene1_name"
+    },
+    {
+     "text": " ",
+     "fact": null
+    },
+    {
+     "text": "called up",
+     "fact": "f_rr_cmp1_gene1_call"
+    },
+    {
+     "text": " (",
+     "fact": null
+    },
+    {
+     "text": "6.1×",
+     "fact": "f_rr_cmp1_gene1_fc"
+    },
+    {
+     "text": ", corrected p ",
+     "fact": null
+    },
+    {
+     "text": "0.0011",
+     "fact": "f_rr_cmp1_gene1_p"
+    },
+    {
+     "text": ", holds in ",
+     "fact": null
+    },
+    {
+     "text": "100 %",
+     "fact": "f_rr_cmp1_gene1_holds"
+    },
+    {
+     "text": "); ",
+     "fact": null
+    },
+    {
+     "text": "MYC",
+     "fact": "f_rr_cmp1_gene2_name"
+    },
+    {
+     "text": " ",
+     "fact": null
+    },
+    {
+     "text": "not called",
+     "fact": "f_rr_cmp1_gene2_call"
+    },
+    {
+     "text": " (",
+     "fact": null
+    },
+    {
+     "text": "1.1×",
+     "fact": "f_rr_cmp1_gene2_fc"
+    },
+    {
+     "text": ", corrected p ",
+     "fact": null
+    },
+    {
+     "text": "0.81",
+     "fact": "f_rr_cmp1_gene2_p"
+    },
+    {
+     "text": ", holds in ",
+     "fact": null
+    },
+    {
+     "text": "100 %",
+     "fact": "f_rr_cmp1_gene2_holds"
+    },
+    {
+     "text": ").",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_rr_cmp1_label",
+     "text": "Drug A vs Control",
+     "value": "Drug A vs Control",
+     "unit": "",
+     "path": "comparisons.drug_a_vs_control.label"
+    },
+    {
+     "id": "f_rr_cmp1_gene1_name",
+     "text": "IL6",
+     "value": "IL6",
+     "unit": "",
+     "path": "comparisons.drug_a_vs_control.contrasts.IL6.target"
+    },
+    {
+     "id": "f_rr_cmp1_gene1_call",
+     "text": "called up",
+     "value": "called up",
+     "unit": "",
+     "path": "comparisons.drug_a_vs_control.contrasts.IL6.conclusion"
+    },
+    {
+     "id": "f_rr_cmp1_gene1_fc",
+     "text": "6.1×",
+     "value": 6.114555706124383,
+     "unit": "×",
+     "path": "comparisons.drug_a_vs_control.contrasts.IL6.fc"
+    },
+    {
+     "id": "f_rr_cmp1_gene1_p",
+     "text": "0.0011",
+     "value": 0.0011056668347653273,
+     "unit": "",
+     "path": "comparisons.drug_a_vs_control.p_adjusted.IL6"
+    },
+    {
+     "id": "f_rr_cmp1_gene1_holds",
+     "text": "100 %",
+     "value": 1.0,
+     "unit": "",
+     "path": "comparisons.drug_a_vs_control.robustness.IL6.holds"
+    },
+    {
+     "id": "f_rr_cmp1_gene2_name",
+     "text": "MYC",
+     "value": "MYC",
+     "unit": "",
+     "path": "comparisons.drug_a_vs_control.contrasts.MYC.target"
+    },
+    {
+     "id": "f_rr_cmp1_gene2_call",
+     "text": "not called",
+     "value": "not called",
+     "unit": "",
+     "path": "comparisons.drug_a_vs_control.contrasts.MYC.conclusion"
+    },
+    {
+     "id": "f_rr_cmp1_gene2_fc",
+     "text": "1.1×",
+     "value": 1.082832489880625,
+     "unit": "×",
+     "path": "comparisons.drug_a_vs_control.contrasts.MYC.fc"
+    },
+    {
+     "id": "f_rr_cmp1_gene2_p",
+     "text": "0.81",
+     "value": 0.8077910348757356,
+     "unit": "",
+     "path": "comparisons.drug_a_vs_control.p_adjusted.MYC"
+    },
+    {
+     "id": "f_rr_cmp1_gene2_holds",
+     "text": "100 %",
+     "value": 1.0,
+     "unit": "",
+     "path": "comparisons.drug_a_vs_control.robustness.MYC.holds"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Drug B vs Control: IL6 called up (15×, corrected p 0.00057, holds in 100 %); MYC called up (7.3×, corrected p 0.0029, holds in 100 %).",
+   "segments": [
+    {
+     "text": "Drug B vs Control",
+     "fact": "f_rr_cmp2_label"
+    },
+    {
+     "text": ": ",
+     "fact": null
+    },
+    {
+     "text": "IL6",
+     "fact": "f_rr_cmp2_gene1_name"
+    },
+    {
+     "text": " ",
+     "fact": null
+    },
+    {
+     "text": "called up",
+     "fact": "f_rr_cmp2_gene1_call"
+    },
+    {
+     "text": " (",
+     "fact": null
+    },
+    {
+     "text": "15×",
+     "fact": "f_rr_cmp2_gene1_fc"
+    },
+    {
+     "text": ", corrected p ",
+     "fact": null
+    },
+    {
+     "text": "0.00057",
+     "fact": "f_rr_cmp2_gene1_p"
+    },
+    {
+     "text": ", holds in ",
+     "fact": null
+    },
+    {
+     "text": "100 %",
+     "fact": "f_rr_cmp2_gene1_holds"
+    },
+    {
+     "text": "); ",
+     "fact": null
+    },
+    {
+     "text": "MYC",
+     "fact": "f_rr_cmp2_gene2_name"
+    },
+    {
+     "text": " ",
+     "fact": null
+    },
+    {
+     "text": "called up",
+     "fact": "f_rr_cmp2_gene2_call"
+    },
+    {
+     "text": " (",
+     "fact": null
+    },
+    {
+     "text": "7.3×",
+     "fact": "f_rr_cmp2_gene2_fc"
+    },
+    {
+     "text": ", corrected p ",
+     "fact": null
+    },
+    {
+     "text": "0.0029",
+     "fact": "f_rr_cmp2_gene2_p"
+    },
+    {
+     "text": ", holds in ",
+     "fact": null
+    },
+    {
+     "text": "100 %",
+     "fact": "f_rr_cmp2_gene2_holds"
+    },
+    {
+     "text": ").",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_rr_cmp2_label",
+     "text": "Drug B vs Control",
+     "value": "Drug B vs Control",
+     "unit": "",
+     "path": "comparisons.drug_b_vs_control.label"
+    },
+    {
+     "id": "f_rr_cmp2_gene1_name",
+     "text": "IL6",
+     "value": "IL6",
+     "unit": "",
+     "path": "comparisons.drug_b_vs_control.contrasts.IL6.target"
+    },
+    {
+     "id": "f_rr_cmp2_gene1_call",
+     "text": "called up",
+     "value": "called up",
+     "unit": "",
+     "path": "comparisons.drug_b_vs_control.contrasts.IL6.conclusion"
+    },
+    {
+     "id": "f_rr_cmp2_gene1_fc",
+     "text": "15×",
+     "value": 15.046252693415429,
+     "unit": "×",
+     "path": "comparisons.drug_b_vs_control.contrasts.IL6.fc"
+    },
+    {
+     "id": "f_rr_cmp2_gene1_p",
+     "text": "0.00057",
+     "value": 0.0005717822842268046,
+     "unit": "",
+     "path": "comparisons.drug_b_vs_control.p_adjusted.IL6"
+    },
+    {
+     "id": "f_rr_cmp2_gene1_holds",
+     "text": "100 %",
+     "value": 1.0,
+     "unit": "",
+     "path": "comparisons.drug_b_vs_control.robustness.IL6.holds"
+    },
+    {
+     "id": "f_rr_cmp2_gene2_name",
+     "text": "MYC",
+     "value": "MYC",
+     "unit": "",
+     "path": "comparisons.drug_b_vs_control.contrasts.MYC.target"
+    },
+    {
+     "id": "f_rr_cmp2_gene2_call",
+     "text": "called up",
+     "value": "called up",
+     "unit": "",
+     "path": "comparisons.drug_b_vs_control.contrasts.MYC.conclusion"
+    },
+    {
+     "id": "f_rr_cmp2_gene2_fc",
+     "text": "7.3×",
+     "value": 7.251232044462345,
+     "unit": "×",
+     "path": "comparisons.drug_b_vs_control.contrasts.MYC.fc"
+    },
+    {
+     "id": "f_rr_cmp2_gene2_p",
+     "text": "0.0029",
+     "value": 0.002859768245524715,
+     "unit": "",
+     "path": "comparisons.drug_b_vs_control.p_adjusted.MYC"
+    },
+    {
+     "id": "f_rr_cmp2_gene2_holds",
+     "text": "100 %",
+     "value": 1.0,
+     "unit": "",
+     "path": "comparisons.drug_b_vs_control.robustness.MYC.holds"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Correction for the several comparisons: Holm's correction across each gene's comparisons.",
+   "segments": [
+    {
+     "text": "Correction for the several comparisons: ",
+     "fact": null
+    },
+    {
+     "text": "Holm's correction across each gene's comparisons",
+     "fact": "f_rr_cmp_correction"
+    },
+    {
+     "text": ".",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_rr_cmp_correction",
+     "text": "Holm's correction across each gene's comparisons",
+     "value": "Holm's correction across each gene's comparisons",
+     "unit": "",
+     "path": "comparisons.correction"
+    }
+   ],
+   "source": "template"
+  }
+ ],
+ "evidence": {
+  "study_id": "7ade8b21e05c",
+  "available": true,
+  "source": "kept",
+  "note": "",
+  "summary": {
+   "plain": "Evidence Ledger: 2 of 11 items present, 7 absent, 1 unknown and 1 not applicable. Absent items never change a conclusion or a confidence grade; they say what this study cannot show.",
+   "segments": [
+    {
+     "text": "Evidence Ledger: ",
+     "fact": null
+    },
+    {
+     "text": "2",
+     "fact": "f_ev_n_present"
+    },
+    {
+     "text": " of ",
+     "fact": null
+    },
+    {
+     "text": "11",
+     "fact": "f_ev_n_items"
+    },
+    {
+     "text": " items present, ",
+     "fact": null
+    },
+    {
+     "text": "7",
+     "fact": "f_ev_n_absent"
+    },
+    {
+     "text": " absent, ",
+     "fact": null
+    },
+    {
+     "text": "1",
+     "fact": "f_ev_n_unknown"
+    },
+    {
+     "text": " unknown and ",
+     "fact": null
+    },
+    {
+     "text": "1",
+     "fact": "f_ev_n_not_applicable"
+    },
+    {
+     "text": " not applicable. Absent items never change a conclusion or a confidence grade; they say what this study cannot show.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_ev_n_present",
+     "text": "2",
+     "value": 2,
+     "unit": "",
+     "path": "evidence.counts.present"
+    },
+    {
+     "id": "f_ev_n_items",
+     "text": "11",
+     "value": 11,
+     "unit": "",
+     "path": "evidence.items"
+    },
+    {
+     "id": "f_ev_n_absent",
+     "text": "7",
+     "value": 7,
+     "unit": "",
+     "path": "evidence.counts.absent"
+    },
+    {
+     "id": "f_ev_n_unknown",
+     "text": "1",
+     "value": 1,
+     "unit": "",
+     "path": "evidence.counts.unknown"
+    },
+    {
+     "id": "f_ev_n_not_applicable",
+     "text": "1",
+     "value": 1,
+     "unit": "",
+     "path": "evidence.counts.not_applicable"
+    }
+   ],
+   "source": "template"
+  },
+  "counts": {
+   "present": 2,
+   "absent": 7,
+   "not_applicable": 1,
+   "unknown": 1
+  },
+  "items": [
+   {
+    "id": "ntc",
+    "title": "NTC on every plate and target",
+    "status": "absent",
+    "status_word": "absent",
+    "value": null,
+    "line": {
+     "plain": "NTC on every plate and target: absent. No well is typed NTC, so contamination cannot be checked from this file.",
+     "segments": [
+      {
+       "text": "NTC on every plate and target: absent. No well is typed NTC, so contamination cannot be checked from this file.",
+       "fact": null
+      }
+     ],
+     "facts": [],
+     "source": "template"
+    },
+    "cannot_tell": true,
+    "miqe": [
+     "5.5",
+     "5.6"
+    ]
+   },
+   {
+    "id": "no_rt",
+    "title": "No-RT control",
+    "status": "absent",
+    "status_word": "absent",
+    "value": null,
+    "line": {
+     "plain": "No-RT control: absent. No well is typed no-RT (RDML type nrt), so genomic DNA carry-over cannot be checked from this file.",
+     "segments": [
+      {
+       "text": "No-RT control: absent. No well is typed no-RT (RDML type nrt), so genomic DNA carry-over cannot be checked from this file.",
+       "fact": null
+      }
+     ],
+     "facts": [],
+     "source": "template"
+    },
+    "cannot_tell": true,
+    "miqe": [
+     "3.5"
+    ]
+   },
+   {
+    "id": "reference_genes",
+    "title": "Reference candidates with geNorm M and V",
+    "status": "absent",
+    "status_word": "absent",
+    "value": null,
+    "line": {
+     "plain": "Reference candidates with geNorm M and V: absent. Reference candidates named: 2; geNorm needs at least 3 to give M and V, so reference stability is not shown.",
+     "segments": [
+      {
+       "text": "Reference candidates with geNorm M and V: absent. Reference candidates named: ",
+       "fact": null
+      },
+      {
+       "text": "2",
+       "fact": "f_ev_reference_genes_n_candidates"
+      },
+      {
+       "text": "; geNorm needs at least ",
+       "fact": null
+      },
+      {
+       "text": "3",
+       "fact": "f_ev_reference_genes_min_candidates"
+      },
+      {
+       "text": " to give M and V, so reference stability is not shown.",
+       "fact": null
+      }
+     ],
+     "facts": [
+      {
+       "id": "f_ev_reference_genes_n_candidates",
+       "text": "2",
+       "value": 2,
+       "unit": "",
+       "path": "evidence.reference_genes.n_candidates"
+      },
+      {
+       "id": "f_ev_reference_genes_min_candidates",
+       "text": "3",
+       "value": 3,
+       "unit": "",
+       "path": "evidence.reference_genes.min_candidates"
+      }
+     ],
+     "source": "template"
+    },
+    "cannot_tell": true,
+    "miqe": [
+     "5.15"
+    ]
+   },
+   {
+    "id": "efficiency",
+    "title": "Efficiency source",
+    "status": "present",
+    "status_word": "present",
+    "value": "per_well_raw",
+    "line": {
+     "plain": "Efficiency source: present. Efficiency is measured per well from the raw curves (LinRegPCR) on 180 of 180 study wells and used as the plate mean per gene; gene medians run from 1.85 to 1.86.",
+     "segments": [
+      {
+       "text": "Efficiency source: present. Efficiency is measured per well from the raw curves (LinRegPCR) on ",
+       "fact": null
+      },
+      {
+       "text": "180",
+       "fact": "f_ev_efficiency_n_wells_with_eff"
+      },
+      {
+       "text": " of ",
+       "fact": null
+      },
+      {
+       "text": "180",
+       "fact": "f_ev_efficiency_n_wells"
+      },
+      {
+       "text": " study wells and used as the plate mean per gene; gene medians run from ",
+       "fact": null
+      },
+      {
+       "text": "1.85",
+       "fact": "f_ev_efficiency_min"
+      },
+      {
+       "text": " to ",
+       "fact": null
+      },
+      {
+       "text": "1.86",
+       "fact": "f_ev_efficiency_max"
+      },
+      {
+       "text": ".",
+       "fact": null
+      }
+     ],
+     "facts": [
+      {
+       "id": "f_ev_efficiency_n_wells_with_eff",
+       "text": "180",
+       "value": 180,
+       "unit": "",
+       "path": "evidence.efficiency.n_wells_with_eff"
+      },
+      {
+       "id": "f_ev_efficiency_n_wells",
+       "text": "180",
+       "value": 180,
+       "unit": "",
+       "path": "evidence.efficiency.n_wells"
+      },
+      {
+       "id": "f_ev_efficiency_min",
+       "text": "1.85",
+       "value": 1.847159,
+       "unit": "",
+       "path": "evidence.efficiency.min"
+      },
+      {
+       "id": "f_ev_efficiency_max",
+       "text": "1.86",
+       "value": 1.856009,
+       "unit": "",
+       "path": "evidence.efficiency.max"
+      }
+     ],
+     "source": "template"
+    },
+    "cannot_tell": false,
+    "miqe": [
+     "5.8"
+    ]
+   },
+   {
+    "id": "rawness",
+    "title": "Raw-ness of the curves",
+    "status": "unknown",
+    "status_word": "unknown",
+    "value": "unknown",
+    "line": {
+     "plain": "Raw-ness of the curves: unknown. Not judged: qPilot's raw-ness check reads an instrument export when it is opened, and this study's file did not go through it. The cheap signs are consistent with raw curves: 180 wells were analysed from their amplification curves and none has a baseline at or below zero.",
+     "segments": [
+      {
+       "text": "Raw-ness of the curves: unknown. Not judged: qPilot's raw-ness check reads an instrument export when it is opened, and this study's file did not go through it. The cheap signs are consistent with raw curves: ",
+       "fact": null
+      },
+      {
+       "text": "180",
+       "fact": "f_ev_rawness_n_wells_with_curves"
+      },
+      {
+       "text": " wells were analysed from their amplification curves and none has a baseline at or below zero.",
+       "fact": null
+      }
+     ],
+     "facts": [
+      {
+       "id": "f_ev_rawness_n_wells_with_curves",
+       "text": "180",
+       "value": 180,
+       "unit": "",
+       "path": "evidence.rawness.n_wells_with_curves"
+      }
+     ],
+     "source": "template"
+    },
+    "cannot_tell": true,
+    "miqe": [
+     "5.3",
+     "5.1"
+    ]
+   },
+   {
+    "id": "rna_integrity",
+    "title": "RNA integrity",
+    "status": "absent",
+    "status_word": "absent",
+    "value": null,
+    "line": {
+     "plain": "RNA integrity: absent. No RNA integrity value (RIN or similar) is recorded for any of the 12 study samples, so RNA quality cannot be related to Cq.",
+     "segments": [
+      {
+       "text": "RNA integrity: absent. No RNA integrity value (RIN or similar) is recorded for any of the ",
+       "fact": null
+      },
+      {
+       "text": "12",
+       "fact": "f_ev_rna_integrity_n_samples"
+      },
+      {
+       "text": " study samples, so RNA quality cannot be related to Cq.",
+       "fact": null
+      }
+     ],
+     "facts": [
+      {
+       "id": "f_ev_rna_integrity_n_samples",
+       "text": "12",
+       "value": 12,
+       "unit": "",
+       "path": "evidence.rna_integrity.n_samples"
+      }
+     ],
+     "source": "template"
+    },
+    "cannot_tell": true,
+    "miqe": [
+     "2.9"
+    ]
+   },
+   {
+    "id": "rt_replicates",
+    "title": "RT replicates or RT batch",
+    "status": "absent",
+    "status_word": "absent",
+    "value": "G-RT not_applicable",
+    "line": {
+     "plain": "RT replicates or RT batch: absent. RT variability not measured: no RT replicates or RT batches are annotated.",
+     "segments": [
+      {
+       "text": "RT replicates or RT batch: absent. RT variability not measured: no RT replicates or RT batches are annotated.",
+       "fact": null
+      }
+     ],
+     "facts": [],
+     "source": "template"
+    },
+    "cannot_tell": true,
+    "miqe": [
+     "5.10"
+    ]
+   },
+   {
+    "id": "biological_units",
+    "title": "Biological units",
+    "status": "present",
+    "status_word": "present",
+    "value": null,
+    "line": {
+     "plain": "Biological units: present. A sample sheet names every study sample: 12 samples in 12 biological units; replicates are averaged within a unit and never counted as n.",
+     "segments": [
+      {
+       "text": "Biological units: present. A sample sheet names every study sample: ",
+       "fact": null
+      },
+      {
+       "text": "12",
+       "fact": "f_ev_biological_units_n_samples"
+      },
+      {
+       "text": " samples in ",
+       "fact": null
+      },
+      {
+       "text": "12",
+       "fact": "f_ev_biological_units_n_units"
+      },
+      {
+       "text": " biological units; replicates are averaged within a unit and never counted as n.",
+       "fact": null
+      }
+     ],
+     "facts": [
+      {
+       "id": "f_ev_biological_units_n_samples",
+       "text": "12",
+       "value": 12,
+       "unit": "",
+       "path": "evidence.biological_units.n_samples"
+      },
+      {
+       "id": "f_ev_biological_units_n_units",
+       "text": "12",
+       "value": 12,
+       "unit": "",
+       "path": "evidence.biological_units.n_units"
+      }
+     ],
+     "source": "template"
+    },
+    "cannot_tell": false,
+    "miqe": [
+     "5.10"
+    ]
+   },
+   {
+    "id": "inter_run_calibrator",
+    "title": "Inter-run calibrator",
+    "status": "not_applicable",
+    "status_word": "not applicable",
+    "value": null,
+    "line": {
+     "plain": "Inter-run calibrator: not applicable. Each of the 5 targets is measured on a single plate, so no inter-run calibrator is needed.",
+     "segments": [
+      {
+       "text": "Inter-run calibrator: not applicable. Each of the ",
+       "fact": null
+      },
+      {
+       "text": "5",
+       "fact": "f_ev_inter_run_calibrator_n_targets"
+      },
+      {
+       "text": " targets is measured on a single plate, so no inter-run calibrator is needed.",
+       "fact": null
+      }
+     ],
+     "facts": [
+      {
+       "id": "f_ev_inter_run_calibrator_n_targets",
+       "text": "5",
+       "value": 5,
+       "unit": "",
+       "path": "evidence.inter_run_calibrator.n_targets"
+      }
+     ],
+     "source": "template"
+    },
+    "cannot_tell": false,
+    "miqe": [
+     "5.12"
+    ]
+   },
+   {
+    "id": "lots",
+    "title": "Reagent and primer lots",
+    "status": "absent",
+    "status_word": "absent",
+    "value": null,
+    "line": {
+     "plain": "Reagent and primer lots: absent. No reagent or primer lot is recorded, so drift cannot be tied to a lot change later.",
+     "segments": [
+      {
+       "text": "Reagent and primer lots: absent. No reagent or primer lot is recorded, so drift cannot be tied to a lot change later.",
+       "fact": null
+      }
+     ],
+     "facts": [],
+     "source": "template"
+    },
+    "cannot_tell": true,
+    "miqe": [
+     "3.6",
+     "4.4"
+    ]
+   },
+   {
+    "id": "instrument",
+    "title": "Instrument and calibration dates",
+    "status": "absent",
+    "status_word": "absent",
+    "value": null,
+    "line": {
+     "plain": "Instrument and calibration dates: absent. None of the 5 runs in the file names an instrument or a run date, and RDML has no field for calibration dates, so the instrument's history cannot be checked from this file.",
+     "segments": [
+      {
+       "text": "Instrument and calibration dates: absent. None of the ",
+       "fact": null
+      },
+      {
+       "text": "5",
+       "fact": "f_ev_instrument_n_runs"
+      },
+      {
+       "text": " runs in the file names an instrument or a run date, and RDML has no field for calibration dates, so the instrument's history cannot be checked from this file.",
+       "fact": null
+      }
+     ],
+     "facts": [
+      {
+       "id": "f_ev_instrument_n_runs",
+       "text": "5",
+       "value": 5,
+       "unit": "",
+       "path": "evidence.instrument.n_runs"
+      }
+     ],
+     "source": "template"
+    },
+    "cannot_tell": true,
+    "miqe": [
+     "4.6"
+    ]
+   }
+  ],
+  "rule": "Absent items never change a conclusion or a confidence grade; they say what this study cannot show.",
+  "method_card": "methods/evidence.md"
+ },
+ "sign_offs": [],
+ "outcomes": [
+  {
+   "id": "accept",
+   "label": "Accept",
+   "meaning": "The run can be used as it is, with what the ledger says it cannot show."
+  },
+  {
+   "id": "repeat",
+   "label": "Repeat",
+   "meaning": "Something here needs the run (or part of it) done again; say what."
+  },
+  {
+   "id": "discuss",
+   "label": "Discuss",
+   "meaning": "Talk it through before the run is used; say what to talk about."
+  }
+ ],
+ "not_built": [
+  {
+   "id": "next_run",
+   "title": "What to change next run",
+   "reason": "Not on this page yet: Plan next sizes the next run from this study's own noise.",
+   "section": "planner"
+  }
+ ],
+ "can_sign_off": true,
+ "why_not": "",
+ "max_comment": 500,
+ "max_reviewer": 100
+}

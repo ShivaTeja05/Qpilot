@@ -24,6 +24,7 @@ HTML-escaped. Deterministic; no model call and no network.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Literal
 
@@ -39,6 +40,7 @@ from qpilot.explain.evidence_text import (
     PURPOSE,
     REPEAT_ELSEWHERE,
     STATUS_WORDS,
+    comparison_lines,
     gate_plate_lines,
     headline_lines,
     item_line,
@@ -204,8 +206,10 @@ def build_review(
     """
     facts: dict[str, Fact] = {}
 
-    def add(fid: str, value: float | int | str, fmt: str = "{}", path: str = "") -> str:
-        facts[fid] = Fact(id=fid, value=value, fmt=fmt, path=path)
+    def add(
+        fid: str, value: float | int | str, fmt: str = "{}", path: str = "", unit: str = ""
+    ) -> str:
+        facts[fid] = Fact(id=fid, value=value, fmt=fmt, unit=unit, path=path)
         return fid
 
     def copy(fid: str) -> str | None:
@@ -239,6 +243,7 @@ def build_review(
                 facts=ids,
             )
         )
+    _comparison_facts(result, genes, add)
     if ledger is not None:
         if ledger.study_id is not None and ledger.study_id != result.study_id:
             raise RunReviewError("the Evidence Ledger belongs to another study")
@@ -276,6 +281,42 @@ def build_review(
         repeat=repeat,
         facts=dict(sorted(facts.items())),
     )
+
+
+def _comparison_facts(result: StudyResult, genes: Sequence[str], add: Any) -> None:
+    """``f_rr_cmp<i>_*``: each comparison of a study with several, and its headline genes.
+
+    Nothing for a study with one comparison. Values are read from ``StudyResult.comparisons``
+    (the stored outcomes, at the planned analysis), the p is the one each call used.
+    """
+    from qpilot.qpcr.contrast import CORRECTED, CORRECTION_WORDS
+
+    found = result.comparisons
+    if found is None or len(found.comparisons) < 2:
+        return
+    corrected = found.correction in CORRECTED
+    if corrected:
+        words = CORRECTION_WORDS[found.correction]
+        add("f_rr_cmp_correction", words, path="comparisons.correction")
+    for i, o in enumerate(found.comparisons, start=1):
+        p, root = f"f_rr_cmp{i}", f"comparisons.{o.id}"
+        add(f"{p}_label", o.label, path=f"{root}.label")
+        if o.primary:
+            add(f"{p}_first", "first", path=f"{root}.primary")
+        if corrected:
+            add(f"{p}_corrected", "corrected", path="comparisons.correction")
+        for j, gene in enumerate((g for g in genes if g in o.contrasts), start=1):
+            g, c = f"{p}_gene{j}", o.contrasts[gene]
+            add(f"{g}_name", gene, path=f"{root}.contrasts.{gene}.target")
+            add(f"{g}_call", CALL_WORDS[c.conclusion], path=f"{root}.contrasts.{gene}.conclusion")
+            if math.isfinite(c.fc):
+                add(f"{g}_fc", float(c.fc), "{:.2g}", f"{root}.contrasts.{gene}.fc", "×")
+            p_used = o.p_adjusted.get(gene)
+            if p_used is not None and math.isfinite(p_used):
+                add(f"{g}_p", float(p_used), "{:.2g}", f"{root}.p_adjusted.{gene}")
+            robust = o.robustness.get(gene)
+            if robust is not None:
+                add(f"{g}_holds", float(robust.holds), "{:.0%}", f"{root}.robustness.{gene}.holds")
 
 
 def _repeat_facts(plan: RepeatPlan, add: Any) -> None:
@@ -447,6 +488,9 @@ def render_text(review: RunReview) -> str:
 
     out = ["Run Review", "", show(study_line(facts)), show(PURPOSE), "", "Headline"]
     out += [f"- {show(line)}" for line in headline_lines(facts) or [NO_HEADLINE]]
+    if lines := comparison_lines(facts):
+        out += ["", "Comparisons"]
+        out += [f"- {show(line)}" for line in lines]
     out += ["", "Evidence Ledger", show(_ledger_head(review))]
     if review.ledger is not None:
         out += [f"- {show(line)}" for item in ITEMS if (line := item_line(facts, item))]
@@ -517,6 +561,9 @@ def render_html(review: RunReview) -> str:
     lines = headline_lines(facts)
     items = "".join(f"<li>{show(line)}</li>" for line in lines)
     body.append(f"<ul>{items}</ul>" if lines else f"<p>{show(NO_HEADLINE)}</p>")
+    if lines := comparison_lines(facts):
+        body.append("<h2>Comparisons</h2>")
+        body.append("<ul>" + "".join(f"<li>{show(line)}</li>" for line in lines) + "</ul>")
     body.append("<h2>Evidence Ledger</h2>")
     body.append(f"<p>{show(_ledger_head(review), 'evidence_v1')}</p>")
     rows = _ledger_rows(review)

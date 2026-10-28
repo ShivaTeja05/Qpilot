@@ -30,6 +30,7 @@ import { count, fixed, fold, pValue } from "@/lib/format";
 import { asConclusion } from "@/lib/vocab";
 import type { GeneRow, Missing, Overview, Suspect, TraceScope } from "./api";
 import { useTraceStudy } from "./api";
+import { TraceComparisons } from "./Comparisons";
 import { FactText } from "./FactText";
 import { TraceWaiting } from "./Waiting";
 import { WhereToLook } from "./WhereToLook";
@@ -56,6 +57,7 @@ export function OverviewPage({ workspace, scope }: { workspace: Workspace; scope
     return (
       <>
         <Header />
+        <TraceComparisons scope={scope} />
         {q.error ? (
           <TraceWaiting error={q.error} onRetry={() => void q.refetch()} what="the study" />
         ) : (
@@ -71,6 +73,7 @@ export function OverviewPage({ workspace, scope }: { workspace: Workspace; scope
   return (
     <>
       <Header />
+      <TraceComparisons scope={scope} rule={view.trace.rule} />
       <p className="mb-5 max-w-4xl text-[14px] leading-relaxed text-fg">
         <FactText text={view.texts.summary} />
       </p>
@@ -177,6 +180,8 @@ function Ladder({ trace }: { trace: Overview }) {
 function FragileGenes({ workspace, trace }: { workspace: Workspace; trace: Overview }) {
   const [, navigate] = useLocation();
   const limit = trace.thresholds.flip_search_limit ?? 20;
+  // several comparisons with a correction: the call uses the corrected p, so the table shows it
+  const corrected = trace.genes.some((g) => g.p_adjusted != null);
   const columns = useMemo<ColumnDef<GeneRow, unknown>[]>(
     () => [
       { id: "rank", header: "#", accessorKey: "rank", meta: { numeric: true, width: "3.5rem" } },
@@ -201,13 +206,21 @@ function FragileGenes({ workspace, trace }: { workspace: Workspace; trace: Overv
         meta: { numeric: true, width: "5rem" },
         cell: ({ row }) => fold(row.original.fc),
       },
-      {
-        id: "p",
-        header: "p",
-        accessorKey: "p",
-        meta: { numeric: true, width: "5rem" },
-        cell: ({ row }) => pValue(row.original.p),
-      },
+      corrected
+        ? {
+            id: "p",
+            header: "Corrected p",
+            accessorKey: "p_adjusted",
+            meta: { numeric: true, width: "6rem" },
+            cell: ({ row }) => pValue(row.original.p_adjusted),
+          }
+        : {
+            id: "p",
+            header: "p",
+            accessorKey: "p",
+            meta: { numeric: true, width: "5rem" },
+            cell: ({ row }) => pValue(row.original.p),
+          },
       {
         id: "k",
         header: "Samples that change it",
@@ -219,13 +232,20 @@ function FragileGenes({ workspace, trace }: { workspace: Workspace; trace: Overv
         id: "single",
         header: "Alone",
         accessorKey: "n_flip_single",
-        meta: { numeric: true, width: "4.5rem" },
+        meta: {
+          numeric: true,
+          width: "4.5rem",
+          help: "How many samples change this call when set aside one at a time (each on its own, the others kept).",
+        },
       },
       {
         id: "top",
         header: "Moves it most",
         accessorKey: "top_unit",
-        meta: { width: "8rem" },
+        meta: {
+          width: "8rem",
+          help: "The sample whose setting aside moves this gene's fold change the most, and by how much (+5.3 %: the fold change becomes 5.3 % larger without it). It need not change the call.",
+        },
         cell: ({ row }) =>
           row.original.top_unit ? (
             <span className="text-muted">
@@ -239,14 +259,14 @@ function FragileGenes({ workspace, trace }: { workspace: Workspace; trace: Overv
           ),
       },
     ],
-    [limit],
+    [limit, corrected],
   );
   return (
     <Card as="section" aria-labelledby="trace-o-genes" className="min-w-0">
       <CardHeader
         id="trace-o-genes"
         title="Calls that hang on few samples"
-        hint="The fewest samples whose removal together changes each call (one and two checked exhaustively). Click a gene to trace it."
+        hint="The fewest samples whose removal together changes each call (one and two checked exhaustively). Alone: samples that change it one at a time; Moves it most: the sample that shifts the fold change most. Click a gene to trace it."
       />
       <CardBody>
         <DataTable
@@ -464,7 +484,7 @@ function LeftOut({ trace }: { trace: Overview }) {
                 <TR>
                   <TH>Sample</TH>
                   <TH>Why</TH>
-                  <TH>The well(s)</TH>
+                  <TH>The wells</TH>
                 </TR>
               </THead>
               <TBody>

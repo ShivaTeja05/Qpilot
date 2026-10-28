@@ -6,12 +6,12 @@
  */
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api, unwrap } from "@/api/client";
-import type { GeneScope } from "./api";
+import { shownQuery, type GeneScope } from "./api";
 
-function fetchGeneUnits(studyId: string, gene: string) {
+function fetchGeneUnits(studyId: string, gene: string, comparison?: string | null) {
   return unwrap(
     api.GET("/api/studies/{study_id}/genes/{gene}/units", {
-      params: { path: { study_id: studyId, gene } },
+      params: { path: { study_id: studyId, gene }, query: shownQuery(comparison) },
     }),
   );
 }
@@ -23,9 +23,9 @@ export type UnitGroup = GeneUnits["groups"]["high"];
 
 export function useGeneUnits(s: GeneScope, gene: string | null, enabled: boolean) {
   return useQuery({
-    queryKey: ["w", s.key, s.studyId, "units", gene] as const,
+    queryKey: ["w", s.key, s.studyId, "units", gene, s.comparison ?? null] as const,
     enabled: Boolean(s.studyId && gene) && enabled,
-    queryFn: () => fetchGeneUnits(s.studyId!, gene!),
+    queryFn: () => fetchGeneUnits(s.studyId!, gene!, s.comparison),
     staleTime: 5 * 60_000,
     placeholderData: keepPreviousData,
   });

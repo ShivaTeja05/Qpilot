@@ -20,12 +20,14 @@ import math
 
 import numpy as np
 
+from qpilot.qpcr.contrast import describe_rule
 from qpilot.trace.context import THRESHOLDS, TraceContext, TraceError, set_aside
 from qpilot.trace.gene import (
     call_model,
     cannot_show,
     cell_model,
     changes,
+    finite,
     flip_set,
     read_as_expected,
     sample_plates,
@@ -68,7 +70,9 @@ def trace_study(ctx: TraceContext) -> Traced[TraceStudy]:
     data = TraceStudy(
         cell=cell_model(ctx),
         labels=ctx.labels,
-        rule=ctx.rule.describe(),
+        rule=describe_rule(ctx.rule, ctx.correction),
+        comparison=ctx.comparison_id,
+        comparison_label=ctx.comparison_label,
         n_units=len(ctx.units),
         n_compared=int(ctx.comparison.used.any(axis=1).sum()),
         n_genes=len(ctx.items),
@@ -93,6 +97,7 @@ def _genes(ctx: TraceContext) -> list[TraceGeneRow]:
         d = np.where(used, np.abs(loo.d_log2fc[:, j]), -1.0)
         top = int(np.argmax(d)) if used.any() else None
         p = float(base.p[j])
+        p_adj = finite(base.p_adj[j]) if base.p_adj is not None else None
         rows.append(
             TraceGeneRow(
                 gene=gene,
@@ -101,6 +106,7 @@ def _genes(ctx: TraceContext) -> list[TraceGeneRow]:
                 log2fc=float(base.diff[j]),
                 fc=float(2 ** base.diff[j]),
                 p=p if math.isfinite(p) else None,
+                p_adjusted=p_adj,
                 margin_log2=abs(float(base.diff[j])) - float(ctx.rule.min_log2fc),
                 n_flip_single=int((loo.changed[:, j] & used).sum()),
                 flip_k=flip.k,
