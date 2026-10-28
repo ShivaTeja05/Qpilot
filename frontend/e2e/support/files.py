@@ -51,7 +51,8 @@ def pzfx_exclude(bundle: str, out: str) -> dict:
     from lxml import etree
 
     with zipfile.ZipFile(bundle) as z:
-        name = next(n for n in z.namelist() if n.endswith(".pzfx"))
+        projects = [n for n in z.namelist() if n.endswith(".pzfx")]
+        name = next(n for n in projects if not n.endswith("_replicates.pzfx"))
         root = etree.fromstring(z.read(name))
     ns = {"p": NS}
     table = root.find("p:Table", ns)

@@ -24,12 +24,19 @@ export const CORPUS = join(
   "corpus",
 );
 
-/** The workspace opened from a file of this name, if the store has one. */
+/**
+ * The session opened from a file of this name, if the store has one (an export of several files
+ * is listed as "<first file> and N more files").
+ */
 export async function sessionOf(
   api: APIRequestContext,
   fileName: string,
 ): Promise<Workspace | undefined> {
-  return (await workspaces(api)).find((w) => w.kind === "session" && w.file_name === fileName);
+  return (await workspaces(api)).find(
+    (w) =>
+      w.kind === "session" &&
+      (w.file_name === fileName || Boolean(w.file_name?.startsWith(`${fileName} and `))),
+  );
 }
 
 /** Wait until the session has no job running (a proposal job fills the inbox as it goes). */
@@ -86,6 +93,9 @@ export async function reviewStage(
   sid: string,
   stage: "design" | "curves",
   reason: string,
+  /** What happens to what is left after the bulk actions: accepted, or rejected as not part
+   * of this study (a person who set every item of the study on the page). */
+  rest: "accept" | "reject" = "accept",
 ): Promise<void> {
   const page = app.page;
   const bulk = async (button: RegExp, go: RegExp) => {
@@ -111,7 +121,7 @@ export async function reviewStage(
     await expect(dialog).toBeHidden({ timeout: 300_000 });
     await app.settle(120_000);
   };
-  await bulk(/^Accept all consistent/, /^Accept these [1-9]/);
+  if (rest === "accept") await bulk(/^Accept all consistent/, /^Accept these [1-9]/);
   await bulk(/^Reject contradicted AI calls/, /^Reject these [1-9]/);
 
   // What is left one by one: contradicted → Reject, the rest → Accept (with a reason).
@@ -119,7 +129,7 @@ export async function reviewStage(
   for (let i = 0; i < 60 && (await waiting.count()); i++) {
     const card = waiting.getByRole("article").first();
     const contradicted = (await card.getByRole("button", { name: "Accept anyway…" }).count()) > 0;
-    if (contradicted) {
+    if (contradicted || rest === "reject") {
       await card.getByRole("button", { name: "Reject…" }).click();
       await card.getByRole("textbox", { name: /Why do you reject it/ }).fill(reason);
       await card.getByRole("button", { name: "Reject", exact: true }).click();
