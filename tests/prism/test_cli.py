@@ -216,14 +216,40 @@ def test_prism_diff_refuses_a_tampered_bundle(studies_env, tmp_path, capsys):
     assert main(["prism", "verify", "--bundle", str(out)]) == 1
 
 
+def _private_cache(root: Path, input_sha256: str) -> Path:
+    """The demo's own files of the shared cache, linked into a cache of this test's own.
+
+    Every other run on the machine writes to the shared cache (the curve tables of the files it
+    reads), so watching it sees their writes. Here only this test can write: any file it adds,
+    replaces or changes in the cache shows (a link reports its target's size and time).
+    """
+    import shutil
+
+    from qpilot.io.datasets import VERMEULEN_FILENAME, default_cache_dir
+
+    root.mkdir()
+    for path in default_cache_dir().iterdir():
+        mine = path.name == VERMEULEN_FILENAME or path.name.startswith(f"{input_sha256}.")
+        if not (mine and path.is_file()):
+            continue
+        try:
+            os.link(path, root / path.name)
+        except OSError:  # another volume: a copy keeps the same bytes
+            shutil.copy2(path, root / path.name)
+    return root
+
+
 @pytest.mark.demo_data
 def test_preview_writes_nothing(studies_env, tmp_path, monkeypatch):
     from qpilot.io.datasets import default_cache_dir
     from qpilot.prism import preview
 
     store, study_id = studies_env
+    cache = _private_cache(tmp_path / "cache", store.get(study_id).input_sha256)
+    monkeypatch.setenv("QPILOT_CACHE_DIR", str(cache))
+    assert default_cache_dir() == cache and any(cache.iterdir())
     monkeypatch.chdir(tmp_path)
-    watched = [store.root, tmp_path, default_cache_dir()]
+    watched = [store.root, tmp_path, cache]
     before = [_files(root) for root in watched]
     result = preview(store, study_id, ["ODC1", "NTRK1"])
     assert [_files(root) for root in watched] == before

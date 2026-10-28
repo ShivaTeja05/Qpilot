@@ -69,6 +69,8 @@ function StateMark({ state, compact }: { state: SectionState; compact?: boolean 
         )}
         aria-hidden
       >
+        {/* The space keeps the link's text "Design 4", as its name says ("Design 4 to review"),
+            not "Design4" (axe label-content-name-mismatch); a flex item drops it on screen. */}{" "}
         {state.count}
       </span>
     );

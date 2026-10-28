@@ -137,11 +137,11 @@ describe("GeneFigure", () => {
     expect(screen.getByText(decided.caption)).toBeTruthy();
     expect(screen.getByText(new RegExp(`^${fold(decided.fold_change)}`))).toBeTruthy();
     for (const [label, url] of [
-      ["SVG (editable)", decided.files.svg],
-      ["PNG (300 dpi)", decided.files.png],
-      ["Data (CSV)", decided.files.csv],
+      ["SVG editable: download the figure as SVG", decided.files.svg],
+      ["PNG 300 dpi: download the figure as PNG", decided.files.png],
+      ["Data CSV: download the data behind the figure", decided.files.csv],
     ] as const) {
-      const link = screen.getByRole("link", { name: `Download the figure as ${label}` });
+      const link = screen.getByRole("link", { name: label });
       expect(link.getAttribute("href")).toContain(url);
       expect(link.getAttribute("href")).toContain("download=true");
     }

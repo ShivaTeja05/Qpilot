@@ -11,7 +11,6 @@ import io
 import json
 import random
 import re
-import time
 import zipfile
 from pathlib import Path
 
@@ -31,6 +30,7 @@ from qpilot.qpcr.instrument_context import (
     run_contexts_from_rdml,
 )
 from tests.engine import instrument_files as F
+from tests.timing import work_time
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 CORPUS = FIXTURES / "corpus"
@@ -398,15 +398,15 @@ def test_events_are_capped(monkeypatch):
 def test_six_megabyte_log_parses_quickly(tmp_path):
     text = F.messages_log(cycles=40, noise_per_cycle=2_400, pause_at=23)
     assert len(text.encode()) >= 6_000_000
-    started = time.perf_counter()
-    log = ic._parse_log(text, "messages.log")
-    elapsed = time.perf_counter() - started
-    assert elapsed < 2.0, elapsed
+    with work_time() as parse:
+        log = ic._parse_log(text, "messages.log")
+    assert parse.seconds < 2.0, parse
     assert [e["kind"] for e in log.events] == ["pause", "resume"]
     members = {"experiment.xml": F.experiment_xml(), "messages.log": text}
-    started = time.perf_counter()
-    ctx = read_run_context(F.write_eds(tmp_path / "big.eds", members))
-    assert time.perf_counter() - started < 2.0
+    eds = F.write_eds(tmp_path / "big.eds", members)
+    with work_time() as read:
+        ctx = read_run_context(eds)
+    assert read.seconds < 2.0, read
     assert ctx.events[0]["cycles"] == [23, 24]
 
 
@@ -914,9 +914,9 @@ def test_ci_fixture_run_name_dates():
 
 @pytest.mark.demo_data
 def test_demo_rdml_has_no_instrument_fields(demo_rdml_path):
-    started = time.perf_counter()
-    contexts = run_contexts_from_rdml(demo_rdml_path)
-    assert time.perf_counter() - started < 10
+    with work_time() as spent:
+        contexts = run_contexts_from_rdml(demo_rdml_path)
+    assert spent.seconds < 10, spent
     assert len(contexts) == 67
     assert sum(1 for c in contexts if any(c.identity.values())) == 0  # 0 of 67 name it
     named = [c for c in contexts if c.run["date_source"] == "run name"]

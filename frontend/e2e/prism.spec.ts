@@ -6,7 +6,6 @@
 import type { APIRequestContext } from "@playwright/test";
 import { demoSession, literal, route } from "./support/data";
 import { expect, test } from "./support/fixtures";
-import { LANDED, notLanded } from "./support/sections";
 
 interface PrismRoutes {
   n_genes: number;
@@ -20,8 +19,6 @@ async function routes(api: APIRequestContext, sid: string): Promise<PrismRoutes>
 }
 
 test.describe("Prism", () => {
-  test.beforeEach(() => test.fixme(!LANDED.prism, notLanded("prism")));
-
   test("each route into Prism lists the genes it concludes differently, as the server says", async ({
     app,
     api,

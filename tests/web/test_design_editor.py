@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.timing import work_time
 from tests.web.conftest import wait_job
 
 CORPUS = Path(__file__).resolve().parents[1] / "fixtures" / "corpus"
@@ -430,7 +431,6 @@ def test_ref_is_never_renamed_alyref_and_such_a_rename_is_never_consistent(sclie
 
 def test_a_whole_96_well_plate_is_set_in_one_act_quickly(web_store):
     """CFX Maestro 4-plex (simulator): 96 unnamed samples, one per well; one act, ~190 items."""
-    import time
 
     from qpilot import studio_design as sd
     from qpilot.ai.client import ModelClient, NoneBackend
@@ -451,10 +451,10 @@ def test_a_whole_96_well_plate_is_set_in_one_act_quickly(web_store):
         items.append(
             sd.DesignItem("design.bio_unit", s.sample, {"biological_unit": f"u_{s.sample[-3:]}"})
         )
-    started = time.monotonic()
-    done = sd.set_design(studio, sid, items, "human", "plate halves")
+    with work_time() as spent:
+        done = sd.set_design(studio, sid, items, "human", "plate halves")
     assert done.recorded == len(items)
-    assert time.monotonic() - started < 20  # was quadratic (a copy of the inbox per item)
+    assert spent.seconds < 20, spent  # was quadratic (a copy of the inbox per item)
     entries = web_store.proposals(sid).entries()
     assert {e.actor for e in entries} == {"human"}  # proposed and accepted by the person
 

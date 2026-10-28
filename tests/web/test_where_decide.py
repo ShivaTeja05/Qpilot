@@ -31,7 +31,7 @@ from qpilot.core.proposals import verify_proposal_chain
 from qpilot.qpcr import trace as trace_engine
 from qpilot.studio_service import EXCLUDE_KIND, TRACE_MAKER, trace_card_of
 from qpilot.web.routers import where as where_router
-from tests.web.conftest import BASE, TOKEN, wait_job, walk_mini
+from tests.web.conftest import BASE, TOKEN, get_settled, wait_job, walk_mini
 
 GENE = "1-Mar"
 REASON = "The NTC on this plate amplified within five cycles of the knock-outs."
@@ -97,18 +97,13 @@ def called(called_walked, tmp_path, monkeypatch):
 
 def where(c, study: str, **query) -> dict:
     """One Where to look answer, waiting out the first read of the study's wells."""
-    for _ in range(200):
-        r = c.get(f"/api/studies/{study}/where-to-look", params=query)
-        if r.status_code == 409 and r.json()["error"]["code"] == "loading":
-            wait_job(c, r.json()["error"]["details"]["job"])
-            continue
-        assert r.status_code == 200, r.text
-        return r.json()
-    raise AssertionError("never ready")
+    r = get_settled(c, f"/api/studies/{study}/where-to-look", params=query)
+    assert r.status_code == 200, r.text
+    return r.json()
 
 
 def set_aside(c, study: str) -> dict:
-    r = c.get(f"/api/studies/{study}/where-to-look/set-aside")
+    r = get_settled(c, f"/api/studies/{study}/where-to-look/set-aside")
     assert r.status_code == 200, r.text
     return r.json()
 
@@ -203,7 +198,7 @@ def test_setting_a_value_aside_is_recorded_analysed_again_and_carried(called):
     assert (card.decision, card.decided_by) == ("cap", "human")
 
     # Trace at the new analysis: the gene has no comparison; the sample says why
-    r = c.get(f"/api/studies/{new}/where-to-look", params={"gene": GENE})
+    r = get_settled(c, f"/api/studies/{new}/where-to-look", params={"gene": GENE})
     assert r.status_code == 404
     listed = set_aside(c, new)
     assert listed["can_apply"] and listed["session"] == sid

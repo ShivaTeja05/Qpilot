@@ -8,7 +8,6 @@ import type { components } from "../src/api/schema";
 import { demoSession, literal, route, workspaceView, type Workspace } from "./support/data";
 import { E2E } from "./support/env";
 import { expect, test, type App } from "./support/fixtures";
-import { LANDED, notLanded } from "./support/sections";
 
 type ResultsView = components["schemas"]["ResultsView"];
 type CardsView = components["schemas"]["CardsView"];
@@ -37,8 +36,6 @@ const focusedLabel = (app: App) =>
   app.page.evaluate(() => document.activeElement?.getAttribute("aria-labelledby") ?? null);
 
 test.describe("Results", () => {
-  test.beforeEach(() => test.fixme(!LANDED.results, notLanded("results")));
-
   test("the all-genes table lists the study's real genes", async ({ app, api }) => {
     const demo = await demoSession(api);
     const { genes } = await results(api, demo);
@@ -117,7 +114,6 @@ test.describe("Results", () => {
   });
 
   test("a gene row opens the Gene section; [ and ] move between genes", async ({ app, api }) => {
-    test.fixme(!LANDED.gene, notLanded("gene"));
     const demo = await demoSession(api);
     const { genes } = await results(api, demo);
     test.skip(genes.length < 2, "needs two genes");
@@ -146,7 +142,6 @@ test.describe("Results", () => {
 
 test.describe("deciding", () => {
   test.beforeEach(() => {
-    test.fixme(!LANDED.decide, notLanded("decide"));
     test.skip(E2E.readOnly, "E2E_READONLY=1: no writes");
   });
 

@@ -1,7 +1,5 @@
 """Step 4.1 gate: which curves count as amplified, as a screened robustness dimension."""
 
-import time
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -22,6 +20,7 @@ from qpilot.qpcr.amp_call import (
 )
 from qpilot.schemas import ContrastResult
 from qpilot.schemas_studio import AmpCallRule
+from tests.timing import work_time
 
 NAN = float("nan")
 
@@ -202,11 +201,10 @@ def test_demo_grid_size_and_sweep_time(studio_demo, demo_curves):
     matrix = log2_matrix(demo_curves)
     others = {r: log2_matrix(apply_rule(demo_curves, r)) for r in STUDIO_AMP_CALLS[1:]}
     space = QpcrSpace(matrix, genorm(matrix, REFERENCE_TARGETS), amp_alternatives=others)
-    start = time.perf_counter()
-    swept = robustness.run_grid(space)
-    elapsed = time.perf_counter() - start
+    with work_time() as spent:
+        swept = robustness.run_grid(space)
     assert len(swept) == 744 * 58
-    assert elapsed < 2, f"744-cell sweep took {elapsed:.2f} s"
+    assert spent.seconds < 2, f"744-cell sweep took {spent}"
     # the primary cell is the legacy analysis exactly: a rule never changes the primary choice
     legacy = QpcrSpace(matrix, genorm(matrix, REFERENCE_TARGETS)).evaluate(
         {"refs": REFERENCE_TARGETS, "cut": 0.15, "undetermined": "drop"}

@@ -62,6 +62,79 @@ def wait_job(client: TestClient, job: dict, timeout: float = 300.0) -> dict:
         time.sleep(0.05)
 
 
+# ---- views a job prepares (409 loading / 503 warming) ----------------------------------------
+
+#: The answers that mean "a job is preparing this; ask again when it is done" (the page's
+#: ``Prefer: respond-async`` turns them into 202, see qpilot/web/cache.py). A route waits a
+#: moment for its job (``WAIT_S`` in gate.py and trace.py), then answers one of these; on a
+#: loaded machine that is the normal first answer, so a test must never assume it finished.
+SOFT_WAIT = {(409, "loading"), (503, "warming")}
+
+
+def waiting_job(r) -> dict | None:
+    """The job a ``409 loading`` / ``503 warming`` answer names; ``{}`` for one that names
+    none (ask again shortly); ``None`` for any other answer."""
+    if r.status_code not in (409, 503):
+        return None
+    try:
+        error = r.json().get("error") or {}
+    except (ValueError, AttributeError):
+        return None
+    if (r.status_code, error.get("code")) not in SOFT_WAIT:
+        return None
+    job = (error.get("details") or {}).get("job")
+    return job if isinstance(job, dict) and job.get("id") else {}
+
+
+def settled(client: TestClient, send, *, timeout: float = 300.0, jobs: list | None = None):
+    """``send()`` again until the answer is not "being prepared"; return that answer.
+
+    Every job a ``409 loading`` / ``503 warming`` answer names is followed to its end (each one
+    is appended to ``jobs`` when given, so a test can check what ran); a job that failed is
+    asked about once more and that answer (the route's own refusal) is returned. ``send`` is a
+    function so a request with an upload can open its file again for each try.
+    """
+    import time
+
+    deadline = time.monotonic() + timeout
+    while True:
+        r = send()
+        job = waiting_job(r)
+        if job is None:
+            return r
+        if time.monotonic() > deadline:
+            raise AssertionError(f"still being prepared after {timeout:.0f} s: {r.text}")
+        if not job:
+            time.sleep(0.1)
+            continue
+        view = wait_job(client, job, max(1.0, deadline - time.monotonic()))
+        if jobs is not None:
+            jobs.append(view)
+        if view["status"] == "failed":
+            return send()
+
+
+def get_settled(client: TestClient, url: str, **kwargs):
+    """``GET url`` once its view is prepared (see :func:`settled`)."""
+    jobs = kwargs.pop("jobs", None)
+    return settled(client, lambda: client.get(url, **kwargs), jobs=jobs)
+
+
+@pytest.fixture(autouse=True)
+def _loaded_machine(monkeypatch):
+    """``QPILOT_TEST_NO_JOB_WAIT=1``: the routes answer ``409 loading`` at once, as they do on
+    a loaded machine, so a run shows every test that assumes a job finished within ``WAIT_S``
+    (``QPILOT_TEST_NO_JOB_WAIT=1 pytest tests/web``). A test that sets ``WAIT_S`` keeps its own."""
+    import os
+
+    if os.environ.get("QPILOT_TEST_NO_JOB_WAIT") == "1":
+        from qpilot.web.routers import gate, trace
+
+        monkeypatch.setattr(gate, "WAIT_S", 0.0)
+        monkeypatch.setattr(trace, "WAIT_S", 0.0)
+    yield
+
+
 @pytest.fixture
 def mini_rdml(tmp_path, monkeypatch):
     """The Studio tests' synthetic two-plate file, in a data root agents may read."""

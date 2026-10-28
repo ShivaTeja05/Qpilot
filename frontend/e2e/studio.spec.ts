@@ -5,7 +5,6 @@
  */
 import { demoSession, literal, proposals, route } from "./support/data";
 import { expect, test, type App } from "./support/fixtures";
-import { LANDED, notLanded } from "./support/sections";
 
 /** A well with a reaction in it (empty cells are labelled "…, empty"). */
 const FILLED_WELL = /^(?!.*empty$).+/;
@@ -19,8 +18,6 @@ async function openDecided(app: App): Promise<void> {
 for (const stage of ["design", "curves"] as const) {
   const title = stage === "design" ? "Design" : "Curves";
   test.describe(title, () => {
-    test.beforeEach(() => test.fixme(!LANDED[stage], notLanded(stage)));
-
     test("the inbox lists every proposal the server has decided", async ({ app, api }) => {
       const demo = await demoSession(api);
       const list = await proposals(api, demo.key, stage);
@@ -73,7 +70,6 @@ test.describe("plates", () => {
     app,
     api,
   }) => {
-    test.fixme(!LANDED.design, notLanded("design"));
     const demo = await demoSession(api);
     await app.open(route(demo, "design"));
     const panel = app.page.getByRole("region", { name: "Plate map" });
@@ -94,7 +90,6 @@ test.describe("plates", () => {
     app,
     api,
   }) => {
-    test.fixme(!LANDED.curves, notLanded("curves"));
     const demo = await demoSession(api);
     await app.open(route(demo, "curves"));
     const plate = app.page.getByRole("region", { name: "The plate" });
@@ -116,7 +111,6 @@ test.describe("plates", () => {
   });
 
   test("Curves: the previous / next plate buttons move between plates", async ({ app, api }) => {
-    test.fixme(!LANDED.curves, notLanded("curves"));
     const demo = await demoSession(api);
     await app.open(route(demo, "curves"));
     const plate = app.page.getByRole("region", { name: "The plate" });

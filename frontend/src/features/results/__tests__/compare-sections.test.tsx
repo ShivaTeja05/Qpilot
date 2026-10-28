@@ -61,8 +61,8 @@ describe("several comparisons in every section", { timeout: 30_000 }, () => {
     const block = screen.getByTestId("gene-comparisons");
     expect(block.textContent).toContain("Showing Drug B vs Control");
     expect(block.textContent).toContain("audits Drug A vs Control only");
-    fireEvent.mouseDown(within(block).getByRole("tab", { name: /Drug A vs Control/ }));
-    fireEvent.click(within(block).getByRole("tab", { name: /Drug A vs Control/ }));
+    fireEvent.click(within(block).getByRole("radio", { name: /Drug A vs Control/ }));
+    expect(onChange).toHaveBeenCalledWith("drug_a_vs_control");
     rerender(
       <GeneComparisons
         tabs={results.comparisons}

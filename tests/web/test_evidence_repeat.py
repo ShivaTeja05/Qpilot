@@ -38,16 +38,12 @@ def fresh_plans():
 
 def repeat(c, study: str, include: str = "consequential") -> dict:
     """The repeat plan, waiting out the first read of the study (Trace, then the Run Gate)."""
-    from tests.web.conftest import wait_job
+    from tests.web.conftest import get_settled
 
-    for _ in range(200):
-        r = c.get(f"/api/studies/{study}/review/repeat", params={"include": include})
-        if r.status_code == 409 and r.json()["error"]["code"] == "loading":
-            wait_job(c, r.json()["error"]["details"]["job"])
-            continue
-        assert r.status_code == 200, r.text
-        return r.json()
-    raise AssertionError("never ready")
+    url = f"/api/studies/{study}/review/repeat"
+    r = get_settled(c, url, params={"include": include})
+    assert r.status_code == 200, r.text
+    return r.json()
 
 
 def test_the_plan_lists_each_reaction_once_with_every_reason_ranked_by_consequence(called):
