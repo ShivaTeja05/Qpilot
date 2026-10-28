@@ -181,7 +181,12 @@ export function ReviewDialog({
                 <CheckCircle2 className="size-4 text-ok" aria-hidden /> To record (
                 {count(toRecord.length)})
               </h3>
-              <ul className="flex max-h-72 flex-col gap-1.5 overflow-y-auto text-[13px] qp-scroll">
+              {/* A list that scrolls is reachable with the keyboard (axe scrollable-region-focusable). */}
+              <ul
+                tabIndex={0}
+                aria-labelledby="record-head"
+                className="flex max-h-72 flex-col gap-1.5 overflow-y-auto rounded-lg text-[13px] outline-none qp-scroll focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
                 {toRecord.map((p) => (
                   <li
                     key={`${p.kind}|${p.subject}`}

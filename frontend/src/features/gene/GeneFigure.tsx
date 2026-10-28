@@ -188,21 +188,49 @@ export function FigureBody({
       </figure>
       <div className="flex flex-wrap gap-1.5">
         <CopyButton text={info.caption} label="Copy caption" showLabel />
-        <FileButton href={fileHref(info.files.svg, head, true)} label="SVG" hint="editable" />
-        <FileButton href={fileHref(info.files.png, head, true)} label="PNG" hint="300 dpi" />
-        <FileButton href={fileHref(info.files.csv, head, true)} label="Data" hint="CSV" />
+        <FileButton
+          href={fileHref(info.files.svg, head, true)}
+          label="SVG"
+          hint="editable"
+          does="download the figure as SVG"
+        />
+        <FileButton
+          href={fileHref(info.files.png, head, true)}
+          label="PNG"
+          hint="300 dpi"
+          does="download the figure as PNG"
+        />
+        <FileButton
+          href={fileHref(info.files.csv, head, true)}
+          label="Data"
+          hint="CSV"
+          does="download the data behind the figure"
+        />
       </div>
     </div>
   );
 }
 
-function FileButton({ href, label, hint }: { href: string; label: string; hint: string }) {
+/**
+ * A download of the figure. Its name starts with the words on the button ("SVG editable"), so
+ * speech input can say what it sees (axe label-content-name-mismatch), then says what it does.
+ */
+function FileButton({
+  href,
+  label,
+  hint,
+  does,
+}: {
+  href: string;
+  label: string;
+  hint: string;
+  does: string;
+}) {
   return (
     <Button asChild size="sm" variant="secondary">
-      <a href={href} download aria-label={`Download the figure as ${label} (${hint})`}>
+      <a href={href} download aria-label={`${label} ${hint}: ${does}`}>
         <Download aria-hidden />
-        {label}
-        <span className="font-normal text-muted">{hint}</span>
+        {label} <span className="font-normal text-muted">{hint}</span>
       </a>
     </Button>
   );
