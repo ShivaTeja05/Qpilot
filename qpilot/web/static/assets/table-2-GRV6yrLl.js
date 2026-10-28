@@ -1,0 +1,1 @@
+import{jn as e}from"./ui-ntqSZ9_S.js";var t={name:`table-2`,size:24,node:[[`path`,{d:`M3 9h18`,key:`1pudct`}],[`path`,{d:`M9 3v18`,key:`fh3hqa`}],[`rect`,{x:`3`,y:`3`,width:`18`,height:`18`,rx:`2`,key:`h1oib`}]]};t.node;var n=e(t);export{n as t};
