@@ -261,13 +261,13 @@ def analyse_curve(curve: MeltCurve, settings: MeltSettings | None = None) -> Wel
     """
     settings = settings or MeltSettings()
     t, f = _clean(curve.temperature, curve.fluorescence)
-    if len(t) < max(settings.min_points, 5):
+    if len(t) < 2:
         return WellMelt(curve=curve, problem="too_few_points")
     step = float(np.median(np.diff(t)))
-    if not step > 0:
+    if step > settings.max_step_c:  # said first: it is why a short melt is short
+        return WellMelt(curve=curve, step_c=round(step, 6), problem="coarse")
+    if len(t) < max(settings.min_points, 5) or not step > 0:
         return WellMelt(curve=curve, problem="too_few_points")
-    if step > settings.max_step_c:
-        return WellMelt(curve=curve, step_c=step, problem="coarse")
     n = int(round((t[-1] - t[0]) / step)) + 1
     grid = t[0] + step * np.arange(n)
     values = np.interp(grid, t, f)

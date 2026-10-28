@@ -484,3 +484,18 @@ def test_the_method_card_names_the_code_and_the_packs_thresholds():
     assert f"`extra_peak_share` ({rule.params['extra_peak_share']})" in card
     assert f"`noise_share` ({rule.params['noise_share']})" in card
     assert f"`min_wells` ({rule.params['min_wells']})" in card
+
+
+def test_a_stepone_melt_region_export_is_read_and_too_coarse_to_judge(tmp_path):
+    """StepOnePlus section files (``thermofisher/zamanian-stepone-plus-sybr-sections``): the
+    melt-region temperatures and normalized readings make 57 melt curves of 14 readings about
+    2.6 °C apart, too far apart to place a Tm within a degree: every curve is ``coarse``."""
+    from qpilot.io.connectors import capture, write_rdml
+    from tests.qpcr.melt_curves import CORPUS
+
+    folder = CORPUS / "thermofisher" / "zamanian-stepone-plus-sybr-sections"
+    path = write_rdml(capture(sorted(folder.glob("*.txt"))), tmp_path / "stepone.rdml")
+    data = read_melt(path)
+    assert len(data.wells) == 57
+    assert {w.problem for w in data.wells.values()} == {"coarse"}
+    assert all(2.4 < w.step_c < 2.7 for w in data.wells.values())
