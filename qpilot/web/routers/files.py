@@ -322,6 +322,7 @@ def prism_preview(
     bundle = full.get("bundle") or {}
     info = bundle.get("info") or {}
     figures: dict[str, PrismFigure] = {}
+    sizes = _group_sizes(ctx, study_id)
     if template.get("layout") == "column":  # the preview's tables are the Column tables
         scale = str(info.get("scale") or "log2 relative quantity")
         for gene, table in parsed.items():
@@ -330,7 +331,8 @@ def prism_preview(
                 for name, points in folders.group_points(table["columns"], table["rows"]).items()
             ]
             if any(g.n for g in groups):
-                figures[gene] = PrismFigure(gene=gene, scale=scale, groups=groups, note=FIGURE_NOTE)
+                note = FIGURE_NOTE + _fewer_units(gene, groups, sizes)
+                figures[gene] = PrismFigure(gene=gene, scale=scale, groups=groups, note=note)
     cards = {c.id: c for c in ctx.store.cards(study_id)}
     return PrismPreview(
         session_id=sid,
@@ -360,6 +362,32 @@ def prism_preview(
         replicates_file=project.get("replicates_file"),
         replicates_tables=[PrismTableView(**t) for t in project.get("replicates_tables", [])],
         needs_template=bool(project.get("needs_template", False)),
+    )
+
+
+def _group_sizes(ctx: AppContext, study_id: str) -> dict[str, int]:
+    """Each compared group's size in units, as Results shows it ({} when it cannot be read)."""
+    from qpilot.web.results_views import groups
+
+    try:
+        return {g.label: g.n for g in groups(ctx.store.get(study_id))}
+    except (StudyNotFound, OSError, ValueError, KeyError):
+        return {}
+
+
+def _fewer_units(gene: str, groups: list[GroupPoints], sizes: dict[str, int]) -> str:
+    """Why a group's n here is below the group's size on Results (" ODC1 has a value for …")."""
+    fewer = [
+        f"{g.n} of the {sizes[g.name]} {g.name} units"
+        for g in groups
+        if sizes.get(g.name) is not None and g.n < sizes[g.name]
+    ]
+    if not fewer:
+        return ""
+    return (
+        f" {gene} has a value for {' and '.join(fewer)}: a unit with no value for this gene (no "
+        "quantity, or a well left out) has no row in its table, so the n here can be below the "
+        "group's size on Results."
     )
 
 

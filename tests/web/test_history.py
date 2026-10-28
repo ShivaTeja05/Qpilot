@@ -1,6 +1,6 @@
 """History routes: the decision chain replayed on the study's own grid, diffed and compared.
 
-On the real demo study (Vermeulen 2013, 64 plates; analysed once per module, copied per test):
+On the real demo study (Vermeulen 2009, 64 plates; analysed once per module, copied per test):
 replaying to the head gives exactly the numbers the Results section shows; deciding a card and
 diffing the step before and after lists exactly the genes the flip matrix says that option
 flips; a changed chain entry is caught. Two analyses of the demo file (the planned design and

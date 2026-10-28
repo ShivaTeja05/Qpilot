@@ -2,7 +2,7 @@
  * How the charts write numbers: the page's own formats (`@/lib/format`, docs/app.md §5) under the
  * names the charts and their adapters use. Every number comes from the API; these only format it.
  */
-import { NNBSP, ci, count, fixed, fold, foldFromLog2, percent, pValue } from "@/lib/format";
+import { NNBSP, ci, count, fixed, fold, foldFromLog2, percent, plural, pValue } from "@/lib/format";
 
 /** A fold change: `3.59×`, `0.57×`, `0.0042×`. */
 export const fmtFold = (fc: number | null | undefined): string => fold(fc);
@@ -37,9 +37,7 @@ export const fmtCount = (n: number | null | undefined): string => count(n);
 /** A plain number with fixed decimals (geNorm M, V). */
 export const fmtNum = (v: number | null | undefined, digits = 2): string => fixed(v, digits);
 
-/** "1 gene", "3 genes". */
-export function plural(n: number, one: string, many = `${one}s`): string {
-  return `${count(n)} ${n === 1 ? one : many}`;
-}
+/** "1 gene", "3 genes": the page's own (`@/lib/format`). */
+export { plural };
 
 export { NNBSP };

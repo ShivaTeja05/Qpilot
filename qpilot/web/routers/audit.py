@@ -1,7 +1,8 @@
 """The robustness audit: its status, the run (a job), its views, and attached audit folders.
 
 The audit (:func:`qpilot.integration.simulator.audit`) re-runs a confirmed study under every
-combination of eight analysis decisions and gives each gene a verdict; it is written once, to
+combination of its analysis decisions (eight; nine with technical replicates) and gives each
+gene a verdict; it is written once, to
 ``<studies>/simulator_audits/<study id>``, sealed with checksums and bound to the study's
 decision chain. Its views are the Decision Simulator's results screen
 (:class:`qsim.app.Screen`) built with :meth:`~qsim.app.Screen.from_prepared` on the engine the

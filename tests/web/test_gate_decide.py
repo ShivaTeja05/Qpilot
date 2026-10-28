@@ -154,7 +154,7 @@ def test_leaving_the_wells_out_is_recorded_and_analysed_again(tainted):
     (card,) = again["cards"]
     assert card["card"]["status"] == "decided" and card["card"]["decision"] == "keep"
     assert card["card"]["decided_by"] == "human"
-    assert card["status_line"].startswith("Decided by a person: Keep every well")
+    assert card["status_line"].startswith("Decided by you: Keep every well")
     assert [o["chosen"] for o in card["options"]] == [True, False]
 
     # History ties the new analysis to the click that made it, in words, with the reason

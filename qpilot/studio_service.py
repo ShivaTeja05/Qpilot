@@ -99,6 +99,11 @@ PING_TIMEOUT_S = 10.0  # the one-token request gives up after this (it runs in t
 PING_WAIT_S = 2.0  # the longest a caller (a page render) waits for an answer not known yet
 BLANK_DESIGN_ID = "studio_blank"
 CURVE_JUDGE_UNREADABLE = "unable to read this file"
+#: The curves round's note on what the inbox lists (the page's sentence says it once, with counts).
+CURVE_JUDGE_LISTED = (
+    "Curve Judge disagreements that could change a conclusion are listed one well each; "
+    "the others change no conclusion and are not listed"
+)
 EXCLUSION_KIND = "prism.exclusion_reason"
 EXCLUDE_KIND = "curve.exclude_well"  # a well left out of (or put back into) the analysis
 TRUST_KIND = "curve.import_trust"  # a person's option on the Import Trust card (qpilot/io/trust.py)
@@ -1214,8 +1219,9 @@ class Studio:
             ]
             unscored = sum(1 for k in keys if k not in learned)
             if unscored:
+                wells = "study well" if unscored == 1 else "study wells"
                 notes.append(
-                    f"the Curve Judge cannot score {unscored} study well(s) (a curve whose "
+                    f"the Curve Judge cannot score {unscored} {wells} (a curve whose "
                     "minimum over cycles 1-40 is not a positive number); LinRegPCR alone there"
                 )
         else:
@@ -1238,10 +1244,7 @@ class Studio:
             mattering += 1
             for key in wells[: max(0, MAX_WELL_PROPOSALS - len(outcomes))]:
                 outcomes.append(self._propose_well_call(session_id, key, learned[key], target))
-        notes.append(
-            "Curve Judge disagreements that could change a conclusion are listed one well each; "
-            "the others change no conclusion and are not listed"
-        )
+        notes.append(CURVE_JUDGE_LISTED)
         report = _report(outcomes, notes=notes)
         report["disagreements"] = len(disagree)
         report["targets_that_matter"] = mattering

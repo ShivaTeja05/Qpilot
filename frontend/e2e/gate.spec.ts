@@ -185,7 +185,7 @@ test.describe("Controls: deciding", () => {
     const back = await gate(api, first);
     const keep = back.consequences.find((c) => c.decision_id === decisionId)!;
     expect(keep.decision?.action).toBe("put_back");
-    await expect(region.getByRole("article").first()).toContainText("Decided by a person", {
+    await expect(region.getByRole("article").first()).toContainText("Decided by you", {
       timeout: 120_000,
     });
   });

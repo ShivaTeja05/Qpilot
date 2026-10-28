@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections import Counter
 
+from qpilot.explain.words import noun
 from qpilot.io.datasets import VERMEULEN_SHA256
 from qpilot.io.inputs import input_label, is_converted
 from qpilot.qpcr.confidence_checks import HOLDS_MIN
@@ -93,7 +94,7 @@ def _names(names: list[str] | tuple[str, ...]) -> str:
 
 
 def _plural(n: int, one: str, many: str) -> str:
-    return one if n == 1 else many
+    return noun(n, one, many)
 
 
 # ---- paragraphs ----------------------------------------------------------------------------------
@@ -109,7 +110,7 @@ def data(c: Ctx, cite: Cites) -> list[Part]:
     lead = "Raw fluorescence"
     if reactions:
         lead += f" of {reactions} reactions"
-    lead += f" on {plates} plates"
+    lead += f" on {plates} {noun(r.n_plates, 'plate')}"
     if samples:
         lead += f" ({samples} samples)"
     parts.append(lead + " was read from ")
@@ -319,13 +320,14 @@ def comparison(c: Ctx, cite: Cites) -> list[Part]:
         f"intervals. A gene is called up or down only if p < {alpha} and the change is at least "
         f"{fold}-fold; otherwise it has no call.",
     ]
-    if c.has("f_n_genes"):
+    if c.has("f_n_genes") and c.facts.value("f_n_genes") != 1:
         parts.append(
             f" No correction for multiple testing was applied across the {tok('f_n_genes')} genes."
         )
     parts.append(
-        f" At this analysis {c.call_count('up')} genes are up, {c.call_count('down')} down and "
-        f"{c.call_count('none')} have no call"
+        f" At this analysis {c.call_count('up')} "
+        f"{noun(c.calls.get('up', 0), 'gene is', 'genes are')} up, {c.call_count('down')} down "
+        f"and {c.call_count('none')} {noun(c.calls.get('none', 0), 'has', 'have')} no call"
     )
     if c.has("f_n_withheld") and int(c.facts.value("f_n_withheld") or 0) > 0:
         parts.append(f"; {tok('f_n_withheld')} genes were withheld (too few values in a group)")
@@ -418,8 +420,9 @@ def robustness(c: Ctx, cite: Cites) -> list[Part]:
     holds = c.num("holds_min", HOLDS_MIN, "qpilot.qpcr.confidence_checks:/HOLDS_MIN", fmt="{:.0%}")
     if c.has("f_n_hold_lt_80", "f_n_genes"):
         parts.append(
-            f" {tok('f_n_hold_lt_80')} of {tok('f_n_genes')} genes keep their call in fewer than "
-            f"{holds} of them."
+            f" {tok('f_n_hold_lt_80')} of {tok('f_n_genes')} "
+            f"{noun(c.facts.value('f_n_genes'), 'gene keeps its', 'genes keep their')} call in "
+            f"fewer than {holds} of them."
         )
     alone = [
         (fid, label)

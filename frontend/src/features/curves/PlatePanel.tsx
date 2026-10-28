@@ -5,7 +5,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
 import { PlateMap, layerOptions, plateWells, type PlateLayer } from "@/charts/plate";
-import { count } from "@/lib/format";
+import { count, plural } from "@/lib/format";
 import { useHotkeys } from "@/lib/hooks";
 import {
   Card,
@@ -211,8 +211,4 @@ export function PlatePanel({
       </CardBody>
     </Card>
   );
-}
-
-function plural(n: number, one: string): string {
-  return `${count(n)} ${n === 1 ? one : `${one}s`}`;
 }

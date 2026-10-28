@@ -26,6 +26,16 @@ DEMO_GROUP_VAR = "MYCN_high"
 GROUP_NOTE = "expression-defined (top fraction by MYCN expression), not a clinical call"
 
 
+def marker_group_names(group_var: str) -> tuple[str, str]:
+    """A marker split's two groups as every page, report and export names them.
+
+    ``MYCN_high`` (the design's variable) is shown as ``MYCN-high``, against ``rest``: one
+    display name for a group everywhere (Results, Trace, Report, Prism, the exports).
+    """
+    marker = group_var.removesuffix("_high") or group_var
+    return f"{marker}-high", "rest"
+
+
 @dataclass(frozen=True)
 class GroupSpec:
     """How to split samples: the marker gene, the top fraction, the control genes used for it."""

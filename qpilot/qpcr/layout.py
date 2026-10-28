@@ -38,6 +38,8 @@ import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 
+from qpilot.explain.words import noun, plural
+
 PLATE_SHAPES: dict[int, tuple[int, int]] = {96: (8, 12), 384: (16, 24)}
 CSV_COLUMNS: tuple[str, ...] = ("plate", "well", "sample", "group", "target", "type")
 #: What a name may be: the engine's safe names (``curves.safe_name``), not starting with ``-``
@@ -325,8 +327,10 @@ def plan_shape(spec: LayoutSpec) -> Shape:
         controls = _controls_per_assay(spec, spec.calibrator)
         raise LayoutError(
             f"a {spec.plate_size}-well plate cannot hold one gene and the {len(spec.refs)} "
-            f"reference gene(s) for one sample of each of the {n_groups} groups with "
-            f"{spec.replicates} replicate(s) and {controls} control well(s) per assay: use "
+            f"reference gene{'s' * (len(spec.refs) != 1)} for one sample of each of the "
+            f"{n_groups} groups with {spec.replicates} "
+            f"replicate{'s' * (spec.replicates != 1)} and {controls} control "
+            f"well{'s' * (controls != 1)} per assay: use "
             "384-well plates, fewer replicates, fewer reference genes or fewer controls"
         )
     shape = best[1]
@@ -600,7 +604,9 @@ def _warnings(spec: LayoutSpec, shape: Shape, balance: Balance) -> list[str]:
     if balance.plates_with_one_group:
         small = min(n for _, n in spec.groups)
         out.append(
-            f"{len(balance.plates_with_one_group)} plate(s) hold only one group, because the "
+            f"{plural(len(balance.plates_with_one_group), 'plate')} "
+            f"{'holds' if len(balance.plates_with_one_group) == 1 else 'hold'} only one group, "
+            "because the "
             f"smallest group has {small} samples for {shape.batches} batches: on those plates "
             "plate and group cannot be told apart."
         )
@@ -734,7 +740,8 @@ def make_repeat_layout(spec: RepeatSpec) -> RepeatLayout:
             if not current:
                 raise LayoutError(
                     f"sample {sample}'s {len(blocks[sample])} assays in {spec.replicates} "
-                    f"replicate(s) and their controls do not fit on a {spec.plate_size}-well "
+                    f"{noun(spec.replicates, 'replicate')} and their controls do not fit on a "
+                    f"{spec.plate_size}-well "
                     "plate: use 384-well plates or fewer replicates"
                 )
             plates.append([sample])

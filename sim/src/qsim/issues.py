@@ -135,7 +135,8 @@ def build_queue(
             else:
                 scen = engine.evaluate(base_cell, drop=mask)
                 table = compare(engine, base, scen)
-                remedy = f"drop {int(mask.sum())} well(s) and re-run the baseline analysis"
+                n = int(mask.sum())
+                remedy = f"drop {n} well{'s' * (n != 1)} and re-run the baseline analysis"
         impact, changed, head, move = _summarise(engine, table, outputs)
         if obs.kind == "ntc" and obs.evidence.get("share_within_5_cycles", 0) >= INVALIDATE_SHARE:
             impact = "invalidates"
@@ -190,7 +191,7 @@ def build_queue(
                 Issue(
                     issue_id=f"D-{d}",
                     kind="decision",
-                    title=f"{PLAIN[d][0].upper()}{PLAIN[d][1:]}: changing only this changes {len(flipped)} call(s)",
+                    title=f"{PLAIN[d][0].upper()}{PLAIN[d][1:]}: changing only this changes {len(flipped)} call{'s' * (len(flipped) != 1)}",
                     loci={"decision": d},
                     evidence={
                         "genes_flipped_alone": flipped,

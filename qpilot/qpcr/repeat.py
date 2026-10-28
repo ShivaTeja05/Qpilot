@@ -44,6 +44,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 from pydantic import BaseModel, Field
 
+from qpilot.explain.words import plural
 from qpilot.qpcr import layout as plates
 from qpilot.qpcr import trace as trace_engine
 
@@ -717,8 +718,9 @@ def build_plan(
         cautions += list(built.warnings)
         if reps > study_replicates(ctx):
             notes.append(
-                f"The original run had {study_replicates(ctx)} well(s) per sample and gene; the "
-                f"repeat runs {reps}, so a single well that is off can be told from the sample."
+                f"The original run had {plural(study_replicates(ctx), 'well')} per sample and "
+                f"gene; the repeat runs {reps}, so a single well that is off can be told from the "
+                "sample."
             )
         if calibrator:
             notes.append(
@@ -738,13 +740,15 @@ def build_plan(
     left = [i for i in plated_out(items) if i.consequence == "changes_nothing"]
     if left:
         notes.append(
-            f"{len(left)} item(s) change no call: they are listed but not on the plate (put "
+            f"{plural(len(left), 'item')} {'changes' if len(left) == 1 else 'change'} no call: "
+            "they are listed but not on the plate (put "
             "every item on it to re-run them too)."
         )
     sample_only = [i for i in items if not i.repeat]
     if sample_only:
         notes.append(
-            f"{len(sample_only)} item(s) point at a sample's tube, not a well: check the tube "
+            f"{plural(len(sample_only), 'item')} {'points' if len(sample_only) == 1 else 'point'} "
+            "at a sample's tube, not a well: check the tube "
             "first (input, extraction); the plate carries it only for the calls it changes."
         )
     counts = {c: sum(i.consequence == c for i in items) for c in CONSEQUENCES}
