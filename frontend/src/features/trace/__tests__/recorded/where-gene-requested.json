@@ -1,0 +1,804 @@
+{
+ "study_id": "a01a77b941d9",
+ "session": "dcd4887ce4b8",
+ "head": "4c9ce0ea003d72eb9ea7e3fd28b6ffd3fe58da4b9ff7996ceeeb93d68fccb6e4",
+ "root": {
+  "kind": "gene",
+  "id": "1-Mar"
+ },
+ "answer": "place_to_look",
+ "planned": true,
+ "text": [
+  {
+   "plain": "1-Mar. Called down: 3.21-fold lower in KO (p = 0.018). The rule needs at least 2-fold and p below 0.05; this fold change is 1.61× past that line.",
+   "segments": [
+    {
+     "text": "1-Mar. Called down: ",
+     "fact": null
+    },
+    {
+     "text": "3.21",
+     "fact": "f_trace_1_mar_fold"
+    },
+    {
+     "text": "-fold lower in ",
+     "fact": null
+    },
+    {
+     "text": "KO",
+     "fact": "f_trace_1_mar_group_hi"
+    },
+    {
+     "text": " (p = ",
+     "fact": null
+    },
+    {
+     "text": "0.018",
+     "fact": "f_trace_1_mar_p"
+    },
+    {
+     "text": "). The rule needs at least ",
+     "fact": null
+    },
+    {
+     "text": "2",
+     "fact": "f_trace_1_mar_rule_fold"
+    },
+    {
+     "text": "-fold and p below ",
+     "fact": null
+    },
+    {
+     "text": "0.05",
+     "fact": "f_trace_1_mar_rule_alpha"
+    },
+    {
+     "text": "; this fold change is ",
+     "fact": null
+    },
+    {
+     "text": "1.61×",
+     "fact": "f_trace_1_mar_distance_fold"
+    },
+    {
+     "text": " past that line.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_1_mar_fold",
+     "text": "3.21",
+     "value": 3.2114735141,
+     "unit": "",
+     "path": "trace.gene.1-Mar.summary.fold"
+    },
+    {
+     "id": "f_trace_1_mar_group_hi",
+     "text": "KO",
+     "value": "KO",
+     "unit": "",
+     "path": "trace.gene.1-Mar.summary.group_labels[0]"
+    },
+    {
+     "id": "f_trace_1_mar_p",
+     "text": "0.018",
+     "value": 0.0178841123,
+     "unit": "",
+     "path": "trace.gene.1-Mar.summary.p"
+    },
+    {
+     "id": "f_trace_1_mar_rule_fold",
+     "text": "2",
+     "value": 2.0,
+     "unit": "",
+     "path": "trace.gene.1-Mar.summary.rule.min_fold"
+    },
+    {
+     "id": "f_trace_1_mar_rule_alpha",
+     "text": "0.05",
+     "value": 0.05,
+     "unit": "",
+     "path": "trace.gene.1-Mar.summary.rule.alpha"
+    },
+    {
+     "id": "f_trace_1_mar_distance_fold",
+     "text": "1.61×",
+     "value": 1.6057367571,
+     "unit": "×",
+     "path": "trace.gene.1-Mar.summary"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Setting aside one sample alone changes this call for 4 different samples (largest effect of one sample: 1.1×, sample WT_1).",
+   "segments": [
+    {
+     "text": "Setting aside one sample alone changes this call for ",
+     "fact": null
+    },
+    {
+     "text": "4",
+     "fact": "f_trace_1_mar_n_loo_flips"
+    },
+    {
+     "text": " different samples (largest effect of one sample: ",
+     "fact": null
+    },
+    {
+     "text": "1.1×",
+     "fact": "f_trace_1_mar_max_single_effect_fold"
+    },
+    {
+     "text": ", sample ",
+     "fact": null
+    },
+    {
+     "text": "WT_1",
+     "fact": "f_trace_1_mar_max_single_effect_sample"
+    },
+    {
+     "text": ").",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_1_mar_n_loo_flips",
+     "text": "4",
+     "value": 4,
+     "unit": "",
+     "path": "trace.gene.1-Mar.summary.n_loo_flips"
+    },
+    {
+     "id": "f_trace_1_mar_max_single_effect_fold",
+     "text": "1.1×",
+     "value": 1.0965579357,
+     "unit": "×",
+     "path": "trace.gene.1-Mar.summary.max_single_effect_fold"
+    },
+    {
+     "id": "f_trace_1_mar_max_single_effect_sample",
+     "text": "WT_1",
+     "value": "WT_1",
+     "unit": "",
+     "path": "trace.gene.1-Mar.summary.max_single_effect_sample"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "There is a place to look.",
+   "segments": [
+    {
+     "text": "There is a place to look.",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  },
+  {
+   "plain": "Where to look first:",
+   "segments": [
+    {
+     "text": "Where to look first:",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  },
+  {
+   "plain": "1. Sample KO_1 · plate 1-Mar_plate · well A7: changes the call.",
+   "segments": [
+    {
+     "text": "1",
+     "fact": "f_trace_1_mar_1_rank"
+    },
+    {
+     "text": ". Sample ",
+     "fact": null
+    },
+    {
+     "text": "KO_1",
+     "fact": "f_trace_1_mar_1_sample"
+    },
+    {
+     "text": " · plate ",
+     "fact": null
+    },
+    {
+     "text": "1-Mar_plate",
+     "fact": "f_trace_1_mar_1_plate"
+    },
+    {
+     "text": " · well ",
+     "fact": null
+    },
+    {
+     "text": "A7",
+     "fact": "f_trace_1_mar_1_well"
+    },
+    {
+     "text": ": changes the call.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_1_mar_1_rank",
+     "text": "1",
+     "value": 1,
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[0].rank"
+    },
+    {
+     "id": "f_trace_1_mar_1_sample",
+     "text": "KO_1",
+     "value": "KO_1",
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[0].sample"
+    },
+    {
+     "id": "f_trace_1_mar_1_plate",
+     "text": "1-Mar_plate",
+     "value": "1-Mar_plate",
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[0].plate"
+    },
+    {
+     "id": "f_trace_1_mar_1_well",
+     "text": "A7",
+     "value": "A7",
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[0].well"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Its 1-Mar well read Cq 30.2.",
+   "segments": [
+    {
+     "text": "Its ",
+     "fact": null
+    },
+    {
+     "text": "1-Mar",
+     "fact": "f_trace_1_mar_1_target"
+    },
+    {
+     "text": " well read Cq ",
+     "fact": null
+    },
+    {
+     "text": "30.2",
+     "fact": "f_trace_1_mar_1_cq"
+    },
+    {
+     "text": ".",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_1_mar_1_target",
+     "text": "1-Mar",
+     "value": "1-Mar",
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[0].target"
+    },
+    {
+     "id": "f_trace_1_mar_1_cq",
+     "text": "30.2",
+     "value": 30.2299,
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[0].cq"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "It comes up within the window of this plate's NTC well B6 (Cq 32.7).",
+   "segments": [
+    {
+     "text": "It comes up within the window of this plate's NTC well ",
+     "fact": null
+    },
+    {
+     "text": "B6",
+     "fact": "f_trace_1_mar_1_ntc_well"
+    },
+    {
+     "text": " (Cq ",
+     "fact": null
+    },
+    {
+     "text": "32.7",
+     "fact": "f_trace_1_mar_1_ntc_cq"
+    },
+    {
+     "text": ").",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_1_mar_1_ntc_well",
+     "text": "B6",
+     "value": "B6",
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[0].detail.S6"
+    },
+    {
+     "id": "f_trace_1_mar_1_ntc_cq",
+     "text": "32.7",
+     "value": 32.7365,
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[0].detail.S6"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Consistent with contamination on that plate and target; what to check: the NTC well, and its melt curve if the assay is SYBR.",
+   "segments": [
+    {
+     "text": "Consistent with contamination on that plate and target; what to check: the NTC well, and its melt curve if the assay is SYBR.",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  },
+  {
+   "plain": "With the sample set aside: 1-Mar loses its call.",
+   "segments": [
+    {
+     "text": "With the sample set aside: 1-Mar loses its call.",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  },
+  {
+   "plain": "2. Sample KO_2 · plate 1-Mar_plate · well A10: changes the call.",
+   "segments": [
+    {
+     "text": "2",
+     "fact": "f_trace_1_mar_2_rank"
+    },
+    {
+     "text": ". Sample ",
+     "fact": null
+    },
+    {
+     "text": "KO_2",
+     "fact": "f_trace_1_mar_2_sample"
+    },
+    {
+     "text": " · plate ",
+     "fact": null
+    },
+    {
+     "text": "1-Mar_plate",
+     "fact": "f_trace_1_mar_2_plate"
+    },
+    {
+     "text": " · well ",
+     "fact": null
+    },
+    {
+     "text": "A10",
+     "fact": "f_trace_1_mar_2_well"
+    },
+    {
+     "text": ": changes the call.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_1_mar_2_rank",
+     "text": "2",
+     "value": 2,
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[1].rank"
+    },
+    {
+     "id": "f_trace_1_mar_2_sample",
+     "text": "KO_2",
+     "value": "KO_2",
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[1].sample"
+    },
+    {
+     "id": "f_trace_1_mar_2_plate",
+     "text": "1-Mar_plate",
+     "value": "1-Mar_plate",
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[1].plate"
+    },
+    {
+     "id": "f_trace_1_mar_2_well",
+     "text": "A10",
+     "value": "A10",
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[1].well"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Its 1-Mar well read Cq 30.5.",
+   "segments": [
+    {
+     "text": "Its ",
+     "fact": null
+    },
+    {
+     "text": "1-Mar",
+     "fact": "f_trace_1_mar_2_target"
+    },
+    {
+     "text": " well read Cq ",
+     "fact": null
+    },
+    {
+     "text": "30.5",
+     "fact": "f_trace_1_mar_2_cq"
+    },
+    {
+     "text": ".",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_1_mar_2_target",
+     "text": "1-Mar",
+     "value": "1-Mar",
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[1].target"
+    },
+    {
+     "id": "f_trace_1_mar_2_cq",
+     "text": "30.5",
+     "value": 30.4758,
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[1].cq"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "It comes up within the window of this plate's NTC well B6 (Cq 32.7).",
+   "segments": [
+    {
+     "text": "It comes up within the window of this plate's NTC well ",
+     "fact": null
+    },
+    {
+     "text": "B6",
+     "fact": "f_trace_1_mar_2_ntc_well"
+    },
+    {
+     "text": " (Cq ",
+     "fact": null
+    },
+    {
+     "text": "32.7",
+     "fact": "f_trace_1_mar_2_ntc_cq"
+    },
+    {
+     "text": ").",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_1_mar_2_ntc_well",
+     "text": "B6",
+     "value": "B6",
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[1].detail.S6"
+    },
+    {
+     "id": "f_trace_1_mar_2_ntc_cq",
+     "text": "32.7",
+     "value": 32.7365,
+     "unit": "",
+     "path": "trace.gene.1-Mar.places[1].detail.S6"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Consistent with contamination on that plate and target; what to check: the NTC well, and its melt curve if the assay is SYBR.",
+   "segments": [
+    {
+     "text": "Consistent with contamination on that plate and target; what to check: the NTC well, and its melt curve if the assay is SYBR.",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  },
+  {
+   "plain": "With the sample set aside: 1-Mar loses its call.",
+   "segments": [
+    {
+     "text": "With the sample set aside: 1-Mar loses its call.",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  },
+  {
+   "plain": "Influential, nothing unusual: sample WT_1 (1.1×, setting it aside changes the call), sample WT_2 (1.1×, setting it aside changes the call); the wells behind these values read as expected.",
+   "segments": [
+    {
+     "text": "Influential, nothing unusual: sample ",
+     "fact": null
+    },
+    {
+     "text": "WT_1",
+     "fact": "f_trace_1_mar_infl_1_sample"
+    },
+    {
+     "text": " (",
+     "fact": null
+    },
+    {
+     "text": "1.1×",
+     "fact": "f_trace_1_mar_infl_1_fold"
+    },
+    {
+     "text": ", setting it aside changes the call), sample ",
+     "fact": null
+    },
+    {
+     "text": "WT_2",
+     "fact": "f_trace_1_mar_infl_2_sample"
+    },
+    {
+     "text": " (",
+     "fact": null
+    },
+    {
+     "text": "1.1×",
+     "fact": "f_trace_1_mar_infl_2_fold"
+    },
+    {
+     "text": ", setting it aside changes the call); the wells behind these values read as expected.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_1_mar_infl_1_sample",
+     "text": "WT_1",
+     "value": "WT_1",
+     "unit": "",
+     "path": "trace.gene.1-Mar.influential[0].sample"
+    },
+    {
+     "id": "f_trace_1_mar_infl_1_fold",
+     "text": "1.1×",
+     "value": 1.0965579357,
+     "unit": "×",
+     "path": "trace.gene.1-Mar.infl.1"
+    },
+    {
+     "id": "f_trace_1_mar_infl_2_sample",
+     "text": "WT_2",
+     "value": "WT_2",
+     "unit": "",
+     "path": "trace.gene.1-Mar.influential[1].sample"
+    },
+    {
+     "id": "f_trace_1_mar_infl_2_fold",
+     "text": "1.1×",
+     "value": 1.0965579357,
+     "unit": "×",
+     "path": "trace.gene.1-Mar.infl.2"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Checked, nothing found: NTCs on plates GAPDH_plate · whole-sample lateness · whole-sample efficiency · curve notes · samples left out.",
+   "segments": [
+    {
+     "text": "Checked, nothing found: NTCs on plates ",
+     "fact": null
+    },
+    {
+     "text": "GAPDH_plate",
+     "fact": "f_trace_1_mar_clean_ntc_plates"
+    },
+    {
+     "text": " · whole-sample lateness · whole-sample efficiency · curve notes · samples left out.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_1_mar_clean_ntc_plates",
+     "text": "GAPDH_plate",
+     "value": "GAPDH_plate",
+     "unit": "",
+     "path": "trace.gene.1-Mar.checked_nothing_found"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "The data cannot show: RNA integrity · RT replicates · no-RT controls · batch annotations · a single target well that is off (cannot tell from biology without replicates).",
+   "segments": [
+    {
+     "text": "The data cannot show: RNA integrity · RT replicates · no-RT controls · batch annotations · a single target well that is off (cannot tell from biology without replicates).",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  }
+ ],
+ "places": [
+  {
+   "rank": 1,
+   "sample": "KO_1",
+   "plate": "1-Mar_plate",
+   "well": "A7",
+   "target": "1-Mar",
+   "role": "target_well",
+   "checks": [
+    {
+     "code": "S6",
+     "looks_like": "the well comes up close to its plate's no-template control",
+     "consistent_with": "contamination on that plate and target",
+     "what_to_check": "the NTC well, and its melt curve if the assay is SYBR"
+    }
+   ],
+   "consequence": "changes_call",
+   "consequence_word": "changes the call",
+   "options": [
+    {
+     "id": "keep",
+     "label": "Keep (no change)",
+     "consequence": "changes_nothing",
+     "consequence_word": "changes nothing here",
+     "changed_calls": [],
+     "applies": true,
+     "n_wells": 0
+    },
+    {
+     "id": "set_aside_value",
+     "label": "Set this well's value aside",
+     "consequence": "changes_call",
+     "consequence_word": "changes the call",
+     "changed_calls": [
+      "1-Mar"
+     ],
+     "applies": true,
+     "n_wells": 3
+    },
+    {
+     "id": "set_aside",
+     "label": "Set the sample aside (every comparison)",
+     "consequence": "changes_call",
+     "consequence_word": "changes the call",
+     "changed_calls": [
+      "1-Mar"
+     ],
+     "applies": true,
+     "n_wells": 6
+    }
+   ],
+   "card_id": "card_trace_ko_1_1_mar_plate_a7",
+   "card_status": null,
+   "can_decide": true,
+   "requests": [
+    {
+     "option": "set_aside_value",
+     "option_label": "Set this well's value aside",
+     "wells": [
+      "1-Mar_plate/A7",
+      "1-Mar_plate/A8",
+      "1-Mar_plate/A9"
+     ],
+     "put_back": [],
+     "reason": "The no-template control on this plate amplified within five cycles of the knock-outs.",
+     "agent": null,
+     "at": "2026-10-28T17:55:15Z"
+    }
+   ]
+  },
+  {
+   "rank": 2,
+   "sample": "KO_2",
+   "plate": "1-Mar_plate",
+   "well": "A10",
+   "target": "1-Mar",
+   "role": "target_well",
+   "checks": [
+    {
+     "code": "S6",
+     "looks_like": "the well comes up close to its plate's no-template control",
+     "consistent_with": "contamination on that plate and target",
+     "what_to_check": "the NTC well, and its melt curve if the assay is SYBR"
+    }
+   ],
+   "consequence": "changes_call",
+   "consequence_word": "changes the call",
+   "options": [
+    {
+     "id": "keep",
+     "label": "Keep (no change)",
+     "consequence": "changes_nothing",
+     "consequence_word": "changes nothing here",
+     "changed_calls": [],
+     "applies": true,
+     "n_wells": 0
+    },
+    {
+     "id": "set_aside_value",
+     "label": "Set this well's value aside",
+     "consequence": "changes_call",
+     "consequence_word": "changes the call",
+     "changed_calls": [
+      "1-Mar"
+     ],
+     "applies": true,
+     "n_wells": 3
+    },
+    {
+     "id": "set_aside",
+     "label": "Set the sample aside (every comparison)",
+     "consequence": "changes_call",
+     "consequence_word": "changes the call",
+     "changed_calls": [
+      "1-Mar"
+     ],
+     "applies": true,
+     "n_wells": 6
+    }
+   ],
+   "card_id": "card_trace_ko_2_1_mar_plate_a10",
+   "card_status": null,
+   "can_decide": true,
+   "requests": []
+  }
+ ],
+ "n_more": 0,
+ "checked_nothing_found": [
+  "S2",
+  "S4",
+  "S5",
+  "S6:GAPDH_plate",
+  "S7"
+ ],
+ "cannot_show": [
+  "S8",
+  "S9",
+  "group_wide_fault",
+  "no_rt_controls",
+  "rna_integrity",
+  "rt_replicates",
+  "sample_swap",
+  "single_target_well"
+ ],
+ "absent": [],
+ "n_absent": 0,
+ "decide_note": "Decide… leaves the wells out of the analysis (or puts them back), with your reason, in this session's record, and analyses the study again; your choices on the Decision Cards are carried to the new analysis. A choice that can change a conclusion is a person's.",
+ "method_card": "methods/trace.md",
+ "can_apply": true,
+ "apply_note": "Decide… leaves the wells out of the analysis (or puts them back), with your reason, in this session's record, and analyses the study again; your choices on the Decision Cards are carried to the new analysis. A choice that can change a conclusion is a person's.",
+ "inbox_head": "9b6a8ebb7b38b3e77252a7f24c66044cc6c072c3cdbbb5fac722e1242ba63f54",
+ "set_aside": []
+}

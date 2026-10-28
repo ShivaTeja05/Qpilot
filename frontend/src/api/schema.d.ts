@@ -3015,10 +3015,10 @@ export type components = {
         AgentTool: {
             /**
              * Access
-             * @description read: changes nothing; open: opens a file as a study or session (decides nothing); propose: adds a proposal only a person can accept; request: asks to decide a Decision Card (a choice that can change a conclusion waits for a person).
+             * @description read: changes nothing; open: opens a file as a study or session (decides nothing); propose: adds a proposal only a person can accept; request: asks to decide a Decision Card or to set wells aside (a choice that can change a conclusion waits for a person); export: writes a new file from the study's numbers (decides nothing).
              * @enum {string}
              */
-            access: "read" | "open" | "propose" | "request";
+            access: "read" | "open" | "propose" | "request" | "export";
             /**
              * Description
              * @description The whole description an agent reads, as text.
@@ -14398,6 +14398,11 @@ export type components = {
             plate?: string | null;
             /** Rank */
             rank: number;
+            /**
+             * Requests
+             * @description Agents' requests to set wells aside here, waiting for a person: Decide… approves one (choose its option) or turns it down (keep). Nothing is set aside until then.
+             */
+            requests?: components["schemas"]["WhereRequest"][];
             /** Role */
             role: string;
             /** Sample */
@@ -14406,6 +14411,38 @@ export type components = {
             target?: string | null;
             /** Well */
             well?: string | null;
+        };
+        /**
+         * WhereRequest
+         * @description An agent's request to set wells aside at a place; Decide… answers it for a person.
+         */
+        WhereRequest: {
+            /** Agent */
+            agent?: string | null;
+            /** At */
+            at: string;
+            /**
+             * Option
+             * @description The option asked for (set_aside_value or set_aside).
+             */
+            option: string;
+            /** Option Label */
+            option_label: string;
+            /**
+             * Put Back
+             * @description Wells it asks to put back (a person had set more aside here).
+             */
+            put_back?: string[];
+            /**
+             * Reason
+             * @description The agent's reason, as it wrote it.
+             */
+            reason: string;
+            /**
+             * Wells
+             * @description The wells it asks to leave out (RUN/WELL).
+             */
+            wells: string[];
         };
         /**
          * WhereSetAside
