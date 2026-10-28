@@ -373,6 +373,34 @@ def write_atomic(out: Path, data: bytes) -> None:
         raise
 
 
+def write_new(out: Path, data: bytes) -> None:
+    """Write ``data`` to ``out`` all or nothing, never over a file or link already there.
+
+    Through a temporary file in the same folder, then linked into place: the link fails when the
+    name exists, whatever appeared there since it was checked (``os.replace`` would overwrite).
+    A file system without hard links gets the same rule from an exclusive create.
+
+    Raises:
+        FileExistsError: ``out`` exists (a file, a folder or a link); nothing was written.
+    """
+    fd, tmp = tempfile.mkstemp(dir=out.parent, prefix=f".{out.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(data)
+            fh.flush()
+            os.fsync(fh.fileno())
+        try:
+            os.link(tmp, out)  # the destination is never followed: it must not exist
+        except FileExistsError:
+            raise
+        except OSError:  # no hard links here (some network or FAT drives)
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+            with os.fdopen(os.open(out, flags | getattr(os, "O_BINARY", 0), 0o644), "wb") as fh:
+                fh.write(data)
+    finally:
+        Path(tmp).unlink(missing_ok=True)
+
+
 def new_file(out_path: str | Path, suffix: str, what: str = "file") -> Path:
     """A path for a new file: the right suffix, not there yet, in an existing folder.
 

@@ -696,9 +696,10 @@ def prism_roundtrip(sid: str, body: RoundTripRequest, ctx: Ctx) -> JobStarted:
     """
     _visible_study(ctx, sid)
     bundle = _round_trip_bundle(ctx, sid, body.bundle)
+    roots, outside = folders.returned_rule(_exports(ctx))
     try:
         returned = folders.allowed_returned(
-            body.folder, roots=(_exports(ctx), Path.home()), store_root=ctx.store.root
+            body.folder, roots=roots, store_root=ctx.store.root, outside=outside
         )
     except folders.FolderRefused as err:
         raise api_error(400, "bad_folder", str(err)) from err

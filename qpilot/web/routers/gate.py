@@ -45,6 +45,7 @@ from collections import OrderedDict
 from typing import Annotated, Any
 
 from fastapi import APIRouter, File, Form, UploadFile
+from fastapi.concurrency import run_in_threadpool
 
 from qpilot.app_state import decider_words
 from qpilot.core import gate as core_gate
@@ -1225,29 +1226,35 @@ async def link_gate_run_file(
     from qpilot.web import views
     from qpilot.web.routers.instruments import _keep_run, _read_run, _without_identity
 
-    sid = _visible(ctx, study_id)  # blind first: a refused body says nothing either way
+    # off the event loop: the study's gate and the run file's reading take seconds (RT-EX-010)
+    sid = await run_in_threadpool(_visible, ctx, study_id)  # blind first, before the body
     if not plate or run is None:
         raise api_error(422, "bad_request", "Choose a plate and the run file to link to it.")
-    if plate not in _plates(ctx, study_id):
+    if plate not in await run_in_threadpool(_plates, ctx, study_id):
         raise api_error(404, "not_found", NOT_A_PLATE)
     path = await _keep_run(ctx, run)
-    context = _read_run(path)
-    if context.source_kind == "rdml":
-        raise api_error(422, "bad_file", RDML_RUN_FILE)
-    name = _without_identity(views.display_name(path) or path.name, context)
-    entry = run_links.RunLink(
-        plate=plate,
-        file=path.name,
-        sha256=sha256_file(path),
-        name=name[:200],
-        kind=str(context.source_kind),
-        at=datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
-    )
-    try:
-        run_links.link(ctx.store.root, input_sha(ctx.store, study_id), entry)
-    except run_links.RunLinkError as err:
-        raise api_error(422, "bad_request", str(err)) from err
-    _changed(ctx, study_id, sid)
+
+    def read_and_link() -> run_links.RunLink:
+        context = _read_run(path)
+        if context.source_kind == "rdml":
+            raise api_error(422, "bad_file", RDML_RUN_FILE)
+        name = _without_identity(views.display_name(path) or path.name, context)
+        entry = run_links.RunLink(
+            plate=plate,
+            file=path.name,
+            sha256=sha256_file(path),
+            name=name[:200],
+            kind=str(context.source_kind),
+            at=datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        )
+        try:
+            run_links.link(ctx.store.root, input_sha(ctx.store, study_id), entry)
+        except run_links.RunLinkError as err:
+            raise api_error(422, "bad_request", str(err)) from err
+        _changed(ctx, study_id, sid)
+        return entry
+
+    entry = await run_in_threadpool(read_and_link)
     return GateRunLinked(
         plate=plate,
         linked=True,

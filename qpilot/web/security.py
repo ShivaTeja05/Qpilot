@@ -23,6 +23,7 @@ from __future__ import annotations
 import hmac
 import os
 import secrets
+import shutil
 import traceback
 from collections.abc import Awaitable, Callable, Mapping, MutableMapping
 from dataclasses import dataclass
@@ -42,6 +43,12 @@ INTERNAL = (
     "runs shows the details; please report them."
 )
 WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+#: A hosted sandbox turns read-only while its disk has less than this free (QPILOT_MIN_FREE_MB).
+HOSTED_MIN_FREE_MB = 1024
+SANDBOX_FULL = (
+    "The public sandbox's disk is full, so it only shows what is there until it restarts "
+    "(which empties it). To analyse your own files, install qPilot and run qpilot app."
+)
 
 CSP = "; ".join(
     [
@@ -77,13 +84,18 @@ class Hosting:
     Hosted (``QPILOT_HOSTED=1``, a public sandbox such as a Hugging Face Space): the extra host
     names in ``QPILOT_ALLOWED_HOSTS``, writes also from the sites in ``QPILOT_ALLOWED_ORIGINS``
     (e.g. a frontend that proxies ``/api``), framing by ``QPILOT_FRAME_ANCESTORS``, and no launch
-    key (nothing private lives there: the page says so). Comma-separated lists.
+    key (nothing private lives there: the page says so). Comma-separated lists. Every visitor
+    may write, so a hosted server refuses writes (507) while the disk holding its store
+    (``QPILOT_STUDIES_DIR``) has less than ``QPILOT_MIN_FREE_MB`` free (1024 by default): one
+    visitor's uploads and exports cannot fill the disk the store needs (RT-EX-007).
     """
 
     hosted: bool = False
     hosts: frozenset[str] = LOCAL_HOSTS
     origins: frozenset[str] = frozenset()
     frame_ancestors: tuple[str, ...] = ()
+    data_dir: str | None = None
+    min_free_mb: int = 0
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Hosting:
@@ -95,12 +107,32 @@ class Hosting:
         def items(name: str) -> list[str]:
             return [x.strip() for x in (env.get(name) or "").split(",") if x.strip()]
 
+        try:
+            min_free = int(env.get("QPILOT_MIN_FREE_MB") or HOSTED_MIN_FREE_MB)
+        except ValueError:
+            min_free = HOSTED_MIN_FREE_MB
         return cls(
             hosted=True,
             hosts=LOCAL_HOSTS | {host_name(h) for h in items("QPILOT_ALLOWED_HOSTS")},
             origins=frozenset(o.rstrip("/").lower() for o in items("QPILOT_ALLOWED_ORIGINS")),
             frame_ancestors=tuple(items("QPILOT_FRAME_ANCESTORS")),
+            data_dir=(env.get("QPILOT_STUDIES_DIR") or "").strip() or None,
+            min_free_mb=max(min_free, 0),
         )
+
+    def disk_full(self) -> bool:
+        """True when a hosted server's store has less free disk than ``min_free_mb``."""
+        if not self.hosted or self.min_free_mb <= 0:
+            return False
+        folder = self.data_dir or os.path.expanduser("~")
+        while folder and not os.path.isdir(folder):  # the store may not exist yet
+            parent = os.path.dirname(folder)
+            folder = parent if parent != folder else ""
+        try:
+            free = shutil.disk_usage(folder or "/").free
+        except OSError:
+            return False
+        return free < self.min_free_mb * 1024 * 1024
 
     def headers(self) -> tuple[tuple[bytes, bytes], ...]:
         """The security headers; framing allowed only to the configured ancestors."""
@@ -224,6 +256,9 @@ class Guard:
             length = headers.get("content-length")
             if length and length.isdigit() and int(length) > _body_cap(headers):
                 await _json(send, 413, "too_large", _too_large(headers))
+                return
+            if self.hosting.disk_full():
+                await _json(send, 507, "sandbox_full", SANDBOX_FULL)
                 return
 
         query = parse_qs(scope.get("query_string", b"").decode("latin-1"))

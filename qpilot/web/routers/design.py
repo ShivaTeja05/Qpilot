@@ -18,6 +18,7 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, File, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response
 
 from qpilot import studio_design as sd
@@ -265,26 +266,33 @@ async def attach_sheet(
     from qpilot.io.sheets import SheetError, read_sheet, sheet_table, target_roles
     from qpilot.web.routers.workspaces import MAX_SHEET_BYTES, _keep
 
-    session(ctx, sid)
+    await run_in_threadpool(session, ctx, sid)
     if not sheet.filename:
         raise api_error(400, "no_file", "Choose the sample sheet to attach.")
     kept = await _keep(ctx, sheet, "sheet", MAX_SHEET_BYTES)
     name = views.display_name(kept) or kept.name
-    try:
-        read = read_sheet(kept)
-        usable = sheet_table(read) is not None or bool(target_roles(read))
-    except SheetError as err:
-        raise api_error(400, "bad_file", sv.sentence(f"{name} could not be read: {err}")) from err
-    if not usable:
-        raise api_error(
-            400,
-            "bad_file",
-            f"{name} has no column qPilot recognises: a sample sheet needs a Sample column "
-            "(and Group, Biological unit, Sample type, Quantity…), or a Target column with a "
-            "Target role (Gene type) column. Download the template from this page to see them.",
-        )
-    _run(sd.attach_sheet, ctx.studio, sid, kept, HUMAN)
-    changed(ctx, sid)
+
+    def read_and_attach() -> None:  # off the event loop: a workbook takes seconds (RT-EX-010)
+        try:
+            read = read_sheet(kept)
+            usable = sheet_table(read) is not None or bool(target_roles(read))
+        except SheetError as err:
+            raise api_error(
+                400, "bad_file", sv.sentence(f"{name} could not be read: {err}")
+            ) from err
+        if not usable:
+            raise api_error(
+                400,
+                "bad_file",
+                f"{name} has no column qPilot recognises: a sample sheet needs a Sample column "
+                "(and Group, Biological unit, Sample type, Quantity…), or a Target column with "
+                "a Target role (Gene type) column. Download the template from this page to see "
+                "them.",
+            )
+        _run(sd.attach_sheet, ctx.studio, sid, kept, HUMAN)
+        changed(ctx, sid)
+
+    await run_in_threadpool(read_and_attach)
     studio = ctx.studio
     remembered = (ctx.settings.get("sentences") or {}).get(sid, "")
 
