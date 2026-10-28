@@ -598,14 +598,19 @@ def propose_from_names(
 
     # ---- groups and biological units -----------------------------------------------------
     explicit_units: set[str] = set()
+    grouped: list[tuple[InspectSample, DesignField | None, DesignField | None]] = []
     for sample in summary.samples:
         if sample.sample in controls or sample.sample in in_series:
             continue
         group = _column_field(sample, sheet, "group", "design.group", "group")
+        grouped.append((sample, group, _unit_field(sample, sheet)))
+    pairing = _pairing_units(grouped)
+    for sample, group, unit in grouped:
         if group is not None:
             fields.append(group)
-        unit = _unit_field(sample, sheet)
-        if unit is not None:
+        if unit is not None and unit.value["biological_unit"] in pairing:
+            fields.append(_pair_field(sample, unit, _pairing_word(sheet)))
+        elif unit is not None:
             fields.append(unit)
             explicit_units.add(sample.sample)
     fields.extend(_pattern_units(summary, values, controls | in_series | explicit_units))
@@ -803,19 +808,83 @@ def _unit_field(sample: InspectSample, sheet: _SheetLookup) -> DesignField | Non
     )
 
 
+#: What a sheet's unit column is called, for "paired by ..." (never the sheet's own text).
+_PAIRING_WORDS = (
+    ("donor", "donor"),
+    ("patient", "patient"),
+    ("animal", "animal"),
+    ("mouse", "animal"),
+    ("rat", "animal"),
+    ("subject", "subject"),
+    ("individual", "subject"),
+    ("plant", "plant"),
+    ("culture", "culture"),
+    ("organism", "organism"),
+)
+
+
+def _pairing_units(
+    grouped: Iterable[tuple[InspectSample, DesignField | None, DesignField | None]],
+) -> set[str]:
+    """Unit names (from the sheet's explicit unit column) that samples in two groups share.
+
+    One donor (animal, patient...) with a sample in each group is not one biological unit: it
+    pairs the groups' units, so these become ``design.pair`` proposals (a paired design).
+    """
+    groups: dict[str, set[str]] = defaultdict(set)
+    for _, group, unit in grouped:
+        if group is None or unit is None or unit.level != "High":
+            continue
+        groups[unit.value["biological_unit"]].add(str(group.value["group"]))
+    return {name for name, found in groups.items() if len(found) > 1}
+
+
+def _pairing_word(sheet: _SheetLookup) -> str:
+    """The pairing's name from the unit column's header, as one of qPilot's own words."""
+    table = sheet.table
+    header = ""
+    if table is not None and "bio_unit" in table.columns:
+        header = squash(table.headers.get(table.columns["bio_unit"], ""))
+    return next((word for key, word in _PAIRING_WORDS if header.startswith(key)), "pair")
+
+
+def _pair_field(sample: InspectSample, unit: DesignField, word: str) -> DesignField:
+    """The ``design.pair`` proposal that replaces a unit shared by samples of two groups."""
+    return DesignField(
+        kind="design.pair",
+        subject=sample.sample,
+        value={"pair": unit.value["biological_unit"], "by": word},
+        cites=unit.cites,
+        alternatives=[{"pair": None}],
+        level="Moderate",
+        reasons=[
+            f"the sheet's {word} column gives one {word} samples in different groups, so it "
+            "pairs them (one per group) rather than making them one biological unit",
+            "accepting it makes the comparisons paired tests within each " + word,
+        ],
+    )
+
+
 def sheet_units(summary: InspectSummary, quarantine: Iterable[QuarantineEntry]) -> dict[str, str]:
     """Sample -> biological unit, from the sheet's explicit unit column only.
 
     These are units a person wrote down; the hard ban in :mod:`qpilot.qpcr.design_checks`
-    treats them like confirmed units. Samples with more than one value are left out.
+    treats them like confirmed units. Samples with more than one value are left out, and so are
+    samples whose unit name the sheet gives to samples of two groups (a donor that pairs the
+    groups is not one biological unit; see :func:`_pairing_units`).
     """
     values = {entry.text_id: entry.value for entry in quarantine}
     sheet = _sheet_lookup(summary, values)
+    found = [
+        (s, _column_field(s, sheet, "group", "design.group", "group"), _unit_field(s, sheet))
+        for s in summary.samples
+    ]
+    pairing = _pairing_units(found)
     out = {}
-    for sample in summary.samples:
-        unit = _unit_field(sample, sheet)
-        if unit is not None and not unit.alternatives:
-            out[sample.sample] = unit.value["biological_unit"]
+    for sample, _, unit in found:
+        if unit is None or unit.alternatives or unit.value["biological_unit"] in pairing:
+            continue
+        out[sample.sample] = unit.value["biological_unit"]
     return out
 
 
