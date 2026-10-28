@@ -455,21 +455,82 @@ def replicates(m: MiqeCtx) -> Outcome:
     )
 
 
+LOD_RATE = 0.95  # qpilot.qpcr.absolute.LOD_RATE
+
+
+def _curves(m: MiqeCtx) -> list[Any]:
+    """The study's fitted per-plate standard curves (:mod:`qpilot.qpcr.absolute`), if any."""
+    from qpilot.report.methods import study_quantities
+
+    result = study_quantities(m.ctx)
+    if result is None:
+        return []
+    return [c for c in result.curves if c.fit is not None and c.scope == "plate"]
+
+
 def lod(m: MiqeCtx) -> Outcome:
-    """5.13: not determined by this analysis (scientist #0052)."""
+    """5.13: the standards' LOD per assay (Forootan et al. 2017), when the study has curves.
+
+    Met when at least one assay's dilution series reaches a level detected in fewer than 95 %
+    of its wells (the LOD is then located); a series every level of which was detected bounds
+    the LOD (at or below the lowest standard) without calculating it: not met, and said so.
+    """
+    curves = _curves(m)
+    if not curves:
+        return Fill(
+            "No",
+            [
+                "Not determined by this analysis: it needs replicate detection rates at low input "
+                "or a standard series evaluated for that purpose; change this answer if it was "
+                "determined elsewhere."
+            ],
+            ["results.json:/confidence"],
+        )
+    located = [c for c in curves if c.lod.quantity is not None and not c.lod.at_most]
+    path = "quantities:/curves"
+    n = m.n("lod_n_curves", len(curves), f"{path}@fitted")
+    if located:
+        k = m.n("lod_n_located", len(located), f"{path}@lod_located")
+        rate = m.ctx.num("lod_rate", LOD_RATE, "quantities:/settings/lod_rate", "{:.0%}")
+        return Fill(
+            "Yes",
+            [
+                f"For {k} of {n} standard curves the limit of detection was calculated as the "
+                f"lowest standard detected in at least {rate} of its wells (Forootan et al.; a "
+                "logistic fit is added where levels are partly detected); see the Standard "
+                "curves table."
+            ],
+            ["methods/absolute_quantification.md"],
+        )
     return Fill(
         "No",
         [
-            "Not determined by this analysis: it needs replicate detection rates at low input or a "
-            "standard series evaluated for that purpose; change this answer if it was determined "
-            "elsewhere."
+            f"Every level of all {n} standard curves was detected in every well, so the limit "
+            "of detection is only known to be at or below the lowest standard; a series "
+            "reaching non-detection is needed to calculate it."
         ],
-        ["results.json:/confidence"],
+        ["methods/absolute_quantification.md"],
     )
 
 
 def dynamic_range(m: MiqeCtx) -> Outcome:
-    """5.14: the linear range of a standard curve (never called an LOQ)."""
+    """5.14: the linear range of the standard curves qPilot fitted (never called an LOQ)."""
+    curves = _curves(m)
+    if curves:
+        path = "quantities:/curves"
+        n = m.n("range_n_curves", len(curves), f"{path}@fitted")
+        low = m.ctx.num("range_lowest", min(c.lowest for c in curves), f"{path}/lowest@min", "{:g}")
+        top = m.ctx.num("range_top", max(c.top for c in curves), f"{path}/top@max", "{:g}")
+        return Fill(
+            "Yes",
+            [
+                f"{n} standard curves, the standards spanning {low} to {top} per reaction; each "
+                "unknown outside its curve's standards is flagged as extrapolated (the Quantities "
+                "table), and each curve's slope, R² and efficiency are in the Standard curves "
+                "table."
+            ],
+            ["methods/absolute_quantification.md"],
+        )
     with_quantity = [s for s in m.samples.values() if s.get("role") == "std" and s.get("quantity")]
     if with_quantity:
         n = m.n(
@@ -479,9 +540,9 @@ def dynamic_range(m: MiqeCtx) -> Outcome:
         )
         return Hint(
             [
-                f"The design declares {n} standard samples with quantities, but qPilot does not "
-                "fit "
-                "a standard curve; give the linear range if one was evaluated."
+                f"The design declares {n} standard samples with quantities, but no assay has a "
+                "standard curve with at least three detected levels; give the linear range if "
+                "one was evaluated."
             ]
         )
     return Fill(

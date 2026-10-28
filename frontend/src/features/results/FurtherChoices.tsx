@@ -1,10 +1,12 @@
 /**
  * Further choices the grid tests on request (docs/app.md §4 Results): "Also test efficiency
- * models". qPilot turns each Cq into a quantity with LinRegPCR's mean efficiency of each assay;
- * the other efficiency models are tested only when a person asks. The rule proposes testing them
- * (or stopping), the engine checks the proposal, and a person accepts it in the choices stage;
- * then the study is analysed again with the choice as one more dimension of the grid, and its
- * Decision Card says what each model changes. Every number here is a fact from the result.
+ * models", "Also test other normalisers" (NormFinder's and geNorm's best pairs, the global mean)
+ * and "Also test corrections between plates". qPilot uses LinRegPCR's mean efficiency, the
+ * reference genes chosen and no plate correction; the others are tested only when a person
+ * asks. The rule proposes testing them (or stopping), the engine checks the proposal, and a
+ * person accepts it in the choices stage; then the study is analysed again with the choice as
+ * one more dimension of the grid, and its Decision Card says what each option changes. Every
+ * number here is a fact from the result.
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowUpRight, FlaskConical } from "lucide-react";
@@ -12,7 +14,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { api, unwrap, type Schemas } from "@/api/client";
 import { cn } from "@/lib/cn";
-import { EFFICIENCY_MODEL_WORDS, effectivePayload, type Proposal } from "@/lib/vocab";
+import { AXIS_OPTION_WORDS, effectivePayload, type Proposal } from "@/lib/vocab";
 import { sectionPath } from "@/shell/sections";
 import { Badge, Button, Card, CommandLine, ErrorPanel, Switch, toast, type Tone } from "@/ui";
 import {
@@ -39,14 +41,51 @@ export const AXIS_STATUS: Record<AxisView["status"], { word: string; tone: Tone 
   single_option: { word: "Not in qPilot's grid", tone: "neutral" },
 };
 
+/** How each further choice is named on the page (the efficiency models came first). */
+export interface AxisWords {
+  heading: string;
+  /** The options as a group, inside a sentence ("the efficiency models"). */
+  noun: string;
+  /** The analysis in use, inside a sentence. */
+  inUse: string;
+  list: string;
+  legend: string;
+}
+const EFFICIENCY_UI: AxisWords = {
+  heading: "Also test efficiency models",
+  noun: "the efficiency models",
+  inUse: "LinRegPCR's mean efficiency",
+  list: "Efficiency models",
+  legend: "Efficiency models to test",
+};
+export const AXIS_UI: Record<string, AxisWords> = {
+  efficiency: EFFICIENCY_UI,
+  normaliser: {
+    heading: "Also test other normalisers",
+    noun: "the other normalisers",
+    inUse: "the reference genes chosen",
+    list: "Normalisers",
+    legend: "Normalisers to test",
+  },
+  interrun: {
+    heading: "Also test corrections between plates",
+    noun: "the corrections between plates",
+    inUse: "no correction between plates",
+    list: "Corrections between plates",
+    legend: "Corrections to test",
+  },
+};
+export const axisWords = (name: string): AxisWords => AXIS_UI[name] ?? EFFICIENCY_UI;
+
 /** What accepting a proposal does, said on the card before anyone decides. */
-export function consequenceWords(on: boolean): string {
+export function consequenceWords(on: boolean, axis = "efficiency"): string {
+  const w = axisWords(axis);
   return on
-    ? "Accepting analyses the study again with the efficiency models as one more choice of the " +
-        "grid. The analysis in use stays LinRegPCR's mean efficiency until you decide its card. " +
+    ? `Accepting analyses the study again with ${w.noun} as one more choice of the ` +
+        `grid. The analysis in use stays ${w.inUse} until you decide its card. ` +
         "What you decided on the other cards is carried over, unless that choice matters more in " +
         "the new analysis: then its card asks you again. Confirm the choices again afterwards."
-    : "Accepting goes back to the analysis without the efficiency models; what you decided on " +
+    : `Accepting goes back to the analysis without ${w.noun}; what you decided on ` +
         "the cards is carried back the same way.";
 }
 
@@ -79,6 +118,7 @@ export function OptionsEditor({
 }) {
   const chosen = new Set(Array.isArray(value.options) ? value.options.map(String) : []);
   const primary = axis.options.find((o) => o.primary)?.id ?? "linregpcr";
+  const words = AXIS_OPTION_WORDS[axis.name] ?? {};
   const offered = axis.options.filter(
     (o) => !o.primary && !o.unavailable && (!allowed || allowed.includes(o.id)),
   );
@@ -92,9 +132,11 @@ export function OptionsEditor({
   };
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="mb-1 text-[13px] font-medium text-fg">Efficiency models to test</legend>
+      <legend className="mb-1 text-[13px] font-medium text-fg">
+        {axisWords(axis.name).legend}
+      </legend>
       <p className="text-[13px] text-muted">
-        {EFFICIENCY_MODEL_WORDS[primary] ?? primary} stays in: it is the analysis in use.
+        {upperFirst(words[primary] ?? primary)} stays in: it is the analysis in use.
       </p>
       {offered.map((o) => (
         <Switch
@@ -107,6 +149,16 @@ export function OptionsEditor({
       ))}
     </fieldset>
   );
+}
+
+function upperFirst(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** A reason as the start of a sentence; a name such as "geNorm's" keeps its case. */
+export function sentenceStart(text: string): string {
+  const first = text.split(" ", 1)[0] ?? "";
+  return first.slice(1) === first.slice(1).toLowerCase() ? upperFirst(text) : text;
 }
 
 function OptionRow({ option }: { option: AxisView["options"][number] }) {
@@ -126,9 +178,7 @@ function OptionRow({ option }: { option: AxisView["options"][number] }) {
         </span>
       </div>
       {option.unavailable ? (
-        <p className="text-xs text-muted">
-          {option.unavailable.charAt(0).toUpperCase() + option.unavailable.slice(1)}.
-        </p>
+        <p className="text-xs text-muted">{sentenceStart(option.unavailable)}.</p>
       ) : null}
       {option.flips && option.tested ? (
         <p className="text-xs text-muted">
@@ -153,7 +203,7 @@ function ProposeButton({ axis, sid, on }: { axis: AxisView; sid: string; on: boo
       unwrap(
         api.POST("/api/sessions/{sid}/propose/axis", {
           params: { path: { sid } },
-          body: { axis: axis.name as "efficiency", on },
+          body: { axis: axis.name as "efficiency" | "normaliser" | "interrun", on },
         }),
       ),
     onSuccess: (done) => toast.success(done.message),
@@ -167,7 +217,7 @@ function ProposeButton({ axis, sid, on }: { axis: AxisView; sid: string; on: boo
         loading={propose.isPending}
         onClick={() => propose.mutate()}
       >
-        {on ? "Propose testing the efficiency models" : "Propose to stop testing them"}
+        {on ? `Propose testing ${axisWords(axis.name).noun}` : "Propose to stop testing them"}
       </Button>
       <p className="text-xs text-muted">
         qPilot proposes and checks; nothing changes until you accept the proposal.
@@ -212,7 +262,7 @@ function AxisProposals({
                 allowed={namedOptions(p)}
               />
             )}
-            renderConsequence={(q) => ({ summary: consequenceWords(asksToTest(q)) })}
+            renderConsequence={(q) => ({ summary: consequenceWords(asksToTest(q), axis.name) })}
           />
         </li>
       ))}
@@ -233,6 +283,7 @@ export function AxisPanel({ axis, workspace }: { axis: AxisView; workspace: Work
   const [showDecided, setShowDecided] = useState(false);
   const status = AXIS_STATUS[axis.status];
   const testing = axis.status !== "off";
+  const words = axisWords(axis.name);
   return (
     <Card as="section" aria-labelledby={titleId} className="space-y-3 p-4 text-[13px]">
       <div className="flex items-start gap-3">
@@ -240,7 +291,7 @@ export function AxisPanel({ axis, workspace }: { axis: AxisView; workspace: Work
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 id={titleId} className="text-sm font-semibold text-fg">
-              Also test efficiency models
+              {words.heading}
             </h2>
             <Badge tone={status.tone}>{status.word}</Badge>
           </div>
@@ -250,7 +301,7 @@ export function AxisPanel({ axis, workspace }: { axis: AxisView; workspace: Work
       <p className="text-fg">
         <FactText text={axis.text} />
       </p>
-      <ul aria-label="Efficiency models" className="rounded-lg border border-line px-3 py-2">
+      <ul aria-label={words.list} className="rounded-lg border border-line px-3 py-2">
         {axis.options.map((o) => (
           <OptionRow key={o.id} option={o} />
         ))}
@@ -280,7 +331,7 @@ export function AxisPanel({ axis, workspace }: { axis: AxisView; workspace: Work
       ) : axis.command ? (
         <div className="space-y-1.5">
           <p className="text-muted">
-            This study was analysed outside Studio. To test the efficiency models, run:
+            This study was analysed outside Studio. To test {words.noun}, run:
           </p>
           <CommandLine command={axis.command} />
         </div>
@@ -300,7 +351,7 @@ export function AxisPanel({ axis, workspace }: { axis: AxisView; workspace: Work
               {decided.map((p) => (
                 <li key={p.id} className="rounded-lg border border-line px-3 py-2">
                   <p className="text-fg">
-                    {asksToTest(p) ? "Test the efficiency models" : "Stop testing them"}
+                    {asksToTest(p) ? `Test ${words.noun}` : "Stop testing them"}
                   </p>
                   <p className="text-xs text-muted">{decidedLine(p)}</p>
                   {p.reason ? <p className="text-xs text-muted">Reason: {p.reason}</p> : null}
@@ -314,7 +365,7 @@ export function AxisPanel({ axis, workspace }: { axis: AxisView; workspace: Work
   );
 }
 
-/** Every further choice the API offers for this study (today: the efficiency models). */
+/** Every further choice the API offers for this study (efficiency, normaliser, plates). */
 export function FurtherChoices({ view, workspace }: { view: ResultsView; workspace: Workspace }) {
   const axes = view.axes ?? [];
   if (!axes.length) return null;

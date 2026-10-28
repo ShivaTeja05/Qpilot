@@ -18,3 +18,9 @@ person turned the first down and approved the second on the Agents page; an agen
 
 This machine's home folder is shortened to `~` in the recorded paths (the connect command names
 the store); nothing else is changed.
+
+On 28 Oct 2026 (ex/agents) the `tools` and `rules` were replaced by the real `GET /api/agents` of
+the same code on an empty store: the 27 `qpcr_*` tools (the new `qpcr_comparisons`, `qpcr_units`,
+`qpcr_melt`, `qpcr_repeat_plan`, `qpcr_export` and `qpcr_request_set_aside` among them) and the
+five `sim_*` tools, with what each can change. The connect command, the waiting requests and the
+activity are as first recorded.

@@ -64,9 +64,13 @@ export function DecidePanel({
   onCancel: () => void;
 }) {
   const uid = useId();
-  const [option, setOption] = useState("keep");
+  // an agent's request waiting here: its option is offered first (approve), "keep" turns it down
+  const asked = place.requests ?? [];
+  const requested = asked.find((r) => place.options.some((o) => o.id === r.option && o.applies));
+  const [option, setOption] = useState(requested?.option ?? "keep");
   const [reason, setReason] = useState("");
   const chosen = place.options.find((o) => o.id === option);
+  const approving = asked.some((r) => r.option === option);
   const canSubmit = Boolean(chosen?.applies) && reason.trim().length > 0 && !busy;
   const submit = () => {
     if (canSubmit) onDecide(option, reason.trim());
@@ -141,8 +145,18 @@ export function DecidePanel({
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" disabled={!canSubmit} loading={busy} onClick={submit}>
-          Decide: {chosen?.label ?? option}
+          {approving ? "Approve" : "Decide"}: {chosen?.label ?? option}
         </Button>
+        {asked.length > 0 ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={reason.trim().length === 0 || busy}
+            onClick={() => reason.trim() && onDecide("keep", reason.trim())}
+          >
+            Turn down the request
+          </Button>
+        ) : null}
         <Button size="sm" variant="ghost" onClick={onCancel} disabled={busy}>
           Cancel
         </Button>

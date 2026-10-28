@@ -12,6 +12,11 @@ tables of engine values (never text renderings of them):
 * **Per well**: one row per well: plate, well, sample, unit, group, role, target, Cq, N0 (the
   curve fit's and the one in use), the well's and the assay's efficiency, whether it counts as
   amplified under the call rule in use, and whether a person left it out (and why);
+* **Standard curves** and **Quantities** (absolute quantification, only for a study with
+  standards of known quantity, :mod:`qpilot.qpcr.absolute`): one row per assay's curve (slope,
+  intercept, R², efficiency with its 95 % CI, LOD, LOQ) and one per biological unit and assay
+  (the quantity with its 95 % prediction interval, per µL and per ng when the reaction input is
+  recorded, and its flags in words);
 * **Decisions** (who, what, why, when), **Settings** (every analysis choice in use, the test,
   the rule), **Methods** and the **MIQE 2.0** checklist from the report, and **About**.
 
@@ -361,6 +366,7 @@ class StudyTables:
     n_open: int
     versions: dict[str, str]
     notes: tuple[str, ...] = ()
+    quantities: tuple[Table, ...] = ()  # standard curves, quantities (a study with standards)
     load_report: Callable[[], tuple[Any, str]] = field(
         default=lambda: (None, ""), compare=False, repr=False
     )
@@ -617,7 +623,131 @@ def build_tables(
         n_open=sum(1 for c in cards if c.status in ("open", "pending_human")),
         versions=_versions(),
         notes=tuple(notes),
+        quantities=quantity_tables(store, study_id),
         load_report=lambda: _report_view(store, study_id, session, report),
+    )
+
+
+CURVE_COLUMNS = (
+    Column("assay", "Assay"),
+    Column("curve", "Curve"),
+    Column("scope", "Scope"),
+    Column("plates", "Plates"),
+    Column("slope", "Slope (Cq per log10)", "float"),
+    Column("intercept", "Intercept (Cq)", "cq"),
+    Column("r2", "R²", "float"),
+    Column("efficiency", "Efficiency", "share"),
+    Column("efficiency_low", "Efficiency 95 % CI low", "share"),
+    Column("efficiency_high", "Efficiency 95 % CI high", "share"),
+    Column("wells", "Standard wells on the fit", "int"),
+    Column("levels", "Levels", "int"),
+    Column("top", "Top standard", "n0"),
+    Column("lowest", "Lowest standard", "n0"),
+    Column("lod", "LOD (empirical)", "n0"),
+    Column("lod_how", "LOD, how"),
+    Column("lod_model", "LOD (logistic, 95 %)", "n0"),
+    Column("loq", "LOQ", "n0"),
+    Column("quantity_source", "Standards' quantities from"),
+    Column("problem", "No curve because"),
+    Column("warnings", "MIQE would question"),
+)
+QUANTITY_COLUMNS = (
+    Column("assay", "Assay"),
+    Column("biological_unit", "Biological unit"),
+    Column("group", "Group"),
+    Column("samples", "Samples"),
+    Column("wells", "Wells", "int"),
+    Column("detected", "Wells detected", "int"),
+    Column("mean_cq", "Mean Cq (detected)", "cq"),
+    Column("quantity", "Quantity per reaction", "n0"),
+    Column("low", "95 % prediction interval low", "n0"),
+    Column("high", "95 % prediction interval high", "n0"),
+    Column("per_ul", "Per µL of template", "n0"),
+    Column("per_ng", "Per ng of input", "n0"),
+    Column("unit", "Unit"),
+    Column("curve", "Read from curve"),
+    Column("flags", "Flags"),
+)
+
+
+def quantity_tables(store: StudyStore, study_id: str) -> tuple[Table, ...]:
+    """The Standard curves and Quantities tables; none for a study without standards."""
+    from qpilot.qpcr import absolute as ab
+    from qpilot.qpcr.absolute_study import QuantitiesUnavailable, for_study
+
+    path = store.source(study_id)
+    if path is None:
+        return ()
+    try:
+        found = for_study(study_id, store.get(study_id).input_sha256, path, store.design(study_id))
+    except (QuantitiesUnavailable, OSError, ValueError):
+        return ()
+    result = found.result
+    if not result.curves:
+        return ()
+    curve_rows = []
+    for c in result.curves:
+        fit = c.fit
+        low, high = fit.efficiency_ci if fit is not None else (None, None)
+        curve_rows.append(
+            (
+                c.target,
+                c.id,
+                c.scope,
+                ", ".join(c.runs),
+                _num(fit.slope) if fit else None,
+                _num(fit.intercept) if fit else None,
+                _num(fit.r2) if fit else None,
+                _num(fit.efficiency) if fit else None,
+                _num(low),
+                _num(high),
+                fit.n if fit else None,
+                len({p.quantity for p in c.points if p.detected}),
+                _num(c.top),
+                _num(c.lowest),
+                _num(c.lod.quantity),
+                c.lod.words,
+                _num(c.lod_model.quantity) if c.lod_model else None,
+                _num(c.loq.quantity),
+                c.quantity_source,
+                c.problem or None,
+                "; ".join(c.warnings) or None,
+            )
+        )
+    groups = found.groups or {}
+    unit_rows = [
+        (
+            u.target,
+            u.unit,
+            groups.get(u.unit),
+            ", ".join(u.samples),
+            u.n_wells,
+            u.n_detected,
+            _num(u.mean_cq),
+            _num(u.quantity),
+            _num(u.low),
+            _num(u.high),
+            _num(u.per_ul),
+            _num(u.per_ng),
+            result.unit or None,
+            ", ".join(u.curves) or None,
+            "; ".join(ab.flag_words(u.flags)) or None,
+        )
+        for u in result.unknowns
+    ]
+    settings = result.settings
+    note = (
+        f"LOD: the lowest standard detected in at least {settings.lod_rate:.0%} of its wells; "
+        f"LOQ: the lowest at or above it whose read-back quantities have a log-normal CV of at "
+        f"most {settings.loq_cv:.0%} (Forootan et al. 2017); methods/absolute_quantification.md."
+    )
+    unit_note = (
+        "Quantity per reaction in the standards' unit, read back from the mean Cq of each unit's "
+        "detected wells (95 % prediction interval of the calibration line)."
+    )
+    return (
+        Table("standard_curves", "Standard curves", CURVE_COLUMNS, tuple(curve_rows), note),
+        Table("quantities", "Quantities", QUANTITY_COLUMNS, tuple(unit_rows), unit_note),
     )
 
 
@@ -1232,6 +1362,7 @@ _PROPOSAL_WORDS = {
     "prism.exclusion_reason": "Leave a value out (from Prism)",
     "prism.value_edit": "A value changed in Prism",
     "choice.axis": "Test more analysis choices",
+    "choice.reaction_input": "What one reaction held (quantities per µL and per ng)",
 }
 
 
@@ -1254,6 +1385,13 @@ def _payload_words(p: Any) -> str | None:
         return "left out" if payload.get("action") == "exclude" else "put back"
     if p.kind == "choice.axis":
         return ", ".join(str(o) for o in payload.get("options") or ()) or None
+    if p.kind == "choice.reaction_input":
+        parts = [
+            f"{payload[k]:g} {u}"
+            for k, u in (("template_ul", "µL of template"), ("input_ng", "ng of input"))
+            if isinstance(payload.get(k), int | float)
+        ]
+        return "; ".join(parts) or "none"
     if p.kind == "curve.call_rule":
         from qpilot.qpcr.amp_call import RULES
 
@@ -1369,6 +1507,7 @@ def _versions() -> dict[str, str]:
 def all_tables(tables: StudyTables, record_id: str | None = None) -> list[Table]:
     """Every table in the order the exports write them (as decided first, About last)."""
     out = [tables.decided.results, tables.decided.per_unit, tables.decided.per_well]
+    out += list(tables.quantities)
     if tables.recommended is not None:
         out += [tables.recommended.results, tables.recommended.per_unit]
     out += [tables.decisions, tables.settings, tables.methods, tables.miqe]

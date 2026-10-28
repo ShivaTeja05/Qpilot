@@ -9,6 +9,7 @@ study leaves something open (a choice not yet decided) the paragraph says so.
 from __future__ import annotations
 
 from collections import Counter
+from typing import Any
 
 from qpilot.explain.words import noun
 from qpilot.io.datasets import VERMEULEN_SHA256
@@ -49,6 +50,27 @@ REFERENCES: dict[str, str] = {
         "quantitative RT-PCR data by geometric averaging of multiple internal control genes. "
         "Genome Biol. 2002;3(7):research0034. doi:10.1186/gb-2002-3-7-research0034"
     ),
+    "andersen2004": (
+        "Andersen CL, Jensen JL, Ørntoft TF. Normalization of real-time quantitative reverse "
+        "transcription-PCR data: a model-based variance estimation approach to identify genes "
+        "suited for normalization, applied to bladder and colon cancer data sets. Cancer Res. "
+        "2004;64(15):5245–5250. doi:10.1158/0008-5472.CAN-04-0496"
+    ),
+    "mestdagh2009": (
+        "Mestdagh P, Van Vlierberghe P, De Weer A, et al. A novel and universal method for "
+        "microRNA RT-qPCR data normalization. Genome Biol. 2009;10(6):R64. "
+        "doi:10.1186/gb-2009-10-6-r64"
+    ),
+    "hellemans2007": (
+        "Hellemans J, Mortier G, De Paepe A, Speleman F, Vandesompele J. qBase relative "
+        "quantification framework and software for management and automated analysis of "
+        "real-time quantitative PCR data. Genome Biol. 2007;8(2):R19. doi:10.1186/gb-2007-8-2-r19"
+    ),
+    "ruijter2015": (
+        "Ruijter JM, Ruiz Villalba A, Hellemans J, Untergasser A, van den Hoff MJB. Removal of "
+        "between-run variation in a multi-plate qPCR experiment. Biomol Detect Quantif. "
+        "2015;5:10–14. doi:10.1016/j.bdq.2015.07.001"
+    ),
     "welch1947": (
         "Welch BL. The generalization of 'Student's' problem when several different population "
         "variances are involved. Biometrika. 1947;34(1–2):28–35."
@@ -69,6 +91,15 @@ REFERENCES: dict[str, str] = {
     "bh1995": (
         "Benjamini Y, Hochberg Y. Controlling the false discovery rate: a practical and powerful "
         "approach to multiple testing. J R Stat Soc B. 1995;57(1):289–300."
+    ),
+    "forootan2017": (
+        "Forootan A, Sjöback R, Björkman J, Sjögreen B, Linz L, Kubista M. Methods to determine "
+        "limit of detection and limit of quantification in quantitative real-time PCR (qPCR). "
+        "Biomol Detect Quantif. 2017;12:1–6. doi:10.1016/j.bdq.2017.04.001"
+    ),
+    "miller2010": (
+        "Miller JN, Miller JC. Statistics and Chemometrics for Analytical Chemistry. 6th ed. "
+        "Harlow: Pearson; 2010 (section 5.6, inverse prediction from a calibration line)."
     ),
     "miqe2": (
         "Bustin SA, Ruijter JM, van den Hoff MJB, et al. MIQE 2.0: revision of the Minimum "
@@ -268,6 +299,70 @@ def normalisation(c: Ctx, cite: Cites) -> list[Part]:
                 f"{tok('f_ref_ratio_top_p')})"
             )
         parts.append(".")
+    parts += _normalisers(c, cite)
+    parts += _between_plates(c, cite)
+    return parts
+
+
+def _normalisers(c: Ctx, cite: Cites) -> list[Part]:
+    """NormFinder, geNorm's pair and the global mean, when a person asked to test them."""
+    if not c.has("f_axis_normaliser"):
+        return []
+    parts: list[Part] = []
+    if c.has("f_nf_best_pair", "f_nf_pair_stability"):
+        parts += [
+            " NormFinder ",
+            cite("andersen2004"),
+            f" ranked the same candidates with the groups; its best pair is "
+            f"{tok('f_nf_best_pair')} (stability value {tok('f_nf_pair_stability')})",
+        ]
+        if c.has("f_nf_agreement"):
+            parts.append(f". {tok('f_nf_agreement')}")
+        else:
+            parts.append(".")
+    if c.has("f_gm_n_genes"):
+        parts += [
+            " The global mean ",
+            cite("mestdagh2009"),
+            f" (each of {tok('f_gm_n_genes')} genes weighted equally) was ",
+        ]
+        if c.has("f_axis_normaliser_unavailable_global_mean"):
+            parts.append(
+                f"not tested: qPilot offers it from {tok('f_gm_min_genes')} genes, its own "
+                "default (the paper asks for a large number of genes and gives no minimum)."
+            )
+        else:
+            parts.append("tested as another normaliser.")
+    if c.has("f_n_flipped_normaliser", "f_n_genes"):
+        parts.append(
+            f" Changing only the normaliser changes {tok('f_n_flipped_normaliser')} of "
+            f"{tok('f_n_genes')} calls; the reference genes in use were not changed by it."
+        )
+    elif c.has("f_screen_normaliser"):
+        parts.append(" No other normaliser, tried alone, changes a call.")
+    return parts
+
+
+def _between_plates(c: Ctx, cite: Cites) -> list[Part]:
+    """Inter-run calibration and factor correction, when a person asked to test them."""
+    if not c.has("f_axis_interrun", "f_irc_n_split", "f_irc_n_runs"):
+        return []
+    parts: list[Part] = [
+        f" Of the {tok('f_irc_n_runs')} plates, {tok('f_irc_n_split')} genes have their samples "
+        "on more than one; inter-run calibration ",
+        cite("hellemans2007"),
+        " and factor correction ",
+        cite("ruijter2015"),
+        " were tested as corrections between plates",
+    ]
+    if c.has("f_n_flipped_interrun", "f_n_genes"):
+        parts.append(
+            f": correcting changes {tok('f_n_flipped_interrun')} of {tok('f_n_genes')} calls."
+        )
+    elif c.facts.value("f_axis_interrun") == "not_applicable":
+        parts.append(", but neither can change a result in this study.")
+    else:
+        parts.append(": neither, tried alone, changes a call.")
     return parts
 
 
@@ -434,6 +529,8 @@ def robustness(c: Ctx, cite: Cites) -> list[Part]:
         "undetermined": ("rule for wells without a quantity", "rules for wells without a quantity"),
         "amp_call": ("amplification-call rule", "amplification-call rules"),
         "efficiency": ("efficiency model", "efficiency models"),
+        "normaliser": ("normaliser", "normalisers"),
+        "interrun": ("correction between plates", "corrections between plates"),
     }
     dims = []
     for dim, options in opts.items():
@@ -460,6 +557,8 @@ def robustness(c: Ctx, cite: Cites) -> list[Part]:
             ("f_n_flipped_amp_call", "the amplification-call rule"),
             ("f_n_flipped_undetermined", "the rule for wells without a quantity"),
             ("f_n_flipped_efficiency", "the efficiency model"),
+            ("f_n_flipped_normaliser", "the normaliser"),
+            ("f_n_flipped_interrun", "the correction between plates"),
         )
         if c.has(fid)
     ]
@@ -632,6 +731,7 @@ def software(c: Ctx, cite: Cites) -> list[Part]:
     text += (
         "; LinRegPCR from rdmlpython (MIT licence), geNorm reimplemented from its paper and "
         "Welch's test from SciPy's t distribution"
+        + (", NormFinder reimplemented from its paper" if c.has("f_nf_best_pair") else "")
     )
     if c.inputs.audit is not None:
         text += ", and the audit with qPilot's Decision Simulator"
@@ -643,9 +743,79 @@ def software(c: Ctx, cite: Cites) -> list[Part]:
     return parts
 
 
+def study_quantities(c: Ctx) -> Any:
+    """The study's absolute quantification (:mod:`qpilot.qpcr.absolute_study`), or None."""
+    from qpilot.qpcr.absolute_study import QuantitiesUnavailable, for_study
+
+    source = c.inputs.source
+    if source is None:
+        return None
+    try:
+        found = for_study(c.inputs.study_id, c.result.input_sha256, source, c.inputs.design)
+    except (QuantitiesUnavailable, OSError, ValueError):
+        return None
+    return found.result if found.result.curves else None
+
+
+def quantities(c: Ctx, cite: Cites) -> list[Part]:
+    """Absolute quantification: the standard curves, LOD/LOQ and the unknowns' intervals."""
+    result = study_quantities(c)
+    if result is None:
+        return []
+    fitted = [x for x in result.curves if x.fit is not None and x.scope == "plate"]
+    if not fitted:
+        return []
+    path = "quantities:/curves"
+    n = c.count("abs_n_curves", len(fitted), f"{path}@fitted")
+    n_assays = c.count("abs_n_assays", len({x.target for x in fitted}), f"{path}@assays")
+    effs = [x.fit.efficiency for x in fitted]
+    r2s = [x.fit.r2 for x in fitted]
+    lo = c.num("abs_eff_min", min(effs), f"{path}/efficiency@min", "{:.1%}")
+    hi = c.num("abs_eff_max", max(effs), f"{path}/efficiency@max", "{:.1%}")
+    r2 = c.num("abs_r2_min", min(r2s), f"{path}/r2@min", "{:.3f}")
+    sources = {x.quantity_source for x in fitted}
+    where = {
+        "design": "as a person set them on the Design page",
+        "file": "as the input file declares them",
+        "name": "from the standards' names",
+    }
+    told = "; ".join(where.get(s, s.replace("+", " and ")) for s in sorted(sources))
+    rate = c.num(
+        "abs_lod_rate", result.settings.lod_rate, "quantities:/settings/lod_rate", "{:.0%}"
+    )
+    cv = c.num("abs_loq_cv", result.settings.loq_cv, "quantities:/settings/loq_cv", "{:.0%}")
+    parts: list[Part] = [
+        f"Absolute quantities were read from {n} standard curves ({n_assays} assays, one per "
+        f"assay and plate; the standards' quantities {told}): Cq regressed on log10 quantity "
+        "over the detected standard wells by ordinary least squares, efficiency "
+        f"10^(−1/slope) − 1 from {lo} to {hi}, R² at least {r2}. Each unit's quantity is the "
+        "inverse prediction from the mean Cq of its detected wells, with a 95 % prediction "
+        "interval ",
+        cite("miller2010"),
+        f". The limit of detection is the lowest standard detected in at least {rate} of its "
+        "wells, and the limit of quantification the lowest whose read-back quantities have a "
+        f"log-normal coefficient of variation of at most {cv} ",
+        cite("forootan2017"),
+    ]
+    units = result.unknowns
+    if units:
+        out = sum(1 for u in units if {"above_top", "below_lowest"} & set(u.flags))
+        low = sum(1 for u in units if {"below_loq", "below_lod"} & set(u.flags))
+        n_units = c.count("abs_n_units", len(units), "quantities:/unknowns@len", "{:,}")
+        n_out = c.count("abs_n_extrapolated", out, "quantities:/unknowns@extrapolated", "{:,}")
+        n_low = c.count("abs_n_below_limit", low, "quantities:/unknowns@below_limits", "{:,}")
+        parts.append(
+            f"; of {n_units} unit estimates, {n_out} lie outside the standards (extrapolated) and "
+            f"{n_low} below the limit of quantification or detection, and are flagged as such"
+        )
+    parts.append(".")
+    return parts
+
+
 PARAGRAPHS = (
     ("data", "Data", data),
     ("curves", "Curve analysis", curves),
+    ("quantities", "Absolute quantification", quantities),
     ("normalisation", "Reference genes and normalisation", normalisation),
     ("comparison", "Groups and comparison", comparison),
     ("robustness", "Robustness to analysis choices", robustness),

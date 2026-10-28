@@ -174,12 +174,61 @@ def _sim_whatif(out: dict[str, Any]) -> dict[str, Any]:
     return {**{k: out[k] for k in keep if k in out}, "n_genes": len(out.get("genes") or [])}
 
 
+def _comparisons(out: dict[str, Any]) -> dict[str, Any]:
+    keep = ("study_id", "n_comparisons", "test", "correction", "pair_by", "omnibus_groups")
+    fields = ("id", "label", "group_a", "group_b", "primary", "n_a", "n_b", "n_pairs", "n_up")
+    return {
+        **{k: out[k] for k in keep if k in out},
+        "comparisons": [
+            {
+                **{k: c.get(k) for k in (*fields, "n_down")},
+                "n_not_tested": len(c.get("not_tested") or {}),
+            }
+            for c in out["comparisons"]
+        ],
+    }
+
+
+def _units(out: dict[str, Any]) -> dict[str, Any]:
+    drop = ("units", "how")
+    concise = {k: v for k, v in out.items() if k not in drop}
+    concise["units"] = [
+        {k: u.get(k) for k in ("unit", "group", "samples", "log2", "n_wells", "capped")}
+        for u in out["units"]
+    ]
+    return concise
+
+
+def _melt(out: dict[str, Any]) -> dict[str, Any]:
+    drop = ("calls", "wells")
+    concise = {k: v for k, v in out.items() if k not in drop}
+    calls = out.get("calls") or []
+    concise["n_calls"] = len(calls)
+    concise["flagged"] = sorted(c["key"] for c in calls if c.get("flagged"))
+    return concise
+
+
+def _repeat(out: dict[str, Any]) -> dict[str, Any]:
+    drop = ("wells", "csv", "not_repeated")
+    concise = {k: v for k, v in out.items() if k not in drop}
+    fields = ("rank", "sample", "target", "scope", "consequence", "changed_calls", "on_plate")
+    concise["items"] = [
+        {**{k: i.get(k) for k in fields}, "n_reasons": len(i.get("reasons") or [])}
+        for i in out["items"]
+    ]
+    return concise
+
+
 CONCISE: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "qpcr_study": _study,
     "qpcr_robustness": _robustness,
     "qpcr_proposals": _proposals,
     "qpcr_inspect": _inspect,
     "qpcr_curve_calls": _curve_calls,
+    "qpcr_comparisons": _comparisons,
+    "qpcr_units": _units,
+    "qpcr_melt": _melt,
+    "qpcr_repeat_plan": _repeat,
     "sim_audit": _sim_audit,
     "sim_whatif": _sim_whatif,
 }

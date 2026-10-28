@@ -254,6 +254,18 @@ def _d_trust(subject: str, d: Mapping[str, Any]) -> str:
     return f"Import Trust: {label[0].lower()}{label[1:]}"
 
 
+def _d_reaction(subject: str, d: Mapping[str, Any]) -> str:
+    parts = []
+    if d.get("template_ul") not in (None, ""):
+        parts.append(f"{float(d['template_ul']):g} µL of template")
+    if d.get("input_ng") not in (None, ""):
+        parts.append(f"{float(d['input_ng']):g} ng of input")
+    if not parts:
+        return "Give absolute quantities per reaction only (no template volume or input amount)"
+    unit = f" ({d['unit']})" if d.get("unit") else ""
+    return "Each reaction held " + " and ".join(parts) + f": quantities per µL and per ng{unit}"
+
+
 def _d_axis(subject: str, d: Mapping[str, Any]) -> str:
     from qpilot.qpcr.axes import get_axis
 
@@ -327,6 +339,7 @@ _DESCRIBERS: dict[str, Callable[[str, Mapping[str, Any]], str]] = {
     "curve.exclude_well": _d_exclude,
     "curve.import_trust": _d_trust,
     "choice.axis": _d_axis,
+    "choice.reaction_input": _d_reaction,
     "prism.project": _d_project,
     "prism.exclusion_reason": _d_exclusion,
     "prism.value_edit": _d_value_edit,

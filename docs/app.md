@@ -336,7 +336,11 @@ the reason in one write to the session's inbox (`Studio.decide_trace`, Run Gate'
 study is analysed again (Trace waits for it) and the person's Decision Card choices are carried
 to the new analysis. "Keep" puts back what was set aside at the place, or records the keep.
 Reading a well from the sample's other reference wells stays a what-if (shown, not chosen).
-**Set aside from Trace** lists what a person set aside that is out of the analysis now, each
+An agent can only **ask** for a set-aside (`qpcr_request_set_aside` over MCP: the agent's own
+`curve.exclude_well` per well, waiting in the inbox, `Studio.request_trace`): the place then shows
+an "Agent asked" badge and "An agent asked to … because: …"; Decide… offers the asked option first
+(**Approve**) and **Turn down the request** (keep), and any click at the place answers every
+request waiting there (`WherePlace.requests`). **Set aside from Trace** lists what a person set aside that is out of the analysis now, each
 with **Put the wells back** (a reason; only the wells set aside there come back). For a study
 analysed outside Studio, Decide… opens the place as a Decision Card on Results
 (`StudyStore.open_card`: no chain entry; recorded, the numbers stay as analysed) and the panel
@@ -401,8 +405,8 @@ time, hash → prev hash, status applied/pending/rejected/stale; a carried entry
 chain, audit binding). Copyable `qpilot verify` / `qpilot rerun` commands.
 
 ### Agents (`features/agents`)
-How to connect (`claude mcp add qpilot -- qpilot serve`, copy button), the tools (read / ask /
-propose; none can decide a conclusion-changing choice), live list of requests waiting for a
+How to connect (`claude mcp add qpilot -- qpilot serve`, copy button), the tools (read / open /
+propose / request / write a file; none can decide a conclusion-changing choice), live list of requests waiting for a
 person (same Approve / Turn down as Results) and recent agent entries from the chain and the
 proposal inbox.
 

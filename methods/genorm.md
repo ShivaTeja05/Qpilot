@@ -18,7 +18,7 @@
 
 **On the demo study.** M = 1.64–2.03 for all five candidates, none below 1.5; V2/3 = 0.56, V3/4 = 0.39, V4/5 = 0.33, none below 0.15 → recommended set = all five. In a heterogeneous tumour panel that is expected, and it is the reason the control-gene choice changes 31 of 58 conclusions. qPilot says this on the Decision Card before anyone asks.
 
-**Limits.** geNorm assumes the candidates are not co-regulated; it cannot detect a set that drifts together. NormFinder (Andersen et al. 2004) addresses that and is on the roadmap, reimplemented from the paper because its original code may not be redistributed.
+**Limits.** geNorm assumes the candidates are not co-regulated; it cannot detect a set that drifts together. NormFinder (Andersen et al. 2004) addresses that: it is reimplemented from the paper (`methods/normfinder.md`) and shown next to geNorm on the reference panel, and its best pair can be tested as a further choice.
 
 ## Group effect (reverse-normalisation guard)
 

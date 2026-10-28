@@ -54,6 +54,7 @@ from qpilot.web.contract_trace import (
     WhereCheck,
     WhereOption,
     WherePlace,
+    WhereRequest,
     WhereSetAside,
     WhereView,
 )
@@ -303,10 +304,33 @@ def _set_aside(ctx: AppContext, sid: str, built: places_engine.TraceContext) -> 
     return out
 
 
+def _requests(waiting: list[Any]) -> list[WhereRequest]:
+    """Agents' waiting requests at one place, one per option asked for (oldest first)."""
+    from qpilot.studio_service import leaves_out
+
+    by_option: dict[str, list[Any]] = {}
+    for p in waiting:
+        option = str(((p.consequence or {}).get("trace") or {}).get("option") or "")
+        by_option.setdefault(option, []).append(p)
+    return [
+        WhereRequest(
+            option=option,
+            option_label=OPTION_LABELS.get(option, option.replace("_", " ")),
+            wells=sorted(p.subject for p in ps if leaves_out(p)),
+            put_back=sorted(p.subject for p in ps if not leaves_out(p)),
+            reason=(ps[0].reasons or [""])[0],
+            agent=ps[0].made_by.agent,
+            at=ps[0].created_at,
+        )
+        for option, ps in by_option.items()
+    ]
+
+
 def _place(
     place: places_engine.PlaceToLook,
     opened: dict[str, str],
     built: places_engine.TraceContext | None = None,
+    requests: dict[str, list[Any]] | None = None,
 ) -> WherePlace:
     from qpilot.explain.trace_text import CONSEQUENCE_WORDS
 
@@ -347,6 +371,7 @@ def _place(
         card_id=card_id,
         card_status=opened.get(card_id),
         can_decide=place.consequence == "changes_call",
+        requests=_requests((requests or {}).get(card_id, [])),
     )
 
 
@@ -406,6 +431,7 @@ def where_view(
     ]
     apply = _can_apply(ctx, study_id, sid)
     note = APPLY_NOTE if apply else OUTSIDE_STUDIO if sid is None else NOT_CURRENT
+    asked = ctx.studio.trace_requests(sid) if apply and sid else {}
     return WhereView(
         study_id=study_id,
         session=sid,
@@ -414,7 +440,7 @@ def where_view(
         answer=result.answer,
         planned=built.planned,
         text=text,
-        places=[_place(p, opened, built) for p in result.places],
+        places=[_place(p, opened, built, asked) for p in result.places],
         comparison=traced.id if traced is not None else None,
         comparison_note=COMPARISON_NOTE.format(label=f"{traced.labels[0]} vs {traced.labels[1]}")
         if traced is not None

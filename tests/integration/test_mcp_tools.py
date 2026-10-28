@@ -192,10 +192,19 @@ def test_the_simulator_and_prism_replies_match_their_output_schemas(workflow, mo
     ok("sim_decisions", {"study_id": study})
     ok("sim_findings", {"study_id": study, "table": "issues", "limit": 5})
     ok("qpcr_prism_preview", {"study_id": study})
+    # what came back from Prism: the project the bundle holds (nothing changed in it), and the
+    # older route's tables when the workflow kept them
     diff = ok(
         "qpcr_prism_diff",
-        {"study_id": study, "bundle_dir": str(bundle), "sent_back_dir": str(bundle / "sent_back")},
+        {"study_id": study, "bundle_dir": str(bundle), "project_path": str(bundle)},
     )
-    assert diff.saved is False
+    assert diff.saved is False and diff.source == "project"
+    sent_back = bundle.parent / "prism_sent_back"
+    if sent_back.is_dir():
+        old = ok(
+            "qpcr_prism_diff",
+            {"study_id": study, "bundle_dir": str(bundle), "sent_back_dir": str(sent_back)},
+        )
+        assert old.saved is False
     refused = anyio.run(server.call_tool, "sim_gene", {"study_id": study, "gene": "NOT_A_GENE"})
     assert refused.is_error and refused.structured_content["code"] == "unknown_item"

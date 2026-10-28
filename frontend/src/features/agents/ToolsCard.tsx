@@ -1,5 +1,14 @@
 /** How to connect an agent, what it can and cannot do, and its tools by what they can change. */
-import { Eye, FolderOpen, Hand, Lightbulb, PlugZap, ShieldAlert, ShieldCheck } from "lucide-react";
+import {
+  Eye,
+  FileDown,
+  FolderOpen,
+  Hand,
+  Lightbulb,
+  PlugZap,
+  ShieldAlert,
+  ShieldCheck,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { count } from "@/lib/format";
 import { Card, CardBody, CardHeader, CommandLine } from "@/ui";
@@ -23,11 +32,16 @@ const ACCESS: Record<ToolAccess, { title: string; hint: string; icon: ReactNode 
   },
   request: {
     title: "Request a decision",
-    hint: "Ask for a choice on a Decision Card. One that can change a conclusion always waits for a person.",
+    hint: "Ask for a choice on a Decision Card, or for wells to be set aside. One that can change a conclusion always waits for a person.",
     icon: <Hand aria-hidden />,
   },
+  export: {
+    title: "Write a file",
+    hint: "Write the study's numbers, figures or a journal supplement into a new file. They change no result and decide nothing.",
+    icon: <FileDown aria-hidden />,
+  },
 };
-const ORDER: ToolAccess[] = ["request", "propose", "open", "read"];
+const ORDER: ToolAccess[] = ["request", "propose", "export", "open", "read"];
 
 export function ConnectCard({
   command,

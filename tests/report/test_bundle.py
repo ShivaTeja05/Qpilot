@@ -38,6 +38,8 @@ def test_csv_tables_carry_the_exact_engine_values(walked):
             "results.csv",
             "per_unit.csv",
             "per_well.csv",
+            "standard_curves.csv",  # the mini plates carry a ten-fold series (STD_100...)
+            "quantities.csv",
             "decisions.csv",
             "settings.csv",
             "methods.csv",

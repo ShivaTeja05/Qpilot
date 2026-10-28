@@ -1336,7 +1336,10 @@ export type paths = {
         put?: never;
         /**
          * Propose Axis
-         * @description The rule proposes testing a further choice (the efficiency models), or no longer testing it.
+         * @description The rule proposes testing a further choice, or no longer testing it.
+         *
+         *     The further choices: the efficiency models, the normaliser (NormFinder's and geNorm's best
+         *     pairs, the global mean) and the correction between plates (inter-run calibrator, factor).
          *
          *     It joins the choices stage's inbox; nothing changes until a person accepts it, and then the
          *     study is analysed again with the choice as one more dimension of the grid. Results only
@@ -2465,6 +2468,66 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/quantities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Quantities
+         * @description The study's standard curves and how many units each assay quantified.
+         */
+        get: operations["get_quantities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/quantities/{target}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Assay Quantities
+         * @description One assay: every curve with its points and prediction band, every unit's quantity.
+         */
+        get: operations["get_assay_quantities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/quantities/reaction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Reaction
+         * @description A person records the template volume and input amount of one reaction (with a reason).
+         */
+        post: operations["post_reaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/record": {
         parameters: {
             query?: never;
@@ -2497,6 +2560,26 @@ export type paths = {
          * @description The records of this study in qPilot's export folder, newest first.
          */
         get: operations["list_records"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/references": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get References
+         * @description Both rankings (geNorm, NormFinder) of the study's candidate reference genes.
+         */
+        get: operations["get_references"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2909,6 +2992,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/tools/copies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Copies
+         * @description How many copies ``ng`` of a ``length``-long molecule hold, and its dilution series.
+         */
+        get: operations["get_copies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/workspaces": {
         parameters: {
             query?: never;
@@ -3147,10 +3250,10 @@ export type components = {
         AgentTool: {
             /**
              * Access
-             * @description read: changes nothing; open: opens a file as a study or session (decides nothing); propose: adds a proposal only a person can accept; request: asks to decide a Decision Card (a choice that can change a conclusion waits for a person).
+             * @description read: changes nothing; open: opens a file as a study or session (decides nothing); propose: adds a proposal only a person can accept; request: asks to decide a Decision Card or to set wells aside (a choice that can change a conclusion waits for a person); export: writes a new file from the study's numbers (decides nothing).
              * @enum {string}
              */
-            access: "read" | "open" | "propose" | "request";
+            access: "read" | "open" | "propose" | "request" | "export";
             /**
              * Description
              * @description The whole description an agent reads, as text.
@@ -3329,6 +3432,40 @@ export type components = {
              * @description Why it is asked again, in words.
              */
             why: string;
+        };
+        /**
+         * AssayQuantities
+         * @description One assay: every curve in full and every unit's quantity.
+         */
+        AssayQuantities: {
+            /** Curves */
+            curves: components["schemas"]["CurveDetail"][];
+            reaction?: components["schemas"]["ReactionView"] | null;
+            settings: components["schemas"]["QuantitiesSettings"];
+            /** Study Id */
+            study_id: string;
+            /** Target */
+            target: string;
+            /** Unit */
+            unit: string;
+            /** Units */
+            units: components["schemas"]["UnitQuantity"][];
+        };
+        /**
+         * AssaySummary
+         * @description One assay: its curves and how many units were quantified or flagged.
+         */
+        AssaySummary: {
+            /** Curves */
+            curves: components["schemas"]["CurveSummary"][];
+            /** N Flagged */
+            n_flagged: number;
+            /** N Quantified */
+            n_quantified: number;
+            /** N Units */
+            n_units: number;
+            /** Target */
+            target: string;
         };
         /**
          * AtChoices
@@ -4887,7 +5024,7 @@ export type components = {
         };
         /**
          * AxisView
-         * @description A further choice the grid can test on request (the efficiency models).
+         * @description A further choice the grid can test on request (efficiency, normaliser, between plates).
          */
         AxisView: {
             /**
@@ -4924,6 +5061,20 @@ export type components = {
             text: components["schemas"]["FactText"];
             /** Title */
             title: string;
+        };
+        /**
+         * BandPoint
+         * @description The fitted line and its 95 % prediction band for one new well, at one log10 quantity.
+         */
+        BandPoint: {
+            /** Cq */
+            cq: number;
+            /** High */
+            high: number;
+            /** Log10 Quantity */
+            log10_quantity: number;
+            /** Low */
+            low: number;
         };
         /** Body_attach_sheet */
         Body_attach_sheet: {
@@ -6342,6 +6493,45 @@ export type components = {
             target: string;
         };
         /**
+         * CopiesAnswer
+         * @description ng to copies for a standard: the numbers and the formula, in words.
+         */
+        CopiesAnswer: {
+            /**
+             * Copies
+             * @description Copies in that many ng.
+             */
+            copies: number;
+            /** Copies Per Ng */
+            copies_per_ng: number;
+            /** Formula */
+            formula: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "dsDNA" | "ssDNA" | "RNA";
+            /** Kind Words */
+            kind_words: string;
+            /** Length */
+            length: number;
+            /**
+             * Molar Mass
+             * @description g/mol of one molecule.
+             */
+            molar_mass: number;
+            /** Ng */
+            ng: number;
+            /** Reference */
+            reference: string;
+            /**
+             * Series
+             * @description A serial dilution from `copies` (when a step was given).
+             * @default []
+             */
+            series: number[];
+        };
+        /**
          * CurveCallsView
          * @description Each well of one target called under every rule (facts about curves, no conclusion).
          */
@@ -6362,6 +6552,89 @@ export type components = {
             wells: components["schemas"]["WellCall"][];
         };
         /**
+         * CurveDetail
+         * @description A curve with every point, level and the prediction band (for the chart).
+         */
+        CurveDetail: {
+            /** Band */
+            band: components["schemas"]["BandPoint"][];
+            /**
+             * Efficiency
+             * @description 10^(-1/slope) - 1 (1.0 = 100 %).
+             */
+            efficiency?: number | null;
+            /** Efficiency High */
+            efficiency_high?: number | null;
+            /** Efficiency Low */
+            efficiency_low?: number | null;
+            /** Fitted */
+            fitted: boolean;
+            /** Id */
+            id: string;
+            /** Intercept */
+            intercept?: number | null;
+            /** Levels */
+            levels: components["schemas"]["LevelView"][];
+            lod: components["schemas"]["LimitView"];
+            lod_model?: components["schemas"]["LimitView"] | null;
+            loq: components["schemas"]["LimitView"];
+            /** Lowest */
+            lowest?: number | null;
+            /**
+             * N Levels
+             * @default 0
+             */
+            n_levels: number;
+            /**
+             * N Unknowns
+             * @description Units read from this curve.
+             * @default 0
+             */
+            n_unknowns: number;
+            /**
+             * N Wells
+             * @default 0
+             */
+            n_wells: number;
+            /** Points */
+            points: components["schemas"]["StandardPointView"][];
+            /**
+             * Problem
+             * @default
+             */
+            problem: string;
+            /**
+             * Quantity Source
+             * @description design, file, name, or a mix joined with '+'.
+             */
+            quantity_source: string;
+            /** R2 */
+            r2?: number | null;
+            /** Runs */
+            runs: string[];
+            /**
+             * S Yx
+             * @description Residual SD of Cq about the line.
+             */
+            s_yx?: number | null;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "plate" | "pooled";
+            /** Slope */
+            slope?: number | null;
+            /** Target */
+            target: string;
+            /** Top */
+            top?: number | null;
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
+        };
+        /**
          * CurveSeries
          * @description One well's raw curve.
          */
@@ -6378,6 +6651,83 @@ export type components = {
             target: string;
             /** Well */
             well: string;
+        };
+        /**
+         * CurveSummary
+         * @description One standard curve's numbers (per assay and plate, or pooled over plates).
+         */
+        CurveSummary: {
+            /**
+             * Efficiency
+             * @description 10^(-1/slope) - 1 (1.0 = 100 %).
+             */
+            efficiency?: number | null;
+            /** Efficiency High */
+            efficiency_high?: number | null;
+            /** Efficiency Low */
+            efficiency_low?: number | null;
+            /** Fitted */
+            fitted: boolean;
+            /** Id */
+            id: string;
+            /** Intercept */
+            intercept?: number | null;
+            lod: components["schemas"]["LimitView"];
+            lod_model?: components["schemas"]["LimitView"] | null;
+            loq: components["schemas"]["LimitView"];
+            /** Lowest */
+            lowest?: number | null;
+            /**
+             * N Levels
+             * @default 0
+             */
+            n_levels: number;
+            /**
+             * N Unknowns
+             * @description Units read from this curve.
+             * @default 0
+             */
+            n_unknowns: number;
+            /**
+             * N Wells
+             * @default 0
+             */
+            n_wells: number;
+            /**
+             * Problem
+             * @default
+             */
+            problem: string;
+            /**
+             * Quantity Source
+             * @description design, file, name, or a mix joined with '+'.
+             */
+            quantity_source: string;
+            /** R2 */
+            r2?: number | null;
+            /** Runs */
+            runs: string[];
+            /**
+             * S Yx
+             * @description Residual SD of Cq about the line.
+             */
+            s_yx?: number | null;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "plate" | "pooled";
+            /** Slope */
+            slope?: number | null;
+            /** Target */
+            target: string;
+            /** Top */
+            top?: number | null;
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
         };
         /**
          * CurveView
@@ -6934,6 +7284,38 @@ export type components = {
             unchanged: number;
         };
         /**
+         * DetectedOnlyView
+         * @description A withheld gene measured in both groups but detected in one only (or in neither).
+         *
+         *     No fold change exists for it (a ratio to nothing); the detected group's ΔCq (the gene's Cq
+         *     minus the mean Cq of the control genes, per biological unit, then the mean) says how much.
+         */
+        DetectedOnlyView: {
+            /**
+             * Absent
+             * @description The group (or groups) it was detected in no unit of.
+             */
+            absent: string;
+            /**
+             * Dcq
+             * @description Mean ΔCq of the detected group.
+             */
+            dcq?: number | null;
+            /** Dcq Sd */
+            dcq_sd?: number | null;
+            /**
+             * Group
+             * @description The group it was detected in; null: in neither.
+             */
+            group: string | null;
+            /** N Absent */
+            n_absent: number;
+            /** N Detected */
+            n_detected: number;
+            /** N Group */
+            n_group: number;
+        };
+        /**
          * DownloadLink
          * @description A file qPilot wrote into its export folder (beside the store), offered for download.
          */
@@ -7381,6 +7763,16 @@ export type components = {
             note: string;
             /** Seq */
             seq: number | null;
+        };
+        /**
+         * FlagView
+         * @description One flag on an unknown, with its words.
+         */
+        FlagView: {
+            /** Id */
+            id: string;
+            /** Words */
+            words: string;
         };
         /**
          * FlipOption
@@ -9161,6 +9553,34 @@ export type components = {
             word: string;
         };
         /**
+         * LevelView
+         * @description One standard level: how often it was detected and how well its quantity reads back.
+         */
+        LevelView: {
+            /**
+             * Back Quantity
+             * @description Geometric mean of the read-back quantities.
+             */
+            back_quantity: number | null;
+            /**
+             * Cv
+             * @description Log-normal CV of the read-back quantities (0.35 = 35 %).
+             */
+            cv: number | null;
+            /** Mean Cq */
+            mean_cq: number | null;
+            /** N Detected */
+            n_detected: number;
+            /** N Wells */
+            n_wells: number;
+            /** Quantity */
+            quantity: number;
+            /** Rate */
+            rate: number | null;
+            /** Sd Cq */
+            sd_cq: number | null;
+        };
+        /**
          * Limitation
          * @description One limitation, in plain words.
          */
@@ -9168,6 +9588,27 @@ export type components = {
             /** Id */
             id: string;
             text: components["schemas"]["ReportText"];
+        };
+        /**
+         * LimitView
+         * @description A limit of detection or of quantification: the quantity, how it was found, in words.
+         */
+        LimitView: {
+            /**
+             * At Most
+             * @description Every level passed: the true limit is at or below this.
+             * @default false
+             */
+            at_most: boolean;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "empirical" | "logistic" | "lowest_standard" | "not_determined";
+            /** Quantity */
+            quantity: number | null;
+            /** Words */
+            words: string;
         };
         /**
          * LinkBody
@@ -9937,6 +10378,16 @@ export type components = {
             reason: string;
             /** Samples */
             samples: string[];
+        };
+        /**
+         * NotQuantified
+         * @description An assay with standards but no curve, and why.
+         */
+        NotQuantified: {
+            /** Reason */
+            reason: string;
+            /** Target */
+            target: string;
         };
         /**
          * OpenDone
@@ -11634,7 +12085,7 @@ export type components = {
              * Kind
              * @enum {string}
              */
-            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.pair" | "design.dilution_series" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "curve.import_trust" | "choice.axis" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
+            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.pair" | "design.dilution_series" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "curve.import_trust" | "choice.axis" | "choice.reaction_input" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
             /**
              * Level
              * @default Low
@@ -11827,11 +12278,11 @@ export type components = {
         ProposeAxis: {
             /**
              * Axis
-             * @description The further choice: which efficiency turns Cq into quantity.
+             * @description The further choice: which efficiency turns Cq into quantity (efficiency), what to normalise each gene to (normaliser: NormFinder's and geNorm's best pairs, the global mean) or how to correct differences between plates (interrun).
              * @default efficiency
-             * @constant
+             * @enum {string}
              */
-            axis: "efficiency";
+            axis: "efficiency" | "normaliser" | "interrun";
             /**
              * On
              * @description True: test it; false: stop testing it.
@@ -11983,6 +12434,70 @@ export type components = {
             summary?: components["schemas"]["FactText"] | null;
         };
         /**
+         * QuantitiesSettings
+         * @description The thresholds in use, shown wherever they apply.
+         */
+        QuantitiesSettings: {
+            /** Lod Rate */
+            lod_rate: number;
+            /** Loq Cv */
+            loq_cv: number;
+            /** Min Levels */
+            min_levels: number;
+            /** Prediction Level */
+            prediction_level: number;
+        };
+        /**
+         * QuantitiesView
+         * @description The study's absolute quantification: every assay with standards.
+         */
+        QuantitiesView: {
+            /** Assays */
+            assays: components["schemas"]["AssaySummary"][];
+            /**
+             * Available
+             * @description False: no standard has a quantity (see `why`).
+             */
+            available: boolean;
+            /**
+             * Can Set Reaction
+             * @description A person can record the reaction input (a Studio session).
+             * @default false
+             */
+            can_set_reaction: boolean;
+            /**
+             * Groups Shown
+             * @description Units carry their design group (a groups design).
+             * @default false
+             */
+            groups_shown: boolean;
+            /** Method Card */
+            method_card: string;
+            /** Not Quantified */
+            not_quantified: components["schemas"]["NotQuantified"][];
+            /**
+             * Notes
+             * @default []
+             */
+            notes: string[];
+            reaction?: components["schemas"]["ReactionView"] | null;
+            /** References */
+            references: string[];
+            settings: components["schemas"]["QuantitiesSettings"];
+            /** Study Id */
+            study_id: string;
+            /**
+             * Unit
+             * @description What one unit of the quantities is ('' when not declared).
+             */
+            unit: string;
+            /**
+             * Why
+             * @default
+             */
+            why: string;
+        };
+        /**
          * QuarantineEntry
          * @description One piece of free text from a file, stored once and cited by ``text_id`` everywhere else.
          *
@@ -12018,6 +12533,46 @@ export type components = {
             sheet_cells: {
                 [key: string]: string;
             };
+        };
+        /**
+         * ReactionRecorded
+         * @description What recording the reaction input did.
+         */
+        ReactionRecorded: {
+            /** Head */
+            head: string;
+            /** Message */
+            message: string;
+            /** Status */
+            status: string;
+        };
+        /**
+         * ReactionRequest
+         * @description A person records what one reaction held (all empty: per reaction only).
+         */
+        ReactionRequest: {
+            /** Expected Head */
+            expected_head?: string | null;
+            /** Input Ng */
+            input_ng?: number | null;
+            /** Reason */
+            reason: string;
+            /** Template Ul */
+            template_ul?: number | null;
+            /** Unit */
+            unit?: string | null;
+        };
+        /**
+         * ReactionView
+         * @description What one reaction held (the design's ``reaction_input``).
+         */
+        ReactionView: {
+            /** Input Ng */
+            input_ng?: number | null;
+            /** Template Ul */
+            template_ul?: number | null;
+            /** Unit */
+            unit?: string | null;
         };
         /**
          * RecordCommands
@@ -12159,6 +12714,141 @@ export type components = {
              * @description One line per problem, or one OK line.
              */
             summary: string[];
+        };
+        /**
+         * ReferenceGeneRow
+         * @description One candidate reference gene under both methods (lower is steadier in each).
+         */
+        ReferenceGeneRow: {
+            /** Gene */
+            gene: string;
+            /**
+             * Genorm M
+             * @description geNorm M: the mean SD of its log2 ratio to each other candidate.
+             */
+            genorm_m?: number | null;
+            /**
+             * Genorm Rank
+             * @description 1 = steadiest by geNorm.
+             */
+            genorm_rank?: number | null;
+            /**
+             * Normfinder
+             * @description NormFinder's stability value: the error it would bring in (log2), from its variation within each group and its shift between the groups.
+             */
+            normfinder?: number | null;
+            /**
+             * Normfinder Rank
+             * @description 1 = steadiest by NormFinder.
+             */
+            normfinder_rank?: number | null;
+            /**
+             * Shift
+             * @description NormFinder's shift of the gene in each group (log2), before shrinkage.
+             */
+            shift?: {
+                [key: string]: number;
+            };
+            /**
+             * Used
+             * @description The analysis in use divides by it.
+             */
+            used: boolean;
+            /**
+             * Within Sd
+             * @description NormFinder's within-group SD (log2), mean over the groups.
+             */
+            within_sd?: number | null;
+        };
+        /**
+         * ReferencePair
+         * @description A best pair by one method, with its value where the method gives one.
+         */
+        ReferencePair: {
+            /** Genes */
+            genes: string[];
+            /** Value */
+            value?: number | null;
+        };
+        /**
+         * ReferenceStability
+         * @description geNorm M and NormFinder's stability side by side, and whether they agree.
+         */
+        ReferenceStability: {
+            /** Candidates */
+            candidates: string[];
+            /**
+             * Choice Note
+             * @description Which reference genes are used stays a person's choice.
+             */
+            choice_note: string;
+            /** @description geNorm's best pair (its last two genes; it cannot order them). */
+            genorm_pair?: components["schemas"]["ReferencePair"] | null;
+            /**
+             * Grouped
+             * @description NormFinder used the study's groups.
+             */
+            grouped: boolean;
+            /**
+             * Groups
+             * @description Group -> units used.
+             */
+            groups?: {
+                [key: string]: number;
+            };
+            /**
+             * Left Out Reasons
+             * @description Why units were left out -> how many.
+             */
+            left_out_reasons?: {
+                [key: string]: number;
+            };
+            /**
+             * N Left Out
+             * @description Units NormFinder could not use, and why below.
+             * @default 0
+             */
+            n_left_out: number;
+            /**
+             * N Units
+             * @default 0
+             */
+            n_units: number;
+            normfinder_pair?: components["schemas"]["ReferencePair"] | null;
+            /**
+             * Rows
+             * @description Every candidate, in candidate order.
+             */
+            rows: components["schemas"]["ReferenceGeneRow"][];
+            /** Sources */
+            sources: string[];
+            /** Study Id */
+            study_id: string;
+            /**
+             * Unavailable
+             * @description Why NormFinder could not run (then no NormFinder numbers).
+             */
+            unavailable?: string | null;
+            /**
+             * Used
+             * @description The reference genes the analysis in use divides by.
+             */
+            used: string[];
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "agree" | "share_one" | "disagree" | "not_available";
+            /**
+             * Warnings
+             * @description The paper's own requirements.
+             */
+            warnings?: string[];
+            /**
+             * Words
+             * @description What the two agree or disagree on, in plain words.
+             */
+            words: string;
         };
         /**
          * RefusedProposal
@@ -13591,6 +14281,28 @@ export type components = {
             reason: string;
         };
         /**
+         * StandardPointView
+         * @description One standard well (detected or not) on its curve.
+         */
+        StandardPointView: {
+            /** Back Quantity */
+            back_quantity: number | null;
+            /** Cq */
+            cq: number | null;
+            /** Detected */
+            detected: boolean;
+            /** Quantity */
+            quantity: number;
+            /** Residual */
+            residual: number | null;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Well */
+            well: string;
+        };
+        /**
          * StepConclusions
          * @description The calls at one step, and what changed from the step before.
          */
@@ -14928,6 +15640,43 @@ export type components = {
             x: number;
         };
         /**
+         * UnitQuantity
+         * @description One biological unit's quantity of one assay with its 95 % prediction interval.
+         */
+        UnitQuantity: {
+            /** Curves */
+            curves: string[];
+            /** Flags */
+            flags: components["schemas"]["FlagView"][];
+            /**
+             * Group
+             * @description Its group in the confirmed design.
+             */
+            group?: string | null;
+            /** High */
+            high: number | null;
+            /** Low */
+            low: number | null;
+            /** Mean Cq */
+            mean_cq: number | null;
+            /** N Detected */
+            n_detected: number;
+            /** N Wells */
+            n_wells: number;
+            /** Per Ng */
+            per_ng?: number | null;
+            /** Per Ul */
+            per_ul?: number | null;
+            /** Quantity */
+            quantity: number | null;
+            /** Samples */
+            samples: string[];
+            /** Unit */
+            unit: string;
+            /** Wells */
+            wells: components["schemas"]["UnknownWellView"][];
+        };
+        /**
          * UnitValue
          * @description One biological unit's value in a Prism table (log2 relative quantity).
          */
@@ -15090,6 +15839,26 @@ export type components = {
              * @description The well's relative amount (log2, the unit's control-gene mean removed), relative to the second group's mean; null when the well has no value.
              */
             x: number | null;
+        };
+        /**
+         * UnknownWellView
+         * @description One well of an unknown.
+         */
+        UnknownWellView: {
+            /** Cq */
+            cq: number | null;
+            /** Curve */
+            curve: string | null;
+            /** Detected */
+            detected: boolean;
+            /** Quantity */
+            quantity: number | null;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Well */
+            well: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -15290,6 +16059,11 @@ export type components = {
             plate?: string | null;
             /** Rank */
             rank: number;
+            /**
+             * Requests
+             * @description Agents' requests to set wells aside here, waiting for a person: Decide… approves one (choose its option) or turns it down (keep). Nothing is set aside until then.
+             */
+            requests?: components["schemas"]["WhereRequest"][];
             /** Role */
             role: string;
             /** Sample */
@@ -15298,6 +16072,38 @@ export type components = {
             target?: string | null;
             /** Well */
             well?: string | null;
+        };
+        /**
+         * WhereRequest
+         * @description An agent's request to set wells aside at a place; Decide… answers it for a person.
+         */
+        WhereRequest: {
+            /** Agent */
+            agent?: string | null;
+            /** At */
+            at: string;
+            /**
+             * Option
+             * @description The option asked for (set_aside_value or set_aside).
+             */
+            option: string;
+            /** Option Label */
+            option_label: string;
+            /**
+             * Put Back
+             * @description Wells it asks to put back (a person had set more aside here).
+             */
+            put_back?: string[];
+            /**
+             * Reason
+             * @description The agent's reason, as it wrote it.
+             */
+            reason: string;
+            /**
+             * Wells
+             * @description The wells it asks to leave out (RUN/WELL).
+             */
+            wells: string[];
         };
         /**
          * WhereSetAside
@@ -15435,6 +16241,7 @@ export type components = {
          * @description A gene the engine compared no fold change for, and why (it is not in ``genes``).
          */
         WithheldGene: {
+            detected_only?: components["schemas"]["DetectedOnlyView"] | null;
             /** Gene */
             gene: string;
             /** Reason */
@@ -19698,6 +20505,104 @@ export interface operations {
             };
         };
     };
+    get_quantities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuantitiesView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_assay_quantities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                target: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssayQuantities"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_reaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReactionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReactionRecorded"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_record: {
         parameters: {
             query?: never;
@@ -19751,6 +20656,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecordList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_references: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferenceStability"];
                 };
             };
             /** @description Validation Error */
@@ -20434,6 +21370,45 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SystemView"];
+                };
+            };
+        };
+    };
+    get_copies: {
+        parameters: {
+            query: {
+                kind?: "dsDNA" | "ssDNA" | "RNA";
+                /** @description Bases (dsDNA: base pairs). */
+                length: number;
+                /** @description Levels of the series. */
+                levels?: number;
+                /** @description ng of the standard (or ng per µL). */
+                ng: number;
+                /** @description Dilution step. */
+                step?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CopiesAnswer"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

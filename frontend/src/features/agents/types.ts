@@ -3,7 +3,7 @@ import type { Schemas } from "@/api/client";
 
 export type AgentsView = Schemas["AgentsView"];
 export type AgentTool = Schemas["AgentTool"];
-/** What a tool can change: nothing, open a file as a study, add a proposal, or request a decision. */
+/** What a tool can change: nothing, open a file as a study, add a proposal, request a decision, or write a file. */
 export type ToolAccess = AgentTool["access"];
 /** An agent's request on a Decision Card, waiting for a person. */
 export type PendingRequest = Schemas["AgentRequest"];

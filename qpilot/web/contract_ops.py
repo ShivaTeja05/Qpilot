@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 # ---- agents ---------------------------------------------------------------------------------
 
-ToolAccess = Literal["read", "open", "propose", "request"]
+ToolAccess = Literal["read", "open", "propose", "request", "export"]
 
 
 class AgentTool(BaseModel):
@@ -25,7 +25,8 @@ class AgentTool(BaseModel):
     access: ToolAccess = Field(
         description="read: changes nothing; open: opens a file as a study or session (decides "
         "nothing); propose: adds a proposal only a person can accept; request: asks to decide a "
-        "Decision Card (a choice that can change a conclusion waits for a person)."
+        "Decision Card or to set wells aside (a choice that can change a conclusion waits for a "
+        "person); export: writes a new file from the study's numbers (decides nothing)."
     )
     effect: str = Field(description="What the tool can change, in plain words.")
     simulator: bool = Field(description="A read-only tool over the robustness audit (sim_*).")

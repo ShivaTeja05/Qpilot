@@ -33,6 +33,8 @@ FLIPPED_FACT = {
     "undetermined": "f_n_flipped_undetermined",
     "amp_call": "f_n_flipped_amp_call",
     "numbers.efficiency_model": "f_n_flipped_efficiency",
+    "numbers.normaliser": "f_n_flipped_normaliser",
+    "numbers.interrun": "f_n_flipped_interrun",
 }
 #: What a card with several comparisons says about deciding it (choices are the study's).
 STUDY_WIDE = (

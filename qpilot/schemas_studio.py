@@ -39,6 +39,10 @@ kind                        subject            payload
                                                (``reexport_raw``, ``analyse_as_is``, ``cq_only``)
 ``choice.axis``             axis name          ``{"options": [option id, ...]}``, primary first
                             (``efficiency``)   (one option: the axis is not tested)
+``choice.reaction_input``   ``reaction``       ``{"template_ul": float | null, "input_ng": float
+                                               | null, "unit": str | null}``: what one reaction
+                                               held, for quantities per µL and per ng (all null:
+                                               none)
 ``prism.project``           ``prism``          ``{"template_id": str, "genes": [...], ...}``
 ``prism.exclusion_reason``  ``gene/sample``    ``{"gene", "sample", "action": "exclude"|"restore"}``
                             (``/rep n``)       + ``"well_rep"`` (0: the unit's value, n: its
@@ -111,6 +115,7 @@ ProposalKind = Literal[
     "curve.exclude_well",
     "curve.import_trust",
     "choice.axis",
+    "choice.reaction_input",
     "prism.project",
     "prism.exclusion_reason",
     "prism.value_edit",
@@ -427,6 +432,30 @@ class ImportTrust(BaseModel):
     analysis: Literal["as_is", "cq_only"] = "as_is"
 
 
+class ReactionInput(BaseModel):
+    """What one reaction held, so absolute quantities can be given per µL and per ng.
+
+    ``template_ul``: µL of template (the extract, the cDNA) pipetted into each reaction;
+    ``input_ng``: ng of nucleic acid in each reaction; ``unit``: what one unit of the
+    standards' quantities is (``"copies"``), when the file does not say. Only the Quantities
+    view and its exports read it (:mod:`qpilot.qpcr.absolute`); no relative result does.
+    """
+
+    template_ul: float | None = None
+    input_ng: float | None = None
+    unit: str | None = None
+
+    @model_validator(mode="after")
+    def _positive(self) -> ReactionInput:
+        for name in ("template_ul", "input_ng"):
+            value = getattr(self, name)
+            if value is not None and not (value > 0 and value < 1e9):
+                raise ValueError(f"{name} must be a positive number")
+        if self.unit is not None and (not self.unit.strip() or len(self.unit) > 40):
+            raise ValueError("unit is a short word such as copies")
+        return self
+
+
 class StudyDesign(BaseModel):
     """A confirmed study design; the engine runs from this and from nothing else.
 
@@ -444,7 +473,8 @@ class StudyDesign(BaseModel):
     see ``qpilot/qpcr/axes``). ``import_trust`` is set for a study opened from an instrument
     export whose curves were processed before export (:class:`ImportTrust`). ``None`` (the
     default for both) is left out of :meth:`canonical`, so the design hash and every existing
-    study id stay what they were.
+    study id stay what they were. ``reaction_input`` (:class:`ReactionInput`, set after the
+    results are visible: ``choice.reaction_input``) is ``None`` by default and left out too.
     """
 
     design_id: str = "custom"
@@ -463,6 +493,7 @@ class StudyDesign(BaseModel):
     import_trust: ImportTrust | None = None
     axes: dict[str, tuple[str, ...]] | None = None
     comparisons: ComparisonPlan | None = None
+    reaction_input: ReactionInput | None = None
     note: str = ""
 
     @model_validator(mode="after")

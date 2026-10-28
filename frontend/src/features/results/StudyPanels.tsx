@@ -4,6 +4,7 @@ import { FlipMatrix, GenormBars } from "@/charts";
 import { count, plural } from "@/lib/format";
 import { Card, CardBody, CardHeader, Skeleton } from "@/ui";
 import type { FlipsView, ResultsView } from "./api";
+import { ReferenceComparison } from "./ReferenceComparison";
 
 export function FlipPanel({
   flips,
@@ -63,16 +64,23 @@ export function FlipPanel({
   );
 }
 
-export function ReferencesPanel({ view }: { view: ResultsView }) {
+export function ReferencesPanel({
+  view,
+  workspaceKey,
+}: {
+  view: ResultsView;
+  /** With it, NormFinder's ranking is shown next to geNorm's (GET …/references). */
+  workspaceKey?: string;
+}) {
   const g = view.references;
   return (
     <Card as="section" aria-labelledby="refs-title">
       <CardHeader
         id="refs-title"
         title="Reference genes"
-        hint={`The analysis normalises to ${g.used.join(", ")}. geNorm ranks the candidates by how steady they are across samples.`}
+        hint={`The analysis normalises to ${g.used.join(", ")}. geNorm ranks the candidates by how steady they are across samples; NormFinder also looks at how each differs between the groups.`}
       />
-      <CardBody>
+      <CardBody className="space-y-5">
         <GenormBars
           m={g.m}
           order={g.order}
@@ -81,6 +89,9 @@ export function ReferencesPanel({ view }: { view: ResultsView }) {
           cutoffV={g.cutoff_v}
           used={g.used}
         />
+        {workspaceKey && g.candidates.length >= 2 ? (
+          <ReferenceComparison workspaceKey={workspaceKey} studyId={view.study_id} />
+        ) : null}
       </CardBody>
     </Card>
   );

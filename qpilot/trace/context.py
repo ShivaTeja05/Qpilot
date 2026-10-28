@@ -238,7 +238,12 @@ def cell_of(model: StudyModel, choice: Mapping[str, str] | None) -> dict[str, An
         if match is None:
             raise TraceError(f"The analysis option {text!r} for {dim} is not one qPilot checks.")
         cell[dim] = match
-    return cell
+    from qpilot.qpcr.axes.normaliser import NotTraceable, as_refs_cell
+
+    try:  # a best pair is traced as the control genes it is
+        return as_refs_cell(cell, model.axis_notes.get("normaliser"))
+    except NotTraceable as err:
+        raise TraceError(f"Trace cannot follow this analysis: {err}.") from None
 
 
 def _option_text(option: Any) -> str:
@@ -247,12 +252,20 @@ def _option_text(option: Any) -> str:
     return str(option)
 
 
+def _rebuilt(model: StudyModel, cell: Mapping[str, Any]) -> bool:
+    """True when the cell's quantities are rebuilt (an efficiency model or a plate correction)."""
+    efficiency = cell.get("efficiency")
+    between = cell.get("interrun")
+    return (efficiency is not None and efficiency != model.settings.efficiency[0]) or (
+        between is not None and between != model.settings.interrun[0]
+    )
+
+
 def _cell_matrix(model: StudyModel, cell: Mapping[str, Any]) -> pd.DataFrame:
-    """Units x genes log2(N0) under the cell's amplification rule and efficiency model."""
+    """Units x genes log2(N0) under the cell's rule, efficiency model and plate correction."""
     primary = model.space.primary.get("amp_call")
     amp = cell.get("amp_call", primary)
-    efficiency = cell.get("efficiency")
-    if efficiency is not None and efficiency != model.settings.efficiency[0]:
+    if _rebuilt(model, cell):
         stage = model.cell_stage(cell)
         return stage.values.reindex(index=model.matrix.index, columns=model.matrix.columns)
     if amp is None or amp == primary:
@@ -269,8 +282,7 @@ def _cell_table(model: StudyModel, cell: Mapping[str, Any]) -> pd.DataFrame:
     The rule clears n0 where a well is not called amplified; a model other than the primary
     rebuilds n0 and marks the wells it leaves out as excluded.
     """
-    efficiency = cell.get("efficiency")
-    if efficiency is not None and efficiency != model.settings.efficiency[0]:
+    if _rebuilt(model, cell):
         return model.cell_table(cell)
     primary = model.space.primary.get("amp_call")
     amp = cell.get("amp_call", primary)
@@ -289,8 +301,7 @@ def _cell_excluded(model: StudyModel, cell: Mapping[str, Any]) -> pd.DataFrame |
     A person's exclusions, and the wells an efficiency model leaves out (each well's own
     efficiency outside the valid range).
     """
-    efficiency = cell.get("efficiency")
-    if efficiency is not None and efficiency != model.settings.efficiency[0]:
+    if _rebuilt(model, cell):
         return model.cell_stage(cell).excluded
     return model.inputs.excluded
 

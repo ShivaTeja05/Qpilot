@@ -101,6 +101,21 @@ class WhereOption(BaseModel):
     n_wells: int = Field(default=0, description="Wells a set-aside leaves out of the analysis.")
 
 
+class WhereRequest(BaseModel):
+    """An agent's request to set wells aside at a place; Decide… answers it for a person."""
+
+    option: str = Field(description="The option asked for (set_aside_value or set_aside).")
+    option_label: str
+    wells: list[str] = Field(description="The wells it asks to leave out (RUN/WELL).")
+    put_back: list[str] = Field(
+        default_factory=list,
+        description="Wells it asks to put back (a person had set more aside here).",
+    )
+    reason: str = Field(description="The agent's reason, as it wrote it.")
+    agent: str | None = None
+    at: str
+
+
 class WherePlace(BaseModel):
     """A place to look: a well (or the sample's tube) where something is unusual."""
 
@@ -120,6 +135,12 @@ class WherePlace(BaseModel):
     )
     can_decide: bool = Field(
         description="Decide… is offered: an option here changes a call (a person's decision)."
+    )
+    requests: list[WhereRequest] = Field(
+        default_factory=list,
+        description="Agents' requests to set wells aside here, waiting for a person: Decide… "
+        "approves one (choose its option) or turns it down (keep). Nothing is set aside until "
+        "then.",
     )
 
 

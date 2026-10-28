@@ -22,6 +22,7 @@ import absentJson from "./recorded/where-absent.json";
 import calmJson from "./recorded/where-calm.json";
 import geneJson from "./recorded/where-gene.json";
 import openedViewJson from "./recorded/where-gene-opened.json";
+import requestedJson from "./recorded/where-gene-requested.json";
 import outsideJson from "./recorded/where-gene-outside.json";
 import openedJson from "./recorded/place-opened.json";
 import decidedJson from "./recorded/place-decided.json";
@@ -31,6 +32,7 @@ import sampleJson from "./recorded/where-sample.json";
 import wellJson from "./recorded/where-well.json";
 
 const GENE = geneJson as unknown as WhereView;
+const REQUESTED = requestedJson as unknown as WhereView;
 const CALM = calmJson as unknown as WhereView;
 const SAMPLE = sampleJson as unknown as WhereView;
 const WELL = wellJson as unknown as WhereView;
@@ -157,6 +159,43 @@ describe("where to look, read", { timeout: 30_000 }, () => {
     fireEvent.click(decide);
     expect(onApply).toHaveBeenCalledWith(place, "set_aside", "The well never rose.");
     expect(onDecide).not.toHaveBeenCalled();
+  });
+
+  it("shows an agent's request at the place; a person approves it or turns it down", () => {
+    // recorded/record_request.py: an agent asked (qpcr_request_set_aside) to set a value aside
+    const place = REQUESTED.places[0]!;
+    const [asked] = place.requests!;
+    expect(asked).toBeTruthy();
+    expect(place.can_decide).toBe(true);
+    const onApply = vi.fn();
+    result(REQUESTED, { onApply });
+    const row = places()[0]!;
+    expect(within(row).getByText("Agent asked")).toBeTruthy();
+    const banner = within(row).getByRole("status");
+    expect(banner.textContent).toContain("An agent asked to");
+    expect(banner.textContent).toContain(asked!.option_label.toLowerCase());
+    expect(banner.textContent).toContain(`${asked!.reason}`);
+    expect(banner.textContent).toContain("Nothing changes until a person");
+    fireEvent.click(within(row).getByRole("button", { name: /^Decide…/ }));
+    // the requested option is offered first, and choosing it is an approval
+    const radios = within(row).getAllByRole("radio") as HTMLInputElement[];
+    expect(radios.find((r) => r.checked)!.value).toBe(asked!.option);
+    const approve = within(row).getByRole("button", { name: /^Approve: / });
+    expect((approve as HTMLButtonElement).disabled).toBe(true); // a reason first
+    const down = within(row).getByRole("button", { name: "Turn down the request" });
+    expect((down as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(within(row).getByRole("textbox"), { target: { value: " Agreed. " } });
+    fireEvent.click(approve);
+    expect(onApply).toHaveBeenLastCalledWith(place, asked!.option, "Agreed.");
+    // turning it down keeps what is there, with the person's reason
+    fireEvent.click(down);
+    expect(onApply).toHaveBeenLastCalledWith(place, "keep", "Agreed.");
+  });
+
+  it("shows nothing about agents where none asked", () => {
+    result(GENE);
+    expect(screen.queryByText("Agent asked")).toBeNull();
+    expect(screen.queryByText(/An agent asked to/)).toBeNull();
   });
 
   it("offers no Decide… where no option changes the call", () => {

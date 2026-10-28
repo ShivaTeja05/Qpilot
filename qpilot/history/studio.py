@@ -41,6 +41,7 @@ KIND_TITLE = {
     "curve.well_call": "Well call",
     "curve.exclude_well": "Well exclusion",
     "curve.import_trust": "Import Trust",
+    "choice.reaction_input": "Reaction input",
     "prism.project": "Prism project",
     "prism.exclusion_reason": "Exclusion in Prism",
     "prism.value_edit": "Value changed in Prism",

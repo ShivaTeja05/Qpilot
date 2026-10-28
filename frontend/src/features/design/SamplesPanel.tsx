@@ -11,6 +11,7 @@ import { count } from "@/lib/format";
 import { ROLE_SHORT, ROLE_WORDS } from "@/lib/vocab";
 import { Button, Input, Select, Table, TBody, TD, TH, THead, TR } from "@/ui";
 import { visibleText, type QuoteLookup } from "@/ui/proposal";
+import { CopiesHelper } from "./CopiesHelper";
 import {
   NAME_RE,
   NAME_WORDS,
@@ -311,6 +312,7 @@ export function SamplesPanel({
                         .join(", ")}${ordered.length > 4 ? " …" : ""}`
                     : ""}
                 </span>
+                <CopiesHelper onUse={(copies) => setTop(String(copies))} />
               </div>
             ) : null}
             <div className="flex flex-wrap gap-1.5">

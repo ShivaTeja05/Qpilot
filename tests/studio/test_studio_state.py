@@ -39,6 +39,7 @@ PAYLOADS = {
     "curve.exclude_well": ("run1/A2", {"excluded": True}),
     "curve.import_trust": ("import", {"option": "cq_only"}),
     "choice.axis": ("efficiency", {"options": ["linregpcr", "per_well", "assumed_2"]}),
+    "choice.reaction_input": ("reaction", {"template_ul": 5, "input_ng": 10, "unit": "copies"}),
     "prism.project": ("prism", {"template_id": "two_groups_log2", "genes": ["ODC1"]}),
     "prism.exclusion_reason": (
         "ODC1/1496",

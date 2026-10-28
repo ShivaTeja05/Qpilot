@@ -120,6 +120,10 @@ GATE_STALE = (
     "the analysis changed since the controls were checked; read them again (they are checked "
     "at the new analysis)"
 )
+TRACE_STALE = (
+    "the analysis changed since the place was traced; trace it again (it is shown at the new "
+    "analysis)"
+)
 STALE_EXCLUSIONS = (
     "its consequence was computed before the exclusions accepted since then; read what Prism "
     "sent back again (Round trip) for numbers that hold"
@@ -740,7 +744,8 @@ class Studio:
             return Assembly(None, [*blockers, str(err)])
         if blockers:
             return Assembly(None, blockers, design_hash)
-        curves_hash = full.model_copy(update={"excluded_wells": (), "axes": None}).design_hash()
+        unhashed = {"excluded_wells": (), "axes": None, "reaction_input": None}
+        curves_hash = full.model_copy(update=unhashed).design_hash()
         verdict = self.import_verdict(session_id)
         if verdict is not None:
             option = trust_option(accepted) or trust.IN_USE
@@ -1514,6 +1519,10 @@ class Studio:
         curves = analyse_study(
             self.source(session_id), settings.experiment_id, settings.candidates, settings.curves
         )
+        if axis != "efficiency":  # the normaliser and the correction between plates
+            from qpilot import studio_axes
+
+            return {"axis": axis, "tested": tested, **studio_axes.offer(axis, settings, curves)}
         table = design_curves(curves, design)
         quantities = {s: d.quantity for s, d in design.samples.items() if d.quantity}
         std = eff_axis.standard_curves(table, quantities)
@@ -1552,10 +1561,13 @@ class Studio:
 
         On: every option of the axis that applies to the confirmed design, primary first (for
         the efficiency models: LinRegPCR's mean efficiency, each well's own, one per amplicon,
-        an assumed 2.0, the dilution series'); off: the primary alone. Nothing changes until a
-        person accepts it; then the design names the axis and the study is analysed again with
-        it as one more dimension of the grid, whose Decision Card says what each option would
-        change. The analysis in use stays the primary until a person decides that card.
+        an assumed 2.0, the dilution series'; for the normaliser: the reference genes chosen,
+        NormFinder's and geNorm's best pairs, the global mean; for the correction between
+        plates: none, the inter-run calibrator, the factor correction); off: the primary alone.
+        Nothing changes until a person accepts it; then the design names the axis and the
+        study is analysed again with it as one more dimension of the grid, whose Decision Card
+        says what each option would change. The analysis in use stays the primary until a
+        person decides that card.
         """
         from qpilot.qpcr.axes import get_axis
 
@@ -1570,6 +1582,22 @@ class Studio:
             raise StudioError(f"this choice is {state} in the current analysis")
         catalogue = {o.id: o for o in get_axis(axis).catalogue}
         numbers = offer["evidence"]
+        if axis != "efficiency":  # the normaliser and the correction between plates
+            from qpilot import studio_axes
+
+            labels = {o: c.label for o, c in catalogue.items()}
+            proposal = Proposal(
+                study_id=session_id,
+                kind="choice.axis",
+                subject=axis,
+                payload={"options": list(wanted)},
+                evidence=studio_axes.evidence(axis, numbers),
+                alternatives=[{"options": [primary]} if on else {"options": list(options)}],
+                level="Moderate",
+                reasons=studio_axes.reasons(axis, on, offer["unavailable"], labels),
+                made_by=MadeBy(kind="rule"),
+            )
+            return self.store.proposals(session_id).propose(proposal, "system")
         evidence = [
             Evidence(
                 kind="rule",
@@ -1838,7 +1866,17 @@ class Studio:
             for w, p in _latest_exclusions(view).items()
             if trace_card_of(p) == choice.card_id and leaves_out(p)
         }
-        choice = replace(choice, universe=tuple(sorted(set(choice.wells) | mine)))
+        # an agent's request waiting at this place is answered by any click here (approved when
+        # it asks for what the person chose, turned down otherwise), whichever wells it names
+        asked = {
+            p.subject
+            for p in view.proposals
+            if p.kind == EXCLUDE_KIND
+            and p.status == "proposed"
+            and p.made_by.kind == "agent"
+            and trace_card_of(p) == choice.card_id
+        }
+        choice = replace(choice, universe=tuple(sorted(set(choice.wells) | mine | asked)))
         # Run Gate's plan: a waiting request from no card (or from Trace) on these wells is
         # settled by the same click; one tied to a Run Gate card is left for that card.
         plan = _gate_plan(assembly, view, choice)  # type: ignore[arg-type]
@@ -1872,17 +1910,88 @@ class Studio:
             proposals=decided,
         )
 
-    def _trace_proposal(
-        self, session_id: str, choice: TraceChoice, well: str, excluded: bool
-    ) -> Proposal:
-        """One well of a Trace choice as a ``curve.exclude_well`` proposal made by Trace.
+    def request_trace(
+        self, session_id: str, choice: TraceChoice, reason: str, agent: str | None = None
+    ) -> GateDecision:
+        """An agent asks to set wells aside at a place Trace pointed at: proposals that wait.
 
+        Run Gate's :meth:`request_gate` for a Trace place: one agent-made ``curve.exclude_well``
+        per well whose state the option would change (the place's wells, and the wells a person
+        set aside from this same place that the option would put back), with the agent's
+        ``reason``. Nothing is applied (only a person accepts, :meth:`decide_trace` or the
+        Curves inbox), so the answer is ``pending_human`` whatever the place is; a person's
+        Decide… at the place answers a waiting request by the same click (accepted when it
+        asks for what the person chose, turned down otherwise). When nothing would change,
+        nothing is filed and the answer says so.
+        """
+        from qpilot.core.proposals import clean_reason
+
+        reason = clean_reason(reason, required=True)
+        assembly, view = self._gate_view(session_id, choice)  # type: ignore[arg-type]
+        if isinstance(assembly, GateDecision):
+            return replace(assembly, reason=TRACE_STALE)
+        mine = {
+            w
+            for w, p in _latest_exclusions(view).items()
+            if trace_card_of(p) == choice.card_id and leaves_out(p)
+        }
+        choice = replace(choice, universe=tuple(sorted(set(choice.wells) | mine)))
+        plan = _gate_plan(assembly, view, choice)  # type: ignore[arg-type]
+        inbox = self.store.proposals(session_id)
+        filed: list[Proposal] = []
+        head = view.head
+        for well, excluded in plan.changes:
+            proposal = self._trace_proposal(session_id, choice, well, excluded, (reason, agent))
+            outcome = inbox.propose(proposal, "agent")
+            if outcome.status == "refused":
+                return GateDecision(status="refused", head=outcome.head, reason=outcome.reason)
+            head = outcome.head
+            if outcome.proposal is not None:
+                filed.append(outcome.proposal)
+        return GateDecision(
+            status="pending_human",
+            head=head,
+            proposals=filed,
+            reason=(
+                "Only a person decides whether to set wells aside: the request waits in qPilot "
+                "(Trace, at this place, or the Curves inbox)."
+                if filed
+                else "Nothing to ask: the wells are already as this option leaves them."
+            ),
+        )
+
+    def trace_requests(self, session_id: str) -> dict[str, list[Proposal]]:
+        """Agents' requests waiting at Trace places, by the place's card id, oldest first."""
+        out: dict[str, list[Proposal]] = {}
+        for card, proposals in self.trace_record(session_id).items():
+            waiting = [p for p in proposals if p.status == "proposed" and p.made_by.kind == "agent"]
+            if waiting:
+                out[card] = waiting
+        return out
+
+    def _trace_proposal(
+        self,
+        session_id: str,
+        choice: TraceChoice,
+        well: str,
+        excluded: bool,
+        agent: tuple[str, str | None] | None = None,
+    ) -> Proposal:
+        """One well of a Trace choice as a ``curve.exclude_well`` proposal.
+
+        Made by Trace's rule, or by an agent when ``agent`` gives its reason (and name).
         Blind-safe like Run Gate's: the consequence says only whether the option changes a
         call at the analysis in use and which place and option it came from (the sample and
         its well, never a gene, a direction or a number).
         """
         words = "leave it out" if excluded else "put it back"
         checks = f" ({', '.join(choice.checks)})" if choice.checks else ""
+        if agent is None:
+            made_by = MadeBy(kind="rule", provider=TRACE_MAKER, model=TRACE_MODEL)
+            reasons = [f"Trace{checks}, {choice.where}: {choice.label}"]
+        else:
+            made_by = MadeBy(kind="agent", agent=agent[1])
+            reasons = [agent[0]]
         return Proposal(
             study_id=session_id,
             kind=EXCLUDE_KIND,
@@ -1904,8 +2013,8 @@ class Studio:
                 },
             },
             level="Moderate",
-            reasons=[f"Trace{checks}, {choice.where}: {choice.label}"],
-            made_by=MadeBy(kind="rule", provider=TRACE_MAKER, model=TRACE_MODEL),
+            reasons=reasons,
+            made_by=made_by,
         )
 
     def trace_record(self, session_id: str) -> dict[str, list[Proposal]]:
