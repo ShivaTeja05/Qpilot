@@ -147,3 +147,20 @@ def test_no_gene_symbol_is_proposed_for_a_placeholder_and_its_check_is_never_con
     summary, q = make({"S1": "unkn"}, targets={"REF": "toi", "GOI": "toi", "GAPDH": "toi"})
     symbols = {f.subject for f in by(propose_from_names(summary, q), "design.gene_symbol")}
     assert "REF" not in symbols and "GOI" not in symbols and "GAPDH" in symbols
+
+
+def test_the_lightcycler96_depositors_table_names_its_reference_gene(tmp_path):
+    """The hmuY deposit's own table (tests/fixtures/corpus/rdml/lightcycler96-lc96p-hmuy,
+    hmuy_cq_values.xlsx), its sample columns as intake keeps them (no Cq beside a group):
+    'Gene Type' says Target / Reference, padded with spaces as the depositors typed it."""
+    path = tmp_path / "hmuy_cq_values (sample columns).csv"
+    rows = ["Replicate,Sample Name,Gene Name,Condition Name,Gene Type"]
+    for sample, condition in (("Hm_1", "Hm"), ("DIP_1", "DIP")):
+        rows.append(f"1,{sample}       ,hmuYPe   ,{condition},Target   ")
+        rows.append(f"1,{sample}       ,16S rRNA ,{condition},Reference")
+    path.write_text("\n".join(rows) + "\n")
+    table = sheet_table(path)
+    assert table is not None
+    assert {"sample", "target", "group", "target_role"} <= set(table.columns)
+    roles = {(c.target, c.role) for c in target_roles(path)}
+    assert roles == {("hmuYPe", "toi"), ("16S rRNA", "ref")}
