@@ -36,6 +36,11 @@ STAGES = (
         "Wells that were flagged, amplified very late or never amplified.",
         ("flagged", "late_cq", "nondetect"),
     ),
+    (
+        "Combine the replicates",
+        "A sample's replicate wells become one value; replicates are never counted as samples.",
+        ("replicates",),
+    ),
     ("Normalise", "Each sample is divided by the average of its reference genes.", ("refs",)),
     ("Define the groups", "Samples are split into the high group and the rest.", ("cut",)),
     ("Compare the groups", "A two-group test gives a p-value for each gene.", ("test",)),
@@ -97,10 +102,11 @@ class LabViews:
         """
         if self._genorm_cache is None:
             from qpilot.qpcr.quant import log2_matrix
-            from qpilot.qpcr.refgenes import genorm
+
+            from qsim.study_space import stability_m
 
             s = self.engine.study
-            m_values = genorm(log2_matrix(s.curves), list(s.candidates)).M_initial
+            m_values = stability_m(log2_matrix(s.curves), s.candidates)
             self._genorm_cache = {str(g): float(v) for g, v in m_values.items()}
         return self._genorm_cache
 
@@ -110,7 +116,7 @@ class LabViews:
         cell = self.space.baseline_index()
         v, ids = e.values_of(cell), e.ids_of(cell)
         with self._engine_lock:
-            matrix = e.matrix(v["efficiency"], v["flagged"], v["nondetect"], late=v.get("late_cq"))
+            matrix = e.matrix_of(v)
             _, valid = e.relative(matrix, ids["refs"])
         return valid[:, e.items.index(gene)]
 
@@ -196,7 +202,7 @@ class LabViews:
         e, s = self.engine, self.engine.study
         v, ids = e.values_of(cell), e.ids_of(cell)
         with self._engine_lock:
-            matrix = e.matrix(v["efficiency"], v["flagged"], v["nondetect"], late=v.get("late_cq"))
+            matrix = e.matrix_of(v)
             rel, valid = e.relative(matrix, ids["refs"])
         i = e.items.index(gene)
         col = s.genes.index(gene)
@@ -395,6 +401,9 @@ class LabViews:
         decisions = pd.read_csv(self.dir / "decisions.csv").set_index("decision")
         stages = []
         for title, text, ids in STAGES:
+            ids = [d for d in ids if d in self.space.names]  # replicates: only when there are any
+            if not ids:
+                continue
             items = []
             for d in ids:
                 dec = self.space.decision(d)
