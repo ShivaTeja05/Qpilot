@@ -81,11 +81,9 @@ DETECTED = {
     "thermofisher/securebio-qs3-design-analysis-2.7": {"*": "quantstudio"},
     "thermofisher/zamanian-stepone-plus-sybr-sections": {
         "*": "quantstudio",
-        # per-filter raw counts and the melt-region tables are not read (yet)
+        # per-filter raw counts are not read (yet); the melt-region tables are (the derivative
+        # is recognised and passed over)
         "raw_data.txt": None,
-        "melt_region_derivative_data.txt": None,
-        "melt_region_normalized_data.txt": None,
-        "melt_region_temperature_data.txt": None,
     },
     "rdml/cfx-manager-3.0-rdml-1.1-nonstandard-member": {"*": "rdml"},
     "rdml/cfx-manager-3.0-rdml-1.2-rpa": {"*": "rdml"},
@@ -336,8 +334,17 @@ def test_zamanian_stepone_section_files_are_one_plate():
     assert (p.n_wells, p.n_reactions, p.n_cycles) == (57, 57, 40)
     assert p.sample_types == {"ntc": 3, "unkn": 54}
     assert p.n_with_vendor_cq == 57 - 2
-    assert {s.role for s in result.meta.sources} == {"plate"}
+    roles = {s.name: s.role for s in result.meta.sources}
+    assert set(roles.values()) == {"plate", "melt", "ignored"}
+    assert roles["melt_region_derivative_data.txt"] == "ignored"
     assert verdicts(result) == {p.run_id: "normalized"}  # Rn = normalized
+    # the melt region: each well's 14 temperatures and normalized readings, paired by reading
+    assert result.meta.layers.melt
+    melted = [r for plate in result.plates for r in plate.reactions if r.melt is not None]
+    assert len(melted) == 57 and {len(r.melt.x) for r in melted} == {14}
+    a1 = next(r for r in melted if r.well == "A1" and r.target == "GAPDH")
+    assert (a1.melt.x[0], a1.melt.y[0]) == (60.2008, 67173.8203)  # Reading 1 in both files
+    assert (a1.melt.x[-1], a1.melt.y[-1]) == (93.677, -592.6323)  # Reading 14
 
 
 ALLOTROPY = "thermofisher/allotropy-quantstudio-rtpcr-txt"

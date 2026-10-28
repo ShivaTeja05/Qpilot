@@ -9,8 +9,15 @@
 # qpcr/gate_instr.py), are rules of the pack: sourced, with their thresholds as parameters, a
 # verdict per biological unit x target (G-RT) and per plate (G-INSTR), and the consequence test
 # where they point at wells. The rules of 1.0.0 are unchanged.
+#
+# 1.2.0 (28 Oct 2026): G-MELT, melt curves of DNA-binding-dye assays (qpcr/melt.py,
+# methods/melt_curve.md): one product at the assay's melting temperature per amplified study
+# well, and what melted in each no-template control. G-NTC-1 now grades a control's amplification
+# with G-MELT's class of its product (a primer-dimer gives its 'tainted_dimer' warning, as the
+# 1.0.0 severity already allowed) when the file has melt curves; without them it is unchanged.
+# The rules of 1.1.0 are otherwise unchanged.
 pack: research-default
-version: 1.1.0
+version: 1.2.0
 label: >-
   Research use only. Rules are lab-editable examples with sources; they are not clinical
   run-validity rules.
@@ -70,6 +77,21 @@ sources:
       CFX run information): the run state, the event log and each calibration's expiry as the
       vendor's software wrote them. qPilot reads them (methods/instrument_context.md) and adds no
       threshold of its own.
+  rdmlpython_melt:
+    citation: >-
+      RDML consortium, rdmlpython (MIT), Run.meltCurveAnalysis: a peak within the expected
+      melting temperature +/- truePeakWidth (default 1.0 C) is the product, and peaks below
+      peakCutoff (default 5 % of the summed peak heights) are not counted. Untergasser A, Ruijter
+      JM, Benes V, van den Hoff MJB. Web-based LinRegPCR: application for the visualization and
+      analysis of (RT)-qPCR amplification and melting data. BMC Bioinformatics 2021;22:398.
+    url: https://doi.org/10.1186/s12859-021-04306-1
+  ririe_1997:
+    citation: >-
+      Ririe KM, Rasmussen RP, Wittwer CT. Product differentiation by analysis of DNA melting
+      curves during the polymerase chain reaction. Anal Biochem 1997;245(2):154-160: the
+      negative derivative of the melt curve (-dF/dT) peaks at each product's melting
+      temperature; primer-dimers melt lower than the product.
+    url: https://doi.org/10.1006/abio.1996.9916
   lab_default:
     citation: Unsourced, lab-editable default (qPilot project convention).
 rules:
@@ -219,3 +241,40 @@ rules:
     consequence_scope: [exclude_run]
     default_action: card
     sources: [vendor_run_file, lab_default]
+  - id: G-MELT
+    name: One product at the assay's melting temperature
+    check: melt_products
+    statement: >-
+      For SYBR Green and other DNA-binding dyes with a melt curve. Each well's melt curve is
+      differentiated (-dF/dT, smoothed) and its peaks found; a peak lower than noise_share of the
+      assay's typical product peak on the plate is not counted. The assay's expected melting
+      temperature is the one the file declares for the target, else the median main-peak
+      temperature of the target's amplified study wells on the plate (at least min_wells of
+      them; a qPilot convention). Each study sample's amplified wells should melt as one product
+      within tm_tolerance_c of it: a main peak further away, or no peak, means no product at the
+      expected temperature (fail); an extra peak carrying at least extra_peak_share of the well's
+      summed peak heights means a mixture, such as a primer-dimer beside the product (warn); the
+      consequence test leaves the flagged wells out. In a no-template control, a peak at the
+      product's temperature is a contamination candidate and a higher one another product
+      (warn); only lower peaks are a primer-dimer candidate, usually harmless there (pass);
+      G-NTC-1 grades the control's amplification with this class. A single peak at the expected
+      temperature does not guarantee the intended amplicon (MIQE 2.0). Without melt curves, or
+      for a probe chemistry, the rule is not applicable.
+    applies_to:
+      sample_types: [unkn, pos, std, ntc, ntp]
+      per: [plate, target, sample]
+      chemistry: [dna_binding_dye]
+    needs: [melt_curve, engine_call]
+    params: {tm_tolerance_c: 1.0, extra_peak_share: 0.05, noise_share: 0.05, min_wells: 3}
+    severity:
+      one_product: pass
+      extra_peak: warn
+      tm_off: fail
+      no_peak: fail
+      ntc_clean: pass
+      ntc_dimer: pass
+      ntc_other_product: warn
+      ntc_product: warn
+    consequence_scope: [exclude_flagged]
+    default_action: card
+    sources: [rdmlpython_melt, ririe_1997, miqe2, lab_default]

@@ -67,6 +67,10 @@ RULES_1_0 = ("G-TYPED", "G-NTC-1", "G-NAC", "G-NRT", "G-POS", "G-STD", "G-REP")
 #: sha256 of those rules, the sources they cite and the consequence thresholds, taken from the
 #: 1.0.0 pack: 1.1.0 adds rules and sources and changes none of these.
 RULES_1_0_HASH = "1d97abd5a41d362c115e45b293583cb484580d8fa8fe603795dcd80faf0c4368"
+#: The rules of 1.1.0 (1.0.0's and G-RT, G-INSTR) and the same parts, taken from the 1.1.0 pack:
+#: 1.2.0 adds G-MELT and its sources and changes none of these.
+RULES_1_1 = (*RULES_1_0, "G-RT", "G-INSTR")
+RULES_1_1_HASH = "f8b3287bb845d31d569a793561cafeb60a2d0cba54e64160cfc8861a99ed8eff"
 
 
 def rules_part_hash(pack, ids) -> str:
@@ -83,10 +87,11 @@ def rules_part_hash(pack, ids) -> str:
 
 def test_the_shipped_pack_loads_and_matches_this_builds_evaluators():
     pack = resolve_pack()
-    assert pack.pack == "research-default" and pack.version == "1.1.0"
+    assert pack.pack == "research-default" and pack.version == "1.2.0"
     assert "research use" in pack.label.lower()
-    assert [r.id for r in pack.rules] == [*RULES_1_0, "G-RT", "G-INSTR"]
+    assert [r.id for r in pack.rules] == [*RULES_1_1, "G-MELT"]
     assert rules_part_hash(pack, RULES_1_0) == RULES_1_0_HASH
+    assert rules_part_hash(pack, RULES_1_1) == RULES_1_1_HASH
     assert check_pack_against(pack, CHECKS) == []
     for rule in pack.rules:
         assert rule.sources and all(s in pack.sources for s in rule.sources)
@@ -106,7 +111,7 @@ def test_the_pack_hash_is_of_its_content_not_its_bytes():
     # a threshold does
     edited = override(pack, "1.0.1", params={"G-NTC-1": {"k_cycles": 4}})
     assert edited.hash != pack.hash
-    assert pack.ref() == {"pack": "research-default", "version": "1.1.0", "hash": pack.hash}
+    assert pack.ref() == {"pack": "research-default", "version": "1.2.0", "hash": pack.hash}
     # the canonical JSON a record keeps loads back to the same pack
     assert pack_from_json(core_rules.canonical_pack_json(pack)).hash == pack.hash
     # and the YAML a lab saves loads back too

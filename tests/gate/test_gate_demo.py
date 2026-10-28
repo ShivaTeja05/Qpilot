@@ -150,16 +150,18 @@ def test_the_replicate_tolerance_equals_the_independent_one():
 def test_the_consequence_test_on_the_demo(demo):
     """No control finding changes a call at the planned analysis; three change one elsewhere."""
     report, _ = demo
-    # the rules of research-default 1.0.0 give the same verdicts as before G-RT and G-INSTR
-    old = [ev for ev in report.evals if ev.rule_id not in ("G-RT", "G-INSTR")]
+    # the rules of research-default 1.0.0 give the same verdicts as before G-RT, G-INSTR, G-MELT
+    old = [ev for ev in report.evals if ev.rule_id not in ("G-RT", "G-INSTR", "G-MELT")]
     assert summarise(old) == {"pass": 491, "warn": 8, "fail": 14, "not_applicable": 192}
-    # the demo annotates no RT replicates, and its RDML says nothing about the runs
+    # the demo annotates no RT replicates, its RDML says nothing about the runs, and the file
+    # holds no melt curves
     new = Counter((ev.rule_id, ev.verdict, ev.code) for ev in report.evals if ev not in old)
     assert new == {
         ("G-RT", "not_applicable", "rt_not_annotated"): 1,
         ("G-INSTR", "not_applicable", "nothing_in_file"): 64,
+        ("G-MELT", "not_applicable", "no_melt_data"): 1,
     }
-    assert report.counts == {"pass": 491, "warn": 8, "fail": 14, "not_applicable": 257}
+    assert report.counts == {"pass": 491, "warn": 8, "fail": 14, "not_applicable": 258}
     assert len(report.consequences) == 10
     assert all(o.n_flipped == 0 for c in report.consequences for o in c.options)
     assert report.triage == {"ignore": 10, "rescue": 0, "human": 0, "defer": 0}

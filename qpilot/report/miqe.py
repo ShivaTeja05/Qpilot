@@ -555,9 +555,61 @@ def significance(m: MiqeCtx) -> Outcome:
     return Fill("Yes", parts, ["results.json:/conclusion_rule"])
 
 
+NO_MELT = (
+    "The study's file has no melt curves, so qPilot could not check the products' melting "
+    "temperatures; say how specificity was confirmed (melt curve, gel or sequencing)."
+)
+
+
+def _melt(m: MiqeCtx) -> tuple[Any, list[Any]] | None:
+    """The study's melt curves and calls (``qpcr/melt.py``, the pack's G-MELT thresholds)."""
+    from qpilot.qpcr import melt
+    from qpilot.qpcr.gate_rules import melt_params, resolve_pack
+    from qpilot.qpcr.study import StudySettings
+
+    source = m.ctx.inputs.source
+    if source is None:
+        return None
+    design = m.ctx.inputs.design
+    settings = StudySettings.from_design(design) if design is not None else StudySettings()
+    try:
+        return melt.study_melt(source, settings, melt_params(resolve_pack()))
+    except Exception:  # an unreadable file: the item cannot be told, said below
+        return None
+
+
 def specificity(m: MiqeCtx) -> Outcome:
-    """5.19: melt curves or sequencing (qPilot analyses neither)."""
-    return Hint(["qPilot does not analyse melt curves; say how specificity was confirmed."])
+    """5.19: the melt curves, analysed when the file has them (``qpcr/melt.py``, rule G-MELT)."""
+    found = _melt(m)
+    if found is None:
+        return Hint([NO_FILE if m.ctx.inputs.source is None else NO_MELT])
+    data, assays = found
+    if not data.has_melt or not assays:
+        return Hint([NO_MELT])
+    path = "melt:/"
+    wells = sum(len(a.with_melt) for a in assays)
+    flagged = sum(1 for a in assays for w in a.wells if w.flagged)
+    medians = [a.expected_tm for a in assays if a.expected_tm is not None]
+    n_wells = m.n("melt_n_wells", wells, path + "wells@len")
+    n_assays = m.n("melt_n_assays", len(assays), path + "assays@len")
+    n_flagged = m.n("melt_n_flagged", flagged, path + "wells@flagged")
+    parts: list[Part] = [
+        f"qPilot analysed the melt curves of {n_wells} wells ({n_assays} assays on their "
+        "plates): each well's -dF/dT peaks against its assay's product temperature."
+    ]
+    if medians:
+        lo = m.ctx.num("melt_tm_lo", min(medians), path + "assays@tm_min", "{:.1f}", " °C")
+        hi = m.ctx.num("melt_tm_hi", max(medians), path + "assays@tm_max", "{:.1f}", " °C")
+        parts.append(f"The products melt between {lo} and {hi}.")
+    parts.append(
+        f"The Run Gate's rule G-MELT points at {n_flagged} wells (an extra peak, no product at "
+        "the expected temperature, or a product in a no-template control)."
+    )
+    parts.append(
+        "A single peak at the expected temperature does not guarantee that it is the intended "
+        "amplicon (MIQE 2.0)."
+    )
+    return Fill("Yes", parts, ["methods/melt_curve.md", "packs/research-default.yaml#G-MELT"])
 
 
 RESOLVERS: dict[str, Callable[[MiqeCtx], Outcome]] = {
