@@ -37,6 +37,7 @@ from functools import lru_cache
 from statistics import NormalDist
 from typing import Any
 
+from qpilot.explain.words import plural
 from qpilot.schemas import PlanResult
 
 SIGMA_HELP = "SD of log2 normalised expression between biological replicates (not technical Cq SD)"
@@ -561,7 +562,7 @@ def _rules(
 
 
 def _plural(n: int, word: str) -> str:
-    return f"{n} {word}" if n == 1 else f"{n} {word}s"
+    return plural(n, word)
 
 
 def _and(items: list[str]) -> str:

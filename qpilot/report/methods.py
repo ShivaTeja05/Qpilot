@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections import Counter
 
+from qpilot.explain.words import noun
 from qpilot.io.datasets import VERMEULEN_SHA256
 from qpilot.io.inputs import input_label, is_converted
 from qpilot.qpcr.confidence_checks import HOLDS_MIN
@@ -93,7 +94,7 @@ def _names(names: list[str] | tuple[str, ...]) -> str:
 
 
 def _plural(n: int, one: str, many: str) -> str:
-    return one if n == 1 else many
+    return noun(n, one, many)
 
 
 # ---- paragraphs ----------------------------------------------------------------------------------

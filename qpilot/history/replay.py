@@ -29,6 +29,7 @@ from typing import Any
 
 from qpilot.core.record import verify_chain
 from qpilot.core.store import StudyNotFound, StudyStore, replay_cards
+from qpilot.explain.words import plural
 from qpilot.schemas import DecisionCard, DecisionEntry, StudyResult
 from qpilot.web import results_views as rv
 from qpilot.web.contract_history import (
@@ -342,8 +343,7 @@ def _names(genes: Sequence[str], limit: int = 4) -> str:
     return f"{shown} and {more} more" if more > 0 else shown
 
 
-def _plural(n: int, one: str, many: str | None = None) -> str:
-    return f"{n} {one if n == 1 else (many or one + 's')}"
+_plural = plural  # qpilot.explain.words: one copy for the product
 
 
 def _effect(entry: DecisionEntry | None, changed: list[str], moved: int, same: bool) -> str:

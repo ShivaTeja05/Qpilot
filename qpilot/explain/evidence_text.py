@@ -232,7 +232,7 @@ def repeat_lines(facts: Facts) -> list[str]:
     if "f_rr_repeat_n_wells" in facts:
         line += (
             "; the repeat plate has {{f_rr_repeat_n_wells}} wells on {{f_rr_repeat_n_plates}} "
-            "plate(s)"
+            + ("plate" if _value(facts, "f_rr_repeat_n_plates") == 1 else "plates")
         )
         if "f_rr_repeat_calibrator" in facts:
             line += ", with sample {{f_rr_repeat_calibrator}} as the inter-run calibrator"

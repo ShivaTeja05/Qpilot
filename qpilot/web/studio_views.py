@@ -614,15 +614,18 @@ def curve_judge_sentence(report: dict[str, Any]) -> str:
     if not n:
         return "The Curve Judge agrees with LinRegPCR on every study well it scored."
     if not k:
-        return (
-            f"The Curve Judge disagrees with LinRegPCR on {wells}; none of them could change a "
-            "conclusion, so none is listed."
+        none = (
+            "it cannot change a conclusion, so it is not listed"
+            if n == 1
+            else "none of them can change a conclusion, so none is listed"
         )
+        return f"The Curve Judge disagrees with LinRegPCR on {wells}; {none}."
     targets = f"{k} target{'s' * (k != 1)}"
+    whose = "that target's" if k == 1 else "those targets'"
     return (
-        f"The Curve Judge disagrees with LinRegPCR on {wells}; on {targets} that could change a "
-        "conclusion, so those wells are listed one by one for you to decide. The others change "
-        "no conclusion and are not listed."
+        f"The Curve Judge disagrees with LinRegPCR on {wells}; on {targets}, resolving them "
+        f"could change a conclusion, so {whose} wells are listed one by one for you to decide. "
+        "The others change no conclusion and are not listed."
     )
 
 

@@ -37,6 +37,7 @@ from qpilot.ai.prompts import SYSTEM_INTERPRET
 from qpilot.app_state import conclusion_word, esc
 from qpilot.core.facts import slug
 from qpilot.explain.templates import to_html
+from qpilot.explain.words import plural
 from qpilot.schemas import Fact
 from qpilot.schemas_studio import TEXT_ID, InspectSummary, MadeBy, Proposal, QuarantineEntry
 from qpilot.studio_service import BLIND_STAGES, STAGES
@@ -400,7 +401,7 @@ def details_rows(details: Mapping[str, Any]) -> list[tuple[str, str]]:
                     rows.append((esc(rule), text))
             continue
         if isinstance(value, Mapping | list | tuple) and not _scalars(value):
-            rows.append((label, _folded(value, f"{len(value)} item(s)")))
+            rows.append((label, _folded(value, plural(len(value), "item"))))
         elif isinstance(value, list | tuple):
             shown = ", ".join(_value_text(v) for v in value[:12])
             more = f" … ({len(value)} in all)" if len(value) > 12 else ""
@@ -783,7 +784,8 @@ def card_html(
         what.append(f"<p>As edited by a person: {esc(describe(p, p.effective_payload()))}</p>")
     if p.alternatives:
         alts = "; ".join(esc(describe(p, alt)) for alt in p.alternatives[:6])
-        what.append(f'<p class="qs-alt">Other reading(s): {alts}</p>')
+        head = "Other reading" if len(p.alternatives) == 1 else "Other readings"
+        what.append(f'<p class="qs-alt">{head}: {alts}</p>')
     what.append(
         f'<p class="qs-meta"><code>{esc(p.kind)}</code> · '
         f"{esc(STATUS_WORDS.get(p.status, p.status))} · <span class='qs-id'>{esc(p.id)}</span></p>"

@@ -46,6 +46,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, File, Form, UploadFile
 
+from qpilot.app_state import decider_words
 from qpilot.core import gate as core_gate
 from qpilot.core.rules import VERDICTS, RuleEval, RulePack
 from qpilot.schemas import DecisionCard, Fact
@@ -660,7 +661,7 @@ def _card_view(
             "call, so an agent asking for it must ask a person."
         )
     if card.status == "decided" and decision is not None:
-        status = f"Decided by a person: {decision.label}. Why: {decision.reason}"
+        status = f"Decided by {decider_words('human')}: {decision.label}. Why: {decision.reason}"
     if requests:
         status = (
             "An agent asks for "
