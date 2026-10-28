@@ -187,4 +187,4 @@ def test_the_mcp_trace_follows_a_comparison(studies):
     assert out["study_id"] == sid and "code" not in out
     assert out["root"] == {"kind": "gene", "id": "MYC"}
     refused = tools.qpcr_trace(sid, gene="MYC", comparison="nope")
-    assert refused["code"] and "no comparison" in refused["message"]
+    assert refused["code"] and "no comparison" in str(refused)
