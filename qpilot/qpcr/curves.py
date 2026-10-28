@@ -63,7 +63,7 @@ import numpy as np
 import pandas as pd
 
 from qpilot.io.datasets import default_cache_dir
-from qpilot.io.rdml_io import load, runs
+from qpilot.io.rdml_io import load, names_key, runs
 from qpilot.vendor.rdmlpython import rdml
 
 log = logging.getLogger(__name__)
@@ -335,16 +335,22 @@ def cache_path(
     reference_targets: Iterable[str],
     settings: CurveSettings,
     cache_dir: Path,
+    names: str = "",
 ) -> Path:
-    """Where the analysed table for this exact input and configuration is cached."""
-    config = json.dumps(
-        {
-            "experiment": experiment_id,
-            "refs": sorted(reference_targets),
-            "settings": settings.fields(),
-        },
-        sort_keys=True,
-    )
+    """Where the analysed table for this exact input and configuration is cached.
+
+    ``names`` is :func:`qpilot.io.rdml_io.names_key` of the file: for a file whose samples or
+    targets the loader names from elsewhere in it (LightCycler 96), so a table cached before
+    it did is not reused. It is ``""`` for every other file, and then the key is unchanged.
+    """
+    fields: dict[str, Any] = {
+        "experiment": experiment_id,
+        "refs": sorted(reference_targets),
+        "settings": settings.fields(),
+    }
+    if names:
+        fields["names"] = names
+    config = json.dumps(fields, sort_keys=True)
     config_key = hashlib.sha256(config.encode()).hexdigest()[:12]
     return cache_dir / f"{input_sha256}.{config_key}.curves.csv"
 
@@ -411,7 +417,9 @@ def analyse_study(
         path = Path(source)
         if use_cache:
             directory = Path(cache_dir) if cache_dir is not None else default_cache_dir()
-            cached = cache_path(file_sha256(path), experiment_id, references, settings, directory)
+            cached = cache_path(
+                file_sha256(path), experiment_id, references, settings, directory, names_key(path)
+            )
             if cached.exists():
                 table = _read_cache(cached)
                 named = table["well"].str.fullmatch(_WELL_LABEL).all()
@@ -444,7 +452,9 @@ def _instrument_study(
     cached: Path | None = None
     if not isinstance(source, rdml.Rdml) and use_cache:
         directory = Path(cache_dir) if cache_dir is not None else default_cache_dir()
-        cached = cache_path(file_sha256(source), experiment_id, references, settings, directory)
+        cached = cache_path(
+            file_sha256(source), experiment_id, references, settings, directory, names_key(source)
+        )
         if cached.exists():
             return _read_cache(cached)
     fitted = replace(settings, quantities=LINREGPCR)

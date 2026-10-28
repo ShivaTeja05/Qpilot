@@ -212,7 +212,11 @@ def _build(
 ) -> FileFacts:
     doc = rdml_io.load(path)
     names = _Names()
-    notes: list[str] = []
+    loaded = rdml_io.load_notes(doc)
+    notes: list[str] = list(loaded.notes)  # what the loader repaired (none for a clean file)
+    for kind, renamed in sorted(loaded.renamed.items()):
+        for original in renamed:  # the file's own ids, quarantined like every name in it
+            names.quarantine(f"rdml:{kind}.id", original)
 
     target_names: dict[str, str] = {}  # original target id -> engine target name
     target_types: dict[str, str] = {}
