@@ -14,6 +14,11 @@ What a figure shows, and only that:
   units' values, as GraphPad Prism draws it);
 * above the groups, the engine's **call** as a shape and a word (▲ up, ▼ down, ○ no call; never
   colour alone), with the fold change and p of the engine's Welch test;
+* a study with **several comparisons** (three or more groups): every group the study compares
+  is drawn, in one fixed order whichever comparison is chosen, with one bracket per comparison
+  (its call, fold change and, when the engine corrects for the several comparisons, the
+  corrected p, written p-adj), the narrowest lowest; the chosen comparison's bracket is in
+  ink, the others in grey;
 * the **caption** (:attr:`GeneFigure.caption`) is built from the engine's facts: n per group,
   the test, no correction across genes (or the engine's correction), the efficiency model, the
   reference genes, the call rule, and which analysis it is (as decided, or recommended). It is
@@ -87,8 +92,26 @@ class GroupDots:
 
 
 @dataclass(frozen=True)
+class Bracket:
+    """One comparison's call over its two groups (``a`` and ``b`` index ``GeneFigure.groups``)."""
+
+    a: int
+    b: int
+    name: str
+    call: str | None
+    fc: float | None
+    p: float | None
+    adjusted: bool  # ``p`` is the corrected p the call used
+    chosen: bool
+
+
+@dataclass(frozen=True)
 class GeneFigure:
-    """One gene of one comparison, ready to draw: the dots, the engine's result, the caption."""
+    """One gene of one comparison, ready to draw: the dots, the engine's result, the caption.
+
+    ``brackets`` (a study with several comparisons only) holds one bracket per comparison over
+    every group of the study; empty otherwise (one bracket over the two groups, as before).
+    """
 
     gene: str
     comparison: str
@@ -104,6 +127,8 @@ class GeneFigure:
     basis_label: str
     caption: str
     note: str = ""
+    brackets: tuple[Bracket, ...] = ()
+    p_adjusted: float | None = None
 
     @property
     def title(self) -> str:
@@ -147,6 +172,8 @@ def gene_figure(
             "the figure needs each unit's value, and the study's input file is not known here "
             "(open the study from its file again)"
         )
+    if len(analysis.comparisons) > 1:
+        return _with_caption(_every_group(analysis, gene, comp), tables, basis)
     values = analysis.unit_values(gene, comp.name)
     order = [
         comp.group_a,
@@ -181,6 +208,72 @@ def gene_figure(
     return _with_caption(fig, tables, basis)
 
 
+def group_order(comps: Sequence[Any]) -> list[str]:
+    """Every group of several comparisons, in one order: each comparison's reference first.
+
+    Each group against a control gives the control, then the others; every pair gives the
+    first group, then the rest, as the comparisons name them.
+    """
+    return list(dict.fromkeys(g for c in comps for g in (c.group_b, c.group_a)))
+
+
+def _every_group(analysis: Any, gene: str, comp: Any) -> GeneFigure:
+    """One gene over every group of the study, a bracket per comparison (``comp`` chosen)."""
+    comps = list(analysis.comparisons)
+    order = group_order(comps)
+    values: dict[str, dict[str, float]] = {g: {} for g in order}
+    for c in comps:
+        if gene not in c.genes:
+            continue
+        for group, pts in analysis.unit_values(gene, c.name).items():
+            values.setdefault(group, {}).update({str(u): v for u, v in pts})
+    groups = []
+    for i, name in enumerate(order):
+        pts = tuple(sorted(values.get(name, {}).items(), key=lambda pair: pair[0]))
+        mean, lo, hi = mean_ci([v for _, v in pts])
+        groups.append(GroupDots(name, pts, mean, lo, hi, color=i % len(PALETTE)))
+    if not any(g.points for g in groups):
+        raise FigureError(f"no biological unit has a value for {gene!r}")
+    brackets = []
+    for c in sorted(comps, key=lambda c: c.name != comp.name):  # the chosen one first (lowest)
+        con = c.contrasts.get(gene)
+        adjusted = bool(c.correction) and bool(c.p_adjusted) and gene in (c.p_adjusted or {})
+        p = (c.p_adjusted or {}).get(gene) if adjusted else (con.p if con else None)
+        brackets.append(
+            Bracket(
+                a=order.index(c.group_a),
+                b=order.index(c.group_b),
+                name=c.name,
+                call=con.conclusion if con is not None else None,
+                fc=_finite(con.fc) if con else None,
+                p=_finite(p),
+                adjusted=adjusted,
+                chosen=c.name == comp.name,
+            )
+        )
+    con = comp.contrasts.get(gene)
+    note = "" if con is not None else comp.withheld.get(gene, "too few values in a group")
+    chosen = brackets[0]
+    return GeneFigure(
+        gene=gene,
+        comparison=comp.name,
+        groups=tuple(groups),
+        call=con.conclusion if con is not None else None,
+        fc=_finite(con.fc) if con else None,
+        ci_lo=_finite(con.ci[0]) if con else None,
+        ci_hi=_finite(con.ci[1]) if con else None,
+        p=_finite(con.p) if con else None,
+        n_a=con.n_hi if con else None,
+        n_b=con.n_lo if con else None,
+        basis=analysis.basis,
+        basis_label=analysis.label,
+        caption="",
+        note=note,
+        brackets=tuple(brackets),
+        p_adjusted=chosen.p if chosen.adjusted else None,
+    )
+
+
 def _finite(x: Any) -> float | None:
     try:
         v = float(x)
@@ -192,17 +285,18 @@ def _finite(x: Any) -> float | None:
 # ---- the caption: the engine's facts in words -----------------------------------------------
 
 
-def p_words(p: float | None) -> list[Segment]:
-    """``p = 0.003``, or ``p = 2.3 × 10⁻⁸`` as text segments."""
+def p_words(p: float | None, adjusted: bool = False) -> list[Segment]:
+    """``p = 0.003``, or ``p = 2.3 × 10⁻⁸`` as text segments (``p_adj`` for a corrected p)."""
     if p is None:
         return [("p not computed", "")]
+    name: list[Segment] = [("p", ""), ("adj", "sub")] if adjusted else [("p", "")]
     if p >= 0.001:
-        return [(f"p = {fmt.p_value(p)}", "")]
+        return [*name, (f" = {fmt.p_value(p)}", "")]
     exponent = math.floor(math.log10(p))
     mantissa = p / 10**exponent
     if round(mantissa, 1) >= 10:
         mantissa, exponent = mantissa / 10, exponent + 1
-    return [(f"p = {mantissa:.1f} × 10", ""), (f"{fmt.MINUS}{-exponent}", "sup")]
+    return [*name, (f" = {mantissa:.1f} × 10", ""), (f"{fmt.MINUS}{-exponent}", "sup")]
 
 
 def _plain(segments: Sequence[Segment]) -> str:
@@ -218,9 +312,57 @@ def _call_sentence(fig: GeneFigure) -> str:
     return {"up": "called up", "down": "called down", "none": "no call"}.get(fig.call, fig.call)
 
 
+def _every_caption(fig: GeneFigure, tables: StudyTables, basis: str) -> str:
+    """The caption of a figure over every group: each group's n, each comparison's result."""
+    analysis = tables.analysis(basis)
+    comps = {c.name: c for c in analysis.comparisons}
+    named = ", ".join(f"{g.name} (n = {g.n})" for g in fig.groups)
+    parts = [
+        f"{fig.gene} in {named}. Each dot is one biological unit's log2 relative quantity; "
+        "technical replicates are averaged within each unit and never counted as n. Bars: group "
+        "mean with its 95 % confidence interval (Student's t).",
+        f" Quantities are normalised to the mean log2 quantity of the reference genes "
+        f"{', '.join(analysis.refs)}; efficiency: {analysis.efficiency}; a curve counts as "
+        f"amplified by {_lower(analysis.amp_call)}; wells with no quantity: "
+        f"{_lower(analysis.undetermined)}.",
+    ]
+    first = comps[fig.comparison]
+    test = first.test or "Welch's t test"
+    parts.append(f" {test[:1].upper()}{test[1:]} on the per-unit log2 values in each comparison:")
+    for k, b in enumerate(fig.brackets):
+        c = comps[b.name]
+        con = c.contrasts.get(fig.gene)
+        sep = ";" if k < len(fig.brackets) - 1 else "."
+        if con is None:
+            parts.append(f" {b.name}, not compared{sep}")
+            continue
+        name = "corrected p" if b.adjusted else "p"
+        p = _plain(p_words(b.p)).removeprefix("p ")
+        parts.append(
+            f" {b.name}, fold change {fmt.fold(b.fc)} (95 % CI {fmt.fold(_finite(con.ci[0]))} to "
+            f"{fmt.fold(_finite(con.ci[1]))}), {name} {p}, {_call_sentence_of(b.call)}{sep}"
+        )
+    alpha, fold = _rule(tables)
+    rule = "corrected p" if any(b.adjusted for b in fig.brackets) else "p"
+    parts.append(f" A call needs {rule} < {alpha:g} and at least {fold:g}-fold.")
+    if first.correction:
+        parts.append(f" {first.correction}.")
+    parts.append(
+        f" The bracket in black is {fig.comparison}. Analysis: "
+        f"{analysis.words.split(':')[0].lower()} ({_basis_tail(analysis)})."
+    )
+    return "".join(parts)
+
+
+def _call_sentence_of(call: str | None) -> str:
+    return {"up": "called up", "down": "called down", "none": "no call"}.get(call or "", "no call")
+
+
 def _with_caption(fig: GeneFigure, tables: StudyTables, basis: str) -> GeneFigure:
     from dataclasses import replace
 
+    if fig.brackets:
+        return replace(fig, caption=_every_caption(fig, tables, basis))
     analysis = tables.analysis(basis)
     a, b = fig.groups[0], fig.groups[1]
     n_a = fig.n_a if fig.n_a else a.n
@@ -411,11 +553,15 @@ def _call_glyph(call: str | None, x: float, y: float, r: float = 4.2) -> Shape:
     return Shape(circle=(x, y, r * 0.8), fill="none")
 
 
+BRACKET_STEP = 15.0  # drawing units between stacked comparison brackets
+
+
 def layout(fig: GeneFigure, x0: float = 0.0, y0: float = 0.0) -> list:
     """The figure's primitives in a ``W`` × ``H`` box whose top-left corner is ``(x0, y0)``."""
     items: list = []
     left, right = x0 + ML, x0 + W - MR
-    top, bottom = y0 + MT, y0 + H - MB
+    extra = BRACKET_STEP * max(len(fig.brackets) - 1, 0)
+    top, bottom = y0 + MT + extra, y0 + H - MB
     lo, hi = _range(fig)
 
     def y(v: float) -> float:
@@ -474,6 +620,11 @@ def layout(fig: GeneFigure, x0: float = 0.0, y0: float = 0.0) -> list:
         items.append(Text(cx, bottom + 15, ((g.name, ""),), 8.5, "middle", INK, cls="group"))
         items.append(Text(cx, bottom + 27, ((f"n = {g.n}", ""),), 7.5, "middle", MUTED))
     items.append(Text(x0 + 6, y0 + 15, ((fig.gene, ""),), 10.5, "start", INK, True, cls="gene"))
+    if fig.brackets:  # several comparisons: a bracket each, the narrowest lowest; chosen in ink
+        stacked = sorted(fig.brackets, key=lambda b: (abs(b.a - b.b), not b.chosen, b.a, b.b))
+        for k, b in enumerate(stacked):
+            items += _bracket(b, centres, top - 12 - BRACKET_STEP * k)
+        return items
     # The engine's call over the first two groups.
     if n >= 2:
         a, b = centres[0], centres[1]
@@ -493,6 +644,30 @@ def layout(fig: GeneFigure, x0: float = 0.0, y0: float = 0.0) -> list:
         items.append(_call_glyph(fig.call, start + 4.5, by - 7.5))
         items.append(Text(start + 12, by - 4.5, words, 8, "start", INK, cls="call"))
     return items
+
+
+def _bracket(b: Bracket, centres: Sequence[float], by: float) -> list:
+    """One comparison's bracket between its groups' columns, with its call, fold and p."""
+    ink = INK if b.chosen else MUTED
+    a, c = centres[b.a], centres[b.b]
+    lo, hi = min(a, c), max(a, c)
+    out: list = [Line(lo, by, hi, by, ink, 0.9 if b.chosen else 0.6, "bracket")]
+    for x in (lo, hi):
+        out.append(Line(x, by, x, by + 3.5, ink, 0.9 if b.chosen else 0.6, "bracket"))
+    if b.call is None:
+        words: tuple[Segment, ...] = (("not compared", ""),)
+    else:
+        words = (
+            (f"{CALL_WORDS.get(b.call, b.call)} · {fmt.fold(b.fc)} · ", ""),
+            *p_words(b.p, b.adjusted),
+        )
+    size = 7.0
+    width = _text_width(words, size) + 10
+    start = max((lo + hi) / 2 - width / 2, centres[0] - 20)
+    glyph = _call_glyph(b.call, start + 3.8, by - 6.0, 3.4)
+    out.append(Shape(glyph.points, glyph.circle, ink if glyph.fill != "none" else "none", ink))
+    out.append(Text(start + 10, by - 3.2, words, size, "start", ink, b.chosen, cls="call"))
+    return out
 
 
 def _text_width(segments: Sequence[Segment], size: float) -> float:

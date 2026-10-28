@@ -6,7 +6,12 @@ group (sample ``<group>_<donor>``, e.g. ``DrugA_D2``), in triplicate. Targets: `
 Drug B only) and ``TP53`` (no change). Each donor shifts every gene of its samples by the same
 amount (the cDNA input, which the control genes remove) and every target gene by a donor's own
 biology (a donor effect only a paired test removes). With ``missing_well`` the sample
-``DrugB_D4`` has no ``TP53`` well at all (a unit not measured for one gene).
+``DrugB_D4`` has no ``TP53`` well at all (a unit not measured for one gene). With
+``ref_shift`` a control gene comes up later in one group (``{("ACTB", "Drug B"): 2.5}``: the
+drug lowers ACTB), so which control genes normalise changes calls in that group's comparison
+only. With ``silent`` a gene never amplifies in a group (``{("TP53", "Drug B")}``: flat
+curves, so every such well is undetermined: under "cap" the group's values are all filled in,
+and the gene is detected only in the other groups).
 
 Curves are model curves (exponential growth to a plateau, efficiency 1.9) with a little baseline
 noise from a fixed seed, so the file is identical on every run.
@@ -68,7 +73,13 @@ def _curve(rng: np.random.Generator, crossing: float) -> list[float]:
     return list(base + 1.0 / (1.0 / (n0 * EFFICIENCY**cycles) + 1.0 / PLATEAU))
 
 
-def write_compare_mini(path: str | Path, *, missing_well: bool = False) -> Path:
+def write_compare_mini(
+    path: str | Path,
+    *,
+    missing_well: bool = False,
+    ref_shift: dict[tuple[str, str], float] | None = None,
+    silent: set[tuple[str, str]] | frozenset[tuple[str, str]] = frozenset(),
+) -> Path:
     """Write the synthetic three-group RDML file to ``path`` and return the path."""
     rng = np.random.default_rng(11)
     parts = ['<rdml xmlns:rdml="http://www.rdml.org" xmlns="http://www.rdml.org" version="1.4">']
@@ -94,6 +105,7 @@ def write_compare_mini(path: str | Path, *, missing_well: bool = False) -> Path:
                 react += 3
                 continue
             cq = BASE_CQ[target] + DONOR_SHIFT[donor] - EFFECT.get((target, group), 0.0)
+            cq += (ref_shift or {}).get((target, group), 0.0)
             if target not in ("GAPDH", "ACTB"):
                 cq += WOBBLE[(group, donor)] + DONOR_BIOLOGY[donor]
             for rep in range(3):
@@ -101,7 +113,10 @@ def write_compare_mini(path: str | Path, *, missing_well: bool = False) -> Path:
                 crossing = cq + (rep - 1) * 0.05
                 parts.append(f'<react id="{react}"><sample id={quoteattr(name)}/>')
                 parts.append(f"<data><tar id={quoteattr(target)}/>")
-                for cycle, fluor in enumerate(_curve(rng, crossing), start=1):
+                curve = _curve(rng, crossing)
+                if (target, group) in silent:  # never amplifies: the baseline alone
+                    curve = list(0.5 + rng.normal(0.0, 0.002, CYCLES))
+                for cycle, fluor in enumerate(curve, start=1):
                     parts.append(f"<adp><cyc>{cycle}</cyc><fluor>{fluor:.4f}</fluor></adp>")
                 parts.append("</data></react>")
         parts.append("</run>")

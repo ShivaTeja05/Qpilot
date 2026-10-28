@@ -11,6 +11,7 @@ import type { Verdict } from "@/lib/vocab";
 import { Button, Card, CardBody, CardHeader, ErrorPanel, JobCard, VerdictTag } from "@/ui";
 import { useInvalidateAudit, useRunAudit, useSeedJob, type AuditTarget } from "./api";
 import type { AuditStatus } from "./types";
+import { ComparisonsNote } from "./ComparisonsNote";
 import { ReplicatesNote } from "./ReplicatesNote";
 import { decisionWords } from "./words";
 
@@ -125,6 +126,7 @@ export function NotRun({
             </p>
           )}
           <ReplicatesNote replicates={scope?.technical_replicates} className="p-3" />
+          <ComparisonsNote comparisons={scope?.comparisons} />
           {scope?.groups?.length === 2 ? (
             <p className="text-[13px] text-muted">
               Comparing <span className="font-medium text-fg">{scope.groups[0]}</span> with{" "}

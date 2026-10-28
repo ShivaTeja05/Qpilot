@@ -118,3 +118,17 @@ class UnitValues(BaseModel):
     how: list[str] = Field(description="How the values were computed, in plain sentences.")
     line_log2: float = Field(description="The fold change a call needs (log2).")
     line: str
+    comparison: str | None = Field(
+        default=None, description="A study with several comparisons: the one shown (its id)."
+    )
+    comparison_label: str | None = None
+    paired: bool = Field(
+        default=False, description="The comparison is paired: its fold change is within pairs."
+    )
+    p_adjusted: float | None = Field(
+        default=None, description="Several comparisons: the corrected p the call used."
+    )
+    correction: str | None = Field(default=None, description="The correction's short name.")
+    q: float | None = Field(
+        default=None, description="Benjamini-Hochberg q over this comparison's genes."
+    )

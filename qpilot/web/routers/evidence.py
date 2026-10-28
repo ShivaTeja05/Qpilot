@@ -38,6 +38,7 @@ from qpilot.core.store import MAX_REVIEWER, StaleReview, StudyNotFound
 from qpilot.explain.evidence_text import (
     PURPOSE,
     STATUS_WORDS,
+    comparison_lines,
     headline_lines,
     item_line,
     ledger_summary,
@@ -339,6 +340,10 @@ def review_view(ctx: AppContext, study_id: str, sid: str | None) -> RunReviewVie
         title=checked("runreview_v1", study_line(facts), facts, "Run Review."),
         purpose=PURPOSE,
         headline=shown,
+        comparisons=[
+            checked("runreview_v1", tokens, facts, "A comparison of the study.")
+            for tokens in comparison_lines(facts)
+        ],
         evidence=evidence_view(study_id, ledger, note, source),
         sign_offs=sign_offs,
         outcomes=list(OUTCOMES),

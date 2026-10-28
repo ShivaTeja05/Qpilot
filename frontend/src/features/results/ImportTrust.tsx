@@ -16,7 +16,8 @@ import { ApiError } from "@/api/client";
 import { cn } from "@/lib/cn";
 import { dateTime } from "@/lib/format";
 import { MOD } from "@/lib/hooks";
-import { Badge, Button, Card, ErrorPanel, Kbd, LevelTag, Textarea, toast } from "@/ui";
+import { decidedBy } from "@/lib/vocab";
+import { Badge, Button, Card, ErrorPanel, KeyHint, LevelTag, Textarea, toast } from "@/ui";
 import {
   useImportTrust,
   useTrustWrite,
@@ -36,7 +37,7 @@ const TITLE_ID = "import-trust-card";
 
 const STATUS: Record<string, { label: string; tone: "accent" | "ok" | "warn" }> = {
   open: { label: "A person decides", tone: "accent" },
-  decided: { label: "Decided by a person", tone: "ok" },
+  decided: { label: decidedBy("human"), tone: "ok" },
   pending_human: { label: "Agent request", tone: "warn" },
 };
 
@@ -203,10 +204,7 @@ function DecideForm({
             Cancel
           </Button>
         )}
-        <span className="text-[12px] text-faint">
-          <Kbd>{MOD}</Kbd>
-          <Kbd>Enter</Kbd>
-        </span>
+        <KeyHint keys={[MOD, "Enter"]} />
       </div>
       {note && <p className="text-[12px] text-muted">{note}</p>}
     </div>
@@ -293,8 +291,10 @@ export function ImportTrustView({
         )}
         {view.decision && !changing && (
           <p className="text-[13px] text-muted">
-            <span className="text-fg">Decided by a person: {view.decision.label}.</span> Why:{" "}
-            {view.decision.reason}
+            <span className="text-fg">
+              {decidedBy("human")}: {view.decision.label}.
+            </span>{" "}
+            Why: {view.decision.reason}
             {view.decision.decided_at ? (
               <span className="text-faint"> · decided {dateTime(view.decision.decided_at)}</span>
             ) : null}

@@ -368,6 +368,10 @@ def _figure(
         tables = _tables(ctx, study_id, sid)
     except StudyNotFound as err:
         raise api_error(404, "not_found", "There is no analysed study with this id.") from err
+    found = ctx.store.get(study_id).comparisons
+    for outcome in found.comparisons if found is not None and comparison else ():
+        if outcome.id == comparison:  # a comparison's id (the page's picker) names it too
+            comparison = outcome.label
     try:
         return tables, gene_figure(tables, gene, basis, comparison)
     except FigureError as err:
@@ -409,6 +413,7 @@ def figure_info(
         ci95_low=fig.ci_lo,
         ci95_high=fig.ci_hi,
         p=fig.p,
+        p_adjusted=fig.p_adjusted,
         n_a=fig.n_a,
         n_b=fig.n_b,
         groups=[

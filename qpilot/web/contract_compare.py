@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from qpilot.schemas import Conclusion
 
 __all__ = [
+    "CardComparison",
     "ComparisonCell",
     "ComparisonGeneRow",
     "ComparisonInfo",
@@ -31,7 +32,9 @@ class ComparisonInfo(BaseModel):
     label: str
     group_a: str
     group_b: str
-    primary: bool = Field(description="The first comparison: the one the Decision Cards describe.")
+    primary: bool = Field(
+        description="The first comparison: listed first everywhere, and the one the audit audits."
+    )
     n_a: int = Field(description="Biological units in group A (pairs, when paired).")
     n_b: int = Field(description="Biological units in group B (pairs, when paired).")
     n_pairs: int | None = Field(default=None, description="Complete pairs (paired designs only).")
@@ -94,9 +97,9 @@ class ComparisonsView(BaseModel):
 
     study_id: str
     several: bool = Field(description="The study has a comparison plan (several, or paired).")
-    test: Literal["welch", "paired_t"]
+    test: Literal["welch", "paired_t", "pooled_t"]
     test_words: str
-    correction: Literal["holm", "none"]
+    correction: Literal["holm", "none", "dunnett", "tukey"]
     correction_words: str
     pattern: str
     control: str | None = None
@@ -111,4 +114,18 @@ class ComparisonsView(BaseModel):
     omnibus_groups: list[str] = Field(
         default=[],
         description="The groups of the per-gene Welch ANOVA (three or more, unpaired designs).",
+    )
+
+
+class CardComparison(BaseModel):
+    """What one Decision Card's choice does in one comparison of a study with several."""
+
+    id: str
+    label: str
+    primary: bool
+    flips: bool = Field(description="A call of this comparison changes with this choice alone.")
+    n_flipped: int = Field(description="How many of its calls change with this choice alone.")
+    genes: list[str] = Field(description="The genes whose call changes (this choice alone).")
+    flips_elsewhere: bool = Field(
+        description="It changes no call here at the planned settings, but does at other ones."
     )
