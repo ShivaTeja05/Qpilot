@@ -541,7 +541,20 @@ def symbol_check(target_name: str, symbol: str) -> ProposalCheck:
             "contradicted",
             "D-SYMBOL",
             details,
-            "the target is a repeat or spike-in assay, which has no gene symbol",
+            getattr(named, "note", "")
+            or "the target is a repeat or spike-in assay, which has no gene symbol",
+        )
+    # Not circular: a name that is an alias, matches only ignoring case, or fits several genes
+    # does not name the proposed gene by itself, so the lookup that made the proposal cannot
+    # also confirm it (``SymbolFinding.identifies``, io/symbols.py; absent in older builds).
+    if symbol != target_name and getattr(named, "identifies", None) is False:
+        listed = ", ".join(named.candidates[:5]) or "no gene"
+        return _check(
+            "cannot_check",
+            "D-SYMBOL",
+            details,
+            "the target's name is an alias, or matches only when letter case is ignored; HGNC "
+            f"lists it for {listed}; confirm the gene",
         )
     if named.candidates and symbol not in named.candidates:
         return _check(

@@ -426,3 +426,34 @@ def test_ref_is_never_renamed_alyref_and_such_a_rename_is_never_consistent(sclie
     assert agent["subject"] == "REF" and agent["check"]["status"] == "cannot_check"
     shown = sclient.get(f"/api/sessions/{sid}/bulk/accept", params={"stage": "design"}).json()
     assert agent["id"] not in shown["ids"]  # never in "Accept all consistent"
+
+
+def test_a_whole_96_well_plate_is_set_in_one_act_quickly(web_store):
+    """CFX Maestro 4-plex (simulator): 96 unnamed samples, one per well; one act, ~190 items."""
+    import time
+
+    from qpilot import studio_design as sd
+    from qpilot.ai.client import ModelClient, NoneBackend
+    from qpilot.studio_service import Studio
+    from qpilot.web import intake
+
+    studio = Studio(web_store, client=ModelClient(backend=NoneBackend()))
+    folder = CORPUS / "biorad" / "covmatic-cfx-maestro-4.0-simulated-4plex"
+    found = intake.sort_dropped([intake.classify(p, p.name) for p in sorted(folder.glob("*.csv"))])
+    sid = studio.open(intake.read_export(web_store, found.exports).rdml_path)
+    state = sd.state(studio, sid)
+    study = [s for s in state.samples if s.role == "unkn"]
+    assert len(study) >= 90
+    items = [sd.DesignItem("design.target_role", "IEC", {"role": "ref"})]
+    for s in study:
+        half = "left" if int(s.wells[0].split("/")[1][1:]) <= 6 else "right"
+        items.append(sd.DesignItem("design.group", s.sample, {"group": half}))
+        items.append(
+            sd.DesignItem("design.bio_unit", s.sample, {"biological_unit": f"u_{s.sample[-3:]}"})
+        )
+    started = time.monotonic()
+    done = sd.set_design(studio, sid, items, "human", "plate halves")
+    assert done.recorded == len(items)
+    assert time.monotonic() - started < 20  # was quadratic (a copy of the inbox per item)
+    entries = web_store.proposals(sid).entries()
+    assert {e.actor for e in entries} == {"human"}  # proposed and accepted by the person

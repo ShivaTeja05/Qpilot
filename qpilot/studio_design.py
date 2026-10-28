@@ -65,6 +65,9 @@ COMPARISON_KIND = "design.comparison"
 #: The design items a person sets on the page (the comparison is written last, see set_design).
 SET_KINDS = (TARGET_ROLE_KIND, ROLE_KIND, SERIES_KIND, GROUP_KIND, UNIT_KIND, COMPARISON_KIND)
 TARGET_ROLES = ("ref", "toi", "ignore")
+#: Optional keys of a comparison a person sets: the further comparisons and their correction
+#: (``qpilot.qpcr.designs.comparison_plan`` reads them; the engine checks them).
+COMPARISON_EXTRAS = ("comparisons", "pattern", "control", "correction", "pair_by")
 SAMPLE_ROLES = ("unkn", "std", "ntc", "nrt", "nac", "pos", "ntp", "opt")
 MAX_ITEMS = 2_000  # one act: every sample of a 384-well plate several times over
 NAME = re.compile(r"^[\w()\-. ]{1,64}\Z")  # the engine's safe names (qpilot.qpcr.curves)
@@ -321,9 +324,12 @@ def normalise(item: DesignItem, facts: Any) -> DesignItem:
         if a == b:
             raise DesignEditError("a group cannot be compared with itself")
         label = payload.get("label") or ""
-        out = {"group_a": a, "group_b": b}
+        out: dict[str, Any] = {"group_a": a, "group_b": b}
         if isinstance(label, str) and label.strip():
             out["label"] = label.strip()[:120]
+        for key in COMPARISON_EXTRAS:  # several comparisons (agent compare's plan), as given
+            if payload.get(key) is not None:
+                out[key] = payload[key]
         return DesignItem(kind, "comparison", out)
     if kind == SERIES_KIND:
         name = _name(subject, "standard series")
@@ -429,13 +435,13 @@ def plan(studio: Studio, sid: str, items: Sequence[DesignItem]) -> DesignPlan:
     Items are checked against the design as a person accepted it, plus the items of this act
     that apply before them (a comparison sees the groups set in the same act).
     """
-    from qpilot.qpcr.design_checks import check_proposal, hard_ban
+    from qpilot.qpcr.design_checks import check_with_facts, hard_ban, register_declared
 
     if len(items) > MAX_ITEMS:
         raise DesignEditError(f"one change sets at most {MAX_ITEMS:,} items")
     view = studio.store.proposals(sid).view()
     facts = studio.facts(sid)
-    rdml, sheet = studio.source(sid), studio.sheet(sid)
+    register_declared(sid, facts)  # what check_proposal does before each check, done once
     values = latest(view.accepted)
     waiting: dict[tuple[str, str], list[Proposal]] = defaultdict(list)
     for p in view.proposals:
@@ -486,10 +492,8 @@ def plan(studio: Studio, sid: str, items: Sequence[DesignItem]) -> DesignPlan:
             candidate = _candidate(sid, item)
             refusal = hard_ban(candidate, everyone)
             check = None
-            if refusal is None:
-                check = check_proposal(
-                    candidate, studio.store, sid, rdml_path=rdml, accepted=context, sheet_path=sheet
-                )
+            if refusal is None:  # check_proposal's own path, on the facts read once
+                check = check_with_facts(candidate, facts, accepted=context)
             planned = PlannedItem(
                 item,
                 "new",
