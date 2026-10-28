@@ -36,6 +36,8 @@ FLIPPED_FACT = {
     "numbers.normaliser": "f_n_flipped_normaliser",
     "numbers.interrun": "f_n_flipped_interrun",
 }
+#: The kinds of a quantification study's cards (``qpilot.qpcr.quantify_study``).
+QUANTITY_PREFIX = "quantity."
 #: What a card with several comparisons says about deciding it (choices are the study's).
 STUDY_WIDE = (
     "A choice on this card applies to the whole study: every comparison is analysed with the "
@@ -49,6 +51,10 @@ def impact_tokens(card: DecisionCard, facts: Facts) -> str | None:
     With several comparisons it names each comparison whose calls the choice changes and how
     many (``f_cmp<i>_n_flipped_<dimension>``); otherwise the study's flip count of the card.
     """
+    if card.kind.startswith(QUANTITY_PREFIX):  # a quantification study's card
+        from qpilot.explain.quantity_text import impact_tokens as quantity_tokens
+
+        return quantity_tokens(card, facts)
     flipped = FLIPPED_FACT.get(card.kind)
     views = card.impact.get("views")
     if views and flipped:
@@ -193,6 +199,8 @@ def _status_line(
         # The request lives in the store's pending list; card.decision is the earlier choice.
         asked = labels.get(pending_option or "", pending_option or "another option")
         return f"Waiting for a person: an agent asked to choose {asked}."
+    if card.impact.get("flips") and card.kind.startswith(QUANTITY_PREFIX):
+        return "Your decision: this choice changes what is reported for at least one sample."
     if card.impact.get("flips"):
         return "Your decision: this choice can change a conclusion."
     return "Open."

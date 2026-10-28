@@ -181,8 +181,13 @@ def next_step(
     undecided_cards: int = 0,
     has_audit: bool = False,
     analysed: bool = True,
+    quantify: bool = False,
 ) -> NextStep:
-    """The one thing to do next. ``proposals`` counts the inbox per stage (``design`` …)."""
+    """The one thing to do next. ``proposals`` counts the inbox per stage (``design`` …).
+
+    A study that quantifies samples (``quantify``) has no audit (it compares no groups): its
+    last step is the report.
+    """
     if not file_present:
         return NextStep(
             title="Open the file again",
@@ -249,6 +254,14 @@ def next_step(
             detail="Each card shows what every option would change; you give the reason.",
             section="results",
             action="Decide",
+        )
+    if quantify:
+        return NextStep(
+            title="Read the quantities and export the report",
+            detail="Every sample's quantity with its 95 % prediction interval, the LOD and the "
+            "LOQ; the report and the Analysis Record keep them with every decision.",
+            section="report",
+            action="Export",
         )
     if not has_audit:
         return NextStep(
@@ -537,6 +550,7 @@ def session_view(
             decisions_head = store.chain_head(line.study_id)
         except (StudyNotFound, OSError):
             pass
+    purpose = session_purpose(studio, sid)
     step = next_step(
         line.stages,
         inbox_counts(studio, sid),
@@ -545,8 +559,10 @@ def session_view(
         undecided_cards=undecided(store, line.study_id),
         has_audit=line.has_audit,
         analysed=line.study_id is not None,
+        quantify=purpose == "quantify",
     )
     return WorkspaceView(
+        purpose=purpose,
         autonomy=study_autonomy(store, line.study_id),
         key=sid,
         kind="session",
@@ -569,6 +585,7 @@ def session_view(
 def study_view(store: StudyStore, study_id: str, active_jobs: list[Any] | None = None):
     """The frame of a study analysed outside a Studio session (results straight away)."""
     line = study_summary(store, study_id)
+    purpose = study_purpose(store, study_id)
     step = next_step(
         [],
         {},
@@ -576,8 +593,10 @@ def study_view(store: StudyStore, study_id: str, active_jobs: list[Any] | None =
         results_visible=True,
         undecided_cards=undecided(store, study_id),
         has_audit=line.has_audit,
+        quantify=purpose == "quantify",
     )
     return WorkspaceView(
+        purpose=purpose,
         autonomy=study_autonomy(store, study_id),
         key=study_id,
         kind="study",
@@ -590,6 +609,29 @@ def study_view(store: StudyStore, study_id: str, active_jobs: list[Any] | None =
         has_audit=line.has_audit,
         is_demo=line.is_demo,
     )
+
+
+def session_purpose(studio: Studio, sid: str) -> str:
+    """What a session's study is for, as a person decided it (``compare`` until then).
+
+    Read from the accepted design decisions (a design choice, never a result: blind-safe).
+    """
+    from qpilot.qpcr.designs import purpose_of
+
+    try:
+        return purpose_of(studio.store.proposals(sid).accepted("design."))
+    except (StudioError, StudyNotFound, OSError, ValueError):
+        return "compare"
+
+
+def study_purpose(store: StudyStore, study_id: str) -> str:
+    """What a stored study is for: ``quantify`` for a quantification design, else ``compare``."""
+    from qpilot.qpcr.quantify_study import is_quantify
+
+    try:
+        return "quantify" if is_quantify(store.design(study_id)) else "compare"
+    except (StudyNotFound, OSError, ValueError):
+        return "compare"
 
 
 def archive_demo(store: StudyStore) -> list[Path]:

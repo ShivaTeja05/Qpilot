@@ -107,6 +107,7 @@ CURVE_JUDGE_LISTED = (
 EXCLUSION_KIND = "prism.exclusion_reason"
 EXCLUDE_KIND = "curve.exclude_well"  # a well left out of (or put back into) the analysis
 TRUST_KIND = "curve.import_trust"  # a person's option on the Import Trust card (qpilot/io/trust.py)
+PURPOSE_KIND = "design.purpose"  # what the study is for (compare groups / quantify samples)
 #: Kinds a person accepts only with a reason (a well left out and an Import Trust choice are
 #: never in "Accept all consistent": each is accepted on its own, or by a card's one click).
 REASON_KINDS = (EXCLUSION_KIND, EXCLUDE_KIND, TRUST_KIND)
@@ -583,7 +584,7 @@ class Studio:
         wrong with its configuration. Whatever happens in the Design Interpreter, the rules'
         proposals are stored.
         """
-        from qpilot.qpcr.design_rules import propose_from_names
+        from qpilot.qpcr.design_rules import propose_from_names, purpose_field
 
         facts = self.facts(session_id)
         quarantine = self.store.quarantine(session_id)
@@ -591,7 +592,9 @@ class Studio:
             quarantine.add(sentence.strip(), "studio:sentence")
         entries = quarantine.all()
         rule_fields = propose_from_names(facts.summary, entries, facts=facts)
-        rule_fields = [*_preset_fields(facts.summary), *rule_fields]
+        presets = _preset_fields(facts.summary)
+        purpose = None if presets else purpose_field(rule_fields, facts)
+        rule_fields = [*presets, *rule_fields, *([purpose] if purpose else [])]
         notes: list[str] = []
         makers: list[MadeBy] = [MadeBy(kind="rule")] * len(rule_fields)
         fields: list[DesignField] = list(rule_fields)
@@ -711,13 +714,16 @@ class Studio:
         card is decided once the results are visible, and choosing it never re-opens them.
         """
         from qpilot.qpcr.amp_call import STUDIO_AMP_CALLS
-        from qpilot.qpcr.designs import DesignError, design_from_proposals
+        from qpilot.qpcr.designs import QUANTIFY, DesignError, design_from_proposals, purpose_of
+        from qpilot.qpcr.quantify_study import standards_needed
 
         if accepted is None:
             accepted = self.store.proposals(session_id).accepted()
         blockers: list[str] = []
         design_part = [p for p in accepted if p.kind.startswith("design.")]
-        if not any(p.kind in ("design.preset", "design.comparison") for p in design_part):
+        quantify = purpose_of(design_part) == QUANTIFY
+        compares = any(p.kind in ("design.preset", "design.comparison") for p in design_part)
+        if not quantify and not compares:
             blockers.append("no comparison yet: accept the groups to compare (or the demo preset)")
         base = StudyDesign(
             design_id=BLANK_DESIGN_ID,
@@ -731,7 +737,11 @@ class Studio:
             design = design.model_copy(update={"amp_calls": STUDIO_AMP_CALLS})
             if design.mode == "groups":
                 design = _with_lab_defaults(design, self.summary(session_id))
-            if not design.reference_candidates:
+            if quantify:  # quantify samples: standards with quantities instead
+                needed = standards_needed(design, self.facts(session_id))
+                if needed:
+                    blockers.append(needed)
+            elif not design.reference_candidates:
                 blockers.append("no reference genes yet: accept at least one target as a reference")
             design_hash = design.design_hash()
             curve_part = [p for p in accepted if p.kind.startswith("curve.")]
@@ -988,7 +998,7 @@ class Studio:
             p.id
             for p in self.inbox(session_id, stage, status="proposed")
             if p.check.status == "consistent"
-            and p.kind not in ("stage.confirm", EXCLUDE_KIND, TRUST_KIND)
+            and p.kind not in ("stage.confirm", EXCLUDE_KIND, TRUST_KIND, PURPOSE_KIND)
         ]
 
     def accept_all_consistent(
@@ -1155,12 +1165,16 @@ class Studio:
         conclusions = [self._primary_conclusions(session_id, d) for d in readings]
         if None in conclusions:
             return None
-        return conclusions[0] != conclusions[1]
+        return _differ(conclusions[0], conclusions[1])
 
-    def _primary_conclusions(self, session_id: str, design: StudyDesign) -> dict[str, str] | None:
-        """Each gene's conclusion at the primary choices (internal only: blind stages)."""
+    def _primary_conclusions(self, session_id: str, design: StudyDesign) -> dict[str, Any] | None:
+        """Each gene's conclusion at the primary choices (internal only: blind stages).
+
+        For a study that quantifies samples, each sample result's reported class and quantity
+        (:class:`qpilot.qpcr.quantify_study.Reported`); compare two with :func:`_differ`.
+        """
         from qpilot.qpcr.curves import CurveAnalysisError, analyse_study
-        from qpilot.qpcr.designs import DesignError
+        from qpilot.qpcr.designs import DesignError, is_quantify
         from qpilot.qpcr.study import StudySettings, build_model
 
         single = design.model_copy(update={"amp_calls": design.amp_calls[:1], "axes": None})
@@ -1172,6 +1186,11 @@ class Studio:
                 settings.candidates,
                 settings.curves,
             )
+            if is_quantify(design):
+                from qpilot.qpcr import quantify_study as qs
+
+                inputs = qs.inputs_for(self.source(session_id), curves, single)
+                return dict(qs.reported(inputs.at(single.amp_calls[0], qs.LOQ_OPTIONS[0])))
             model = build_model(curves, settings)
         except (DesignError, CurveAnalysisError, ValueError):
             return None
@@ -1243,7 +1262,7 @@ class Studio:
             changed = self._primary_conclusions(
                 session_id, design.model_copy(update={"well_calls": calls})
             )
-            matters = baseline is not None and changed is not None and changed != baseline
+            matters = baseline is not None and changed is not None and _differ(changed, baseline)
             if not matters:
                 continue
             mattering += 1
@@ -2693,15 +2712,30 @@ def _confirmed(
 def _carries(before: StudyDesign | None, after: StudyDesign) -> bool:
     """Two confirmed designs a person's choices carry between.
 
-    They differ at most in the wells left out of the analysis and in the further choices the
-    grid tests (``axes``, the efficiency models): both are decided after the curves, and the
-    cards they share ask the same questions.
+    They differ at most in the wells left out of the analysis, in the further choices the
+    grid tests (``axes``, the efficiency models) and in what one reaction held
+    (``reaction_input``, which changes only quantities per µL and per ng): each is decided
+    after the curves, and the cards they share ask the same questions.
     """
     if before is None:
         return False
-    same = {"excluded_wells": (), "axes": None}
+    same = {"excluded_wells": (), "axes": None, "reaction_input": None}
     hashes = {d.model_copy(update=same).design_hash() for d in (before, after)}
     return len(hashes) == 1
+
+
+def _differ(a: dict[str, Any], b: dict[str, Any]) -> bool:
+    """Two readings' conclusions differ: a gene's call, or what is reported for a sample.
+
+    A quantification study's readings hold :class:`qpilot.qpcr.quantify_study.Reported`
+    values: they differ when a sample's class does, or its number by more than 2-fold.
+    """
+    from qpilot.qpcr.quantify_study import Reported, changes
+
+    if any(isinstance(v, Reported) for v in (*a.values(), *b.values())):
+        names = {k: (k, "") for k in {*a, *b}}
+        return bool(changes(a, b, names))
+    return a != b
 
 
 def _system_confirm(proposal: Proposal) -> bool:

@@ -68,7 +68,21 @@ SMALL_REPLICATE_SET = 4
 ACCEPTED = ("accepted", "edited")
 SAMPLE_ROLES = ("unkn",)  # roles whose samples count as study samples (D-NTC, D-NGUARD)
 
-RULE_IDS = ("D-SERIES", "D-NTC", "D-REP", "D-SYMBOL", "D-COVER", "D-NGUARD", "D-AXIS")
+RULE_IDS = (
+    "D-SERIES",
+    "D-NTC",
+    "D-REP",
+    "D-SYMBOL",
+    "D-COVER",
+    "D-NGUARD",
+    "D-AXIS",
+    "D-PURPOSE",
+)
+#: D-NGUARD in a study that quantifies samples: the comparison is set aside, so it does not apply.
+NGUARD_NOT_APPLICABLE = (
+    "not applicable: this study quantifies samples and compares no groups (its purpose is "
+    "quantify samples), so the comparison is set aside and no group size is checked"
+)
 
 
 def _check(
@@ -1008,7 +1022,13 @@ def check_with_facts(
                 "name, so no gene symbol can be checked against it",
             )
         return symbol_check(original, str(payload.get("symbol", "")))
+    if kind == "design.purpose":
+        return purpose_check(payload, facts, accepted)
     if kind == "design.comparison":
+        from qpilot.qpcr.designs import QUANTIFY, purpose_of
+
+        if purpose_of(accepted) == QUANTIFY:
+            return _check("cannot_check", "D-NGUARD", {"applies": False}, NGUARD_NOT_APPLICABLE)
         groups, units = _groups_and_units(accepted)
         roles = _sample_roles(facts, accepted)
         return nguard_check(
@@ -1036,6 +1056,59 @@ def check_with_facts(
     if kind == "choice.axis":
         return axis_check(proposal.subject, payload, wells, accepted)
     return ProposalCheck(status="cannot_check", note="no engine check exists for this kind")
+
+
+def purpose_check(
+    payload: Mapping[str, Any], facts: FileFacts, accepted: list[Proposal]
+) -> ProposalCheck:
+    """``D-PURPOSE``: what the study is for. Refuted only when it cannot be what it says.
+
+    What a study is for is a person's to say; no check can show it. Quantifying samples is
+    refuted when the plate has no standard at all (declared, or marked by an accepted
+    decision): there is no curve to read a quantity from. Otherwise the check cannot decide it
+    (``cannot_check``), so it is never in "Accept all consistent", and the note counts the
+    standards and those with a quantity (names and declared quantities only: blind).
+    """
+    from qpilot.qpcr.designs import PURPOSES, QUANTIFY
+
+    purpose = payload.get("purpose")
+    if purpose not in PURPOSES:
+        return _check("contradicted", "D-PURPOSE", {}, "a study compares groups or quantifies")
+    if purpose != QUANTIFY:
+        return _check(
+            "cannot_check",
+            "D-PURPOSE",
+            {"purpose": purpose},
+            "comparing groups needs groups, a comparison and reference genes; the engine "
+            "checks each when it is set",
+        )
+    roles = _sample_roles(facts, accepted)
+    for p in accepted:
+        if p.kind == "design.dilution_series":
+            for sample in p.effective_payload().get("samples") or {}:
+                roles[str(sample)] = "std"
+    standards = sorted(s for s, role in roles.items() if role == "std")
+    given = set()
+    for p in accepted:
+        if p.kind == "design.dilution_series":
+            given |= {str(s) for s in p.effective_payload().get("samples") or {}}
+    declared = {s for s, entries in facts.sample_quantities.items() if entries}
+    with_quantity = [s for s in standards if s in given or s in declared]
+    details = {"n_standards": len(standards), "n_with_quantity": len(with_quantity)}
+    if not standards:
+        return _check(
+            "contradicted",
+            "D-PURPOSE",
+            details,
+            "the plate has no standards (no sample is typed Standard, in the file or by a "
+            "decision), so there is no standard curve to read a quantity from",
+        )
+    note = (
+        f"{len(standards)} standard sample{'s' * (len(standards) != 1)} on the plate, "
+        f"{len(with_quantity)} with a quantity (the file's or a person's); what the study is "
+        "for is yours to say"
+    )
+    return _check("cannot_check", "D-PURPOSE", details, note)
 
 
 def axis_check(

@@ -25,6 +25,7 @@ DesignKind = Literal[
     "design.bio_unit",
     "design.dilution_series",
     "design.comparison",
+    "design.purpose",
 ]
 PlanAction = Literal["new", "accept", "keep", "unchanged", "refused"]
 NeedWhere = Literal["targets", "samples", "comparison", "inbox", "engine"]
@@ -43,7 +44,10 @@ class DesignEditItem(BaseModel):
     fold change = group_a relative to group_b, the reference group); several comparisons add
     ``comparisons`` (``[{group_a, group_b}, ...]``, the first is ``group_a``/``group_b``),
     ``pattern`` (``vs_control``, ``all_pairs`` or ``chosen``), ``control``, ``correction``
-    (``holm``, ``dunnett``, ``tukey`` or ``none``) and ``pair_by`` (the accepted pairing's name).
+    (``holm``, ``dunnett``, ``tukey`` or ``none``) and ``pair_by`` (the accepted pairing's name);
+    ``design.purpose`` ``{"purpose": "compare"|"quantify"}`` (subject ``purpose``): what the study
+    is for (compare groups, the default; or quantify samples from a standard curve: no
+    comparison and no reference gene needed).
     """
 
     kind: DesignKind
@@ -213,6 +217,18 @@ class DesignEditorView(BaseModel):
     has_sheet: bool = Field(description="A sample sheet is attached to this session.")
     sheet_name: str | None = None
     template_url: str = Field(description="The pre-filled sample-sheet template (CSV).")
+    purpose: Literal["compare", "quantify"] = Field(
+        default="compare",
+        description="What the study is for: compare groups (the default) or quantify samples "
+        "from a standard curve (no comparison, no reference gene).",
+    )
+    purposes: list[EditorOption] = Field(
+        default=[], description="What a study can be for, in words (compare, quantify)."
+    )
+    n_standards: int = Field(default=0, description="Standard samples on the plate.")
+    n_standards_with_quantity: int = Field(
+        default=0, description="Standard samples with a quantity (the file's or a person's)."
+    )
 
 
 class SheetAttached(BaseModel):

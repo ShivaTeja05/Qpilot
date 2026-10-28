@@ -100,6 +100,7 @@ from qpilot.qpcr.designs import (
     design_curves,
     design_units,
     is_legacy_design,
+    is_quantify,
     pairs_for,
     study_key,
     unit_groups,
@@ -298,6 +299,10 @@ def run_study(
     curves = analyse_study(
         path, settings.experiment_id, settings.candidates, settings.curves, cache_dir=cache_dir
     )
+    if is_quantify(settings.design):  # quantify samples: no groups compared
+        from qpilot.qpcr.quantify_study import quantify_study
+
+        return quantify_study(path, curves, _sha256(path), settings)
     return study_from_curves(curves, _sha256(path), settings)
 
 

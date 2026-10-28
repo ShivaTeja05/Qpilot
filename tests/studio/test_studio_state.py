@@ -34,6 +34,7 @@ PAYLOADS = {
     "design.comparison": ("comparison", {"group_a": "LPS", "group_b": "PBS"}),
     "design.pair": ("S1_a", {"pair": "donor 1", "by": "donor"}),
     "design.dilution_series": ("STD", {"experiment_id": "e1", "samples": {"S_1": 1, "S_10": 10}}),
+    "design.purpose": ("purpose", {"purpose": "quantify"}),
     "curve.call_rule": ("amp_call", {"rule": "cq_le_35"}),
     "curve.well_call": ("run1/A1", {"amplified": False}),
     "curve.exclude_well": ("run1/A2", {"excluded": True}),

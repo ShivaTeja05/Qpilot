@@ -37,6 +37,7 @@ KIND_TITLE = {
     "design.comparison": "Comparison",
     "design.pair": "Pairing",
     "design.dilution_series": "Dilution series",
+    "design.purpose": "What the study is for",
     "curve.call_rule": "Amplification rule",
     "curve.well_call": "Well call",
     "curve.exclude_well": "Well exclusion",

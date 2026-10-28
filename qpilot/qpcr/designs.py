@@ -58,6 +58,9 @@ MAX_FILE_BYTES = 1 << 20  # design files and sample sheets: 1 MiB is far more th
 APPLIED = frozenset({"accepted", "edited"})  # the only proposal statuses the engine reads
 SHEET_REQUIRED = ("sample", "group")
 SHEET_OPTIONAL = ("biological_unit", "role", "quantity", "rt_replicate", "pair")
+#: What a study is for (``design.purpose``): compare groups (the default) or quantify samples.
+COMPARE, QUANTIFY = "compare", "quantify"
+PURPOSES: tuple[str, ...] = (COMPARE, QUANTIFY)
 #: The opt-in axes a design (a person's ``choice.axis`` decision) can ask the grid to test.
 DESIGN_AXES: tuple[str, ...] = ("efficiency", "normaliser", "interrun")
 _WELL_KEY = re.compile(r"^[^/]+/[^/]+$")
@@ -90,6 +93,21 @@ def vermeulen_design() -> StudyDesign:
 
 
 PRESETS: dict[str, Callable[[], StudyDesign]] = {LEGACY_DESIGN_ID: vermeulen_design}
+
+
+def is_quantify(design: StudyDesign | None) -> bool:
+    """True for a design whose purpose is to quantify samples (``design.purpose`` quantify)."""
+    return design is not None and design.purpose == QUANTIFY
+
+
+def purpose_of(accepted: Iterable[Proposal]) -> str:
+    """The purpose a person accepted last (``design.purpose``), ``compare`` when none."""
+    found = COMPARE
+    for p in accepted:
+        if p.kind == "design.purpose" and p.status in APPLIED:
+            purpose = p.effective_payload().get("purpose")
+            found = QUANTIFY if purpose == QUANTIFY else COMPARE
+    return found
 
 
 def is_legacy_design(design: StudyDesign | None) -> bool:
@@ -538,7 +556,22 @@ def design_from_proposals(
         _study_samples(data, studied, curves)
     for proposal in exclusions:
         data = _applied(data, proposal, curves)
+    if data.get("purpose") == QUANTIFY:
+        _quantify_only(data)
     return _validate(data, "design from accepted proposals")
+
+
+def _quantify_only(data: dict[str, Any]) -> None:
+    """A quantification design (``design.purpose`` quantify) compares no groups.
+
+    Its samples come from the design (``mode="groups"``), and an accepted comparison (or the
+    demo's marker split) is set aside, not deleted: switching the purpose back to comparing
+    groups gives the comparison back, whatever order the decisions came in.
+    """
+    data["mode"] = "groups"
+    data["marker_split"] = None
+    data["comparison"] = None
+    data["comparisons"] = None
 
 
 def _applied(
@@ -680,6 +713,13 @@ def _apply(
         data["axes"] = axes or None
     elif kind == "choice.reaction_input":
         data["reaction_input"] = reaction_input(payload)
+    elif kind == "design.purpose":
+        purpose = payload.get("purpose")
+        if purpose not in PURPOSES:
+            raise DesignError(
+                f"a study's purpose is {' or '.join(map(repr, PURPOSES))}, not {purpose!r}"
+            )
+        data["purpose"] = QUANTIFY if purpose == QUANTIFY else None
     elif kind == "prism.exclusion_reason":
         _exclusion(data, payload, curves)
     return data  # prism.project and prism.value_edit do not change the design

@@ -136,7 +136,18 @@ def computed(store: StudyStore, study_id: str) -> Any:
     path = store.source(study_id)
     if path is None or not Path(path).is_file():
         raise QuantitiesUnavailable(NO_FILE)
-    return for_study(study_id, result.input_sha256, Path(path), store.design(study_id))
+    design = store.design(study_id)
+    return for_study(study_id, result.input_sha256, Path(path), design, in_use(store, study_id))
+
+
+def in_use(store: StudyStore, study_id: str) -> dict[str, str] | None:
+    """A quantification study's analysis in use (its cards' decisions); ``None`` otherwise."""
+    from qpilot.qpcr.quantify_study import analysis_in_use, is_quantify
+
+    design = store.design(study_id)
+    if not is_quantify(design):
+        return None
+    return analysis_in_use(design, store.cards(study_id))
 
 
 def quantities_view(

@@ -39,7 +39,7 @@ class Computed:
         self.notes = notes
 
 
-_cache: OrderedDict[tuple[str, str], Computed] = OrderedDict()
+_cache: OrderedDict[tuple[Any, ...], Computed] = OrderedDict()
 _lock = threading.Lock()
 
 
@@ -60,8 +60,14 @@ def quantify_file(
     *,
     settings: Any = None,
     loq_cv: float | None = None,
+    rule_id: str | None = None,
 ) -> ab.Absolute:
-    """:func:`qpilot.qpcr.absolute.quantify` on an RDML file with a design (or none)."""
+    """:func:`qpilot.qpcr.absolute.quantify` on an RDML file with a design (or none).
+
+    ``rule_id`` and ``loq_cv`` replace the design's primary amplification rule and the default
+    LOQ line (a quantification study's analysis in use, :func:`qpilot.qpcr.quantify_study.
+    analysis_in_use`).
+    """
     from qpilot.qpcr.curves import analyse_study
     from qpilot.qpcr.designs import design_curves, design_units
     from qpilot.qpcr.study import StudySettings
@@ -91,15 +97,24 @@ def quantify_file(
         quantities=quantities,
         declared=declared_quantities(path),
         units=units,
-        rule_id=settings.amp_calls[0],
+        rule_id=rule_id or settings.amp_calls[0],
         calls=calls,
         reaction=reaction,
         settings=options,
     )
 
 
-def for_study(study_id: str, input_sha256: str, path: Path, design: Any) -> Computed:
+def for_study(
+    study_id: str,
+    input_sha256: str,
+    path: Path,
+    design: Any,
+    choice: Mapping[str, str] | None = None,
+) -> Computed:
     """:func:`computed` from a study's id, input hash, file and design (the report's way in).
+
+    ``choice`` is a quantification study's analysis in use (``amp_call`` and ``loq_cv``, from
+    the person's decisions on its cards); ``None``: the analysis as planned.
 
     Raises:
         QuantitiesUnavailable: The file is not the study's input (its sha256 differs).
@@ -108,7 +123,8 @@ def for_study(study_id: str, input_sha256: str, path: Path, design: Any) -> Comp
     from qpilot.qpcr.designs import unit_groups
     from qpilot.qpcr.study import StudySettings
 
-    key = (study_id, input_sha256)
+    picked = tuple(sorted((choice or {}).items()))
+    key = (study_id, input_sha256, picked)
     with _lock:
         if key in _cache:
             _cache.move_to_end(key)
@@ -116,7 +132,14 @@ def for_study(study_id: str, input_sha256: str, path: Path, design: Any) -> Comp
     if sha256_file(path) != input_sha256:
         raise QuantitiesUnavailable(NO_FILE)
     legacy = StudySettings() if design is None else None  # the demo analysis
-    absolute = quantify_file(path, design, settings=legacy)
+    loq = (choice or {}).get("loq_cv")
+    absolute = quantify_file(
+        path,
+        design,
+        settings=legacy,
+        loq_cv=float(loq) if loq is not None else None,
+        rule_id=(choice or {}).get("amp_call"),
+    )
     notes: list[str] = []
     groups = None
     if design is not None and design.mode == "groups":

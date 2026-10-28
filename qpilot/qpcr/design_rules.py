@@ -670,6 +670,46 @@ def propose_from_names(
     return fields
 
 
+def purpose_field(fields: Iterable[DesignField], facts: FileFacts | None) -> DesignField | None:
+    """Propose quantifying samples when the plate looks like a quantification run.
+
+    That is: the rules found a dilution series whose quantities **the file declares** (at
+    least three levels: the run was set up as a standard curve in the instrument's software)
+    and nothing says which groups are compared (no group was proposed from a sample sheet). A
+    series known only from names (``STD_100``) is no such sign: labs run one beside a
+    comparison, for the efficiency. It is a proposal like any other: a person decides what the
+    study is for, and the engine's check cannot decide it for them (``D-PURPOSE`` is
+    ``cannot_check``), so it is never accepted in "Accept all consistent".
+    """
+    listed = list(fields)
+    if facts is None or any(f.kind == "design.group" for f in listed):
+        return None
+    declared = {s for s, entries in facts.sample_quantities.items() if entries}
+    series = [f for f in listed if f.kind == "design.dilution_series"]
+    levels = [
+        len({float(q) for s, q in (f.value.get("samples") or {}).items() if s in declared})
+        for f in series
+    ]
+    if not levels or max(levels) < 3:
+        return None
+    return DesignField(
+        kind="design.purpose",
+        subject="purpose",
+        value={"purpose": "quantify"},
+        cites=list(dict.fromkeys(c for f in series for c in f.cites))[:20],
+        alternatives=[{"purpose": "compare"}],
+        level="Moderate",
+        reasons=[
+            f"the file declares the quantities of a dilution series ({max(levels)} levels: the "
+            "run was set up as a standard curve) and no groups to compare (no sample sheet "
+            "names groups)",
+            "a run that measures how much is there (a viral load, copies of a construct, a "
+            "library) needs no comparison and no reference genes",
+            "choose Compare groups instead if the samples belong to groups you compare",
+        ],
+    )
+
+
 def sheet_target_roles(
     summary: InspectSummary, values: Mapping[str, str]
 ) -> dict[str, list[tuple[str, list[str]]]]:

@@ -21,7 +21,9 @@ modules and registered here: ``evidence_v1``, ``grt_v1`` and ``runreview_v1``
 (:mod:`qpilot.explain.lookback_text`), ``trace_v1`` (needs ``gene=`` and that gene's trace facts
 for the panel) and ``trace_set_aside_v1`` (:mod:`qpilot.explain.trace_text`; the rationale of a
 ``trace_set_aside`` card), ``sheetcheck_v1``, ``sheetcheck_findings_v1`` and
-``sheetcheck_handover_v1`` (:mod:`qpilot.explain.sheetcheck_text`). Each renders a digit-free
+``sheetcheck_handover_v1`` (:mod:`qpilot.explain.sheetcheck_text`), ``quantity_amp_v1`` and
+``quantity_loq_v1`` (:mod:`qpilot.explain.quantity_text`; a quantification study's cards). Each
+renders a digit-free
 sentence when its facts are absent; ``instrument_gate_v1``, ``lookback_v1`` and ``position_v1``
 need their structured result for anything more.
 """
@@ -448,6 +450,18 @@ def _interrun(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
     return text + _flips_sentence(facts, "f_n_flipped_interrun")
 
 
+def _quantity_amp(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    from qpilot.explain.quantity_text import amp_text
+
+    return amp_text(facts, card, gene)
+
+
+def _quantity_loq(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    from qpilot.explain.quantity_text import loq_text
+
+    return loq_text(facts, card, gene)
+
+
 TEMPLATES: dict[str, Template] = {
     "refset_v1": _refset,
     "cutoff_v1": _cutoff,
@@ -471,6 +485,8 @@ TEMPLATES: dict[str, Template] = {
     "sheetcheck_v1": _sheetcheck,
     "sheetcheck_findings_v1": _sheetcheck_findings,
     "sheetcheck_handover_v1": _sheetcheck_handover,
+    "quantity_amp_v1": _quantity_amp,
+    "quantity_loq_v1": _quantity_loq,
 }
 
 

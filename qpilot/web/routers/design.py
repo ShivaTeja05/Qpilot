@@ -114,6 +114,10 @@ def get_editor(sid: str, ctx: Ctx) -> DesignEditorView:
         has_sheet=has_sheet,
         sheet_name=sheet_name,
         template_url=f"/api/sessions/{sid}/design/template.csv",
+        purpose=state.purpose,
+        purposes=[EditorOption(value=v, label=a, hint=b) for v, a, b in sd.PURPOSE_WORDS],
+        n_standards=state.n_standards,
+        n_standards_with_quantity=state.n_standards_with_quantity,
     )
 
 
