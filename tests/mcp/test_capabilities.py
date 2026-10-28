@@ -651,3 +651,103 @@ def test_prism_replies_stay_hidden_for_a_study_whose_session_is_not_confirmed(to
     assert not studio.results_visible(sid)
     refused(tools.qpcr_prism_preview(study), "results_hidden")
     refused(tools.qpcr_prism_diff(study, str(folder), project_path=str(saved)), "results_hidden")
+
+
+# ---- over MCP: every reply matches its declared output schema ------------------------------------
+
+
+def test_every_new_tools_reply_matches_its_output_schema_over_mcp(called, studies):
+    """A reply that did not match its schema would come back as engine_refused."""
+    import anyio
+
+    from qpilot.agents.surface import SPECS
+    from qpilot.mcp_server import create_server
+
+    server = create_server(called["store"], simulator=False)
+    several = create_server(studies["store"], simulator=False)
+    study = called["study"]
+
+    def ok(name, args, on=server):
+        reply = anyio.run(on.call_tool, name, args)
+        assert reply.is_error is False, (name, reply.structured_content)
+        data = reply.structured_content
+        assert json.loads(reply.content[0].text) == data
+        SPECS[name].output.model_validate(data)
+        return data
+
+    tools = QpilotTools(called["store"])
+    place = the_place(tools, called)
+    for fmt in ("detailed", "concise"):
+        ok("qpcr_units", {"study_id": study, "gene": GENE, "response_format": fmt})
+        ok("qpcr_melt", {"study_id": study, "response_format": fmt})
+        ok("qpcr_repeat_plan", {"study_id": study, "response_format": fmt})
+        ok("qpcr_comparisons", {"study_id": studies["several"], "response_format": fmt}, several)
+    ok("qpcr_export", {"study_id": study, "format": "csv"})
+    asked = ok(
+        "qpcr_request_set_aside",
+        {
+            "study_id": study,
+            "card_id": place["card_id"],
+            "option": "set_aside_value",
+            "reason": REASON,
+            "gene": GENE,
+        },
+    )
+    assert asked["status"] == "pending_human" and asked["applied"] is False
+    # a refusal is an error over MCP, with the same three fields
+    reply = anyio.run(server.call_tool, "qpcr_units", {"study_id": study, "gene": "NOPE"})
+    assert reply.is_error is True and reply.structured_content["code"] == "unknown_item"
+    # arguments that fail the input schema are refused by name, never echoed
+    bad = anyio.run(
+        server.call_tool, "qpcr_export", {"study_id": study, "format": "docx-secret-value"}
+    )
+    assert bad.is_error is True and bad.structured_content["code"] == "invalid_argument"
+    assert "docx-secret-value" not in json.dumps(bad.structured_content)
+
+
+def test_the_new_tools_say_what_they_can_change(called):
+    import anyio
+
+    from qpilot.mcp_server import TOOL_META, create_server
+
+    listed = {
+        t.name: t for t in anyio.run(create_server(called["store"], simulator=False).list_tools)
+    }
+    for name in ("qpcr_comparisons", "qpcr_units", "qpcr_melt", "qpcr_repeat_plan"):
+        ann = listed[name].annotations
+        assert ann.read_only_hint is True and ann.destructive_hint is False, name
+        assert TOOL_META[name][1] == "read"
+    for name, kind in (("qpcr_export", "export"), ("qpcr_request_set_aside", "request")):
+        ann = listed[name].annotations
+        assert ann.read_only_hint is False and ann.destructive_hint is False, name
+        assert ann.idempotent_hint is False and ann.open_world_hint is False, name
+        assert TOOL_META[name][1] == kind
+    # the request tool takes no way to decide, and the export no way to name its file
+    import inspect
+
+    from qpilot.agents.capabilities import CapabilityTools
+
+    assert set(inspect.signature(CapabilityTools.qpcr_request_set_aside).parameters) == {
+        "self", "study_id", "card_id", "option", "reason", "gene", "sample", "well",
+        "expected_head", "idempotency_key",
+    }  # fmt: skip
+    assert set(inspect.signature(CapabilityTools.qpcr_export).parameters) == {
+        "self", "study_id", "format", "genes", "basis", "out_dir", "expected_head",
+        "idempotency_key",
+    }  # fmt: skip
+
+
+def test_docs_agents_names_every_tool_and_what_each_new_one_refuses():
+    from qpilot.integration.mcp_tools import SIM_TOOL_NAMES
+    from qpilot.mcp_server import TOOL_NAMES
+
+    root = Path(__file__).resolve().parents[2]
+    text = (root / "docs" / "agents.md").read_text(encoding="utf-8")
+    for name in (*TOOL_NAMES, *SIM_TOOL_NAMES):
+        assert f"`{name}" in text, f"docs/agents.md does not name {name}"
+    refusals = text.split("#### What each second-wave tool refuses", 1)[1].split("```", 1)[0]
+    for name in (
+        "qpcr_comparisons", "qpcr_units", "qpcr_melt", "qpcr_repeat_plan", "qpcr_export",
+        "qpcr_request_set_aside", "qpcr_prism_diff",
+    ):  # fmt: skip
+        assert f"| `{name}` |" in refusals, name

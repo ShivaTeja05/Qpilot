@@ -573,6 +573,13 @@ function PlaceRow({
   const where = placeWords(place);
   const tone = WHERE_TONE[place.consequence] ?? "neutral";
   const [choosing, setChoosing] = useState(false);
+  // a person's click answered the agent's request waiting here: the panel has done its job
+  const asked = (place.requests ?? []).length;
+  const [seen, setSeen] = useState(asked);
+  if (seen !== asked) {
+    setSeen(asked);
+    if (asked < seen) setChoosing(false);
+  }
   let action: ReactNode;
   if (canApply && place.can_decide && onApply) {
     action = choosing ? null : (

@@ -173,7 +173,7 @@ describe("where to look, read", { timeout: 30_000 }, () => {
     expect(within(row).getByText("Agent asked")).toBeTruthy();
     const banner = within(row).getByRole("status");
     expect(banner.textContent).toContain("An agent asked to");
-    expect(banner.textContent).toContain(asked!.option_label);
+    expect(banner.textContent).toContain(asked!.option_label.toLowerCase());
     expect(banner.textContent).toContain(`${asked!.reason}`);
     expect(banner.textContent).toContain("Nothing changes until a person");
     fireEvent.click(within(row).getByRole("button", { name: /^Decide…/ }));

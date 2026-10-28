@@ -10,13 +10,14 @@ import type { WherePlace } from "./api";
 
 export type WhereRequest = NonNullable<WherePlace["requests"]>[number];
 
-/** What the agent asked for, in words ("Set this well's value aside (3 wells)"). */
+/** What the agent asked for, in words ("set this well's value aside (3 wells)"). */
 export function requestWords(r: WhereRequest): string {
   const n = r.wells.length;
   const asked = n ? ` (${plural(n, "well")})` : "";
   const putBack = r.put_back ?? [];
   const back = putBack.length ? `, and to put ${plural(putBack.length, "well")} back` : "";
-  return `${r.option_label}${asked}${back}`;
+  const label = r.option_label.charAt(0).toLowerCase() + r.option_label.slice(1);
+  return `${label}${asked}${back}`;
 }
 
 export function AgentAsked({ requests }: { requests: WhereRequest[] }) {
@@ -32,7 +33,7 @@ export function AgentAsked({ requests }: { requests: WhereRequest[] }) {
           <span key={r.option} className="block">
             {i === 0 ? "An agent asked to " : "It also asked to "}
             <strong>{requestWords(r)}</strong>
-            {r.reason ? <> because: &ldquo;{r.reason}&rdquo;</> : null}.
+            {r.reason ? <> because: &ldquo;{r.reason}&rdquo;</> : "."}
           </span>
         ))}
         <span className="block text-muted">

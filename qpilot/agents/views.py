@@ -193,7 +193,8 @@ def _units(out: dict[str, Any]) -> dict[str, Any]:
     drop = ("units", "how")
     concise = {k: v for k, v in out.items() if k not in drop}
     concise["units"] = [
-        {k: u.get(k) for k in ("unit", "group", "log2", "n_wells", "capped")} for u in out["units"]
+        {k: u.get(k) for k in ("unit", "group", "samples", "log2", "n_wells", "capped")}
+        for u in out["units"]
     ]
     return concise
 

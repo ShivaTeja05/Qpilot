@@ -159,3 +159,30 @@ def test_the_supplement_is_one_zip_with_the_record(tools, lc96):
     assert out["record"]["verify"].startswith("qpilot verify")
     names = zipfile.ZipFile(io.BytesIO(Path(out["file"]["path"]).read_bytes())).namelist()
     assert any(n.endswith(".xlsx") for n in names) and any(n.endswith("README.txt") for n in names)
+
+
+def test_the_real_files_replies_match_their_output_schemas_over_mcp(lc96):
+    import anyio
+
+    from qpilot.agents.surface import SPECS
+    from qpilot.mcp_server import create_server
+
+    server = create_server(lc96["store"], simulator=False)
+    study = lc96["study"]
+
+    def ok(name, args):
+        reply = anyio.run(server.call_tool, name, args)
+        assert reply.is_error is False, (name, reply.structured_content)
+        SPECS[name].output.model_validate(reply.structured_content)
+        return reply.structured_content
+
+    melt = ok("qpcr_melt", {"study_id": study, "wells": ["A1", "B2"]})
+    assert melt["has_melt"] and melt["calls"] and {w["well"] for w in melt["wells"]} <= {"A1", "B2"}
+    ok("qpcr_melt", {"study_id": study, "response_format": "concise"})
+    ok("qpcr_units", {"study_id": study, "gene": HMUY})
+    ok("qpcr_units", {"study_id": study, "gene": HMUY, "response_format": "concise"})
+    ok("qpcr_repeat_plan", {"study_id": study})
+    ok("qpcr_repeat_plan", {"study_id": study, "include": "all", "response_format": "concise"})
+    ok("qpcr_export", {"study_id": study, "format": "figures", "genes": [HMUY]})
+    # reading is the same through the session's id as through its study's
+    ok("qpcr_melt", {"study_id": lc96["sid"]})
