@@ -210,6 +210,9 @@ Replicate budget (same flags as `qpcr_plan`'s arguments): `--sd-rt`, `--sd-well`
 | `qpilot instrument position --instrument ID [--study S]... [--map ... \| --all-runs INSTR] [--json]` | Position history on demand: well positions that follow the instrument across people and plate layouts |
 | `qpilot trace [study] (--gene G \| --sample S \| --well PLATE:WELL) [--top 3] [--json]` | The Trace "Where to look" panel, or the full trace as byte-stable JSON (`--json`, graph included). Reads only; opens no card |
 | `qpilot check sheet FILE [--study ID] [--map COL=ROLE[:GENE]]... [--confirm] [--json]` | Spreadsheet Check: prints the column mapping (marked "guessed, not confirmed" unless `--confirm` or `--map`), then what reproduces and the first step that differs. `--study` adds hand-overs against that study. The file is never edited |
+| `qpilot melt FILE… [--json]` | Each well's melt curve from an RDML file or an instrument export: the product's Tm per plate and target, extra peaks, what melted in the controls, and the wells G-MELT would point at (reads only) |
+| `qpilot quantify FILE… [--target T] [--quantity NAME=VALUE]... [--csv FILE] [--json]` | Absolute quantification: standard curves, LOD/LOQ and every unknown's copies with a 95 % prediction interval (reads only) |
+| `qpilot export xlsx\|csv\|figures\|supplement --study ID --out FILE` | The study's numbers, figures or a journal supplement as decided (the same files `qpcr_export` writes; [`exports.md`](exports.md)) |
 
 ## 5. qPilot Studio: the Design Interpreter, the Prism draft and their scorecard
 
