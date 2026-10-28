@@ -5,6 +5,7 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { api, unwrap, type JobView, type Schemas } from "@/api/client";
+import { jobPollMs } from "@/api/jobs";
 
 export type WorkspaceView = Schemas["WorkspaceView"];
 export type WorkspaceSummary = Schemas["WorkspaceSummary"];
@@ -53,7 +54,10 @@ export function useJobs(key?: string | null) {
       unwrap(api.GET("/api/jobs", { params: { query: key ? { key } : {} } })) as Promise<JobView[]>,
     refetchInterval: (q) => {
       const jobs = q.state.data as JobView[] | undefined;
-      return jobs?.some((j) => j.status === "queued" || j.status === "running") ? 3000 : false;
+      // The jobs' events keep this list current (api/live.ts); this poll only backs them up.
+      return jobs?.some((j) => j.status === "queued" || j.status === "running")
+        ? jobPollMs()
+        : false;
     },
   });
 }

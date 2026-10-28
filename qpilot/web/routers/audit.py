@@ -708,14 +708,31 @@ def _audit(ctx: AppContext, study_id: str, progress: Progress, replace: bool) ->
     root.mkdir(parents=True, exist_ok=True)
     partial = root / f".{study_id}.partial-{uuid.uuid4().hex[:8]}"
     progress("Rebuilding the study you confirmed and checking the audit reproduces it", 0.0)
+    told = [0.0]  # when the grid's count was last told (0: not yet)
     stop = threading.Event()
     watcher = threading.Thread(
-        target=_watch_stages, args=(partial, progress, stop), daemon=True, name="audit-stages"
+        target=_watch_stages,
+        args=(partial, progress, stop, lambda stage: stage == 0 and told[0] > 0),
+        daemon=True,
+        name="audit-stages",
     )
     watcher.start()
+
+    def grid(done: int, total: int) -> None:
+        # The longest stage, told as it goes (at most twice a second).
+        now = time.monotonic()
+        if done < total and now - told[0] < 0.5:
+            return
+        told[0] = now
+        start, end = RUN_STAGES[0][2], RUN_STAGES[1][2]
+        progress(
+            f"{RUN_STAGES[0][1]}: {done:,} of {total:,} analyses",
+            start + (end - start) * done / max(1, total),
+        )
+
     try:
         try:
-            result = simulator.audit(ctx.store, study_id, partial)
+            result = simulator.audit(ctx.store, study_id, partial, progress=grid)
         except simulator.NotApplicable as err:
             raise JobError(
                 "not_applicable", "The audit does not apply here: " + _sentence(err, capital=False)
@@ -760,13 +777,19 @@ def _audit(ctx: AppContext, study_id: str, progress: Progress, replace: bool) ->
     }
 
 
-def _watch_stages(folder: Path, progress: Progress, stop: threading.Event) -> None:
-    """Report the simulator's stages as its files appear (it has no progress hook)."""
+def _watch_stages(
+    folder: Path,
+    progress: Progress,
+    stop: threading.Event,
+    covered: Callable[[int], bool] = lambda stage: False,
+) -> None:
+    """Report the simulator's stages as its files appear (a stage told otherwise is skipped)."""
     done = 0
     while not stop.wait(POLL_S) and done < len(RUN_STAGES):
         while done < len(RUN_STAGES) and (folder / RUN_STAGES[done][0]).exists():
             _, step, fraction = RUN_STAGES[done]
-            progress(step, fraction)
+            if not covered(done):
+                progress(step, fraction)
             done += 1
 
 
