@@ -34,6 +34,8 @@ FLIP_FACT = {
     "group_cutoff": "f_n_flipped_cutoff",
     "undetermined": "f_n_flipped_undetermined",
     "numbers.efficiency_model": "f_n_flipped_efficiency",
+    "numbers.normaliser": "f_n_flipped_normaliser",
+    "numbers.interrun": "f_n_flipped_interrun",
 }
 
 

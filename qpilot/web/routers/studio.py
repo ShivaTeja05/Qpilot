@@ -368,9 +368,20 @@ def propose_comparison(sid: str, ctx: Ctx) -> ProposeOne:
     return ProposeOne(outcome=outcome, message=message)
 
 
+#: What each further choice is called in a sentence ("test ... as one more choice").
+AXIS_NOUNS = {
+    "efficiency": "the efficiency models",
+    "normaliser": "the other normalisers (best pairs, global mean)",
+    "interrun": "the corrections between plates",
+}
+
+
 @router.post("/sessions/{sid}/propose/axis", response_model=ProposeOne)
 def propose_axis(sid: str, ctx: Ctx, body: ProposeAxis | None = None) -> ProposeOne:
-    """The rule proposes testing a further choice (the efficiency models), or no longer testing it.
+    """The rule proposes testing a further choice, or no longer testing it.
+
+    The further choices: the efficiency models, the normaliser (NormFinder's and geNorm's best
+    pairs, the global mean) and the correction between plates (inter-run calibrator, factor).
 
     It joins the choices stage's inbox; nothing changes until a person accepts it, and then the
     study is analysed again with the choice as one more dimension of the grid. Results only
@@ -389,11 +400,12 @@ def propose_axis(sid: str, ctx: Ctx, body: ProposeAxis | None = None) -> Propose
     outcome = call(ctx.studio.propose_axis, sid, body.axis, body.on)
     if outcome.status == "proposed":
         changed(ctx, sid)
+        noun = AXIS_NOUNS[body.axis]
         message = (
-            "Proposed: test the efficiency models as one more choice. Check the options, then "
-            "decide; nothing changes until you accept."
+            f"Proposed: test {noun} as one more choice. Check the options, then decide; nothing "
+            "changes until you accept."
             if body.on
-            else "Proposed: stop testing the efficiency models. Nothing changes until you accept."
+            else f"Proposed: stop testing {noun}. Nothing changes until you accept."
         )
     else:
         message = sv.sentence(f"Nothing proposed: {outcome.reason or outcome.status}")

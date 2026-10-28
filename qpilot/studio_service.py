@@ -1501,6 +1501,10 @@ class Studio:
         curves = analyse_study(
             self.source(session_id), settings.experiment_id, settings.candidates, settings.curves
         )
+        if axis != "efficiency":  # the normaliser and the correction between plates
+            from qpilot import studio_axes
+
+            return {"axis": axis, "tested": tested, **studio_axes.offer(axis, settings, curves)}
         table = design_curves(curves, design)
         quantities = {s: d.quantity for s, d in design.samples.items() if d.quantity}
         std = eff_axis.standard_curves(table, quantities)
@@ -1539,10 +1543,13 @@ class Studio:
 
         On: every option of the axis that applies to the confirmed design, primary first (for
         the efficiency models: LinRegPCR's mean efficiency, each well's own, one per amplicon,
-        an assumed 2.0, the dilution series'); off: the primary alone. Nothing changes until a
-        person accepts it; then the design names the axis and the study is analysed again with
-        it as one more dimension of the grid, whose Decision Card says what each option would
-        change. The analysis in use stays the primary until a person decides that card.
+        an assumed 2.0, the dilution series'; for the normaliser: the reference genes chosen,
+        NormFinder's and geNorm's best pairs, the global mean; for the correction between
+        plates: none, the inter-run calibrator, the factor correction); off: the primary alone.
+        Nothing changes until a person accepts it; then the design names the axis and the
+        study is analysed again with it as one more dimension of the grid, whose Decision Card
+        says what each option would change. The analysis in use stays the primary until a
+        person decides that card.
         """
         from qpilot.qpcr.axes import get_axis
 
@@ -1557,6 +1564,22 @@ class Studio:
             raise StudioError(f"this choice is {state} in the current analysis")
         catalogue = {o.id: o for o in get_axis(axis).catalogue}
         numbers = offer["evidence"]
+        if axis != "efficiency":  # the normaliser and the correction between plates
+            from qpilot import studio_axes
+
+            labels = {o: c.label for o, c in catalogue.items()}
+            proposal = Proposal(
+                study_id=session_id,
+                kind="choice.axis",
+                subject=axis,
+                payload={"options": list(wanted)},
+                evidence=studio_axes.evidence(axis, numbers),
+                alternatives=[{"options": [primary]} if on else {"options": list(options)}],
+                level="Moderate",
+                reasons=studio_axes.reasons(axis, on, offer["unavailable"], labels),
+                made_by=MadeBy(kind="rule"),
+            )
+            return self.store.proposals(session_id).propose(proposal, "system")
         evidence = [
             Evidence(
                 kind="rule",

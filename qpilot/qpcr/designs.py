@@ -59,7 +59,7 @@ APPLIED = frozenset({"accepted", "edited"})  # the only proposal statuses the en
 SHEET_REQUIRED = ("sample", "group")
 SHEET_OPTIONAL = ("biological_unit", "role", "quantity", "rt_replicate", "pair")
 #: The opt-in axes a design (a person's ``choice.axis`` decision) can ask the grid to test.
-DESIGN_AXES: tuple[str, ...] = ("efficiency",)
+DESIGN_AXES: tuple[str, ...] = ("efficiency", "normaliser", "interrun")
 _WELL_KEY = re.compile(r"^[^/]+/[^/]+$")
 
 

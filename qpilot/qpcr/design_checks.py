@@ -24,7 +24,8 @@ rule            what it can refute
 ``D-AXIS``      a further choice to test (``choice.axis``) whose options are not the axis's
                 own, do not start with the analysis in use, or need what the file does not
                 have (each well's own efficiency, a dilution series, an amplicon on several
-                plates).
+                plates; three reference genes for a best pair, many genes for the global
+                mean; a gene split over plates with a calibrator or a shared measurement).
 ==============  ==============================================================================
 
 **Hard bans** (:func:`hard_ban`) are refused before a proposal is stored, whoever proposes it:
@@ -38,7 +39,7 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -1033,6 +1034,10 @@ def axis_check(
             "the options are not this choice's own: they start with the analysis in use and "
             "name each of the choice's options at most once",
         )
+    if subject == "normaliser":
+        return _normaliser_axis_check(options, wells, accepted)
+    if subject == "interrun":
+        return _interrun_axis_check(options, wells)
     table, quantities = wells, {}
     for p in accepted:
         if p.kind == "design.dilution_series":
@@ -1070,6 +1075,84 @@ def axis_check(
         "each option is the choice's own and the file has what it needs; which options apply "
         "to the analysed experiment is said again when the study is analysed",
     )
+
+
+def _refuted(options: Sequence[str], missing: Mapping[str, str], details: dict) -> ProposalCheck:
+    """``D-AXIS`` from the options the file cannot give (option -> why, in plain words)."""
+    refuted = [o for o in options if o in missing]
+    if refuted:
+        details["not_in_the_file"] = refuted
+        return _check("contradicted", "D-AXIS", details, "; ".join(missing[o] for o in refuted))
+    return _check(
+        "consistent",
+        "D-AXIS",
+        details,
+        "each option is the choice's own and the file has what it needs; which options apply "
+        "to the analysed experiment is said again when the study is analysed",
+    )
+
+
+def _reference_targets(accepted: list[Proposal]) -> set[str] | None:
+    """The targets the accepted proposals make reference genes (``None``: a preset decides)."""
+    refs: dict[str, bool] = {}
+    for p in accepted:
+        if p.kind == "design.preset":
+            return None
+        if p.kind == "design.target_role":
+            refs[p.subject] = p.effective_payload().get("role") == "ref"
+    return {t for t, is_ref in refs.items() if is_ref}
+
+
+def _normaliser_axis_check(
+    options: Sequence[str], wells: pd.DataFrame, accepted: list[Proposal]
+) -> ProposalCheck:
+    """``D-AXIS`` for the normaliser: what a best pair and the global mean need.
+
+    A best pair needs three reference genes; the global mean needs many genes with study wells
+    (:data:`qpilot.qpcr.axes.normaliser.GLOBAL_MEAN_MIN_GENES`).
+    """
+    from qpilot.qpcr.axes.normaliser import GLOBAL_MEAN_MIN_GENES
+
+    study = wells[(wells["sample_type"] == "unkn") & wells["n0"].notna()]
+    n_genes = int(study["target"].nunique())
+    refs = _reference_targets(accepted)
+    missing: dict[str, str] = {}
+    if refs is not None and len(refs) < 3:
+        why = "a best pair needs at least three reference genes, and fewer are accepted"
+        missing.update({"normfinder_pair": why, "genorm_pair": why})
+    if n_genes < GLOBAL_MEAN_MIN_GENES:
+        missing["global_mean"] = (
+            "the file measures too few genes for a global mean (qPilot asks for fifty)"
+        )
+    details: dict[str, Any] = {
+        "options": list(options),
+        "genes_with_study_wells": n_genes,
+        "global_mean_min_genes": GLOBAL_MEAN_MIN_GENES,
+        "reference_genes_accepted": None if refs is None else sorted(refs),
+    }
+    return _refuted(options, missing, details)
+
+
+def _interrun_axis_check(options: Sequence[str], wells: pd.DataFrame) -> ProposalCheck:
+    """``D-AXIS`` for the correction between plates: what each correction needs.
+
+    A gene's study wells must be split over plates, and the option needs a calibrator on each
+    of its plates (``calibrator``) or a measurement two plates share (``factor``).
+    """
+    from qpilot.qpcr import interrun as irc
+
+    table = wells[["run_id", "sample", "sample_type", "target", "n0"]].copy()
+    table["n0"] = pd.to_numeric(table["n0"], errors="coerce")
+    missing = irc.unavailable(table)
+    summary = irc.summary(table)
+    details: dict[str, Any] = {
+        "options": list(options),
+        "plates": summary["n_runs"],
+        "genes_split_over_plates": summary["n_split_targets"],
+        "genes_with_a_calibrator_on_each_plate": len(summary["calibrators"]),
+        "plate_pairs_sharing_a_measurement": summary["n_plate_pairs_sharing"],
+    }
+    return _refuted(options, missing, details)
 
 
 #: Why the file cannot give an efficiency model, in words without digits.

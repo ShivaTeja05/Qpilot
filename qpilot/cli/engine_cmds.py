@@ -92,6 +92,21 @@ def _run_arguments(parser: argparse.ArgumentParser) -> None:
         "amplicon_mean, assumed_2, standard_curve (LinRegPCR's mean efficiency stays the "
         "analysis in use; models that do not apply to the study are named and left out)",
     )
+    parser.add_argument(
+        "--normaliser",
+        default=None,
+        metavar="OPTIONS",
+        help="also test other normalisers: 'all', or a comma-separated list of "
+        "normfinder_pair, genorm_pair, global_mean (the reference genes chosen stay the "
+        "analysis in use; options that do not apply to the study are named and left out)",
+    )
+    parser.add_argument(
+        "--interrun",
+        default=None,
+        metavar="OPTIONS",
+        help="also test corrections between plates: 'all', or calibrator, factor (no "
+        "correction stays the analysis in use; a card only when one changes a call)",
+    )
 
 
 def _design_conflicts(args: argparse.Namespace) -> list[str]:
@@ -196,19 +211,46 @@ def _efficiency_models(text: str) -> tuple[str, ...]:
     return (eff_axis.PRIMARY, *dict.fromkeys(n for n in named if n != eff_axis.PRIMARY))
 
 
-def _with_efficiency(args: argparse.Namespace, settings):
-    """The settings with the efficiency models as one more choice of the design.
+def _axis_options(name: str, text: str) -> tuple[str, ...]:
+    """``--normaliser`` / ``--interrun``: the options to test, the axis's primary first."""
+    from qpilot.qpcr.axes import get_axis
 
-    The models live in the design (``axes``), so the study id names them: a study that tests
-    them is never mistaken for the one that does not. Without ``--design`` the design is the
-    demo analysis with this command's experiment, cut-off and control genes.
+    catalogue = [o.id for o in get_axis(name).catalogue]
+    primary = catalogue[0]
+    if text.strip().lower() == "all":
+        return tuple(catalogue)
+    named = [t.strip() for t in text.split(",") if t.strip()]
+    unknown = [n for n in named if n not in catalogue]
+    if unknown or not named:
+        known = ", ".join(o for o in catalogue if o != primary)
+        raise ValueError(f"unknown --{name} option(s) {unknown or [text]}; use 'all' or {known}")
+    out = (primary, *dict.fromkeys(n for n in named if n != primary))
+    if len(out) < 2:
+        raise ValueError(f"--{name} names no option besides {primary!r}")
+    return out
+
+
+def _with_efficiency(args: argparse.Namespace, settings):
+    """The settings with the further choices asked for as more choices of the design.
+
+    The efficiency models (``--efficiency``), the normalisers (``--normaliser``) and the
+    corrections between plates (``--interrun``) live in the design (``axes``), so the study id
+    names them: a study that tests them is never mistaken for the one that does not. Without
+    ``--design`` the design is the demo analysis with this command's experiment, cut-off and
+    control genes.
     """
     from qpilot.qpcr.designs import vermeulen_design
     from qpilot.qpcr.study import StudySettings
 
-    models = _efficiency_models(args.efficiency)
-    if len(models) < 2:
-        raise ValueError("--efficiency names no model besides LinRegPCR's mean efficiency")
+    asked: dict[str, tuple[str, ...]] = {}
+    if getattr(args, "efficiency", None):
+        models = _efficiency_models(args.efficiency)
+        if len(models) < 2:
+            raise ValueError("--efficiency names no model besides LinRegPCR's mean efficiency")
+        asked["efficiency"] = models
+    for name in ("normaliser", "interrun"):
+        if getattr(args, name, None):
+            asked[name] = _axis_options(name, getattr(args, name))
     design = settings.design
     if design is None:
         base = vermeulen_design()
@@ -220,7 +262,7 @@ def _with_efficiency(args: argparse.Namespace, settings):
                 "reference_candidates": settings.candidates,
             }
         )
-    axes = {**(design.axes or {}), "efficiency": models}
+    axes = {**(design.axes or {}), **asked}
     return StudySettings.from_design(design.model_copy(update={"axes": axes}))
 
 
@@ -241,7 +283,7 @@ def _run_study(args: argparse.Namespace) -> int:
             from qpilot.qpcr.designs import load_design
 
             settings = StudySettings.from_design(load_design(args.design, args.samples))
-        if args.efficiency:
+        if args.efficiency or getattr(args, "normaliser", None) or getattr(args, "interrun", None):
             settings = _with_efficiency(args, settings)
         result, cards, grid = run_study(path, settings)
     except (
@@ -261,23 +303,34 @@ def _run_study(args: argparse.Namespace) -> int:
     return 0
 
 
+_AXIS_LINES = {
+    "efficiency": ("Efficiency models", "LinRegPCR's mean efficiency"),
+    "normaliser": ("Normalisers", "the reference genes chosen"),
+    "interrun": ("Corrections between plates", "the uncorrected quantities"),
+}
+
+
 def _print_efficiency(result) -> None:
-    """One line on the efficiency models when they were tested (facts only)."""
+    """One line per further choice that was tested (facts only)."""
     facts = result.facts
-    status = facts.get("f_axis_efficiency")
-    if status is None:
-        return
-    words = {
-        "swept": "tested as one more choice of the grid",
-        "screened_out": "tested alone first: none flips a conclusion or moves a fold change "
-        "enough to matter, so the grid holds LinRegPCR's mean efficiency",
-        "not_applicable": "none of the requested models applies to this study",
-    }
-    print(f"Efficiency models: {words.get(str(status.value), str(status.value))}")
-    prefix = "f_axis_efficiency_unavailable_"
-    for fid, fact in sorted(facts.items()):
-        if fid.startswith(prefix):
-            print(f"  {fid[len(prefix) :]} not applicable: {fact.value}")
+    for name, (title, primary) in _AXIS_LINES.items():
+        status = facts.get(f"f_axis_{name}")
+        if status is None:
+            continue
+        words = {
+            "swept": "tested as one more choice of the grid",
+            "screened_out": "tested alone first: none changes enough to matter, so the grid "
+            f"holds {primary}",
+            "not_applicable": "none of the requested options applies to this study",
+        }
+        print(f"{title}: {words.get(str(status.value), str(status.value))}")
+        prefix = f"f_axis_{name}_unavailable_"
+        for fid, fact in sorted(facts.items()):
+            if fid.startswith(prefix):
+                print(f"  {fid[len(prefix) :]} not applicable: {fact.value}")
+        agreement = facts.get("f_nf_agreement") if name == "normaliser" else None
+        if agreement is not None:
+            print(f"  {agreement.value}")
 
 
 def _print_study(result, cards, settings) -> None:

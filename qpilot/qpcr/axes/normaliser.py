@@ -247,7 +247,37 @@ def normaliser_values(
     raise ValueError(f"the normaliser option {option!r} does not apply to this study")
 
 
+class NotTraceable(ValueError):
+    """A cell normalised to the global mean: no reference wells to trace."""
+
+
+def as_refs_cell(cell: Mapping[str, Any], notes: Mapping[str, Any] | None) -> dict[str, Any]:
+    """The cell with a best-pair normaliser written as its control genes (the same numbers).
+
+    A best pair is one of the ``refs`` options, so ``{"refs": pair}`` with the planned
+    normaliser evaluates to exactly what the normaliser option does; tools that follow the
+    reference wells (Trace) use that. The planned option returns the cell as it is.
+
+    Raises:
+        NotTraceable: The cell divides by the global mean.
+    """
+    out = dict(cell)
+    option = out.pop(AXIS, PRIMARY)
+    if option == PRIMARY:
+        return dict(cell)
+    pairs = (notes or {}).get("refs") or {}
+    if option in pairs:
+        out["refs"] = tuple(pairs[option])
+        return out
+    raise NotTraceable(
+        "this analysis divides each gene by the global mean of every gene, not by reference "
+        "genes, so there are no reference wells to follow"
+    )
+
+
 __all__ = [
+    "NotTraceable",
+    "as_refs_cell",
     "AXIS",
     "GLOBAL_MEAN",
     "GLOBAL_MEAN_MIN_GENES",

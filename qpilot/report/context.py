@@ -23,6 +23,8 @@ DIM_LABELS = {
     "undetermined": "how wells without a quantity are handled",
     "amp_call": "which curves count as amplified",
     "efficiency": "which efficiency turns Cq into quantity",
+    "normaliser": "what each gene is normalised to",
+    "interrun": "how differences between plates are corrected",
 }
 #: The choice each Decision Card kind decides.
 KIND_DIMENSION = {
@@ -31,6 +33,8 @@ KIND_DIMENSION = {
     "undetermined": "undetermined",
     "amp_call": "amp_call",
     "numbers.efficiency_model": "efficiency",
+    "numbers.normaliser": "normaliser",
+    "numbers.interrun": "interrun",
 }
 #: Method names with digits that prose may quote (they name a method, not a result).
 METHOD_NAMES = {"MIQE 2.0", "SHA-256", "log2", "N0", "TD0", "RFC 6901"}
