@@ -226,14 +226,15 @@ def compute(store: Any, study_id: str, choice: dict[str, str] | None) -> core_ga
     The study's model is rebuilt from its input file and must give its stored results again
     (:func:`qpilot.trace.model_for_study`); the standards' declared quantities come from the
     file, and the raw-ness verdict from the session's import record when the study was opened
-    from an instrument export (:mod:`qpilot.web.intake`; ``None`` for an RDML file).
+    from an instrument export (:mod:`qpilot.web.intake`; ``None`` for an RDML file); G-MELT
+    reads the file's melt curves (:func:`qpilot.qpcr.gate_rules.file_melt`).
 
     Raises:
         JobError: The file is missing or changed, or the rebuilt numbers differ.
     """
     from qpilot.qpcr.curves import analyse_study
     from qpilot.qpcr.designs import design_curves
-    from qpilot.qpcr.gate_rules import run_gate, study_quantities
+    from qpilot.qpcr.gate_rules import file_melt, run_gate, study_quantities
     from qpilot.trace import TraceError, model_for_study
     from qpilot.trace.context import cell_of
 
@@ -257,6 +258,7 @@ def compute(store: Any, study_id: str, choice: dict[str, str] | None) -> core_ga
         model=model,
         cell=cell,
         runs=study_runs(store, study_id, source),
+        melt=file_melt(source, settings.experiment_id),
     )
 
 
