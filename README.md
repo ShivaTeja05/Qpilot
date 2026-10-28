@@ -10,7 +10,7 @@
 ![Runs offline](https://img.shields.io/badge/runs-offline%2C%20on%20a%20laptop-brightgreen.svg)
 ![Research use only](https://img.shields.io/badge/use-research%20only-orange.svg)
 
-[Quickstart](#quickstart) · [The page](#the-page) · [How it works](#how-it-works) · [Commands](#commands) · [AI agents](#use-from-an-ai-agent) · [Validation](#validation) · [Docs](#documentation)
+[Quickstart](#quickstart) · [Screenshots](#see-it) · [The page](#the-page) · [How it works](#how-it-works) · [Commands](#commands) · [AI agents](#use-from-an-ai-agent) · [Validation](#validation) · [Docs](#documentation)
 
 **[▶ Try it online: qpilot-navy.vercel.app](https://qpilot-navy.vercel.app)**: the whole page on the public demo study, in a shared sandbox that resets when it restarts (don't upload confidential data).<br>
 If the sandbox is asleep, the [read-only demo](https://qpilot-demo-pi.vercel.app) shows the same study from recorded answers.
@@ -61,31 +61,52 @@ From the instrument's raw curves to a record anyone can re-run, on the same stud
 
 | | Component | What it does |
 |---|---|---|
-| 🧪 | **Studio** (the page's Design and Curves sections) | The AI proposes the design and the curve calls, the engine checks every proposal, and the scientist decides. Nothing that pairs a group with a number is shown until the design and the curves are confirmed. [`docs/studio.md`](docs/studio.md) |
-| 📈 | **Results and Decision Cards** | Every gene's call with its fold change, confidence level and how often the call holds across the analyses qPilot checks, the choices that could change a conclusion, ranked, for you to decide, and the Evidence Ledger: what this study cannot tell you |
-| 🔍 | **Where to look** | Controls (the Run Gate), Trace (from a result, a sample or a well back to the wells that drive it, with a Decide… for a place that changes a call), Claims, and the Spreadsheet Check that recomputes your own ΔΔCq sheet |
-| 🔬 | **Robustness audit** | The Decision Simulator (`qsim`, in [`sim/`](sim/README.md)) re-runs the confirmed study under every combination of eight analysis decisions (**90,396 analyses** on the demo), gives each gene a verdict, and reproduces qPilot at the baseline. [`docs/integration.md`](docs/integration.md) |
-| 🧾 | **Report, Run Review and the Analysis Record** | Methods, MIQE 2.0 and a passport; a Run Review a person signs off; an Excel workbook; and one hash-chained, checksummed zip with the input, results, every decision with its reason and who made it, and the audit, which anyone can verify and re-run |
-| 🧰 | **Instruments** | A registry and a hash-chained logbook per instrument, what each run file says about it (calibration age, run state), incidents a person confirms, and the lookback "which of my conclusions used this period?" |
-| 📊 | **Prism bridge** | log2 tables per biological unit, a Prism script (`run.pzc`) and provenance, plus what changed in Prism, read back as proposals. [`docs/prism.md`](docs/prism.md) |
+| 📂 | **Your own files** | RDML (1.0 to 1.4) and instrument exports from Bio-Rad CFX, QuantStudio / StepOne / 7500 and LightCycler 480 / 96, or your own Excel Cq table, read by content and checked for how raw the curves are. Every set of a public corpus of real lab files is listed with what qPilot reads from it: [`docs/conformance.md`](docs/conformance.md) |
+| 🧪 | **Studio** (the page's Design and Curves sections) | The AI proposes the design and the curve calls, the engine checks every proposal, and the scientist decides. **A model is optional: the Design can be finished on the page** (targets, groups, standards, biological units, the comparison; [`docs/design-editor.md`](docs/design-editor.md)). Nothing that pairs a group with a number is shown until the design and the curves are confirmed. [`docs/studio.md`](docs/studio.md) |
+| 📈 | **Results and Decision Cards** | Every gene's call with its fold change, confidence level and how often the call holds across the analyses qPilot checks; **several comparisons** per study (against a control, every pair, or your list; Holm across a gene's comparisons, Benjamini–Hochberg q across genes, paired designs); the choices that could change a conclusion, ranked, for you to decide; and the Evidence Ledger: what this study cannot tell you |
+| 🧮 | **Quantities and normalisers** | **Absolute quantification** from the standards on your plate (standard curves, LOD and LOQ, every sample's copies with a 95 % prediction interval; [`docs/quantities.md`](docs/quantities.md)); geNorm and **NormFinder** side by side; other normalisers, efficiency models and corrections between plates tested as further choices when you ask |
+| 🔍 | **Where to look** | Controls (the Run Gate, with **melt curves** judged by G-MELT), Trace (from a result, a sample or a well back to the wells that drive it; in Studio, Decide… leaves them out and analyses again), Claims, and the Spreadsheet Check that recomputes your own ΔΔCq sheet |
+| 🔬 | **Robustness audit** | The Decision Simulator (`qsim`, in [`sim/`](sim/README.md)) re-runs the confirmed study under every combination of eight analysis decisions, nine with technical replicates (**90,396 analyses** on the demo), gives each gene a verdict, and reproduces qPilot at the baseline. [`docs/integration.md`](docs/integration.md) |
+| 🧾 | **Report, exports and the Analysis Record** | Methods, MIQE 2.0 and a passport; a Run Review a person signs off, with **what to repeat and why** and a repeat plate; your **numbers and figures** as an Excel workbook, CSV tables, a figure per gene (SVG, 300-dpi PNG) or a journal supplement ([`docs/exports.md`](docs/exports.md)); and one hash-chained, checksummed zip with the input, results, every decision with its reason and who made it, and the audit, which anyone can verify and re-run |
+| 📊 | **Prism** | A **Prism project (`.pzfx`) that opens as it is**: no template, no script; one table per gene, all genes, and who decided what. What changed in the project you save comes back as questions with their consequences. [`docs/prism.md`](docs/prism.md) |
 | 📐 | **Plan next** | Before the next plate: samples needed from this study's own noise, what a design cannot detect, and a plate layout; `qpilot plan` adds the replicate budget (biological, RT and technical replicates in one formula) |
-| 🔌 | **One MCP server** | `qpilot serve`: 26 tools (21 `qpcr_*` and 5 read-only `sim_*`). An agent can ask and propose; it cannot overrule a person, and the page shows what an agent is waiting to ask you. [`docs/agents.md`](docs/agents.md) |
+| 🧰 | **Instruments** | A registry and a hash-chained logbook per instrument, what each run file says about it (calibration age, run state), incidents a person confirms, and the lookback "which of my conclusions used this period?" |
+| 🔌 | **One MCP server** | `qpilot serve`: 32 tools (27 `qpcr_*` and 5 read-only `sim_*`). An agent can read, ask, propose and write a new export file; it cannot overrule a person, and the page shows what an agent is waiting to ask you. [`docs/agents.md`](docs/agents.md) |
 
-[`docs/user-guide.md`](docs/user-guide.md) walks through the page section by section.
+[`docs/user-guide.md`](docs/user-guide.md) walks through the page section by section; [`docs/README.md`](docs/README.md) lists every guide and method card.
+
+## See it
+
+<table>
+<tr>
+<td width="50%" valign="top"><img src="docs/images/results.png" alt="Results: the robustness map of 58 genes and the Decision Cards, each option with what it changes for the headline genes"><br><sub><b>Results</b> (demo study): every gene's call against how often it holds, and the choices that could change it, waiting for a person.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/design-editor.png" alt="The Design editor: samples of a LightCycler 96 plate with their groups, and the plate map"><br><sub><b>Design, no model</b> (a LightCycler 96 file from Zenodo): select samples or wells, set groups, types and units; each change is recorded with your reason.</sub></td>
+</tr>
+<tr>
+<td valign="top"><img src="docs/images/controls-melt.png" alt="Controls: a G-MELT check opened, three wells' melt curves with one peak at 82 °C inside the expected band"><br><sub><b>Controls</b> (the same plate): a G-MELT check with its wells' melt curves and the assay's expected Tm ± 1 °C.</sub></td>
+<td valign="top"><img src="docs/images/quantities.png" alt="Quantities: a standard curve with its prediction band, slope, efficiency 99.8 %, LOD and LOQ"><br><sub><b>Quantities</b> (a QuantStudio 3 wastewater export): the standard curve, efficiency with its 95 % CI, LOD, LOQ and every sample's copies.</sub></td>
+</tr>
+<tr>
+<td valign="top"><img src="docs/images/gene-figure.png" alt="A gene page: each sample's value by group, and the figure with each dot a biological unit and the group means with 95 % CI"><br><sub><b>Gene</b> (demo): your samples by group and the figure for a paper, exported as SVG or 300-dpi PNG.</sub></td>
+<td valign="top"><img src="docs/images/trace.png" alt="Trace: the well to look at first for CAMTA2, and a tree of what each sample does to the call"><br><sub><b>Trace</b> (demo): from a call to the one well worth a look, and what each sample does to it.</sub></td>
+</tr>
+<tr>
+<td valign="top"><img src="docs/images/audit.png" alt="The audit: verdict counts and every gene's share of the audit's reasonable analyses with the same call"><br><sub><b>Audit</b> (demo): 90,396 analyses, a verdict per gene from the audit's reasonable set.</sub></td>
+<td valign="top"><sub>Screenshots of <code>qpilot app</code> with no model configured. The LightCycler 96 plate is Śmiga &amp; Olczak (2025, Zenodo, CC BY 4.0); the QuantStudio 3 export is SecureBio's airplane-wastewater run (MIT); both are in <a href="tests/fixtures/corpus/README.md"><code>tests/fixtures/corpus/</code></a>, and their designs were set on the page.</sub></td>
+</tr>
+</table>
 
 ## Quickstart
 
-Python 3.11 or newer. Times are wall-clock on a laptop with no model.
-
 ```bash
-git clone https://github.com/ShivaTeja05/Qpilot && cd Qpilot
-python3.11 -m venv .venv && source .venv/bin/activate
-pip install -e '.[studio,sim]'                          # about 30 s
-qpilot fetch-demo                                       # the 64-plate demo study, SHA-256 pinned (7 MB, once)
-qpilot app                                              # the page, on 127.0.0.1 (Ctrl-C to stop)
+pipx install git+https://github.com/ShivaTeja05/Qpilot.git   # or: uv tool install git+https://github.com/ShivaTeja05/Qpilot.git
+qpilot fetch-demo         # the 64-plate demo study, SHA-256 pinned (7 MB, once)
+qpilot app                # the page, on 127.0.0.1 (Ctrl-C to stop)
 ```
 
-`qpilot app` prints a link and opens it. **Use that link**: it carries the key of this launch, without which the page's API answers nothing. On the page, choose **Open the demo study**, or drop your own RDML file or instrument export. Installing needs no Node; the page is already built into the package.
+Python 3.11–3.13 on Windows, macOS or Linux; no Node, no compiler. Once qPilot is on PyPI, `pipx install qpilot` (or `uv tool install qpilot`) works too. Windows step by step in PowerShell, macOS notes, offline installs and where your data lives: [`docs/install.md`](docs/install.md). Working on qPilot itself: `git clone https://github.com/ShivaTeja05/Qpilot && cd Qpilot && pip install -e '.[dev,ai]'` in a virtual environment.
+
+`qpilot app` prints a link and opens it. **Use that link**: it carries the key of this launch, without which the page's API answers nothing. On the page, choose **Open the demo study**, or drop your own RDML file, instrument export or Cq table. The page is already built into the package.
 
 Without a browser, the same walk-through can be scripted and checked:
 
@@ -96,7 +117,7 @@ QPILOT_MODEL_PROVIDER=none qpilot studio demo --check
 # All 9 stages (Studio, audit, Prism, record, agents): 30 checks, 3–6 min
 QPILOT_MODEL_PROVIDER=none python -m qpilot.integration demo --out demo-run
 
-# The 26 MCP tools this install serves
+# The 32 MCP tools this install serves
 qpilot serve --list-tools
 ```
 
@@ -104,7 +125,7 @@ qpilot serve --list-tools
 > On macOS the first `qpilot` command after installing can take about 70 s (the first load of native libraries); later calls start in seconds. `--out` must be a new or empty folder.
 
 > [!TIP]
-> **The model is optional.** With `QPILOT_MODEL_PROVIDER=none` the fixed rules propose alone, and every demo number here comes from the rules. Typing the demo's 427 samples twice (854 items), the rules got 839/854 right; qwen2.5:7b 834/854; qwen2.5:14b and qwen2.5:32b 839/854. Safety held for every model: no control missed, nothing accepted without a person ([`docs/studio-measured.md`](docs/studio-measured.md)).
+> **The model is optional.** With `QPILOT_MODEL_PROVIDER=none` the fixed rules propose alone, whatever they cannot read from your file you set on the Design page yourself, and every demo number here comes from the rules. Typing the demo's 427 samples twice (854 items), the rules got 839/854 right; qwen2.5:7b 834/854; qwen2.5:14b and qwen2.5:32b 839/854. Safety held for every model: no control missed, nothing accepted without a person ([`docs/studio-measured.md`](docs/studio-measured.md)).
 
 ## The page
 
@@ -112,18 +133,18 @@ One hash-routed page, one study at a time. The rail lists the workflow in order,
 
 | Section | What it is for |
 |---|---|
-| **Open** | Drop an RDML file or an instrument export (and optionally a sample sheet and one sentence about the experiment), open the demo study, or return to a recent workspace |
-| **Design** (blind) | Proposals for what each sample and gene is, the groups and the comparison, each checked by the engine; you accept, edit or reject |
-| **Curves** (blind) | Every well's curve and call, the Curve Judge's disagreements as proposals, the call rule |
-| **Results** | The robustness map of every gene, the table, the flip matrix, the Decision Cards, and the Evidence Ledger: what this study can and cannot tell you |
-| **Controls** | What the controls on each plate say (the Run Gate), and whether leaving their wells out changes a call |
-| **Gene** | One gene: what holds, one choice at a time, your samples, its wells |
+| **Open** | Drop an RDML file, an instrument export or your own Cq table (and optionally a sample sheet and one sentence about the experiment), open the demo study, or return to a recent workspace |
+| **Design** (blind) | Proposals for what each sample and gene is, the groups and the comparison (or several), each checked by the engine; you accept, edit or reject, or **set the design on this page** yourself (targets, samples, a pasted list, the comparison, a pre-filled sample sheet) |
+| **Curves** (blind) | Every well's curve and call, its melt curve, the Curve Judge's disagreements as proposals, the call rule |
+| **Results** | The robustness map of every gene, the table (per comparison, with corrected p and q), the flip matrix, the Decision Cards, reference genes by geNorm and NormFinder, **Quantities** when the plate has standards, the further choices you can ask qPilot to test, and the Evidence Ledger: what this study can and cannot tell you |
+| **Controls** | What the controls on each plate say (the Run Gate, melt curves included), whether leaving their wells out changes a call, and what to repeat |
+| **Gene** | One gene: what holds, one choice at a time, your samples with their replicate wells, its wells, and its figure |
 | **Audit** | The robustness audit: a verdict per gene, a what-if lab, and how it works |
-| **Trace** | Follow any number down to the samples and wells that drive it; **Where to look** for a gene, a sample or a well, and **Decide…** opens a place that changes a call as a Decision Card |
+| **Trace** | Follow any number down to the samples and wells that drive it; **Where to look** for a gene, a sample or a well, and **Decide…** at a place that changes a call (in Studio it leaves the wells out and analyses again); an agent's request to set wells aside waits there for you |
 | **Claims** | Check a sentence about the results against the engine's numbers |
 | **Sheet check** | Recompute your own ΔΔCq spreadsheet from its Cq values; the first step that differs, and the known slip that reproduces it (the file is never edited) |
-| **Prism** | The Prism project and bundle, and the round trip back |
-| **Report** | Methods, the MIQE 2.0 checklist, a reviewer's report, the study passport, the **Run Review** a person signs off, and the Excel workbook |
+| **Prism** | The Prism project (`.pzfx`, no template needed), and the round trip back from the project you saved |
+| **Report** | Methods, the MIQE 2.0 checklist, a reviewer's report, the study passport, the **Run Review** a person signs off (with what to repeat and a repeat plate), and the exports: workbook, CSV tables, figures, journal supplement |
 | **Record** | The decision chain, export of the Analysis Record, verification of a record |
 | **History** | Replay the decisions in order and see what each changed |
 | **Plan next** | Samples per group from this study's own noise, what a design cannot detect, and a plate layout |
@@ -144,7 +165,7 @@ flowchart LR
   CHECK --> CARDS["Decision Cards<br/>only choices that flip a conclusion"]
   CARDS --> PERSON{{"Scientist decides<br/>with a reason"}}
   PERSON --> AUDIT["Robustness audit<br/>90,396 analyses"]
-  PERSON --> PRISM["GraphPad Prism<br/>tables + script"]
+  PERSON --> PRISM["GraphPad Prism<br/>project (.pzfx)"]
   AUDIT --> RECORD[("Analysis Record<br/>hash-chained, re-runnable")]
   PRISM --> RECORD
   AGENT["AI agent over MCP"] -.->|asks, proposes| CARDS
@@ -173,8 +194,9 @@ All maths is ordinary, deterministic Python; no language model is involved. Step
 
 1. **Curves**: LinRegPCR, vendored unchanged from the RDML consortium's rdmlpython, on every plate ([method card](methods/linregpcr.md)).
 2. **Control genes**: geNorm stability and the pairwise ratio check between the groups ([method card](methods/genorm.md)).
-3. **Comparison**: Welch's t-test on log2 relative quantities, with a stated rule: *up or down only if p < 0.05 and the change is at least 2-fold; otherwise no call* ([method card](methods/contrast.md)).
-4. **Robustness**: every combination of the reasonable choices on the same plates (31 control-gene sets × 3 group cut-offs × 2 rules for empty wells on the demo: 186 analyses in `qpilot run`; Studio adds four amplification-call rules, 744), and which choices flip which conclusions. The Decision Simulator's audit varies eight decisions (90,396 analyses on the demo) and gives its verdicts from its own reasonable set (144 on the demo).
+3. **Comparison**: Welch's t-test on log2 relative quantities (a paired t-test for a paired design), with a stated rule: *up or down only if p < 0.05 and the change is at least 2-fold; otherwise no call* ([method card](methods/contrast.md)). With several comparisons, each gene's p-values are Holm-corrected across its comparisons before the rule, and Benjamini–Hochberg q-values across genes are shown beside them ([method card](methods/comparisons.md)).
+4. **Robustness**: every combination of the reasonable choices on the same plates (31 control-gene sets × 3 group cut-offs × 2 rules for empty wells on the demo: 186 analyses in `qpilot run`; Studio adds four amplification-call rules, 744), and which choices flip which conclusions. The efficiency model, the normaliser (NormFinder's or geNorm's best pair, the global mean) and a correction between plates join the grid when a person asks ([efficiency](methods/efficiency_model.md), [NormFinder](methods/normfinder.md), [between plates](methods/inter_run_calibration.md)). The Decision Simulator's audit varies eight decisions, nine with technical replicates (90,396 analyses on the demo), and gives its verdicts from its own reasonable set (144 on the demo).
+5. **Quantities and melt**, beside the relative analysis: standard curves, LOD, LOQ and copies with a 95 % prediction interval ([method card](methods/absolute_quantification.md)); each well's melt curve, its peaks and Tm, judged by the Run Gate's G-MELT ([method card](methods/melt_curve.md)).
 
 ## Where to look, and what the data cannot show
 
@@ -184,16 +206,18 @@ On the page these are the Trace, Results (Evidence Ledger), Report (Run Review, 
 qpilot trace --gene CAMTA2            # from a result back to the wells to look at (reads only)
 qpilot trace --well HMBS_20080318:K22 # does this one well matter?
 qpilot evidence                       # what this study cannot tell you (Evidence Ledger)
-qpilot report run-review --out review.html
+qpilot report run-review --repeat --out review.html   # with what to repeat and why
+qpilot melt run.rdml                  # each well's melt curve: the product's Tm, extra peaks, controls
+qpilot quantify run.rdml              # standard curves, LOD/LOQ and every sample's copies
 qpilot check sheet analysis.xlsx      # recompute your own ΔΔCq sheet; the file is never edited
 qpilot plan --sd 0.5 --sd-rt 0.4 --sd-well 0.3 --n 6   # biological, RT and technical replicates together
 qpilot instrument inspect run.eds     # what the run file says about the instrument
-qpilot export excel --out results.xlsx  # results plus a "Where to look" sheet
+qpilot export xlsx --out results.xlsx   # your numbers as numbers (also csv, figures, supplement)
 ```
 
 - **Trace** walks from a gene's conclusion, a sample or a well back through the normaliser, the reference wells and the plate controls. It stops at a plate and well, and says what each one does to the conclusion. On the demo, CAMTA2's first place to look is tumour 2016 on plate HMBS_20080318, well K22: one HMBS well reads Cq 46.1 while the tumour's other four reference wells read normally. Reading that well from the other four changes CAMTA2 from no call to down. A trace that would change a call opens a decision only a person can take. On the page, Trace follows the analysis in use (each Decision Card's applied option). Method: [methods/trace.md](methods/trace.md).
 - **Evidence Ledger** lists the controls and annotations a study has and lacks: NTCs, no-RT, reference-gene stability, efficiency source, RNA integrity, RT replicates, biological units, inter-run calibrators, lots, instrument dates. Absent items never change a conclusion. Method: [methods/evidence.md](methods/evidence.md).
-- **Run Review** is one page per study for the person who reviews someone else's work: the headline genes, the Evidence Ledger and the recorded sign-offs (accept, repeat or discuss, with a comment and a name, kept in the decision chain). Only a person signs off, on the page.
+- **Run Review** is one page per study for the person who reviews someone else's work: the headline genes, the Evidence Ledger, **what to repeat and why** (each sample × gene ranked by what re-running it could change, with a repeat plate to download), the Run Gate per plate, and the recorded sign-offs (accept, repeat or discuss, with a comment and a name, kept in the decision chain). Only a person signs off, on the page.
 - **Spreadsheet Check** recomputes a lab's own analysis sheet from its Cq values. It names the first column that differs and the known slip that reproduces it, such as an inverted sign, the exponent applied twice, or statistics run on fold changes. The column mapping is a guess until a person confirms it. Tested on generated sheets only so far. Method: [methods/sheetcheck.md](methods/sheetcheck.md).
 - **Instrument Logbook** reads calibration dates, run state and log events from QuantStudio `.eds` and export headers. It keeps a hash-chained logbook per instrument, with events inferred from successive files and incidents a person confirms. Lookback answers "which of my conclusions used this period?". The formats are tested on synthetic files built to the layouts seen in public files; several are unverified (see [methods/instrument_context.md](methods/instrument_context.md) and [methods/lookback.md](methods/lookback.md)).
 
@@ -204,13 +228,16 @@ qpilot export excel --out results.xlsx  # results plus a "Where to look" sheet
 | `qpilot fetch-demo` | Download the public 64-plate demo study (pinned, SHA-256 verified) |
 | `qpilot app` | The one page on 127.0.0.1 (never shared); `qpilot app --fresh-demo` moves earlier decisions aside (they are kept, never deleted) |
 | `qpilot studio demo --check` | Studio end to end without a browser (`qpilot studio` itself opens the page) |
-| `qpilot run` | Analyse a study: results, robustness, confidence and Decision Cards (186 analyses of the demo) |
+| `qpilot run` | Analyse a study: results, robustness, confidence and Decision Cards (186 analyses of the demo); `--efficiency`, `--normaliser`, `--interrun` add further choices to the grid |
 | `qpilot plan` | Before the first plate: samples needed (with the replicate budget) and what a design cannot detect |
 | `qpilot trace` | From a gene's result, a sample or a well back to the places to look (reads only) |
 | `qpilot evidence` | What a study can and cannot tell you (the Evidence Ledger; reads only) |
-| `qpilot report run-review` | The Run Review page of a study (renders only; a person signs off on the page) |
+| `qpilot report run-review` | The Run Review page of a study, with `--repeat` what to repeat and the repeat plate (renders only; a person signs off on the page) |
 | `qpilot check sheet` | Recompute a lab's own ΔΔCq sheet; `--confirm` / `--map COL=ROLE` confirm the column mapping |
 | `qpilot instrument` | What run files say about instruments: `inspect`, `list`, `add`, `history`, `lookback`, `position` |
+| `qpilot melt` | Each well's melt curve from an RDML file or an export: the product's Tm per plate and target, extra peaks, controls (reads only) |
+| `qpilot quantify` | Absolute quantification: standard curves, LOD/LOQ and every unknown's copies with a 95 % prediction interval |
+| `qpilot copies` | ng of a standard to copies (dsDNA, ssDNA, RNA) and its dilution series |
 | `qpilot explain` | Print one explanation template rendered from a study's facts |
 | `qpilot validate` | Reproduce the RDML consortium's published benchmark on the demo study |
 | `qpilot doctor` | Versions, the dataset, the model provider and what can leave this machine (`outbound: none` without a model) |
@@ -219,7 +246,7 @@ qpilot export excel --out results.xlsx  # results plus a "Where to look" sheet
 | `qpilot record` | Write the Analysis Record of a study, e.g. one decided in Studio |
 | `qpilot verify` | Check a record's checksums, decision chain and proposal chain |
 | `qpilot rerun` | Re-run a record and compare results byte for byte |
-| `qpilot export` | `export prism`: tables and a Prism script; `export excel`: a workbook with Trace's places to look |
+| `qpilot export` | `xlsx` (or `excel`), `csv`, `figures`, `supplement`: your numbers, figures or a journal supplement, as decided; `prism`: a Prism project (`.pzfx`) that opens as it is |
 | `qpilot prism` | After Prism: `prism diff` shows what changed; `prism verify` checks a bundle |
 | `qsim …` | The Decision Simulator: `demo`, `run`, `ask`, `whatif`, `validate` ([`sim/README.md`](sim/README.md)) |
 | `python -m qpilot.integration` | The integrated workflow: `demo`, `audit --study <id>`, `verify` |
@@ -230,7 +257,7 @@ qpilot export excel --out results.xlsx  # results plus a "Where to look" sheet
 claude mcp add qpilot -- qpilot serve
 ```
 
-`qpilot serve` is the one MCP server: qPilot's 21 `qpcr_*` tools and, when the Decision Simulator imports (it installs with this package), its 5 read-only `sim_*` tools over an audit; `qpilot serve --list-tools` prints what your install serves. It reads and writes the same study store as the page. Every tool has a title, honest annotations and an output schema, and every refusal says what went wrong, a stable code and what to do next.
+`qpilot serve` is the one MCP server: qPilot's 27 `qpcr_*` tools and, when the Decision Simulator imports (it installs with this package), its 5 read-only `sim_*` tools over an audit; `qpilot serve --list-tools` prints what your install serves. It reads and writes the same study store as the page. Every tool has a title, honest annotations and an output schema, and every refusal says what went wrong, a stable code and what to do next.
 
 An agent can read the study, ask what each choice would change, and request a decision:
 
@@ -238,7 +265,7 @@ An agent can read the study, ask what each choice would change, and request a de
 run → qpcr_study → qpcr_robustness → qpcr_decide → pending_human → (scientist decides on the page) → record
 ```
 
-A choice that can change a conclusion (with the other choices at their recommended settings) becomes a request that waits for a person, whatever the agent says; that check is made once, when the study is analysed. Every MCP caller is recorded as an agent, and `actor="human"` is refused. No tool can accept, edit or reject a Studio proposal, sign off a run review or confirm an instrument incident.
+A choice that can change a conclusion (with the other choices at their recommended settings) becomes a request that waits for a person, whatever the agent says; that check is made once, when the study is analysed. Every MCP caller is recorded as an agent, and `actor="human"` is refused. No tool can accept, edit or reject a Studio proposal, sign off a run review or confirm an instrument incident. An agent can ask a person to set wells aside (`qpcr_request_set_aside`: the request waits in Trace, at the place, for **Approve** or **Turn down**), and `qpcr_export` writes new export files only, never over a file, and decides nothing.
 
 > [!IMPORTANT]
 > The gate binds agents whose only access to qPilot is MCP (the page's Ask never writes at all). An agent that can run commands as you can still act as you. Give agents MCP access, not your shell.
@@ -278,34 +305,41 @@ Decisions are a hash chain: each entry carries the hash of the one before, so an
 
 | | |
 |---|---|
-| RDML export from the instrument | ◐ RDML 1.3 and 1.4 tested; 1.0–1.2 are migrated by the vendored code but untested |
-| Instrument exports (Bio-Rad CFX, QuantStudio / StepOne / 7500, LightCycler 480, tidy tables) | ◐ dropped on the page's Open (one file or a whole export set), read by content and converted once into RDML; tested on a public export corpus. The page says how raw the curves are, and a baseline-subtracted or unknown export is analysed with every confidence grade capped until a person decides |
+| RDML export from the instrument | ✔ RDML 1.0 to 1.4, including zipped files whatever their member is called (LightCycler 96 `.lc96p`, CFX Manager), StepOne's RDML 1.0 and LinRegPCR-written RDML; every set of the public corpus opens ([`docs/conformance.md`](docs/conformance.md)) |
+| Instrument exports (Bio-Rad CFX, QuantStudio / StepOne / 7500, LightCycler 480, tidy tables) | ◐ dropped on the page's Open (one file or a whole export set), read by content and converted once into RDML; every real export set of the corpus opens. The page says how raw the curves are, and a baseline-subtracted or unknown export is analysed with every confidence grade capped until a person decides |
+| My own Excel Cq table (Sample, Gene, Condition, Gene Type, Cq) | ◐ opens alone or beside the run file; its Gene Type column proposes the reference genes and its condition column becomes the sample sheet. Analysing from Cq values alone, with no curves, is not offered yet (it is through the Import Trust card of an export that also has curves) |
 | QuantStudio `.eds` | ◐ for the analysis, export the curves with Thermo's own tools first; `qpilot instrument inspect` reads the file's calibration dates, run state and log events (synthetic test files only) |
-| Offline on a laptop, no account | ✔ (macOS: full analysis tested with the network off; Linux: unit tests in CI, without the demo study; Windows untested) |
-| Reproduces my lab's numbers | ◐ reproduces the published benchmark above; your own instrument is untested |
-| Results as CSV | ◐ the robustness grid (`grid.csv`); the Excel workbook (Report section, or `qpilot export excel`) has the results with a "Where to look" sheet; a per-gene CSV is on the roadmap |
-| Prism export | ◐ `qpilot export prism` / the page's Send to Prism write log2 tables per biological unit, a Prism script (`run.pzc`) and provenance (Mode S: Prism itself reads and writes its files). **Not yet run in a real Prism**: the script commands follow GraphPad's documentation, the templates must be made once by hand, see [docs/prism.md](docs/prism.md). Not affiliated with GraphPad Software or Dotmatics |
-| Results written back into RDML | ✘ roadmap |
-| Hash-chained record of every decision | ✔ (tamper-evident; not Part 11) |
-| My own study design | ✔ `qpilot run --design study.yaml --samples sheet.csv`, or in the page's Design section, where the AI proposes the design from your file, sheet and one sentence and you confirm each item; the demo is one preset (tested on synthetic designs and on the demo re-entered as two named groups, which reproduces it exactly) |
-| Technical replicates | ✔ averaged per biological unit (mean of log2 quantities); never counted as n; a group with fewer than two biological units gets no p-value |
+| Offline on a laptop, no account | ✔ (macOS: full analysis tested with the network off; Linux: tests in CI; Windows: in CI, tests and the installed wheel, not yet used on an instrument PC) |
+| Reproduces my lab's numbers | ◐ reproduces the published benchmark above; your own instrument is untested. Melt: 96 of 96 wells of a CFX96 SYBR plate within 0.5 °C of CFX Manager's Tm |
+| My own study design | ✔ set on the page with no model (targets, groups, standards, units, the comparison; [`docs/design-editor.md`](docs/design-editor.md)), proposed from your file, sheet and one sentence, or `qpilot run --design study.yaml --samples sheet.csv` |
+| More than two groups, paired samples | ✔ several comparisons (each against a control, every pair, or your list), Holm across a gene's comparisons, Benjamini–Hochberg q across genes; paired by donor, animal or passage |
+| Technical replicates | ✔ averaged per biological unit (mean of log2 quantities); never counted as n; a group with fewer than two biological units gets no p-value; the robustness audit combines them the same way |
+| Absolute quantities (copies) | ✔ from the standards on the plate: standard curves, LOD, LOQ, copies with a 95 % prediction interval, per µL or ng once you give the reaction input. A plate with no group comparison (a viral load) has no Results page yet: use `qpilot quantify` |
+| Melt curves | ✔ SYBR Green / EvaGreen assays exported with their melt curves (RDML, CFX melt RFU, QuantStudio melt data, StepOne melt sections): G-MELT in Controls |
 | Which curves count as amplified | ✔ LinRegPCR by default; "Cq ≤ 40 / 38 / 35" are shown as choices with their consequences (on the demo, "Cq > 35 = not detected" changes 10 of 58 conclusions); the learned Curve Judge is a second opinion whose disagreements a person resolves (validated on the demo's LightCycler 480 SYBR only) |
+| Results as tables and figures | ✔ Excel workbook, CSV tables, a figure per gene (SVG, 300-dpi PNG) and a journal supplement, as decided on the Decision Cards ([`docs/exports.md`](docs/exports.md)) |
+| Results written back into RDML | ◐ the journal supplement carries your RDML with qPilot's Cq (always), N0 and efficiency (RDML 1.3 and later) and the wells left out, with the reason |
+| Prism export | ◐ Send to Prism / `qpilot export prism` write a Prism project (`.pzfx`) built to GraphPad's file format: one table per gene, all genes, and an Info sheet with who decided what; no template. **Not yet opened in a real Prism seat** ([docs/prism.md](docs/prism.md)). Not affiliated with GraphPad Software or Dotmatics |
+| Hash-chained record of every decision | ✔ (tamper-evident; not Part 11) |
 
 ## Demo dataset
 
-Vermeulen J *et al.* (2009) *Lancet Oncology* 10:663–671 and Ruijter JM *et al.* (2013) *Methods* 59:32–46; CC BY 4.0 (the licence of the CRAN `vermeulen` and `ruijter` packages that redistribute the data). qPilot downloads the copy in the RDML consortium's rdmlpython repository at a pinned commit.
+Vermeulen J *et al.* (2009) *Lancet Oncology* 10:663–671; raw curves from Ruijter JM *et al.* (2013) *Methods* 59:32–46; CC BY 4.0 (the licence of the CRAN `vermeulen` and `ruijter` packages that redistribute the data). qPilot downloads the copy in the RDML consortium's rdmlpython repository at a pinned commit.
 
 **64 plates** (one gene per plate) · **366 neuroblastoma tumours** · **24,576 reactions** · **5 candidate control genes**. The demo groups are **MYCN-high (the top 15 % by MYCN expression) versus the rest**: expression-defined, not the clinical MYCN amplification call.
 
 ## Limitations
 
 - Your own design goes through the page's Design section, or `qpilot run --design study.yaml --samples sheet.csv`; Plan next and `qpilot plan` size a design before the first plate. `qpilot run` without a design analyses the demo's.
-- One gene per plate in the demo, so plate effects cannot be separated from gene effects; there is no plate-effect model.
-- Technical replicates are averaged per biological unit in a confirmed design; the robustness audit needs one well per sample and gene, so it does not run on such a design yet. In the demo each tumour has one well per gene; only standards and controls are in triplicate. No melt-curve analysis; no kinetic outlier test.
-- Curve analysis (N0, Cq, dilution bias) is validated against published results on the standards of one study from one instrument platform (LightCycler 480, SYBR Green I). The later steps (geNorm, the contrast, robustness) are tested against reproduced numbers, not a published benchmark.
-- No correction for testing many genes: the robustness check measures sensitivity to analysis choices, not significance.
-- Deciding a Trace card records the decision with its reason; the study's numbers stay as analysed (to leave a well out of the analysis, leave it out in a Studio session's Curves or from Controls).
-- Results are not yet written back into the RDML file (roadmap).
+- One gene per plate in the demo, so plate effects cannot be separated from gene effects; there is no plate-effect model. The correction between plates (inter-run calibrator, factor correction) is tested on synthetic tables only.
+- Technical replicates are averaged per biological unit in a confirmed design, and the robustness audit combines them the same way. In the demo each tumour has one well per gene; only standards and controls are in triplicate. No kinetic outlier test.
+- Curve analysis (N0, Cq, dilution bias) is validated against published results on the standards of one study from one instrument platform (LightCycler 480, SYBR Green I). The later steps (geNorm, NormFinder, the contrast, robustness) are tested against reproduced numbers, not a published benchmark; NormFinder has not been checked against the paper's own example (its data are not redistributed).
+- The call rule uses no correction for testing many genes (Benjamini–Hochberg q-values are shown beside p for reference); with several comparisons, each gene's p-values are Holm-corrected across its comparisons. The robustness check measures sensitivity to analysis choices, not significance.
+- With several comparisons, the robustness audit audits the first one and says so; a gene's per-unit values and `qpcr_units` follow the first comparison too.
+- A file with Cq values and no curves opens and its design can be set, but an analysis from Cq values alone is offered only through the Import Trust card of an export that also has curves.
+- A plate with standards and no group comparison (a viral load) cannot reach Results on the page; `qpilot quantify` gives its quantities. No MCP tool reads quantities yet.
+- Outside Studio, a Trace decision is recorded only; open the file in Studio to apply it.
+- The Prism project has not yet been opened in a real Prism seat; the table of all genes needs Prism 9 or later.
 
 ## Security and privacy
 
@@ -334,9 +368,10 @@ qpilot/
 └── cli/                    the command line (qpilot …)
 frontend/                   the page's source (React, TypeScript); built into qpilot/web/static
 sim/                        the Decision Simulator (qsim): the robustness audit
-methods/                    method cards: LinRegPCR, geNorm, the contrast, Trace, Evidence, Sheet check, …
+methods/                    method cards: LinRegPCR, geNorm, NormFinder, the contrast, comparisons, melt, quantities, Trace, …
+scripts/                    the merge gate, the demo regression, the corpus conformance table, release checks
 validation/                 the published benchmark and its generated table
-docs/                       the page's spec, Studio, engine, agents, integration, Prism, measured model runs
+docs/                       install, the user guide, the page's spec, Studio, engine, agents, exports, Prism, conformance
 training/                   the Curve Judge's training code
 tests/                      unit, integration, page API and demo-data tests
 ```
@@ -345,15 +380,23 @@ tests/                      unit, integration, page API and demo-data tests
 
 | Guide | Read it for |
 |---|---|
-| [`docs/user-guide.md`](docs/user-guide.md) | the page, section by section |
+| [`docs/README.md`](docs/README.md) | every guide and method card, in one list |
+| [`docs/install.md`](docs/install.md) | installing on Windows, macOS and Linux; where your data lives |
+| [`docs/user-guide.md`](docs/user-guide.md) | the page, section by section, and how to do each task |
+| [`docs/conformance.md`](docs/conformance.md) | which instrument files qPilot reads, set by set |
+| [`docs/design-editor.md`](docs/design-editor.md) | setting the design on the page, with no model |
+| [`docs/quantities.md`](docs/quantities.md) | absolute quantification: standard curves, LOD, LOQ, copies |
+| [`docs/exports.md`](docs/exports.md) | what the workbook, CSV tables, figures and supplement hold |
 | [`docs/app.md`](docs/app.md) | the page's build spec: sections, API, design system |
 | [`docs/studio.md`](docs/studio.md) | qPilot Studio, step by step |
 | [`docs/engine.md`](docs/engine.md) | the engine's steps, method cards and limits |
 | [`docs/integration.md`](docs/integration.md) | the nine-stage workflow, its numbers and diagrams |
 | [`docs/agents.md`](docs/agents.md) | MCP tools, models inside qPilot, the harness |
-| [`docs/prism.md`](docs/prism.md) | the Prism bridge and its round trip |
+| [`docs/prism.md`](docs/prism.md) | the Prism project and its round trip |
 | [`docs/studio-measured.md`](docs/studio-measured.md) | measured model runs, 7B to 32B |
 | [`sim/README.md`](sim/README.md) | the Decision Simulator |
+| [`docs/release.md`](docs/release.md) | how a release is made |
+| [`CHANGELOG.md`](CHANGELOG.md) | what changed in each version |
 | [`THREAT_MODEL.md`](THREAT_MODEL.md) | threats and mitigations |
 
 ## Development
@@ -366,13 +409,13 @@ pytest -q                         # everything, after qpilot fetch-demo
 cd frontend && npm ci && npm run typecheck && npm run lint && npm test && npm run build   # the page
 ```
 
-CI runs lint, the unit tests and `pip-audit` on every pull request. Contributions: [`CONTRIBUTING.md`](CONTRIBUTING.md).
+CI runs lint, `pip-audit`, the unit tests on Ubuntu (Python 3.11–3.13), macOS and Windows, and a smoke test of the installed wheel on every pull request (Windows does not block a merge yet). Contributions: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Built and borrowed
 
-**Borrowed, credited, unchanged:** LinRegPCR (rdmlpython, MIT, vendored at `fce7a44`); the RDML format and schemas; the geNorm method (Vandesompele *et al.* 2002, reimplemented from the paper); SciPy's t distribution; the demo data and the published benchmark tables.
+**Borrowed, credited, unchanged:** LinRegPCR (rdmlpython, MIT, vendored at `fce7a44`); the RDML format and schemas; the geNorm method (Vandesompele *et al.* 2002) and NormFinder (Andersen *et al.* 2004), both reimplemented from the papers; SciPy's t distribution; the demo data, the published benchmark tables and the public instrument files of the test corpus.
 
-**Built here:** the hardened RDML loader, instrument connectors and pinned downloads; the per-plate curve table; quantities, groups, geNorm, the contrast and its rule; the reference-gene group check; the decision space and robustness grid; Decision Cards and the escalation rule; the on-disk study store; the Analysis Record and its hash chain; confidence grades; templated explanations whose numbers are all facts; the one page and its local server (`qpilot/web/`, `frontend/`); qPilot Studio's service and the Prism bridge; the Run Gate, Trace, the Evidence Ledger, the Run Review, the Spreadsheet Check and the instrument logbook; the Decision Simulator (`sim/`) and the integrated workflow (`qpilot/integration/`); the MCP server; the model layer and its test harness; `qpilot plan`; the validation script.
+**Built here:** the hardened RDML loader, instrument connectors and pinned downloads; the per-plate curve table; quantities, groups, geNorm, the contrast and its rule; the reference-gene group check; the decision space and robustness grid; Decision Cards and the escalation rule; the on-disk study store; the Analysis Record and its hash chain; confidence grades; templated explanations whose numbers are all facts; the one page and its local server (`qpilot/web/`, `frontend/`); qPilot Studio's service and the Prism bridge; the Run Gate, melt-curve analysis, Trace, the Evidence Ledger, the Run Review and its repeat plan, the Spreadsheet Check and the instrument logbook; several comparisons, absolute quantification, the exports and the Prism project writer; the Design editor; the Decision Simulator (`sim/`) and the integrated workflow (`qpilot/integration/`); the MCP server; the model layer and its test harness; `qpilot plan`; the validation script.
 
 ## Related tools and cost
 
@@ -384,13 +427,12 @@ For the analysis-and-statistics step, Clarida's Lab plan is listed at €4,800�
 
 ## Roadmap (not built)
 
-- Results written back into RDML, and a per-gene CSV
-- The Prism export run in a real Prism
-- The robustness audit on designs with technical replicates
-- A Trace card's set-aside applied to the analysis (today it is recorded; the numbers stay as analysed)
-- Replicate-outlier and melt-peak cards on data that has them
+- An analysis from Cq values alone (a Cq table or a Cq-only RDML file), with its own confidence cap
+- The Prism project opened and round-tripped in a real Prism seat
+- The robustness audit, a gene's per-unit values and the Trace request over MCP for every comparison, not only the first
+- Quantities on the page for a plate with no group comparison, and an MCP tool for them
 - A plate effect (plate as a random effect) once a gene spans two or more plates
-- NormFinder, reimplemented from the paper
+- qPilot on PyPI (`pipx install qpilot`), and Windows used on an instrument PC
 
 ## Licence and citation
 
