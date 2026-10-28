@@ -477,7 +477,7 @@ function LeftOut({ trace }: { trace: Overview }) {
                 <TR>
                   <TH>Sample</TH>
                   <TH>Why</TH>
-                  <TH>The well(s)</TH>
+                  <TH>The wells</TH>
                 </TR>
               </THead>
               <TBody>

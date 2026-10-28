@@ -89,11 +89,13 @@ export function Summary({ view, auditHref }: { view: ResultsView; auditHref: str
           <div className="text-[12px] text-muted">Reference genes</div>
           <p className="mt-0.5 text-[13px] text-fg">{g.used.join(", ")}</p>
           <p className="mt-1 text-[12px] text-muted">
-            {steady === g.used.length
-              ? `All ${count(g.used.length)} below the geNorm stability cut-off (M ${fixed(g.cutoff_m, 1)}).`
-              : steady === 0
-                ? `None is below the commonly used geNorm cut-off (M ${fixed(g.cutoff_m, 1)}): normalisation is a weak point of this study.`
-                : `${count(steady)} of ${count(g.used.length)} below the geNorm cut-off (M ${fixed(g.cutoff_m, 1)}).`}
+            {g.used.length === 1
+              ? `One control gene (${g.used[0]}): geNorm stability needs two or more to compare, so it cannot be judged here; MIQE 2.0 asks for at least two validated reference genes.`
+              : steady === g.used.length
+                ? `All ${count(g.used.length)} below the geNorm stability cut-off (M ${fixed(g.cutoff_m, 1)}).`
+                : steady === 0
+                  ? `None is below the commonly used geNorm cut-off (M ${fixed(g.cutoff_m, 1)}): normalisation is a weak point of this study.`
+                  : `${count(steady)} of ${count(g.used.length)} below the geNorm cut-off (M ${fixed(g.cutoff_m, 1)}).`}
           </p>
         </div>
         <div className="min-w-0">
