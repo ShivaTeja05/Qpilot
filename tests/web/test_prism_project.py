@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+import importlib
 import time
 from pathlib import Path
 
@@ -54,8 +55,9 @@ def _send(client, sid) -> dict:
 
 
 def test_send_writes_a_project_with_plain_steps_and_no_command(ready, monkeypatch):
-    monkeypatch.setattr("qpilot.studio_service._mac_prism_app", lambda: None)
-    monkeypatch.setattr("qpilot.studio_service._windows_prism_exe", lambda: None)
+    service = importlib.import_module("qpilot.studio_service")
+    monkeypatch.setattr(service, "_mac_prism_app", lambda: None)
+    monkeypatch.setattr(service, "_windows_prism_exe", lambda: None)
     client, sid = ready["client"], ready["sid"]
     sent = _send(client, sid)
     folder = Path(sent["bundle"]["folder"])
@@ -179,7 +181,11 @@ def test_a_project_for_an_earlier_analysis_with_the_same_tables_stays_current(re
     # Another analysis of the session (as a decision that changed no number makes one): its
     # tables digest is computed from its own tables, here the same numbers as the earlier one.
     monkeypatch.setattr(type(studio), "study", lambda self, s: "0a0a0a0a0a0a")
-    monkeypatch.setattr("qpilot.prism.project_digest", lambda store_, study_id, genes=None: digest)
+    monkeypatch.setattr(
+        importlib.import_module("qpilot.prism"),
+        "project_digest",
+        lambda store_, study_id, genes=None: digest,
+    )
     monkeypatch.setattr(store, "chain_head", lambda study_id: "ab" * 32)
     first = client.get(f"/api/sessions/{sid}/prism").json()
     assert first["project"]["checking"] or first["project"]["still_current"]
@@ -197,7 +203,9 @@ def test_a_project_for_an_earlier_analysis_with_the_same_tables_stays_current(re
     assert "still current" in status["next"] and status["can_send"] is True
     # when a number changed, the earlier project does not hold
     monkeypatch.setattr(
-        "qpilot.prism.project_digest", lambda store_, study_id, genes=None: "0" * 64
+        importlib.import_module("qpilot.prism"),
+        "project_digest",
+        lambda store_, study_id, genes=None: "0" * 64,
     )
     monkeypatch.setattr(store, "chain_head", lambda study_id: "cd" * 32)
     deadline = time.monotonic() + 60

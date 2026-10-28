@@ -8,6 +8,7 @@ technical replicates), so this runs without the demo dataset.
 
 from __future__ import annotations
 
+import importlib
 import shutil
 from pathlib import Path
 
@@ -27,6 +28,11 @@ from tests.prism.conftest import TOY_STUDY, accepted_exclusion, toy_inputs
 NS = {"p": pzfx.NAMESPACE}
 
 
+def _engine_export():
+    """The engine's export module as imported (``sys.modules``), whose inputs the toy replaces."""
+    return importlib.import_module("qpilot.qpcr.export")
+
+
 class _Store:
     """The only store call the export makes besides the (replaced) inputs: the decisions."""
 
@@ -37,7 +43,7 @@ class _Store:
 @pytest.fixture
 def toy_export(tmp_path, monkeypatch):
     inputs = toy_inputs()
-    monkeypatch.setattr("qpilot.qpcr.export.demo_inputs", lambda *a, **k: inputs)
+    monkeypatch.setattr(_engine_export(), "demo_inputs", lambda *a, **k: inputs)
     result = export_study(_Store(), TOY_STUDY, tmp_path / "bundle", platform="macos")
     return result, inputs
 
@@ -115,7 +121,7 @@ def test_the_readme_gives_plain_steps_for_both_systems_and_no_repo_path(toy_expo
 
 def test_scripts_are_an_optional_extra(tmp_path, monkeypatch):
     inputs = toy_inputs()
-    monkeypatch.setattr("qpilot.qpcr.export.demo_inputs", lambda *a, **k: inputs)
+    monkeypatch.setattr(_engine_export(), "demo_inputs", lambda *a, **k: inputs)
     result = export_study(_Store(), TOY_STUDY, tmp_path / "b", platform="macos", scripts=True)
     names = {p.name for p in result.out_dir.iterdir()}
     assert {"run.pzc", "send_back.pzc", f"qpilot_{TOY_STUDY}.pzfx"} <= names
@@ -128,7 +134,7 @@ def test_scripts_are_an_optional_extra(tmp_path, monkeypatch):
 
 def test_the_older_scripts_only_bundle_is_unchanged(tmp_path, monkeypatch):
     inputs = toy_inputs()
-    monkeypatch.setattr("qpilot.qpcr.export.demo_inputs", lambda *a, **k: inputs)
+    monkeypatch.setattr(_engine_export(), "demo_inputs", lambda *a, **k: inputs)
     result = export_study(_Store(), TOY_STUDY, tmp_path / "b", platform="macos", project=False)
     names = {p.name for p in result.out_dir.iterdir()}
     assert {"run.pzc", "send_back.pzc", "T.csv", "T2.csv", "sent_back"} <= names
