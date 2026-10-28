@@ -119,7 +119,9 @@ def _print(result: Any) -> None:
 
 
 def _write_csv(path: Path, result: Any) -> None:
+    """The unknowns as CSV; a name a spreadsheet would run as a formula starts with ``'``."""
     from qpilot.qpcr import absolute as ab
+    from qpilot.report.figures import csv_value as text
 
     columns = ["unit", "assay", "samples", "wells", "detected", "mean_cq", "quantity", "low"]
     columns += ["high", "unit_of_quantity", "curve", "flags"]
@@ -129,18 +131,18 @@ def _write_csv(path: Path, result: Any) -> None:
         for u in result.unknowns:
             writer.writerow(
                 [
-                    u.unit,
-                    u.target,
-                    " ".join(u.samples),
+                    text(u.unit),
+                    text(u.target),
+                    text(" ".join(u.samples)),
                     u.n_wells,
                     u.n_detected,
                     "" if u.mean_cq is None else repr(u.mean_cq),
                     "" if u.quantity is None else repr(u.quantity),
                     "" if u.low is None else repr(u.low),
                     "" if u.high is None else repr(u.high),
-                    result.unit,
-                    " ".join(u.curves),
-                    "; ".join(ab.flag_words(u.flags)),
+                    text(result.unit),
+                    text(" ".join(u.curves)),
+                    text("; ".join(ab.flag_words(u.flags))),
                 ]
             )
 
