@@ -18,7 +18,7 @@ from qpilot.web.context import make_context
 from qpilot.web.routers import trace as trace_router
 from qpilot.web.routers import where as where_router
 from qpilot.web.server import create_app
-from tests.web.conftest import BASE, TOKEN, wait_job
+from tests.web.conftest import BASE, TOKEN, get_settled
 
 pytestmark = pytest.mark.demo_data
 
@@ -36,10 +36,9 @@ def demo_store(tmp_path_factory):
 
 
 def _get(c, url, **params):
-    r = c.get(url, params=params)
-    if r.status_code == 409 and r.json()["error"]["code"] == "loading":
-        assert wait_job(c, r.json()["error"]["details"]["job"])["status"] == "done"
-        r = c.get(url, params=params)
+    jobs: list[dict] = []
+    r = get_settled(c, url, params=params, jobs=jobs)
+    assert all(job["status"] == "done" for job in jobs), jobs
     assert r.status_code == 200, r.text
     return r.json()
 

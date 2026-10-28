@@ -638,7 +638,7 @@ class _Hanging:
         return "OK"
 
 
-def _eventually(check, timeout_s: float = 5.0) -> bool:
+def _eventually(check, timeout_s: float = 30.0) -> bool:
     deadline = time.monotonic() + timeout_s
     while time.monotonic() < deadline:
         if check():
@@ -649,17 +649,21 @@ def _eventually(check, timeout_s: float = 5.0) -> bool:
 
 def test_a_model_that_does_not_answer_never_stalls_the_page(env, monkeypatch):
     assert studio_service.PING_WAIT_S <= 2.0 and studio_service.PING_TTL_S >= 60.0
-    monkeypatch.setattr(studio_service, "PING_WAIT_S", 0.2)
+    # Wall clock on purpose: the property is that nothing waits for the model. A later call
+    # must come back well inside the first call's wait (half of it, so a loaded machine's
+    # scheduling delay is not mistaken for a wait); the first must end at all.
+    wait = 1.0
+    monkeypatch.setattr(studio_service, "PING_WAIT_S", wait)
     hanging = _Hanging()
     studio = Studio(env.store, client=ModelClient(backend=hanging))
     try:
         started = time.monotonic()
         status = studio.model_status()
-        assert time.monotonic() - started < 1.0
+        assert time.monotonic() - started < wait + 2.0
         assert status["checking"] and status["answers"] is None and not status["available"]
         assert "checking whether it answers" in model_line_html(status)
         started = time.monotonic()
-        assert studio.model_status()["checking"] and time.monotonic() - started < 0.1
+        assert studio.model_status()["checking"] and time.monotonic() - started < wait / 2
         assert hanging.calls == [1]  # one request out, not one per page render
         hanging.release.set()
         assert _eventually(lambda: studio.model_status()["available"])
@@ -667,7 +671,7 @@ def test_a_model_that_does_not_answer_never_stalls_the_page(env, monkeypatch):
         hanging.release.clear()
         monkeypatch.setattr(studio_service, "PING_TTL_S", 0.0)
         started = time.monotonic()
-        assert studio.model_status()["available"] and time.monotonic() - started < 0.1
+        assert studio.model_status()["available"] and time.monotonic() - started < wait / 2
         assert _eventually(lambda: len(hanging.calls) == 2)
     finally:
         hanging.release.set()

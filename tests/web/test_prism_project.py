@@ -19,6 +19,7 @@ import pytest
 from lxml import etree
 
 from qpilot.prism import pzfx
+from tests.timing import work_time
 from tests.web.conftest import wait_job
 
 NS = {"p": pzfx.NAMESPACE}
@@ -244,6 +245,6 @@ def test_the_routes_panel_is_cached_per_study(ready, monkeypatch):
     monkeypatch.setattr(files, "_routes_view", lambda *a: calls.append(a) or real(*a))
     again = client.get(f"/api/sessions/{sid}/prism/routes")
     assert again.json() == first.json() and calls == []
-    started = time.monotonic()
-    client.get(f"/api/sessions/{sid}/prism/routes")
-    assert time.monotonic() - started < 2.0
+    with work_time() as spent:
+        client.get(f"/api/sessions/{sid}/prism/routes")
+    assert spent.seconds < 2.0, spent

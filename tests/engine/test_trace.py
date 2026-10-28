@@ -13,7 +13,6 @@ import re
 import subprocess
 import sys
 import textwrap
-import time
 
 import numpy as np
 import pandas as pd
@@ -34,6 +33,7 @@ from qpilot.qpcr import trace as T
 from qpilot.qpcr.curves import COLUMN_ORDER
 from qpilot.qpcr.study import StudySettings, build_model
 from qpilot.schemas import DecisionCard, GeneRobustness
+from tests.timing import work_time
 
 REFS = ("R1", "R2", "R3", "R4")
 TOY = StudySettings(candidates=REFS, marker="M(1)", group_var="M_high", headline=("UP", "FLAT"))
@@ -966,9 +966,9 @@ def test_demo_full_trace_under_one_second(demo):
     curves, model, _ = demo
     timings = []
     for _ in range(3):
-        start = time.perf_counter()
-        ctx = T.build_context(curves, model)
-        text = "".join(r.to_json() for r in T.trace_all_genes(ctx).values())
-        timings.append(time.perf_counter() - start)
+        with work_time() as spent:
+            ctx = T.build_context(curves, model)
+            text = "".join(r.to_json() for r in T.trace_all_genes(ctx).values())
+        timings.append(spent)
     assert text
-    assert min(timings) < 1.0, timings
+    assert min(t.seconds for t in timings) < 1.0, timings

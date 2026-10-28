@@ -1,7 +1,6 @@
 """Task 7 gate: the decision space equals the scalar contrast and reproduces the oracle grid."""
 
 import itertools
-import time
 
 import numpy as np
 import pandas as pd
@@ -12,6 +11,7 @@ from qpilot.qpcr.curves import REFERENCE_TARGETS
 from qpilot.qpcr.design import GroupSpec
 from qpilot.qpcr.refgenes import genorm
 from qpilot.qpcr.space import QpcrSpace, ref_subsets
+from tests.timing import work_time
 
 
 def _assert_same(vectorised, scalar):
@@ -152,11 +152,10 @@ def test_demo_full_sweep_reproduces_oracle_grid(demo_space):
         dict(zip(demo_space.dimensions, combo, strict=True))
         for combo in itertools.product(*demo_space.dimensions.values())
     ]
-    start = time.perf_counter()
-    grid = [(cell, demo_space.evaluate(cell)) for cell in cells]
-    elapsed = time.perf_counter() - start
+    with work_time() as spent:
+        grid = [(cell, demo_space.evaluate(cell)) for cell in cells]
     assert len(grid) == 186
-    assert elapsed < 5, f"full sweep took {elapsed:.1f} s"
+    assert spent.seconds < 5, f"full sweep took {spent}"
 
     primary = demo_space.evaluate(demo_space.primary)
 
