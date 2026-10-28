@@ -1,6 +1,6 @@
 """The study report: every number a fact, MIQE 2.0 on the demo, the reviewer's report, the exports.
 
-The demo tests run on the real demo study (Vermeulen 2013, 64 plates) with a real robustness
+The demo tests run on the real demo study (Vermeulen 2009, 64 plates) with a real robustness
 audit (the Decision Simulator, 99 permutations); every number the report cites is checked against
 the store, the audit or the input file, independently of the report's code. The quick tests use
 the Studio tests' walked mini file: the route, groups from a confirmed design, the blind rule and

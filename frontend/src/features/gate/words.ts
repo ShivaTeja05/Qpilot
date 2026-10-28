@@ -3,7 +3,7 @@
  * "compliant" or "diagnostic"), what a consequence class means, where a finding sits, and the
  * filters of the rule list. Pure functions, tested on the recorded answers.
  */
-import { count, plural } from "@/lib/format";
+import { count, plateLabel, plural } from "@/lib/format";
 import type { Tone } from "@/ui";
 import type { ConsequenceClass, Consequence, Evaluation, Plate, RunFile, Verdict } from "./api";
 
@@ -37,11 +37,8 @@ export const CLASS_TONE: Record<ConsequenceClass, Tone> = {
   unknown: "info",
 };
 
-/** A plate's run id without the date the demo's exporter appends (`CAMTA2_20080227` → `CAMTA2`). */
-export function plateLabel(run: string | null | undefined): string {
-  if (!run) return "";
-  return run.replace(/_\d{8}$/, "");
-}
+/** A plate as every page names it (its run id, `CAMTA2_20080227`): `@/lib/format`'s. */
+export { plateLabel };
 
 /**
  * Where a finding sits, in words: plate · unit · target · sample (the target when it is not the
@@ -50,7 +47,8 @@ export function plateLabel(run: string | null | undefined): string {
 export function whereText(e: Pick<Evaluation, "plate" | "target" | "sample" | "unit">): string {
   const plate = plateLabel(e.plate);
   const parts = [plate ? `Plate ${plate}` : "", e.unit ? `Unit ${e.unit}` : ""];
-  if (e.target && e.target !== plate) parts.push(e.target);
+  // the target, unless the plate is named after it (`CAMTA2_20080227` holds CAMTA2)
+  if (e.target && e.target !== plate && !plate.startsWith(`${e.target}_`)) parts.push(e.target);
   if (e.sample) parts.push(`sample ${e.sample}`);
   return parts.filter(Boolean).join(" · ") || "The study";
 }
