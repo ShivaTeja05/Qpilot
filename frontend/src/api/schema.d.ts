@@ -11502,6 +11502,12 @@ export type components = {
             curves_shown: boolean;
             /** Key */
             key: string;
+            /**
+             * Multiplex
+             * @description Some wells hold more than one dye (one curve per target): one row per curve, several rows per well.
+             * @default false
+             */
+            multiplex: boolean;
             /** N Cols */
             n_cols: number;
             /** N Rows */
@@ -11551,6 +11557,11 @@ export type components = {
              * @default false
              */
             disagrees: boolean;
+            /**
+             * Dye
+             * @description The dye this target is read in, as the file names it (several per well on a multiplex plate).
+             */
+            dye?: string | null;
             /**
              * Efficiency
              * @description The well's own amplification factor per cycle (2.0 = 100 %); the starting quantity uses the target's mean (efficiency_target).

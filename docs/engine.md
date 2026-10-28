@@ -5,7 +5,7 @@ The engine is the part of qPilot that turns an instrument's raw export into numb
 ## The engine, step by step
 
 1. **Open** (`qpilot/io/rdml_io.py`). Reads RDML, the instrument-neutral XML standard for qPCR, plain or zipped, through a hardened parser: no external entities, no network, size and compression-ratio caps.
-2. **Curves** (`qpilot/qpcr/curves.py`). Runs LinRegPCR, vendored unchanged, on every plate and returns per-well Cq, efficiency and starting quantity N0. Results are cached by the input file's hash and the settings. [Method card](../methods/linregpcr.md)
+2. **Curves** (`qpilot/qpcr/curves.py`). Runs LinRegPCR, vendored unchanged, on every plate (a multiplex plate one dye at a time, so every dye of a well gets its own N0: [multiplex.md](multiplex.md)) and returns per-well Cq, efficiency and starting quantity N0. Results are cached by the input file's hash and the settings. [Method card](../methods/linregpcr.md)
 3. **Quantities** (`qpilot/qpcr/quant.py`). log2 N0 per sample and gene; a well that never amplified stays missing ("undetermined").
 4. **Groups** (`qpilot/qpcr/design.py`). High versus rest by a marker gene's expression (demo: the top 15 % by MYCN), fixed once from the primary control genes.
 5. **Control genes** (`qpilot/qpcr/refgenes.py`). geNorm stability M, ranking and pairwise V, giving the recommended set. [Method card](../methods/genorm.md)

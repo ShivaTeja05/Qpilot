@@ -1211,6 +1211,16 @@ def curve_check(subject: str, payload: Mapping[str, Any], wells: pd.DataFrame) -
     claim = payload.get("amplified")
     if not isinstance(claim, bool):
         return _check("contradicted", "D-CURVE", {}, "a well call is amplified true or false")
+    if "target" in rows.columns and rows["target"].nunique() > 1:  # a multiplex well
+        targets = sorted(set(rows["target"].astype(str)))
+        return _check(
+            "contradicted",
+            "D-CURVE",
+            {"targets": ", ".join(targets)},
+            "this well holds a curve for each of several targets (multiplex), and a call on the "
+            "well would set every one of them at once; leave the well out instead, or leave the "
+            "call to LinRegPCR, which calls each dye's curve on its own",
+        )
     row = rows.iloc[0]
     has_quantity = bool(pd.notna(row["n0"]))
     fitted = bool(row["amplification"]) and bool(row["plateau"]) and has_quantity
