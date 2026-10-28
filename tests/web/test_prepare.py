@@ -137,3 +137,27 @@ def test_a_fresh_demo_does_not_wait_for_views_being_prepared(client, web_ctx, st
         assert web_ctx.store.list_studies() == []
     finally:
         release.set()
+
+
+def test_background_work_never_takes_a_worker_from_a_persons_jobs(web_ctx):
+    """The view preparation runs on its own thread: a person's job starts at once."""
+    import threading
+
+    from qpilot.web.jobs import WORKERS
+
+    release = threading.Event()
+    held = web_ctx.jobs.submit(
+        "prepare", lambda p: release.wait(30), title="t", background=True, dedupe=False
+    )
+    route_jobs = [
+        web_ctx.jobs.submit("gate.run", lambda p: release.wait(30), title="t", key=f"k{i}")
+        for i in range(WORKERS - 1)
+    ]
+    started = threading.Event()
+    mine = web_ctx.jobs.submit("open", lambda p: started.set(), title="Opening", key="mine")
+    try:
+        assert started.wait(10), "a person's job queued behind background work"
+        assert held.status == "running" and all(j.status == "running" for j in route_jobs)
+    finally:
+        release.set()
+    assert wait_job_obj(web_ctx, mine).status == "done"

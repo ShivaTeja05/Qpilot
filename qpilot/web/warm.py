@@ -322,6 +322,7 @@ def prepare_views(ctx: AppContext, app: Any, study_ids: list[str]) -> Any:
         title="Preparing what the page shows next",
         typical_s=PREPARE_S * len(todo),
         dedupe=False,
+        background=True,
     )
 
 
