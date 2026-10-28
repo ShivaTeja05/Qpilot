@@ -2353,6 +2353,46 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/report/figure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Figure File
+         * @description One gene's figure as SVG (editable text), 300-dpi PNG, or its source data as CSV.
+         */
+        get: operations["figure_file"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/report/figure/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Figure Info
+         * @description One gene's figure: what it shows, its caption (from the engine's facts), its files.
+         */
+        get: operations["figure_info"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/results": {
         parameters: {
             query?: never;
@@ -6189,6 +6229,98 @@ export type components = {
              * @enum {string}
              */
             source: "template" | "model";
+        };
+        /**
+         * FigureFiles
+         * @description Where the figure's files are served (same-origin links).
+         */
+        FigureFiles: {
+            /** Csv */
+            csv: string;
+            /** Png */
+            png: string;
+            /** Svg */
+            svg: string;
+        };
+        /**
+         * FigureGroup
+         * @description One group of a gene's figure: its biological units and the bar drawn for it.
+         */
+        FigureGroup: {
+            /** Ci High */
+            ci_high: number | null;
+            /**
+             * Ci Low
+             * @description 95 % confidence interval of the mean (low).
+             */
+            ci_low: number | null;
+            /**
+             * Mean
+             * @description Mean log2 relative quantity of the units.
+             */
+            mean: number | null;
+            /**
+             * N
+             * @description Biological units with a value (the dots).
+             */
+            n: number;
+            /** Name */
+            name: string;
+        };
+        /**
+         * FigureInfo
+         * @description One gene's figure: what it shows, its caption, and its files.
+         */
+        FigureInfo: {
+            /**
+             * Bases
+             * @description The analyses there is a figure for.
+             */
+            bases: ("as_decided" | "recommended")[];
+            /**
+             * Basis
+             * @enum {string}
+             */
+            basis: "as_decided" | "recommended";
+            /** Basis Label */
+            basis_label: string;
+            /**
+             * Call
+             * @description The engine's call (None: the engine did not compare this gene).
+             */
+            call: ("up" | "down" | "none") | null;
+            /** Caption */
+            caption: string;
+            /** Chain Head */
+            chain_head: string;
+            /** Ci95 High */
+            ci95_high: number | null;
+            /** Ci95 Low */
+            ci95_low: number | null;
+            /** Comparison */
+            comparison: string;
+            /** Comparisons */
+            comparisons: string[];
+            files: components["schemas"]["FigureFiles"];
+            /** Fold Change */
+            fold_change: number | null;
+            /** Gene */
+            gene: string;
+            /** Groups */
+            groups: components["schemas"]["FigureGroup"][];
+            /** N A */
+            n_a: number | null;
+            /** N B */
+            n_b: number | null;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /** P */
+            p: number | null;
+            /** Study Id */
+            study_id: string;
         };
         /**
          * FileFacts
@@ -10521,22 +10653,40 @@ export type components = {
          */
         ReportExportBody: {
             /**
+             * Basis
+             * @description figures: draw the analysis as decided on the Decision Cards (default) or the recommended one. The tables always hold the analysis as decided, and the recommended one too when it differs.
+             * @default as_decided
+             * @enum {string}
+             */
+            basis: "as_decided" | "recommended";
+            /**
              * Expected Head
              * @description The chain head the page showed (warns when it moved since).
              */
             expected_head?: string | null;
             /**
              * Format
-             * @description md: the report as Markdown; html: a printable page; passport: one self-contained offline HTML file with charts, bound to a fresh Analysis Record; xlsx: the results as an Excel workbook with Trace's places to look for each gene.
+             * @description md: the report as Markdown; html: a printable page; passport: one self-contained offline HTML file with charts, bound to a fresh Analysis Record; xlsx: the study's numbers as an Excel workbook (results, per unit, per well, decisions, settings, Methods; Trace's places to look); csv: the same tables as CSV files in a zip; figures: a figure per gene (SVG, 300-dpi PNG, source CSV, caption) and a panel, zipped; supplement: what a journal asks for in one zip (the workbook, the tables, the MIQE checklist, the figures, the RDML with qPilot's results, the Analysis Record).
              * @enum {string}
              */
-            format: "md" | "html" | "passport" | "xlsx";
+            format: "md" | "html" | "passport" | "xlsx" | "csv" | "figures" | "supplement";
+            /**
+             * Genes
+             * @description figures and supplement: the genes to draw (default: the headline genes).
+             */
+            genes?: string[] | null;
         };
         /**
          * ReportExported
          * @description One written report file, ready to download.
          */
         ReportExported: {
+            /**
+             * Bases
+             * @description The analyses the file holds: as decided, and recommended.
+             * @default []
+             */
+            bases: ("as_decided" | "recommended")[];
             /** Chain Head */
             chain_head: string;
             download: components["schemas"]["DownloadLink"];
@@ -10544,7 +10694,13 @@ export type components = {
              * Format
              * @enum {string}
              */
-            format: "md" | "html" | "passport" | "xlsx";
+            format: "md" | "html" | "passport" | "xlsx" | "csv" | "figures" | "supplement";
+            /**
+             * Genes
+             * @description The genes drawn (figures, supplement).
+             * @default []
+             */
+            genes: string[];
             /**
              * Head Moved
              * @default false
@@ -17017,6 +17173,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportExports"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    figure_file: {
+        parameters: {
+            query: {
+                basis?: "as_decided" | "recommended";
+                comparison?: string | null;
+                download?: boolean;
+                format?: "svg" | "png" | "csv";
+                gene: string;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The figure as SVG or PNG, or its source data as CSV. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": unknown;
+                    "image/svg+xml": unknown;
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    figure_info: {
+        parameters: {
+            query: {
+                basis?: "as_decided" | "recommended";
+                comparison?: string | null;
+                gene: string;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FigureInfo"];
                 };
             };
             /** @description Validation Error */
