@@ -20,5 +20,12 @@ Two more pages compose the engine's outputs without new maths:
 
 * :mod:`qpilot.report.run_review`: the Run Review, one page per run for the person who reviews
   someone else's work (thin version: Evidence Ledger, headline and recorded sign-offs).
-* :mod:`qpilot.report.excel`: the study's tables as one Excel workbook.
+* :mod:`qpilot.report.tables`: the study's numbers as tidy tables (results per gene, per
+  biological unit, per well, decisions, settings), as decided on the Decision Cards and, when it
+  differs, at the recommended options; every export below reads them.
+* :mod:`qpilot.report.excel`: those tables as one Excel workbook (numbers as numbers).
+* :mod:`qpilot.report.figures`: a figure per gene (dots = biological units, mean and 95 % CI,
+  the engine's call, a caption from its facts) as SVG and 300-dpi PNG.
+* :mod:`qpilot.report.bundle`: the tables as CSV, the figures, and the journal supplement
+  (with :mod:`qpilot.report.rdml_out`, the RDML with qPilot's results written back).
 """
