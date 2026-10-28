@@ -382,6 +382,13 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
     if (!others.length) return `Stop testing ${question}; keep ${words(primary)} only`;
     return `Also test ${question}: ${others.map(words).join("; ")} (besides ${words(primary)}, the analysis in use)`;
   },
+  "choice.reaction_input": (_s, d) => {
+    const parts: string[] = [];
+    if (typeof d.template_ul === "number") parts.push(`${d.template_ul} µL of template`);
+    if (typeof d.input_ng === "number") parts.push(`${d.input_ng} ng of input`);
+    if (!parts.length) return "Give absolute quantities per reaction only";
+    return `Each reaction held ${parts.join(" and ")}: quantities per µL and per ng`;
+  },
   "curve.well_call": (s, d) => {
     if (typeof d.amplified !== "boolean") throw new Error("amplified must be boolean");
     return `Count well ${s} as ${d.amplified ? "amplified" : "not amplified (no usable curve)"}`;
@@ -470,6 +477,7 @@ export const KIND_TITLE: Record<Proposal["kind"], string> = {
   "curve.exclude_well": "Well exclusion",
   "curve.import_trust": "Import Trust",
   "choice.axis": "Further choice to test",
+  "choice.reaction_input": "Reaction input",
   "prism.project": "Prism project",
   "prism.exclusion_reason": "Exclusion in Prism",
   "prism.value_edit": "Value changed in Prism",

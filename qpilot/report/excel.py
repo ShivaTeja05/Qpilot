@@ -320,6 +320,8 @@ def excel_bytes(
     _put_table(book, decided.results, extra=[(TRACE_COLUMN, trace_column)])
     _put_table(book, decided.per_unit)
     _put_table(book, decided.per_well)
+    for table in tables.quantities:  # standard curves and quantities (a study with standards)
+        _put_table(book, table)
     if tables.recommended is not None:
         _put_table(book, tables.recommended.results)
         _put_table(book, tables.recommended.per_unit)
@@ -340,6 +342,7 @@ def excel_bytes(
     _put_table(book, replace(about, title=ABOUT_SHEET, rows=tuple(rows)))
     data = deterministic_xlsx(book)
     sheets = [decided.results.title, decided.per_unit.title, decided.per_well.title]
+    sheets += [t.title for t in tables.quantities]
     if tables.recommended is not None:
         sheets += [tables.recommended.results.title, tables.recommended.per_unit.title]
     sheets += [WHERE_SHEET, tables.decisions.title, tables.settings.title, tables.methods.title]

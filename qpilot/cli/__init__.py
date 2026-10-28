@@ -12,7 +12,15 @@ import sys
 from collections.abc import Sequence
 
 from qpilot import __version__
-from qpilot.cli import core_cmds, engine_cmds, melt_cmds, prism_cmds, quality_cmds, studio_cmds
+from qpilot.cli import (
+    core_cmds,
+    engine_cmds,
+    melt_cmds,
+    prism_cmds,
+    quality_cmds,
+    quant_cmds,
+    studio_cmds,
+)
 from qpilot.cli._types import Command
 
 __all__ = ["Command", "build_parser", "main"]
@@ -34,6 +42,7 @@ def build_parser() -> argparse.ArgumentParser:
         *studio_cmds.COMMANDS,
         *quality_cmds.COMMANDS,
         *melt_cmds.COMMANDS,
+        *quant_cmds.COMMANDS,
     ]
     for name, help_text, add_arguments, run in commands:
         if name in seen:
