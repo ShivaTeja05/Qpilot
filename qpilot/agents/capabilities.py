@@ -673,7 +673,7 @@ class CapabilityTools:
         expected_head: str | None,
     ) -> dict[str, Any]:
         from qpilot.core.record import RecordError
-        from qpilot.report.excel import ExcelError, write_atomic
+        from qpilot.report.excel import ExcelError, write_new
         from qpilot.web import folders
         from qpilot.web.contract_report import ReportExportBody
         from qpilot.web.jobs import JobError
@@ -751,7 +751,14 @@ class CapabilityTools:
             }
         if target is not None:
             try:
-                write_atomic(target, written.read_bytes())
+                write_new(target, written.read_bytes())
+            except FileExistsError:  # it appeared while the export was written (RT-EX-008)
+                return refuse(
+                    Code.INVALID_ARGUMENT,
+                    f"{target.name} appeared in that folder while the export was written; "
+                    f"nothing was overwritten (the file is in the export folder: {written})",
+                    field="out_dir",
+                )
             except OSError as err:
                 return refuse(
                     Code.ENGINE_REFUSED,
