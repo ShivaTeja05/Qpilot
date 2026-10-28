@@ -9,9 +9,11 @@ server) and carries ``expected_head``: a card that changed since the page read i
 from __future__ import annotations
 
 import re
-from typing import Any
+from collections.abc import Iterator
+from contextlib import contextmanager
+from typing import Annotated, Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 from qpilot.core.store import StudyNotFound
 from qpilot.schemas import DecisionOutcome
@@ -34,6 +36,7 @@ from qpilot.web.contract import (
     TurnDownBody,
     UndoBody,
 )
+from qpilot.web.contract_compare import ComparisonsView
 from qpilot.web.jobs import JobError, Progress
 
 router = APIRouter(tags=["results"])
@@ -151,21 +154,59 @@ def decide_errors(err: Exception) -> Exception:
 # ---- reading ---------------------------------------------------------------------------------
 
 
+COMPARISON_ID = re.compile(r"^[a-z0-9_]{1,200}\Z")
+ComparisonQuery = Annotated[
+    str | None,
+    Query(description="One comparison of a study with several (its id); default: the first."),
+]
+
+
+def comparison_ok(comparison: str | None) -> str | None:
+    """A comparison id is lower-case letters, digits and underscores; anything else is 404."""
+    if comparison is None or comparison == "":
+        return None
+    if not COMPARISON_ID.match(comparison):
+        raise api_error(404, "not_found", "There is no comparison with this id.")
+    return comparison
+
+
+@contextmanager
+def known_comparison() -> Iterator[None]:
+    """Map an unknown comparison id to a plain 404."""
+    from qpilot.web.compare_views import UnknownComparison
+
+    try:
+        yield
+    except UnknownComparison as err:
+        raise api_error(404, "not_found", str(err)) from err
+
+
 @router.get("/studies/{study_id}/results", response_model=ResultsView)
-def get_results(study_id: str, ctx: Ctx) -> ResultsView:
+def get_results(study_id: str, ctx: Ctx, comparison: ComparisonQuery = None) -> ResultsView:
     """The study's results: summary, rule, reference genes, every gene's call and robustness."""
     sid = study(ctx, study_id)
-    return rv.results_view(ctx.store, study_id, sid)
+    with known_comparison():
+        return rv.results_view(ctx.store, study_id, sid, comparison_ok(comparison))
+
+
+@router.get("/studies/{study_id}/comparisons", response_model=ComparisonsView)
+def get_comparisons(study_id: str, ctx: Ctx) -> ComparisonsView:
+    """Every comparison of the study side by side: each gene's call, fold change, p and q."""
+    from qpilot.web.compare_views import comparisons_view
+
+    study(ctx, study_id)
+    return comparisons_view(ctx.store, study_id)
 
 
 @router.get("/studies/{study_id}/genes/{gene}", response_model=GeneView)
-def get_gene(study_id: str, gene: str, ctx: Ctx) -> GeneView:
+def get_gene(study_id: str, gene: str, ctx: Ctx, comparison: ComparisonQuery = None) -> GeneView:
     """Everything about one compared gene, with the cards that can change it."""
     study(ctx, study_id)
     if not gene or len(gene) > 128:
         raise api_error(404, "not_found", "There is no compared gene with this name.")
     try:
-        return rv.gene_view(ctx.store, study_id, gene)
+        with known_comparison():
+            return rv.gene_view(ctx.store, study_id, gene, comparison_ok(comparison))
     except rv.GeneWithheld as err:
         raise api_error(404, "withheld", str(err), gene=gene) from err
     except KeyError as err:
@@ -173,10 +214,11 @@ def get_gene(study_id: str, gene: str, ctx: Ctx) -> GeneView:
 
 
 @router.get("/studies/{study_id}/flips", response_model=FlipsView)
-def get_flips(study_id: str, ctx: Ctx) -> FlipsView:
+def get_flips(study_id: str, ctx: Ctx, comparison: ComparisonQuery = None) -> FlipsView:
     """Decisions × genes: where one decision alone changes a gene's call."""
     study(ctx, study_id)
-    return rv.flips_view(ctx.store, study_id)
+    with known_comparison():
+        return rv.flips_view(ctx.store, study_id, comparison_ok(comparison))
 
 
 @router.get("/studies/{study_id}/cards", response_model=CardsView)

@@ -39,6 +39,7 @@ from qpilot.web.contract import (
     CardsView,
     CardView,
     CarriedFrom,
+    ComparisonTab,
     DecisionEntryView,
     DecisionsView,
     FactRef,
@@ -643,8 +644,10 @@ def _row(
     at: pd.DataFrame | None,
     verdicts: Mapping[str, str],
     labels: Mapping[str, str],
+    extra: Mapping[str, tuple[float | None, float | None]] | None = None,
 ) -> GeneRow:
     contrast = result.contrasts[gene]
+    p_adjusted, q = (extra or {}).get(gene, (None, None))
     robust = result.robustness.get(gene)
     grade = result.confidence.get(gene)
     yours = None
@@ -680,6 +683,8 @@ def _row(
         at_your_choices=yours,
         verdict=verdict,
         verdict_label=labels.get(verdict) if verdict else None,
+        p_adjusted=p_adjusted,
+        q=q,
     )
 
 
@@ -781,23 +786,46 @@ def axis_views(
     ]
 
 
-def results_view(store: StudyStore, study_id: str, session: str | None = None) -> ResultsView:
-    """Everything the Results section shows."""
+def _shown(
+    store: StudyStore, study_id: str, comparison: str | None
+) -> tuple[StudyResult, StudyResult, Any, Any, Any]:
+    """``(stored result, result as shown, outcome, primary grid, grid as shown)``.
+
+    ``comparison`` picks one comparison of a study with several (``None``: the primary, as
+    stored); see :mod:`qpilot.web.compare_views`.
+    """
+    from qpilot.web import compare_views as cv
+
+    stored = store.get(study_id)
+    outcome = cv.outcome_of(stored, comparison)
+    grid = load_grid(store, stored)
+    if outcome is None or outcome.primary:
+        return stored, stored, outcome, grid, grid
+    shown_grid = cv.comparison_grid(store, study_id, outcome.id, grid)
+    return stored, cv.shown_result(stored, outcome), outcome, grid, shown_grid
+
+
+def results_view(
+    store: StudyStore, study_id: str, session: str | None = None, comparison: str | None = None
+) -> ResultsView:
+    """Everything the Results section shows (``comparison``: one of several; default primary)."""
     from qpilot.app_state import design_line
     from qpilot.explain.templates import TemplateError, render_template
     from qpilot.qpcr.contrast import ConclusionRule
+    from qpilot.web import compare_views as cv
 
-    result = store.get(study_id)
+    stored, result, outcome, primary_grid, grid = _shown(store, study_id, comparison)
     head, cards, pending = store.snapshot(study_id)
     headline = headline_genes(result, cards, store)
-    grid = load_grid(store, result)
-    at = None
-    at = at_choices(grid, cards)
+    at = cv.at_choices_in(primary_grid, grid, cards)
     verdicts, labels = _verdicts(store, study_id)
-    rows = [_row(g, result, set(headline), at, verdicts, labels) for g in result.contrasts]
+    extra = cv.extra_columns(stored, outcome)
+    rows = [_row(g, result, set(headline), at, verdicts, labels, extra) for g in result.contrasts]
     try:
         summary_text = fact_text(render_template("summary_v1", result.facts).tokens, result.facts)
     except (KeyError, TemplateError):
+        summary_text = None
+    if result is not stored:  # the summary sentence describes the first comparison
         summary_text = None
     rule = ConclusionRule(**result.conclusion_rule)
     genorm = result.genorm
@@ -842,7 +870,7 @@ def results_view(store: StudyStore, study_id: str, session: str | None = None) -
             stable=[g for g, m in genorm.M_initial.items() if m < genorm.cutoff_M],
         ),
         genes=rows,
-        withheld=withheld(result),
+        withheld=withheld(result) + _not_tested(outcome),
         headline=headline,
         counts=counts,
         levels=levels,
@@ -852,7 +880,21 @@ def results_view(store: StudyStore, study_id: str, session: str | None = None) -
         head=head,
         audit=audit_badge(store, study_id),
         axes=axis_views(store, result, cards, session),
+        comparison=outcome.id if outcome is not None else _primary_id(stored),
+        comparisons=[ComparisonTab(**tab) for tab in cv.tabs(stored)],
     )
+
+
+def _primary_id(result: StudyResult) -> str | None:
+    """The primary comparison's id in a study with several (None otherwise)."""
+    return result.comparisons.comparisons[0].id if result.comparisons is not None else None
+
+
+def _not_tested(outcome: Any) -> list[WithheldGene]:
+    """Genes a (non-primary) comparison cannot test, as withheld genes of that comparison."""
+    if outcome is None or outcome.primary:
+        return []
+    return [WithheldGene(gene=g, reason=r) for g, r in sorted(outcome.not_tested.items())]
 
 
 # ---- the flip matrix -------------------------------------------------------------------------
@@ -863,10 +905,17 @@ def _flip_rows(
     grid: Grid | None,
     cards: Sequence[DecisionCard],
     genes: Sequence[str],
+    primary: Grid | None = None,
 ) -> list[FlipRow]:
+    """Decision rows for ``genes``; ``primary`` is the grid the cards' options are read from.
+
+    The cards describe the primary comparison, so for another comparison's ``grid`` the cards'
+    options and the options in use are found in the primary grid (the same analyses).
+    """
     by_dim = {KIND_DIMENSION.get(c.kind): c for c in cards}
-    mapped = card_options(grid, cards) if grid is not None else {}
-    choice = current_cell(grid, cards, mapped) if grid is not None and grid.planned else None
+    source = grid if primary is None else primary
+    mapped = card_options(source, cards) if source is not None else {}
+    choice = current_cell(source, cards, mapped) if source is not None and source.planned else None
     dims: list[str] = []
     for gene in genes:
         for dim in result.robustness[gene].impact:
@@ -919,17 +968,17 @@ def _flip_rows(
     return rows
 
 
-def flips_view(store: StudyStore, study_id: str) -> FlipsView:
+def flips_view(store: StudyStore, study_id: str, comparison: str | None = None) -> FlipsView:
     """Decisions × genes: where a decision alone flips a gene's call, and by how much."""
-    result = store.get(study_id)
+    stored, result, outcome, primary_grid, grid = _shown(store, study_id, comparison)
     cards = store.cards(study_id)
     genes = [g for g in result.contrasts if g in result.robustness]
-    grid = load_grid(store, result)
     return FlipsView(
         study_id=study_id,
         genes=genes,
         planned=[result.contrasts[g].conclusion for g in genes],
-        rows=_flip_rows(result, grid, cards, genes),
+        rows=_flip_rows(result, grid, cards, genes, primary_grid),
+        comparison=outcome.id if outcome is not None else _primary_id(stored),
     )
 
 
@@ -1219,28 +1268,31 @@ class GeneWithheld(LookupError):
 # ---- one gene --------------------------------------------------------------------------------
 
 
-def gene_view(store: StudyStore, study_id: str, gene: str) -> GeneView:
+def gene_view(
+    store: StudyStore, study_id: str, gene: str, comparison: str | None = None
+) -> GeneView:
     """Everything about one compared gene (``KeyError`` if it is not one)."""
     from qpilot.explain.templates import TemplateError, render_template
+    from qpilot.web import compare_views as cv
 
-    result = store.get(study_id)
+    stored, result, outcome, primary_grid, grid = _shown(store, study_id, comparison)
     if gene not in result.contrasts:
-        held = next((w for w in withheld(result) if w.gene == gene), None)
+        held = next((w for w in withheld(result) + _not_tested(outcome) if w.gene == gene), None)
         if held is not None:
             raise GeneWithheld(f"{gene} has no comparison: {held.reason}.")
         raise KeyError(gene)
     head, cards, pending = store.snapshot(study_id)
     entries = store.entries(study_id)
     headline = headline_genes(result, cards, store)
-    grid = load_grid(store, result)
-    at = None
-    at = at_choices(grid, cards)
+    at = cv.at_choices_in(primary_grid, grid, cards)
     verdicts, labels = _verdicts(store, study_id)
-    row = _row(gene, result, set(headline), at, verdicts, labels)
+    row = _row(gene, result, set(headline), at, verdicts, labels, cv.extra_columns(stored, outcome))
     try:
         rendered = render_template("confidence_v1", result.facts, gene=gene)
         confidence_text = fact_text(rendered.tokens, result.facts)
     except (KeyError, TemplateError):
+        confidence_text = None
+    if result is not stored:  # the sentence's facts are the first comparison's
         confidence_text = None
     gene_grid = None
     if grid is not None and grid.planned is not None:
@@ -1254,7 +1306,9 @@ def gene_view(store: StudyStore, study_id: str, gene: str) -> GeneView:
             p=[_number(x) for x in rows["p"]],
             conclusion=[_text(x) for x in rows["conclusion"]],  # type: ignore[misc]
         )
-    effects = _flip_rows(result, grid, cards, [gene]) if gene in result.robustness else []
+    effects = (
+        _flip_rows(result, grid, cards, [gene], primary_grid) if gene in result.robustness else []
+    )
     links, report = CarryLinks(store, result.input_sha256), carry_report(store, study_id)
     affecting = [
         card_view(c, result, entries, pending, *card_carry(store, c, entries, links, report))
@@ -1283,6 +1337,7 @@ def gene_view(store: StudyStore, study_id: str, gene: str) -> GeneView:
         next_gene=order[i + 1] if i + 1 < len(order) else None,
         audit_verdict=verdict,
         audit_verdict_label=labels.get(verdict) if verdict else None,
+        comparison=outcome.id if outcome is not None else _primary_id(stored),
     )
 
 
