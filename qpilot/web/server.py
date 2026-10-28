@@ -24,16 +24,20 @@ os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")  # any library that would
 from fastapi import FastAPI, HTTPException, Request  # noqa: E402
 from fastapi.exceptions import RequestValidationError  # noqa: E402
 from fastapi.responses import FileResponse, JSONResponse, Response  # noqa: E402
+from starlette.middleware.gzip import GZipMiddleware  # noqa: E402
 
 from qpilot import __version__  # noqa: E402
 from qpilot.core.store import StudyStore  # noqa: E402
 from qpilot.studio_service import Studio  # noqa: E402
+from qpilot.web.cache import ApiCache  # noqa: E402
 from qpilot.web.context import AppContext, make_context  # noqa: E402
 from qpilot.web.security import Guard, launch_token  # noqa: E402
 
 STATIC = Path(__file__).parent / "static"
 HOST = "127.0.0.1"
 DEFAULT_PORT = 7860
+GZIP_MIN_BYTES = 4096  # small answers are sent as they are
+GZIP_LEVEL = 5  # an 800 KB view in a few milliseconds, about a tenth of its size
 NOT_BUILT = """<!doctype html><meta charset="utf-8"><title>qPilot</title>
 <body style="font:16px system-ui;margin:3rem;max-width:40rem">
 <h1>qPilot</h1><p>The page has not been built in this checkout.</p>
@@ -122,6 +126,9 @@ def create_app(ctx: AppContext) -> FastAPI:
             return Response(NOT_BUILT, media_type="text/html")
         return FileResponse(index, headers={"cache-control": "no-cache"})
 
+    # Innermost first: tags and 304s on the route's own bytes, then compression, then the guard.
+    app.add_middleware(ApiCache, bus=ctx.bus)
+    app.add_middleware(GZipMiddleware, minimum_size=GZIP_MIN_BYTES, compresslevel=GZIP_LEVEL)
     app.add_middleware(Guard, token=ctx.token)
     return app
 
