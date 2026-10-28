@@ -42,10 +42,14 @@ def _wait(client, job_id: str, timeout: float = 1800.0) -> dict:
     raise AssertionError(f"job {job_id} did not finish in {timeout} s")
 
 
-def _replay(source: Path, pause: float = 0.7):
-    """Stands in for ``simulator.audit``: writes ``source``'s files in the simulator's order."""
+def _replay(source: Path, pause: float = 0.7, grid: int = 0):
+    """Stands in for ``simulator.audit``: writes ``source``'s files in the simulator's order.
 
-    def fake(store, study_id, out_dir, **_):
+    With ``grid``, tells ``progress`` the full grid's count after ``lock.json`` (as the real
+    audit's engine count does).
+    """
+
+    def fake(store, study_id, out_dir, progress=None, **_):
         out = Path(out_dir)
         assert not out.exists() or not any(out.iterdir())
         out.mkdir(parents=True, exist_ok=True)
@@ -53,6 +57,10 @@ def _replay(source: Path, pause: float = 0.7):
         rest = sorted(p.name for p in source.iterdir() if p.is_file() and p.name not in names)
         for name in names:
             shutil.copyfile(source / name, out / name)
+            if name == "lock.json" and grid and progress is not None:
+                for done in range(grid // 4, grid + 1, grid // 4):
+                    progress(done, grid)
+                    time.sleep(0.6)  # the router tells the count at most twice a second
             time.sleep(pause)  # long enough for the stage watcher to see each file
         for name in rest:
             shutil.copyfile(source / name, out / name)
@@ -106,6 +114,39 @@ def test_the_audit_job_reports_its_stages_and_lands_whole(seeded, tmp_path, monk
         check = client.post(f"/api/studies/{study}/audit/verify", json={}, headers=WRITE).json()
         assert check["ok"], check["problems"]
     _close(ctx)
+
+
+def test_the_audit_tells_how_far_the_grid_has_come(seeded, tmp_path, monkeypatch):  # noqa: F811
+    """perf: the longest stage moves (was one step at 0.17 for most of the run)."""
+    root = _copy(seeded, tmp_path, audits=False)
+    study = seeded[1]
+    source = seeded[0] / "simulator_audits" / study
+    monkeypatch.setattr(sim, "audit", _replay(source, pause=0.6, grid=6912))
+    monkeypatch.setattr(audit_router, "_load_job", lambda *a: None)
+    ctx, client = _client(StudyStore(root))
+    fractions: list[float] = []
+    with client:
+        r = client.post(f"/api/studies/{study}/audit", json={}, headers=WRITE)
+        job_id = r.json()["job"]["id"]
+        deadline = time.monotonic() + 120
+        steps: list[str] = []
+        while time.monotonic() < deadline:
+            job = client.get(f"/api/jobs/{job_id}").json()
+            if job["fraction"] is not None and (not fractions or fractions[-1] != job["fraction"]):
+                fractions.append(job["fraction"])
+            if job["step"] and (not steps or steps[-1] != job["step"]):
+                steps.append(job["step"])
+            if job["status"] in ("done", "failed"):
+                break
+            time.sleep(0.05)
+    _close(ctx)
+    assert job["status"] == "done", job
+    counted = [s for s in steps if s.endswith(" analyses")]
+    assert counted[0].endswith("1,728 of 6,912 analyses") and counted[-1].endswith(
+        "6,912 of 6,912 analyses"
+    )
+    assert fractions == sorted(fractions), fractions  # never goes back
+    assert any(0.17 < f < 0.88 for f in fractions), fractions
 
 
 def test_running_again_keeps_the_earlier_audit(seeded, tmp_path, monkeypatch):  # noqa: F811
