@@ -469,3 +469,18 @@ def test_study_melt_reads_the_curve_table_through_the_design(hsieh):
     assert data.has_melt and {a.run_id for a in assays} == {GAPDH, INHIBITION}
     frame = pd.DataFrame({"run_id": [], "target": []})
     assert judge(frame, data) == []
+
+
+def test_the_method_card_names_the_code_and_the_packs_thresholds():
+    from pathlib import Path
+
+    from qpilot.qpcr.gate_rules import resolve_pack
+
+    card = (Path(__file__).resolve().parents[2] / M.METHOD_CARD).read_text(encoding="utf-8")
+    for name in ("analyse_curve", "judge_assay", "melt_products", "ntc_melt_class"):
+        assert name in card
+    rule = resolve_pack().rule("G-MELT")
+    assert f"`tm_tolerance_c` ({rule.params['tm_tolerance_c']} °C)" in card
+    assert f"`extra_peak_share` ({rule.params['extra_peak_share']})" in card
+    assert f"`noise_share` ({rule.params['noise_share']})" in card
+    assert f"`min_wells` ({rule.params['min_wells']})" in card
