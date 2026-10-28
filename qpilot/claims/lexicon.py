@@ -26,7 +26,7 @@ import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Literal
+from typing import Any, Literal
 
 from qpilot.io.symbols import load_table, normalise_assay_name
 
@@ -192,6 +192,7 @@ class Lexicon:
         if "f_group_a" in facts and "f_group_b" in facts:
             a, b = str(facts["f_group_a"].value), str(facts["f_group_b"].value)
             a_words, b_words = named_groups(a, b)
+            others = [(_word(g), PLAN_GROUP) for g in plan_groups(result) if g not in (a, b)]
         else:  # labelled as the Results section labels them (``MYCN-high`` / ``rest``)
             name = result.design.group_var.removesuffix("_high") or (marker or "")
             a, b, a_words, b_words = marker_groups(name)
@@ -321,6 +322,18 @@ def find_genes(text: str, genes: Iterable[str]) -> list[Found]:
 # ---- helpers ---------------------------------------------------------------------------------
 
 
+#: What a group of a study's other comparisons is (the claim is then read against none of them).
+PLAN_GROUP = "a group of another of this study's comparisons"
+
+
+def plan_groups(result: Any) -> list[str]:
+    """Every group a study with several comparisons compares, in order (empty: one comparison)."""
+    found = getattr(result, "comparisons", None)
+    if found is None or len(found.comparisons) < 2:
+        return []
+    return list(dict.fromkeys(g for o in found.comparisons for g in (o.group_a, o.group_b)))
+
+
 def named_groups(a: str, b: str) -> tuple[list[str], list[str]]:
     """Patterns for a design's two named groups (``KO`` / ``WT``): the names as whole words."""
     return [_word(a)], [_word(b)]
@@ -363,8 +376,8 @@ def marker_other_groups(marker: str) -> list[tuple[str, str]]:
 
 
 def _word(label: str) -> str:
-    """A group label as a whole-word pattern."""
-    return rf"(?<![\w-]){re.escape(label)}(?![\w-])"
+    """A group label as a whole-word pattern (``20`` is not the ``20`` of ``p = 0.20``)."""
+    return rf"(?<![\w.-]){re.escape(label)}(?![\w-]|[.,]\d)"
 
 
 @lru_cache(maxsize=1)
