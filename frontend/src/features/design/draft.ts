@@ -19,9 +19,14 @@ export const EMPTY_DRAFT: Draft = new Map();
 const keyOf = (kind: string, subject: string) => `${kind}\u0000${subject}`;
 export const SERIES_NAME = "Standards set on the page";
 
-/** The engine's safe names: letters, digits, spaces and _ - . ( ), at most 64 characters. */
-export const NAME_RE = /^[\p{L}\p{N}_()\-. ]{1,64}$/u;
-export const NAME_WORDS = "letters, digits, spaces and _ - . ( ), at most 64 characters";
+/**
+ * A person's group and unit names, kept as written ("LPS + inhibitor", "IL-6/ctrl", "Day 3 (50 µM)"):
+ * any letters, digits, spaces and signs, at most 64 characters, no space first or last, and no
+ * tab, line break or invisible character (the server's rule, `qpilot/core/names.py`).
+ */
+export const NAME_RE = /^(?!\s)(?!.*\s$)[^\p{C}\u2028\u2029]{1,64}$/u;
+export const NAME_WORDS =
+  "any letters, digits, spaces and signs, at most 64 characters, without tabs, line breaks or invisible characters";
 
 export function withItems(draft: Draft, items: EditItem[]): Draft {
   const next = new Map(draft);
@@ -276,8 +281,8 @@ export function parsePasted(text: string, match: (name: string) => string | null
     let problem: string | null = null;
     if (!name) problem = "no sample name in the first column";
     else if (!sample) problem = "no sample in this file has this name";
-    else if (group && !NAME_RE.test(group)) problem = `a group name uses ${NAME_WORDS}`;
-    else if (unit && !NAME_RE.test(unit)) problem = `a unit name uses ${NAME_WORDS}`;
+    else if (group && !NAME_RE.test(group)) problem = `a group name may use ${NAME_WORDS}`;
+    else if (unit && !NAME_RE.test(unit)) problem = `a unit name may use ${NAME_WORDS}`;
     else if (!group && !unit) problem = "no group in the second column";
     if (sample && !problem) {
       const before = seen.get(sample);

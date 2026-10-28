@@ -545,8 +545,9 @@ def _several(c: Ctx, cite: Cites, found, alpha: str, fold: str) -> list[Part]:  
         " across the genes of each comparison are reported; they do not enter the calls.",
     ]
     if found.omnibus_groups:
+        k = c.count("n_omnibus_groups", len(found.omnibus_groups), "comparisons.omnibus_groups@len")
         parts.append(
-            f" Welch's one-way ANOVA across the {len(found.omnibus_groups)} groups is reported "
+            f" Welch's one-way ANOVA across the {k} groups is reported "
             "per gene for orientation; it does not enter the calls."
         )
     for i in range(1, n + 1):

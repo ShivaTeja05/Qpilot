@@ -7456,9 +7456,9 @@ export type components = {
             accept_contradicted: boolean;
             /**
              * Expected Head
-             * @description The inbox head the page showed (409 stale when it moved).
+             * @description The inbox head the page showed (the editor's `head`); 409 stale when something was decided since.
              */
-            expected_head?: string | null;
+            expected_head: string;
             /** Items */
             items: components["schemas"]["DesignEditItem"][];
             /**
@@ -12694,6 +12694,11 @@ export type components = {
              * @default false
              */
             groups_shown: boolean;
+            /**
+             * Inbox Head
+             * @description The session's inbox head (a Studio session's study only): sent back as `expected_head` when the reaction input is recorded.
+             */
+            inbox_head?: string | null;
             /** Method Card */
             method_card: string;
             /** Not Quantified */
@@ -12774,8 +12779,11 @@ export type components = {
          * @description A person records what one reaction held (all empty: per reaction only).
          */
         ReactionRequest: {
-            /** Expected Head */
-            expected_head?: string | null;
+            /**
+             * Expected Head
+             * @description The session's inbox head the quantities view showed (its `inbox_head`); 409 stale when something was decided since.
+             */
+            expected_head: string;
             /** Input Ng */
             input_ng?: number | null;
             /** Reason */

@@ -65,7 +65,7 @@ the Decision Cards treat it the same way.
 |---|---|
 | `GET /api/studies/{id}/quantities` | every assay with standards: curves, LOD, LOQ, counts |
 | `GET /api/studies/{id}/quantities/{target}` | one assay: points, levels, the prediction band, every unit |
-| `POST /api/studies/{id}/quantities/reaction` | `{template_ul, input_ng, unit, reason, expected_head}` (a person; a Studio session) |
+| `POST /api/studies/{id}/quantities/reaction` | `{template_ul, input_ng, unit, reason, expected_head}` (a person; a Studio session). `expected_head` is required: the quantities view's `inbox_head`; 409 `stale` in words when something was decided since, 422 without it |
 | `GET /api/tools/copies?ng=&length=&kind=&step=&levels=` | ng to copies and a dilution series |
 | `qpilot quantify FILE… [--quantity "Std 1=1e5"] [--csv out.csv]` | any RDML file or instrument export, no study needed (absolute-only plates) |
 | `qpilot copies --ng 1 --length 3000 [--kind dsDNA] [--step 10 --levels 6]` | ng to copies |

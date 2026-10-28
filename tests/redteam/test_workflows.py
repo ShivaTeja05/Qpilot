@@ -15,7 +15,10 @@ outsider chooses (a branch name, a title) into a shell command:
   ran ``npm ci``, so any npm package's install script could change ``qpilot/`` before
   ``python -m build``; the page check is now a job of its own, and the build job runs no npm;
 * every checkout in the release workflow sets ``persist-credentials: false`` (no token is left
-  in ``.git/config`` for later steps).
+  in ``.git/config`` for later steps);
+* RT-EX-013: every action is pinned by its full commit SHA with the release it is as a
+  ``# vX.Y.Z`` comment (a moved tag of a compromised action never runs, in the publishing job
+  least of all), and Dependabot keeps the pins current (it updates the SHA and the comment).
 """
 
 from __future__ import annotations
@@ -115,3 +118,24 @@ def test_pypi_is_published_only_from_a_tag_and_only_when_switched_on():
     job = _load("release.yml")["jobs"]["pypi"]
     assert "github.ref_type == 'tag'" in job["if"] and "vars.PYPI_PUBLISH == 'true'" in job["if"]
     assert job["environment"]["name"] == "pypi"
+
+
+# RT-EX-013
+PINNED = re.compile(r"^\s*-?\s*uses:\s*([\w.-]+/[\w./-]+)@([0-9a-f]{40}) # (v\d+\.\d+\.\d+)\s*$")
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_every_action_is_pinned_by_commit_with_its_release(name):
+    lines = (WORKFLOWS / name).read_text(encoding="utf-8").splitlines()
+    uses = [line for line in lines if re.match(r"^\s*-?\s*uses:", line)]
+    assert uses, name
+    unpinned = [line.strip() for line in uses if not PINNED.match(line)]
+    assert not unpinned, unpinned
+    steps = [s for job in _load(name)["jobs"].values() for s in _steps(job) if "uses" in s]
+    assert len(steps) == len(uses)  # every step's action is on a line of its own, as checked
+
+
+def test_dependabot_keeps_the_pinned_actions_current():
+    config = yaml.safe_load((WORKFLOWS.parent / "dependabot.yml").read_text(encoding="utf-8"))
+    ecosystems = {u["package-ecosystem"]: u for u in config["updates"]}
+    assert ecosystems["github-actions"]["directory"] == "/"

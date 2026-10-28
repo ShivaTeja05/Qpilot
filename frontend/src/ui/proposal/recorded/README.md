@@ -77,3 +77,10 @@ curl -s -H "x-qpilot-token: $QPILOT_APP_TOKEN" "http://127.0.0.1:7881/api/sessio
 curl -s -H "x-qpilot-token: $QPILOT_APP_TOKEN" "http://127.0.0.1:7881/api/sessions/$S/bulk/reject?stage=design&makers=ai" > probes-bulk-reject-ai.json
 curl -s -H "x-qpilot-token: $QPILOT_APP_TOKEN" "http://127.0.0.1:7881/api/sessions/$S/bulk/reject?stage=design&makers=all" > probes-bulk-reject-all.json
 ```
+
+`qs3-redecided-design.json`: the `design.group` and `design.comparison` proposals of a real
+QuantStudio 3 export (corpus `thermofisher/securebio-qs3-design-analysis-2.7`, session
+`e1572115c27f`) decided twice on the Design page over the real API: first DNI vs DSI
+(`tests/web/quant_walk.py`), then the twenty airplane samples in five groups named
+`LPS + inhibitor`, `IL-6/ctrl`, `Day 3 (50 µM)`, `KO#2` and `α-syn`, each against `IL-6/ctrl`.
+Recorded with `GET /api/sessions/e1572115c27f/proposals?stage=design`, keeping those two kinds.

@@ -262,10 +262,17 @@ def _headline(ctx: AppContext, study_id: str) -> list[str]:
 
 
 def _slug(label: str) -> str:
-    """A group label as the layout may write it (the label itself when it is already safe)."""
+    """A group label as the layout may write it.
+
+    The label itself when it can be (any letters, digits, spaces and signs, not starting like a
+    formula: ``qpcr.layout.is_layout_name``), else its characters made safe.
+    """
     import re
 
-    text = re.sub(r"[^\w()\-. ]", "_", str(label)).strip().lstrip("-")[:64]
+    text = str(label).strip()
+    if lay.is_layout_name(text):
+        return text
+    text = re.sub(r"[^\w()\-. ]", "_", text).strip().lstrip("-=+@")[:64].strip()
     return text or "group"
 
 

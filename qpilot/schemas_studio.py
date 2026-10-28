@@ -64,6 +64,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, model_validator
 
+from qpilot.core.names import name_digest
 from qpilot.schemas import Actor, Level
 
 # ---------------------------------------------------------------------------------------------
@@ -327,8 +328,13 @@ class Comparison(BaseModel):
 
 
 def _slug(name: str) -> str:
+    """The name's lower-case ASCII slug (``KO#2`` -> ``ko_2``).
+
+    A name with no ASCII letter or digit (``Контроль``, ``对照``) is ``g_`` and a short hash of
+    it, so such names still get different ids.
+    """
     out = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
-    return out or "group"
+    return out or f"g_{name_digest(name)}"
 
 
 ComparisonPattern = Literal["vs_control", "all_pairs", "chosen"]

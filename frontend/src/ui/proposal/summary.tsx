@@ -12,6 +12,24 @@ type Dict = Record<string, unknown>;
 
 const settled = (p: Proposal) => p.status === "accepted" || p.status === "edited";
 
+/**
+ * The decision in force for each item: a later acceptance on the same kind and subject (a
+ * person who changed a group or the comparison) replaces the earlier one, as the engine reads
+ * them (in decision order, the latest wins). The list order breaks ties within one second.
+ */
+export function inForce(accepted: Proposal[]): Proposal[] {
+  const ordered = accepted
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => (a.p.decided_at ?? "").localeCompare(b.p.decided_at ?? "") || a.i - b.i);
+  const out = new Map<string, Proposal>();
+  for (const { p } of ordered) {
+    const key = `${p.kind}\u0000${p.subject}`;
+    out.delete(key);
+    out.set(key, p);
+  }
+  return [...out.values()];
+}
+
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="contents">
@@ -53,7 +71,11 @@ function designRows(accepted: Proposal[]): [string, ReactNode][] {
       </>,
     ]);
   }
-  const groups = tally(of("design.group").map(({ d }) => String(d.group)));
+  const groups = tally(
+    of("design.group")
+      .filter(({ d }) => d.group != null && d.group !== "") // a cleared group is in no group
+      .map(({ d }) => String(d.group)),
+  );
   if (groups.length) {
     rows.push(["Groups", groups.map(([g, n]) => `“${g}”: ${plural(n, "sample")}`).join(" · ")]);
   }
@@ -131,7 +153,7 @@ export function StageSummary({
   proposals: Proposal[];
   className?: string;
 }) {
-  const accepted = proposals.filter((p) => settled(p) && p.kind !== "stage.confirm");
+  const accepted = inForce(proposals.filter((p) => settled(p) && p.kind !== "stage.confirm"));
   const rows = stage === "design" ? designRows(accepted) : curveRows(accepted);
   if (!rows.length) return <p className="text-[13px] text-muted">No accepted proposal yet.</p>;
   return (
