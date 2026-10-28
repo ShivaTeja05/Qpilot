@@ -448,6 +448,7 @@ def curve_view(studio: Studio, sid: str, key: str, target: str | None = None) ->
     here = [w for (wl, _), w in curves.items() if wl == well]
     if target is not None:
         here = [w for w in here if w.target == target]
+    here = [w for w in here if len(w.cycles)]  # a reaction of Cq values only has no curve
     if not here:
         raise KeyError(f"no curve for well {well} on plate {run_id}")
     raw = here[0]
