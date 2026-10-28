@@ -131,6 +131,8 @@ function GenePage({
   const replicateAudit = Boolean(status.data?.manifest?.scope?.technical_replicates);
   const samplesFrom = samplesSource(covered, replicateAudit);
   const units = useGeneUnits(scope, geneName, samplesFrom === "engine" && Boolean(gene.data));
+  // The audit's own chart stands in when the engine's values cannot be read but the audit's can.
+  const engineShown = samplesFrom === "engine" && !(covered && units.error && !units.data);
   const carries = useMemo(
     () => (covered ? carriedUnits(samples.data?.points) : undefined),
     [covered, samples.data],
@@ -311,7 +313,7 @@ function GenePage({
               onSource={setSource}
               labels={labels}
             />
-            {samplesFrom === "engine" ? (
+            {engineShown ? (
               <UnitSamples
                 units={units}
                 selected={selectedSample}
