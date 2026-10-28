@@ -21,7 +21,7 @@
      {
       "source": "trace",
       "code": "S1",
-      "words": "Trace (plate HMBS_20080318, well K22): looks like one reference well disagrees with the sample's other reference wells; consistent with that well: pipetting, evaporation, the seal or a failed reaction.",
+      "words": "at plate HMBS_20080318, well K22, it looks like one reference well disagrees with the sample's other reference wells; consistent with that well: pipetting, evaporation, the seal or a failed reaction.",
       "what_to_check": "re-run that well and look at its curve"
      }
     ],
@@ -52,7 +52,7 @@
      {
       "source": "no_comparison",
       "code": "S7",
-      "words": "Sample 1542 is in no comparison: its SDHA(1) reference well (plate SDHA(1)_20080220, well E1) has no value: LinRegPCR found no amplification. Read from the sample's other reference wells, bringing it back changes the call of PAICS.",
+      "words": "its SDHA(1) reference well (plate SDHA(1)_20080220, well E1) has no value (LinRegPCR found no amplification), so the sample is in no comparison. Read from the sample's other reference wells, bringing it back changes the call of PAICS.",
       "what_to_check": ""
      }
     ],
@@ -82,7 +82,7 @@
      {
       "source": "trace",
       "code": "S1",
-      "words": "Trace (plate UBC(2)_20080220, well O13): looks like one reference well disagrees with the sample's other reference wells; consistent with that well: pipetting, evaporation, the seal or a failed reaction.",
+      "words": "at plate UBC(2)_20080220, well O13, it looks like one reference well disagrees with the sample's other reference wells; consistent with that well: pipetting, evaporation, the seal or a failed reaction.",
       "what_to_check": "re-run that well and look at its curve"
      }
     ],
@@ -112,7 +112,7 @@
      {
       "source": "trace",
       "code": "S1",
-      "words": "Trace (plate HPRT1_20080303, well F23): looks like one reference well disagrees with the sample's other reference wells; consistent with that well: pipetting, evaporation, the seal or a failed reaction.",
+      "words": "at plate HPRT1_20080303, well F23, it looks like one reference well disagrees with the sample's other reference wells; consistent with that well: pipetting, evaporation, the seal or a failed reaction.",
       "what_to_check": "re-run that well and look at its curve"
      }
     ],
@@ -142,7 +142,7 @@
      {
       "source": "no_comparison",
       "code": "S7",
-      "words": "Sample 2770 is in no comparison: its HMBS reference well (plate HMBS_20080318, well J22) has no value: LinRegPCR found no amplification. Read from the sample's other reference wells, bringing it back changes the call of DPYSL3.",
+      "words": "its HMBS reference well (plate HMBS_20080318, well J22) has no value (LinRegPCR found no amplification), so the sample is in no comparison. Read from the sample's other reference wells, bringing it back changes the call of DPYSL3.",
       "what_to_check": ""
      }
     ],
@@ -172,7 +172,7 @@
      {
       "source": "no_amplification",
       "code": "no_amplification",
-      "words": "No amplification in NTRK1 for sample 1136, while it amplified in 342 of the 346 other compared samples: the sample is missing from this gene's comparison.",
+      "words": "NTRK1 did not amplify in this sample, while it amplified in 342 of the 346 other compared samples: the sample is missing from this gene's comparison.",
       "what_to_check": ""
      }
     ],
@@ -200,7 +200,7 @@
      {
       "source": "no_amplification",
       "code": "no_amplification",
-      "words": "No amplification in PTPRH for sample 1231, while it amplified in 342 of the 346 other compared samples: the sample is missing from this gene's comparison.",
+      "words": "PTPRH did not amplify in this sample, while it amplified in 342 of the 346 other compared samples: the sample is missing from this gene's comparison.",
       "what_to_check": ""
      }
     ],
@@ -228,7 +228,7 @@
      {
       "source": "no_amplification",
       "code": "no_amplification",
-      "words": "No amplification in CDH5 for sample 1716, while it amplified in 341 of the 346 other compared samples: the sample is missing from this gene's comparison.",
+      "words": "CDH5 did not amplify in this sample, while it amplified in 341 of the 346 other compared samples: the sample is missing from this gene's comparison.",
       "what_to_check": ""
      }
     ],
@@ -256,7 +256,7 @@
      {
       "source": "no_amplification",
       "code": "no_amplification",
-      "words": "No amplification in DDC for sample 1751, while it amplified in 342 of the 346 other compared samples: the sample is missing from this gene's comparison.",
+      "words": "DDC did not amplify in this sample, while it amplified in 342 of the 346 other compared samples: the sample is missing from this gene's comparison.",
       "what_to_check": ""
      }
     ],
@@ -284,7 +284,7 @@
      {
       "source": "no_amplification",
       "code": "no_amplification",
-      "words": "No amplification in PLAT for sample 1776, while it amplified in 344 of the 346 other compared samples: the sample is missing from this gene's comparison.",
+      "words": "PLAT did not amplify in this sample, while it amplified in 344 of the 346 other compared samples: the sample is missing from this gene's comparison.",
       "what_to_check": ""
      }
     ],
@@ -312,7 +312,7 @@
      {
       "source": "no_comparison",
       "code": "S7",
-      "words": "Sample 1803 is in no comparison: its HMBS reference well (plate HMBS_20080318, well N1) has no value: LinRegPCR found no amplification.",
+      "words": "its HMBS reference well (plate HMBS_20080318, well N1) has no value (LinRegPCR found no amplification), so the sample is in no comparison.",
       "what_to_check": ""
      }
     ],
@@ -340,7 +340,7 @@
      {
       "source": "no_comparison",
       "code": "S7",
-      "words": "Sample 1803 is in no comparison: its MYCN(4) marker well (plate MYCN(4)_20080222, well N1) has no value: LinRegPCR found no amplification.",
+      "words": "its MYCN(4) marker well (plate MYCN(4)_20080222, well N1) has no value (LinRegPCR found no amplification), so the sample is in no comparison.",
       "what_to_check": ""
      }
     ],

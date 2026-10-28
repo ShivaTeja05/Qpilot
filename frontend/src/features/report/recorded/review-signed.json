@@ -1,16 +1,16 @@
 {
  "message": "Signed off (discuss). The decision log keeps it with your name and comment; it changes no result and no Decision Card.",
- "head": "78acbc46133fea559a5b072da5a4f01c6bc675a64fdd705929d032eeb5e11cc7",
+ "head": "6092b26876c43a2773d7a39a31728ec90ba4a9a463fd6411bad2c280f6750128",
  "sign_off": {
   "seq": 2,
   "outcome": "discuss",
   "outcome_word": "discuss",
   "reviewer": "qPilot UI test recorder",
   "comment": "Recorded by the qPilot UI tests (not a real review): <b>markup</b> in a comment must show as text.",
-  "at": "2026-10-28T16:26:40Z",
-  "hash": "78acbc46133fea559a5b072da5a4f01c6bc675a64fdd705929d032eeb5e11cc7",
+  "at": "2026-10-28T16:45:19Z",
+  "hash": "6092b26876c43a2773d7a39a31728ec90ba4a9a463fd6411bad2c280f6750128",
   "line": {
-   "plain": "qPilot UI test recorder chose discuss on 2026-10-28T16:26:40Z (decision-log entry 2): “Recorded by the qPilot UI tests (not a real review): <b>markup</b> in a comment must show as text.”.",
+   "plain": "qPilot UI test recorder chose discuss on 2026-10-28T16:45:19Z (decision-log entry 2): “Recorded by the qPilot UI tests (not a real review): <b>markup</b> in a comment must show as text.”.",
    "segments": [
     {
      "text": "qPilot UI test recorder",
@@ -29,7 +29,7 @@
      "fact": null
     },
     {
-     "text": "2026-10-28T16:26:40Z",
+     "text": "2026-10-28T16:45:19Z",
      "fact": "f_rr_review_2_at"
     },
     {
@@ -70,8 +70,8 @@
     },
     {
      "id": "f_rr_review_2_at",
-     "text": "2026-10-28T16:26:40Z",
-     "value": "2026-10-28T16:26:40Z",
+     "text": "2026-10-28T16:45:19Z",
+     "value": "2026-10-28T16:45:19Z",
      "unit": "",
      "path": "review.reviews[0].at"
     },
@@ -96,7 +96,7 @@
  "review": {
   "study_id": "e300000d4f9a",
   "session": "bc1d233e3866",
-  "head": "78acbc46133fea559a5b072da5a4f01c6bc675a64fdd705929d032eeb5e11cc7",
+  "head": "6092b26876c43a2773d7a39a31728ec90ba4a9a463fd6411bad2c280f6750128",
   "title": {
    "plain": "Run Review of study e300000d4f9a: 64 plates, 366 samples, 24,576 reactions.",
    "segments": [
@@ -1243,10 +1243,10 @@
     "outcome_word": "discuss",
     "reviewer": "qPilot UI test recorder",
     "comment": "Recorded by the qPilot UI tests (not a real review): <b>markup</b> in a comment must show as text.",
-    "at": "2026-10-28T16:26:40Z",
-    "hash": "78acbc46133fea559a5b072da5a4f01c6bc675a64fdd705929d032eeb5e11cc7",
+    "at": "2026-10-28T16:45:19Z",
+    "hash": "6092b26876c43a2773d7a39a31728ec90ba4a9a463fd6411bad2c280f6750128",
     "line": {
-     "plain": "qPilot UI test recorder chose discuss on 2026-10-28T16:26:40Z (decision-log entry 2): “Recorded by the qPilot UI tests (not a real review): <b>markup</b> in a comment must show as text.”.",
+     "plain": "qPilot UI test recorder chose discuss on 2026-10-28T16:45:19Z (decision-log entry 2): “Recorded by the qPilot UI tests (not a real review): <b>markup</b> in a comment must show as text.”.",
      "segments": [
       {
        "text": "qPilot UI test recorder",
@@ -1265,7 +1265,7 @@
        "fact": null
       },
       {
-       "text": "2026-10-28T16:26:40Z",
+       "text": "2026-10-28T16:45:19Z",
        "fact": "f_rr_review_2_at"
       },
       {
@@ -1306,8 +1306,8 @@
       },
       {
        "id": "f_rr_review_2_at",
-       "text": "2026-10-28T16:26:40Z",
-       "value": "2026-10-28T16:26:40Z",
+       "text": "2026-10-28T16:45:19Z",
+       "value": "2026-10-28T16:45:19Z",
        "unit": "",
        "path": "review.reviews[0].at"
       },

@@ -27,3 +27,8 @@ It writes twice, both plainly a test: a sign-off read at a head that is not in t
 server answers `409 stale`, nothing enters the chain), and one real sign-off (`discuss`, a
 comment that says it is a test and holds `<b>markup</b>`, so the tests can check that it shows as
 text). Run it only on a copy of a store. Re-running adds another sign-off to that copy.
+
+On 28 Oct 2026 they were recorded again the same way (over a fresh copy of the seeded store,
+with `ex-env.sh followup`), and `record.py` now also writes `repeat.json`
+(`GET /api/studies/{id}/review/repeat`: what to repeat and why, the repeat plate and the Run Gate
+per plate; read-only), with its items cut to the first 12 (the counts stay the server's).
