@@ -340,6 +340,7 @@ Vermeulen J *et al.* (2009) *Lancet Oncology* 10:663–671; raw curves from Ruij
 - A plate with standards and no group comparison (a viral load) cannot reach Results on the page; `qpilot quantify` gives its quantities. No MCP tool reads quantities yet.
 - Outside Studio, a Trace decision is recorded only; open the file in Studio to apply it.
 - The Prism project has not yet been opened in a real Prism seat; the table of all genes needs Prism 9 or later.
+- The exports and the Prism project refuse a study whose group name holds a character other than letters, digits, spaces and `_ - . ( )` (a group named "LPS + inhibitor"): give the group a plain name on the Design page.
 
 ## Security and privacy
 

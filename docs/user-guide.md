@@ -470,6 +470,7 @@ Everything can also be done with the Tab key, and every control shows where the 
 | Every gene is capped at Moderate | The export's curves were most likely baseline-subtracted (or qPilot could not tell) | Decide the Import Trust card on Results |
 | "The demo study is not downloaded yet" | The demo is not on this computer | Click **Download 7.0 MB and open** on Open, or run `qpilot fetch-demo` |
 | The audit is refused | Its baseline does not reproduce qPilot, or the comparison is one it cannot audit yet (paired, Dunnett or Tukey, or a correction that changes a call) | The page gives the reason in words |
+| An export or Send to Prism is refused: "unsafe group name" | A group name holds a character other than letters, digits, spaces and `_ - . ( )` (for example "LPS + inhibitor") | Give the group a plain name on the Design page ("LPS with inhibitor") |
 | No Quantities on Results | The plate's standards have no quantity yet | Give them on Design → Samples (Standard, top quantity, dilution step) |
 | The model chip says "not answering" | The model is configured but does not answer; hover for the reason | Rules answer alone meanwhile; check the endpoint and name |
 | The live dot is not green | The page lost its connection to qPilot | It reconnects by itself; if not, is `qpilot app` still running? |
