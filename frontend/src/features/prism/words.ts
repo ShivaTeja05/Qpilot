@@ -25,7 +25,19 @@ export const ROUTE_ORDER = ["ddcq", "linear_welch", "linear_student"];
 export const NOT_AFFILIATED =
   "Works with GraphPad Prism. qPilot is not affiliated with or endorsed by GraphPad Software or Dotmatics.";
 export const NOT_RUN_YET =
-  "Not yet run in a real Prism: the bundle and its scripts are built from GraphPad's own documentation, and the first project should be checked by hand.";
+  "Not yet opened in a real Prism by the qPilot team: the project follows GraphPad's published XML format and files saved by Prism 6 to 10. Check the first one by hand; the CSV files in the bundle hold the same tables.";
+
+/** What the project file is, in one line. */
+export const PROJECT_WORDS =
+  "A Prism project (.pzfx) that opens in GraphPad Prism as it is: no template and no script. qPilot writes the tables and the Info sheet; you add the test and the graph with a few clicks, and Prism keeps them when you save.";
+
+/** Which operating system this browser runs on (the server's answer wins when it has one). */
+export function browserPlatform(): "windows" | "macos" | null {
+  const ua = typeof navigator === "undefined" ? "" : navigator.userAgent;
+  if (/Windows/i.test(ua)) return "windows";
+  if (/Mac OS X|Macintosh/i.test(ua)) return "macos";
+  return null;
+}
 
 /** What a round-trip diff item is, in words. */
 export const DIFF_KIND_WORDS: Record<string, string> = {

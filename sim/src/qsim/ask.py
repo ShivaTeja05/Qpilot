@@ -159,10 +159,10 @@ class Asker:
         model_writes: bool = False,
     ) -> None:
         self.dir = Path(results)
-        self.explain = json.loads((self.dir / "explain.json").read_text())
-        self.summary = json.loads((self.dir / "summary.json").read_text())
+        self.explain = json.loads((self.dir / "explain.json").read_text(encoding="utf-8"))
+        self.summary = json.loads((self.dir / "summary.json").read_text(encoding="utf-8"))
         self.decisions = pd.read_csv(self.dir / "decisions.csv").set_index("decision")
-        self.issues = json.loads((self.dir / "issues.json").read_text())
+        self.issues = json.loads((self.dir / "issues.json").read_text(encoding="utf-8"))
         self.client = client if client is not None else default_client()
         self._rdml = rdml
         # by default the model reads the question and the engine's checked template writes the answer;

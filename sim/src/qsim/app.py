@@ -212,10 +212,10 @@ class Screen(LabViews):
                 f"{self.dir} has no complete run ({', '.join(missing)} missing): run "
                 f"`qsim run --out {self.dir}` first, or open a file with `qsim app --rdml`."
             )
-        self.explain: dict = json.loads((self.dir / "explain.json").read_text())
+        self.explain: dict = json.loads((self.dir / "explain.json").read_text(encoding="utf-8"))
         self.genes = pd.read_csv(self.dir / "genes.csv").set_index("gene")
-        self.issues: list[dict] = json.loads((self.dir / "issues.json").read_text())
-        self.summary: dict = json.loads((self.dir / "summary.json").read_text())
+        self.issues: list[dict] = json.loads((self.dir / "issues.json").read_text(encoding="utf-8"))
+        self.summary: dict = json.loads((self.dir / "summary.json").read_text(encoding="utf-8"))
         flips = self.dir / "one_sample_flips.csv"
         self.sample_flips = pd.read_csv(flips, dtype={"sample": str}) if flips.exists() else None
         self.source = (self.summary.get("source") or {}).get("name") or BENCHMARK_NAME

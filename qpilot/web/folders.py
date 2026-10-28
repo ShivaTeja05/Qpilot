@@ -128,6 +128,31 @@ def allowed_folder(text: str, *, roots: Sequence[Path], store_root: Path) -> Pat
     raise FolderRefused("The folder must be inside your home folder or qPilot's export folder.")
 
 
+def allowed_returned(text: str, *, roots: Sequence[Path], store_root: Path) -> Path:
+    """What came back from Prism, if the page may read it; else ``FolderRefused``.
+
+    A folder under the rules of :func:`allowed_folder`, or a ``.pzfx`` file (not a link) in
+    such a folder: the project a person saved in Prism.
+    """
+    raw = (text or "").strip()
+    path = Path(raw).expanduser() if raw and "\x00" not in raw and len(raw) <= 4096 else None
+    if path is not None and path.suffix.lower() == ".pzfx" and path.is_absolute():
+        if ".." in path.parts:
+            raise FolderRefused("The file's path may not contain “..”: give its full path.")
+        if path.is_symlink():
+            raise FolderRefused("This file is a link: give the file it points to instead.")
+        if not path.is_file():
+            raise FolderRefused(f"There is no file {path}.")
+        folder = allowed_folder(str(path.parent), roots=roots, store_root=store_root)
+        return folder / path.name
+    return allowed_folder(text, roots=roots, store_root=store_root)
+
+
+def new_token() -> str:
+    """An opaque, unguessable name for a file this server keeps (an uploaded project)."""
+    return secrets.token_urlsafe(12)
+
+
 def exports_root(store_root: Path) -> Path:
     """Where bundles and records are written: ``exports/`` beside the study store.
 

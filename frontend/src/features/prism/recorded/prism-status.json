@@ -1,16 +1,24 @@
 {
-  "session_id": "bc1d233e3866",
-  "study_id": "6f6513925b05",
-  "choices_confirmed": false,
-  "project": {
-    "status": "none",
-    "proposal_id": null,
-    "template_id": null,
-    "genes": [],
-    "made_by": null
-  },
-  "can_draft": false,
-  "can_send": false,
-  "next": "Confirm the analysis choices first (Results): the Prism project follows them.",
-  "bundles": 1
+ "session_id": "bc1d233e3866",
+ "study_id": "ea8208bcd21d",
+ "choices_confirmed": true,
+ "project": {
+  "status": "accepted",
+  "proposal_id": "p_21ad4548255d7824",
+  "template_id": "two_groups_log2",
+  "genes": [
+   "BIRC5",
+   "NM23A",
+   "NTRK1",
+   "ODC1"
+  ],
+  "made_by": "rule",
+  "still_current": true,
+  "drafted_for": "e300000d4f9a",
+  "checking": false
+ },
+ "can_draft": true,
+ "can_send": true,
+ "next": "The Prism project accepted earlier is still current (the tables hold the same numbers): press Send to Prism.",
+ "bundles": 1
 }

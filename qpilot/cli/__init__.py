@@ -21,6 +21,7 @@ from qpilot.cli import (
     quant_cmds,
     studio_cmds,
 )
+from qpilot.cli._console import ensure_utf8_output
 from qpilot.cli._types import Command
 
 __all__ = ["Command", "build_parser", "main"]
@@ -56,6 +57,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the ``qpilot`` command line and return its exit code."""
+    ensure_utf8_output()  # ΔΔCq and → must not crash a Windows pipe (cp1252)
     parser = build_parser()
     args = parser.parse_args(argv)
     run = getattr(args, "_run", None)

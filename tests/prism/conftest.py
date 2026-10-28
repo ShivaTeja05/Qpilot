@@ -167,11 +167,17 @@ def demo_inputs(demo_study):
 
 @pytest.fixture(scope="session")
 def demo_export(demo_study, tmp_path_factory):
-    """The demo exported once (headline genes, two_groups_log2, macOS paths fixed)."""
+    """The demo exported once (headline genes, the project and the optional scripts, macOS
+    paths fixed)."""
     from qpilot.prism import export_study
 
     store, study_id = demo_study
     out = tmp_path_factory.mktemp("prism_export") / "bundle"
     return export_study(
-        store, study_id, out, platform="macos", prism_dir="/Users/lab/qpilot_demo_export"
+        store,
+        study_id,
+        out,
+        platform="macos",
+        prism_dir="/Users/lab/qpilot_demo_export",
+        scripts=True,
     )

@@ -56,9 +56,9 @@ def _qpilot(args: list[str], env: dict[str, str]) -> subprocess.CompletedProcess
 
 def fingerprint(run_dir: Path) -> dict:
     """The legacy-analysis numbers that must never move, from one ``qpilot run --out``."""
-    results = json.loads((run_dir / "results.json").read_text())
-    cards = json.loads((run_dir / "cards.json").read_text())
-    facts = json.loads((run_dir / "facts.json").read_text())
+    results = json.loads((run_dir / "results.json").read_text(encoding="utf-8"))
+    cards = json.loads((run_dir / "cards.json").read_text(encoding="utf-8"))
+    facts = json.loads((run_dir / "facts.json").read_text(encoding="utf-8"))
     genes = {}
     for gene in sorted(results["contrasts"]):
         c = results["contrasts"][gene]
@@ -111,8 +111,8 @@ def fingerprint(run_dir: Path) -> dict:
 
 def locked_checks(run_dir: Path, validation: dict) -> list[tuple[str, bool, str]]:
     """The brief's locked demo numbers, at printed precision: (name, ok, observed)."""
-    results = json.loads((run_dir / "results.json").read_text())
-    cards = {c["id"]: c for c in json.loads((run_dir / "cards.json").read_text())}
+    results = json.loads((run_dir / "results.json").read_text(encoding="utf-8"))
+    cards = {c["id"]: c for c in json.loads((run_dir / "cards.json").read_text(encoding="utf-8"))}
     out: list[tuple[str, bool, str]] = []
 
     def check(name: str, observed, expected) -> None:
@@ -218,7 +218,7 @@ def main() -> int:
             print(f"DEMO REGRESSION: FAIL (qpilot validate exited {proc.returncode})")
             return 1
         validation_path = tmp / "validation" / "validation.json"
-        validation = json.loads(validation_path.read_text())
+        validation = json.loads(validation_path.read_text(encoding="utf-8"))
 
         nondeterministic = [
             n for n in OUTPUTS if (tmp / "a" / n).read_bytes() != (tmp / "b" / n).read_bytes()
@@ -238,12 +238,14 @@ def main() -> int:
 
         fp = fingerprint(tmp / "a")
         if args.write_fingerprint:
-            FINGERPRINT.write_text(json.dumps(fp, indent=1, sort_keys=True) + "\n")
+            FINGERPRINT.write_text(
+                json.dumps(fp, indent=1, sort_keys=True) + "\n", encoding="utf-8", newline="\n"
+            )
             notes.append(f"fingerprint written to {FINGERPRINT.relative_to(ROOT)}")
         elif not FINGERPRINT.exists():
             failures.append("no scripts/demo_fingerprint.json (run with --write-fingerprint)")
         else:
-            base = json.loads(FINGERPRINT.read_text())
+            base = json.loads(FINGERPRINT.read_text(encoding="utf-8"))
             if fp["grid_sha256"] != base["grid_sha256"]:
                 failures.append("legacy grid.csv is not byte-identical to the baseline")
             semantic = _diff({k: base[k] for k in ("study", "genes", "cards", "facts")}, fp)

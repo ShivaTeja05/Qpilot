@@ -1034,9 +1034,11 @@ def validate(data: str | Path = DATA, out: str | Path = "results") -> dict:
         Path(data), scored, p2["components"]["dkfz"], summary["v2_coverage"]["components"]["dkfz"]
     )
     out = Path(out)
-    t.round(6).to_csv(out / "validation_dpcr.csv", index=False)
-    scored.round(6).to_csv(out / "validation_dpcr_baseline.csv", index=False)
-    (out / "validation_dpcr.json").write_text(json.dumps(summary, indent=1))
+    t.round(6).to_csv(out / "validation_dpcr.csv", index=False, lineterminator="\n")
+    scored.round(6).to_csv(out / "validation_dpcr_baseline.csv", index=False, lineterminator="\n")
+    (out / "validation_dpcr.json").write_text(
+        json.dumps(summary, indent=1), encoding="utf-8", newline="\n"
+    )
     return summary
 
 
