@@ -6,6 +6,10 @@
  * group, a fold change or a p-value: the server withholds them until the design and the curves
  * are confirmed, and the plate map has no group field.
  *
+ * A file of Cq values only (docs/cq-tables.md) has no curve to fit or judge: the stage then
+ * confirms its Cq table (`CqTablePanel`: each sample's Cq per well, wells without a Cq, replicate
+ * spread from G-REP, each assay's efficiency) in place of the curve viewer and the melt curves.
+ *
  * Route: `#/s/<sid>/curves[/<plate>[/<well,well,…>]]` — the plate and the chosen wells, so a link
  * from elsewhere (a proposal's evidence, a sample in Gene) opens the well's curve.
  */
@@ -20,8 +24,9 @@ import type { SectionProps } from "@/shell/sections";
 import { Button, EmptyState, JobCard, LoadingBlock, PageHeader } from "@/ui";
 import type { Proposal } from "@/lib/vocab";
 import { ConfirmStage, StageInbox, useStageProposals, type InboxFilter } from "@/ui/proposal";
-import { usePlate } from "./api";
+import { useCqTable, usePlate } from "./api";
 import { CheckCurvesJob, CheckCurvesPanel, useCheckCurves } from "./CheckCurves";
+import { CqTablePanel } from "./CqTablePanel";
 import { CurvePanel } from "./CurvePanel";
 import { MeltPanel } from "./melt";
 import { ALL_GENES, PlatePanel } from "./PlatePanel";
@@ -106,6 +111,11 @@ function CurvesStage({
   const runParam = rest[0] ?? null;
   const wells = (rest[1] ?? "").split(",").filter(Boolean);
   const plate = usePlate(sid, runParam);
+  // A file of Cq values only: the Cq table replaces the curve viewer (the server says which).
+  const cqTable = useCqTable(sid);
+  const cqOnly = Boolean(cqTable.data?.cq_only ?? plate.data?.cq_only);
+  // The curve viewer and the melt curves wait for that answer, so a Cq table never asks for them.
+  const curvesKnown = !cqTable.isPending || Boolean(plate.data?.cq_only);
   // The address wins: while another plate loads, the one still on screen is not the one chosen.
   const run = runParam ?? plate.data?.run.run_id ?? null;
   const setPlace = useCallback(
@@ -212,21 +222,25 @@ function CurvesStage({
         ref={curveRef}
         className={cn("flex min-w-0 scroll-mt-20 flex-col gap-6", reviewing && "order-first")}
       >
-        <CurvePanel
-          sid={sid}
-          run={run}
-          wells={wells}
-          gene={plate.data?.multiplex && shownGene !== ALL_GENES ? shownGene : null}
-          onClear={() => setPlace(run, [])}
-          waitingProposal={(key) => waitingFor.has(key)}
-          onShowProposal={showProposalOf}
-        />
-        <MeltPanel
-          sid={sid}
-          run={run}
-          wells={plate.isPlaceholderData ? [] : wells}
-          onPickWells={(w) => setPlace(run, w)}
-        />
+        {cqOnly || !curvesKnown ? null : (
+          <>
+            <CurvePanel
+              sid={sid}
+              run={run}
+              wells={wells}
+              gene={plate.data?.multiplex && shownGene !== ALL_GENES ? shownGene : null}
+              onClear={() => setPlace(run, [])}
+              waitingProposal={(key) => waitingFor.has(key)}
+              onShowProposal={showProposalOf}
+            />
+            <MeltPanel
+              sid={sid}
+              run={run}
+              wells={plate.isPlaceholderData ? [] : wells}
+              onPickWells={(w) => setPlace(run, w)}
+            />
+          </>
+        )}
       </div>
     </div>
   );
@@ -236,14 +250,19 @@ function CurvesStage({
       <PageHeader
         eyebrow="Studio · blind"
         title="Curves"
-        hint="Which wells amplified, and where the Curve Judge reads a curve differently from LinRegPCR. No group, fold change or p-value is shown until the design and the curves are confirmed."
+        hint={
+          cqOnly
+            ? "Which wells have a Cq, and where replicates disagree (this file has Cq values only). No group, fold change or p-value is shown until the design and the curves are confirmed."
+            : "Which wells amplified, and where the Curve Judge reads a curve differently from LinRegPCR. No group, fold change or p-value is shown until the design and the curves are confirmed."
+        }
         actions={
           proposals?.length ? <ConfirmStage sid={sid} stage="curves" status={curves} /> : null
         }
       />
       <div className="flex min-w-0 flex-col gap-6">
-        <StageBar workspace={workspace} check={check} onShowPlate={showPlate} />
+        <StageBar workspace={workspace} check={check} onShowPlate={showPlate} cqOnly={cqOnly} />
         {proposals?.length ? <CheckCurvesJob state={check} /> : null}
+        {cqOnly ? <CqTablePanel sid={sid} /> : null}
         <div
           className={cn(
             "grid grid-cols-[minmax(0,1fr)] gap-6",
@@ -263,10 +282,12 @@ function CurvesStage({
               empty={
                 confirmed ? (
                   <EmptyState compact icon={<CheckCircle2 />} title="No curves proposals">
-                    The curves stage was confirmed with LinRegPCR’s calls; nothing was proposed.
+                    {cqOnly
+                      ? "The curves stage was confirmed with the file’s own Cq values; nothing was proposed."
+                      : "The curves stage was confirmed with LinRegPCR’s calls; nothing was proposed."}
                   </EmptyState>
                 ) : (
-                  <CheckCurvesPanel state={check} />
+                  <CheckCurvesPanel state={check} cqOnly={cqOnly} />
                 )
               }
               allDecided={

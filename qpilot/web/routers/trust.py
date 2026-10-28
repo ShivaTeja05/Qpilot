@@ -48,6 +48,11 @@ NO_CARD = (
     "The curves of this study call for no Import Trust decision: they are raw, normalised to a "
     "passive reference, or the study was opened from an RDML file."
 )
+NO_CURVES = (
+    "This file has Cq values only, so there are no curves whose processing before export could "
+    "be checked, and no Import Trust decision: each assay's efficiency is its dilution series' "
+    "or an assumed 2.0, and the confidence cap says so."
+)
 NOT_CURRENT = (
     "This is not the analysis in use for its Studio session any more, so its Import Trust card "
     "is shown as it was; decide it on the analysis in use."
@@ -115,6 +120,14 @@ def _request(p: Any) -> TrustRequestView | None:
     )
 
 
+def _cq_only(ctx: AppContext, study_id: str) -> bool:
+    """True for a study of a file with Cq values only (its facts say so)."""
+    try:
+        return "f_cq_only" in ctx.store.get(study_id).facts
+    except Exception:  # an unreadable study: say what the curves say
+        return False
+
+
 def build_view(ctx: AppContext, study_id: str, sid: str | None) -> ImportTrustView:
     """The study's Import Trust card as the page shows it (``applies: false`` without one)."""
     from qpilot.studio_service import trust_choice, trust_decision, trust_requests
@@ -128,7 +141,10 @@ def build_view(ctx: AppContext, study_id: str, sid: str | None) -> ImportTrustVi
     design = ctx.store.design(study_id)
     chosen = design.import_trust if design is not None else None
     if found is None or verdict is None or chosen is None:
-        return ImportTrustView(study_id=study_id, applies=False, why=NO_CARD)
+        cq_values = _cq_only(ctx, study_id)
+        return ImportTrustView(
+            study_id=study_id, applies=False, why=NO_CURVES if cq_values else NO_CARD
+        )
     meta, _ = found
     inbox = ctx.studio.store.proposals(sid).view()
     current = analysed_study(ctx.studio, sid) == study_id

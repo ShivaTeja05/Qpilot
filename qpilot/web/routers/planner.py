@@ -229,11 +229,17 @@ def _efficiency(result) -> PlanEfficiency:  # noqa: ANN001 (a StudyResult)
     lo, hi = EFFICIENCY_RANGE
     outside = sorted(g for g, e in eff.items() if not lo <= e - 1 <= hi)
     spread = _spread(list(eff.values()))
+    cq_values = "f_cq_only" in (result.facts or {})
+    source = (
+        "its dilution series, else assumed 2.0: this file has Cq values only"
+        if cq_values
+        else "LinRegPCR, the median over its plates"
+    )
     if spread is None:
         text = "This study has no efficiency per gene."
     else:
         text = (
-            f"Efficiency per gene (LinRegPCR, the median over its plates): median "
+            f"Efficiency per gene ({source}): median "
             f"{spread.median:.2f}, from {spread.min:.2f} to {spread.max:.2f} (2.00 is a perfect "
             f"doubling). {len(outside)} of {spread.n} fall outside "
             f"{lo * 100:.0f}–{hi * 100:.0f} %: check those assays with a standard curve before "

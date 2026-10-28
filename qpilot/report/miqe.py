@@ -303,6 +303,8 @@ def nrt(m: MiqeCtx) -> Outcome:
 def raw_data(m: MiqeCtx) -> Outcome:
     """5.1: raw fluorescence in RDML."""
     meta = m.rdml
+    if m.ctx.has("f_cq_only"):
+        return Fill("No", [CQ_ONLY_WORDS["raw_data"]])
     if meta is None:
         return Hint(["The input file is not here; deposit the RDML file with the paper."])
     if not meta.n_reactions_with_curves:
@@ -330,6 +332,8 @@ def raw_data(m: MiqeCtx) -> Outcome:
 
 def quantification(m: MiqeCtx) -> Outcome:
     """5.2: quantification method (relative, from efficiency-corrected N0)."""
+    if m.ctx.has("f_cq_only"):
+        return Fill("Yes", [CQ_ONLY_WORDS["quantification"]], ["docs/cq-tables.md"])
     return Fill(
         "Yes",
         [
@@ -342,6 +346,8 @@ def quantification(m: MiqeCtx) -> Outcome:
 
 def baseline_cq(m: MiqeCtx) -> Outcome:
     """5.3: baseline and Cq method."""
+    if m.ctx.has("f_cq_only"):  # set by the instrument software, before the file was written
+        return Hint([CQ_ONLY_WORDS["baseline_cq"]])
     commit = m.ctx.version("rdmlpython_vendored")
     text = (
         "Per-well baseline estimated and subtracted by LinRegPCR; Cq is TD0, the cycle where the "
@@ -358,7 +364,11 @@ def software(m: MiqeCtx) -> Outcome:
     if qp is None:
         return None
     text = f"qPilot {qp}"
-    if rp:
+    if m.ctx.has("f_cq_only"):
+        text += (
+            " (no curve analysis: the file holds Cq values only, set by the instrument software)"
+        )
+    elif rp:
         text += f" with LinRegPCR from rdmlpython (commit {rp})"
     py = m.ctx.version("python")
     if py:
@@ -403,12 +413,16 @@ def ntc_results(m: MiqeCtx) -> Outcome:
 
 def examples(m: MiqeCtx) -> Outcome:
     """5.7: examples of positive and negative results (the curves are on the page)."""
+    if m.ctx.has("f_cq_only"):
+        return Hint([CQ_ONLY_WORDS["examples"]])
     return Hint(["Every well's raw curve is in the Curves section; choose examples for the paper."])
 
 
 def efficiency(m: MiqeCtx) -> Outcome:
     """5.8: efficiency per well from the curve (LinRegPCR)."""
     c = m.ctx
+    if c.has("f_cq_only"):
+        return _cq_efficiency(m)
     eff = c.result.efficiency
     if not eff:
         return Fill("No", ["No efficiency in this study: quantities assume one (footnote j)."])
@@ -427,6 +441,17 @@ def efficiency(m: MiqeCtx) -> Outcome:
 
 def quantity_method(m: MiqeCtx) -> Outcome:
     """5.9: efficiency-corrected target quantity (footnote j)."""
+    if m.ctx.has("f_cq_only"):
+        if m.ctx.has("f_n_eff_assumed") and m.ctx.result.facts["f_n_eff_assumed"].value:
+            return Fill(
+                "No",
+                [
+                    "Efficiency was assumed, not measured, for the assays without a dilution "
+                    f"series: {tok('f_eff_assumed_genes')} (footnote j)."
+                ],
+                ["results.json:/facts/f_eff_assumed_genes"],
+            )
+        return Fill("Yes", [CQ_ONLY_WORDS["quantity_method"]], ["docs/cq-tables.md"])
     if not m.ctx.result.efficiency:
         return Fill("No", ["Efficiency was assumed, not measured (footnote j)."])
     return Fill(
@@ -437,6 +462,34 @@ def quantity_method(m: MiqeCtx) -> Outcome:
         ],
         ["methods/linregpcr.md"],
     )
+
+
+def _cq_efficiency(m: MiqeCtx) -> Outcome:
+    """5.8 for a file of Cq values only: each assay's dilution series, else assumed."""
+    c = m.ctx
+    facts = c.result.facts
+    series = int(facts["f_n_eff_series"].value) if "f_n_eff_series" in facts else 0
+    words = [tok(fid) for fid in sorted(facts) if fid.startswith("f_eff_words_")]
+    head = (
+        "No curve was available (the file holds Cq values only), so no well's own efficiency "
+        "was estimated. "
+    )
+    if not series:
+        return Fill(
+            "No",
+            [
+                head + "No assay has a dilution series, so every assay's efficiency is assumed: "
+                f"{tok('f_eff_assumed_value')}, every cycle doubling the product (footnote j)."
+            ],
+            ["results.json:/facts"],
+        )
+    answer = "Yes" if not int(facts["f_n_eff_assumed"].value) else "No"
+    return Fill(
+        answer,
+        [head + "Each assay's efficiency is from its dilution series where it has one, else "
+         "assumed: " + " ".join(words)],
+        ["results.json:/facts", "docs/cq-tables.md"],
+    )  # fmt: skip
 
 
 def replicates(m: MiqeCtx) -> Outcome:
@@ -545,11 +598,16 @@ def dynamic_range(m: MiqeCtx) -> Outcome:
                 "one was evaluated."
             ]
         )
+    source = (
+        "the file holds Cq values only, and no assay has a dilution series"
+        if m.ctx.has("f_cq_only")
+        else "quantities come from each curve's own efficiency"
+    )
     return Fill(
         "No",
         [
-            "No standard curve is evaluated (quantities come from each curve's own efficiency); "
-            "change this answer if the range was determined elsewhere."
+            f"No standard curve is evaluated ({source}); change this answer if the range was "
+            "determined elsewhere."
         ],
     )
 
@@ -672,6 +730,34 @@ def specificity(m: MiqeCtx) -> Outcome:
         "amplicon (MIQE 2.0)."
     )
     return Fill("Yes", parts, ["methods/melt_curve.md", "packs/research-default.yaml#G-MELT"])
+
+
+#: The MIQE items of a file of Cq values only (``docs/cq-tables.md``): what no curve leaves out.
+CQ_ONLY_WORDS: dict[str, str] = {
+    "raw_data": (
+        "Not available: the file holds Cq values only, so no raw fluorescence (amplification "
+        "curves) was available to qPilot. Deposit the instrument's raw export with the paper if "
+        "it still exists."
+    ),
+    "quantification": (
+        "Relative quantification from the file's Cq values (no curves): each well's starting "
+        "quantity is its assay's efficiency raised to the power of minus its Cq, the assay's "
+        "efficiency taken from its dilution series where the design has one, else assumed."
+    ),
+    "baseline_cq": (
+        "Not available from this file: it holds Cq values only, so the baseline and the Cq were "
+        "set by the instrument software before export. State that software, its baseline "
+        "setting and its threshold (or Cq) method."
+    ),
+    "examples": (
+        "Not available: the file holds Cq values only, so there are no curves to show; show "
+        "examples from the instrument software. The Cq table is on the Curves page."
+    ),
+    "quantity_method": (
+        "Efficiency-corrected: each well's quantity uses its assay's efficiency from the "
+        "assay's dilution series (the file holds Cq values only)."
+    ),
+}
 
 
 RESOLVERS: dict[str, Callable[[MiqeCtx], Outcome]] = {

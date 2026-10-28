@@ -24,3 +24,13 @@ curl -s "${H[@]}" "$QPILOT_API/api/sessions/bc1d233e3866/proposals?stage=curves"
 `frame-curves-waiting.json` drops the frame's `facts` and `summary` (large, unused here). The
 inbox holds the call-rule proposal (cannot check) and 110 Curve Judge well calls on
 ALUsq(Eurogentec)_20080228 (contradicted).
+
+## A file of Cq values only (`*-cq-only-hmuy.json`, `cq-table-hmuy.json`)
+
+Recorded 28 Oct 2026 from the real API (FastAPI's test client over `qpilot.web.server`, no model)
+by the cqonly agent: the depositors' Cq table `tests/fixtures/corpus/rdml/lightcycler96-lc96p-hmuy/
+hmuy_cq_values.xlsx` dropped alone, the design set on the Design page (`POST …/design/set`: 16S
+rRNA the reference, hmuYPe the gene of interest, groups Hm and DIP, DIP compared with Hm), the
+design confirmed, then **Check the curves** run (`propose_curves`). The script is
+`agent-bus/scratch/ex-cqonly/work/record_fixtures.py`; it writes the session frame (without
+`facts` and `summary`), the curves inbox, the plate and `GET /api/sessions/{sid}/cq-table`.

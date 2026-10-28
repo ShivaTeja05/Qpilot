@@ -835,6 +835,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{sid}/cq-table": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Cq Table
+         * @description A Cq-only file's Cq table for the curves stage (blind: no group, no comparison).
+         */
+        get: operations["get_cq_table"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{sid}/curve": {
         parameters: {
             query?: never;
@@ -6532,6 +6552,203 @@ export type components = {
             series: number[];
         };
         /**
+         * CqCounts
+         * @description How many wells and replicate sets the table holds, and how many to look at.
+         */
+        CqCounts: {
+            /**
+             * N Controls With Cq
+             * @description Negative-control wells (NTC, no-RT…) with a Cq.
+             */
+            n_controls_with_cq: number;
+            /**
+             * N Late
+             * @description Wells with a Cq above 35.
+             */
+            n_late: number;
+            /**
+             * N Outside
+             * @description Replicate sets wider than G-REP expects.
+             */
+            n_outside: number;
+            /** N Sets */
+            n_sets: number;
+            /**
+             * N Study Without Cq
+             * @description Study-sample wells without a Cq (non-detects).
+             */
+            n_study_without_cq: number;
+            /**
+             * N Wells
+             * @description Wells of the analysed plates (left-out targets excluded).
+             */
+            n_wells: number;
+            /** N With Cq */
+            n_with_cq: number;
+            /** N Without Cq */
+            n_without_cq: number;
+        };
+        /**
+         * CqEfficiencyView
+         * @description One assay's efficiency: from its dilution series, or assumed to be 2.0.
+         */
+        CqEfficiencyView: {
+            /**
+             * Efficiency
+             * @description E (2.0: every cycle doubles the product).
+             */
+            efficiency: number;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "dilution_series" | "assumed";
+            /** Target */
+            target: string;
+            /** Words */
+            words: string;
+        };
+        /**
+         * CqSetView
+         * @description The wells of one sample and target on one plate (its technical replicates).
+         */
+        CqSetView: {
+            /**
+             * Flags
+             * @description What to look at, in plain words.
+             * @default []
+             */
+            flags: string[];
+            /** Mean Cq */
+            mean_cq?: number | null;
+            /** N Wells */
+            n_wells: number;
+            /** N With Cq */
+            n_with_cq: number;
+            /**
+             * Range Cq
+             * @description Highest minus lowest Cq of its wells with a Cq.
+             */
+            range_cq?: number | null;
+            /**
+             * Role
+             * @description Its sample type in the design (unkn, std, ntc, …).
+             */
+            role: string;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Sample Text Id */
+            sample_text_id?: string | null;
+            /**
+             * Spread
+             * @description G-REP's verdict on the replicate spread.
+             * @enum {string}
+             */
+            spread: "within" | "outside" | "not_evaluated";
+            /**
+             * Spread Words
+             * @description G-REP's sentence, or why it was not evaluated.
+             */
+            spread_words: string;
+            /** Target */
+            target: string;
+            /** Target Text Id */
+            target_text_id?: string | null;
+            /**
+             * Tolerance
+             * @description G-REP's expected range for this copy number (cycles).
+             */
+            tolerance?: number | null;
+            /** Wells */
+            wells: components["schemas"]["CqWellView"][];
+        };
+        /**
+         * CqTableView
+         * @description The Curves stage of a file of Cq values only (``cq_only: false`` for a file with curves).
+         */
+        CqTableView: {
+            counts?: components["schemas"]["CqCounts"] | null;
+            /** Cq Only */
+            cq_only: boolean;
+            /**
+             * Efficiencies
+             * @default []
+             */
+            efficiencies: components["schemas"]["CqEfficiencyView"][];
+            /** Key */
+            key: string;
+            /**
+             * Message
+             * @description What this stage is, in one or two sentences.
+             */
+            message: string;
+            /**
+             * Not Applicable
+             * @description The curve-based checks that do not apply, in plain words.
+             * @default []
+             */
+            not_applicable: string[];
+            /**
+             * Rule
+             * @description G-REP's statement (the rule pack's words).
+             * @default
+             */
+            rule: string;
+            /**
+             * Sets
+             * @default []
+             */
+            sets: components["schemas"]["CqSetView"][];
+            /**
+             * Shown
+             * @description The Cq values are shown (the design is confirmed).
+             */
+            shown: boolean;
+        };
+        /**
+         * CqWellView
+         * @description One well of a replicate set: its Cq as the file gives it, and whether it is used.
+         */
+        CqWellView: {
+            /**
+             * Cq
+             * @description The file's Cq (a cycle); none: no Cq.
+             */
+            cq?: number | null;
+            /**
+             * File Excluded
+             * @description The file's own exclusion note, if any.
+             * @default
+             */
+            file_excluded: string;
+            /**
+             * Key
+             * @description `plate/well`.
+             */
+            key: string;
+            /**
+             * Late
+             * @description Its Cq is above the latest Cq cut-off (35).
+             * @default false
+             */
+            late: boolean;
+            /**
+             * Left Out
+             * @description A person left it out of the analysis.
+             * @default false
+             */
+            left_out: boolean;
+            /**
+             * Used
+             * @description It has a Cq and no one left it out.
+             */
+            used: boolean;
+            /** Well */
+            well: string;
+        };
+        /**
          * CurveCallsView
          * @description Each well of one target called under every rule (facts about curves, no conclusion).
          */
@@ -11265,6 +11482,12 @@ export type components = {
          * @description One plate's wells, for the plate map (blind: no group next to a number).
          */
         PlateView: {
+            /**
+             * Cq Only
+             * @description The file has Cq values only (no curves): the Cq per well is the file's, and no efficiency, R² or baseline exists (`docs/cq-tables.md`).
+             * @default false
+             */
+            cq_only: boolean;
             /**
              * Curve Judge
              * @description The Curve Judge's status in words.
@@ -17739,6 +17962,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProposalDecided"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_cq_table: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CqTableView"];
                 };
             };
             /** @description Validation Error */

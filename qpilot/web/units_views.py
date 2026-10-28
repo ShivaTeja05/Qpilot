@@ -365,10 +365,15 @@ def _how(
     at_plan: bool,
 ) -> list[str]:
     refs = ", ".join(inputs.refs)
+    cq_values = inputs.result is not None and "f_cq_only" in inputs.result.facts
+    source = (
+        "from each well's Cq and its assay's efficiency (this file has Cq values only)"
+        if cq_values
+        else "from each well's curve and efficiency"
+    )
     out = [
         f"Each large dot is one biological unit: the amount of {gene} divided by the mean of its "
-        f"control genes ({refs}), from each well's curve and efficiency, shown relative to the "
-        f"mean of {second}.",
+        f"control genes ({refs}), {source}, shown relative to the mean of {second}.",
     ]
     if most > 1:
         out.append(

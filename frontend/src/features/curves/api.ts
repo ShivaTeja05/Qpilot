@@ -68,3 +68,18 @@ export function useCurveCalls(sid: string, gene: string | null) {
     staleTime: 60_000,
   });
 }
+
+export type CqTableView = Schemas["CqTableView"];
+export type CqSetView = Schemas["CqSetView"];
+
+/**
+ * A file of Cq values only: its Cq table for the curves stage (`cq_only: false` for a file with
+ * curves). Blind: no group, fold change or p-value; the Cq values once the design is confirmed.
+ */
+export function useCqTable(sid: string) {
+  return useQuery({
+    queryKey: ["w", sid, "cq-table"],
+    queryFn: () => unwrap(api.GET("/api/sessions/{sid}/cq-table", { params: { path: { sid } } })),
+    staleTime: 30_000,
+  });
+}

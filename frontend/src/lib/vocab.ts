@@ -370,9 +370,14 @@ export const PRESET_WORDS: Record<string, string> = {
     "the published design of the Vermeulen neuroblastoma dataset: tumours compared by MYCN expression (an expression-defined split, not a clinical call), normalised to the original study's five reference genes",
 };
 
-/** An amplification-call rule id in words. */
-export function ruleWords(rule: unknown): string {
+/** `linregpcr` for a file of Cq values only (docs/cq-tables.md): the same rule, no curve. */
+export const CQ_RULE_WORDS =
+  "the file's own Cq (a well counts when the file gives it a Cq; Cq values only)";
+
+/** An amplification-call rule id in words (`cqValues`: a file of Cq values only). */
+export function ruleWords(rule: unknown, cqValues = false): string {
   const r = String(rule);
+  if (r === "linregpcr" && cqValues) return CQ_RULE_WORDS;
   if (r === "linregpcr") return "LinRegPCR's call (it found an exponential phase and a quantity)";
   if (r === "learned") return "the Curve Judge's call (a model that reads the curve's shape)";
   const m = /^cq_le_(\d+(?:\.\d+)?)$/.exec(r);
@@ -381,8 +386,9 @@ export function ruleWords(rule: unknown): string {
 }
 
 /** Short label of an amplification-call rule: `LinRegPCR`, `Cq ≤ 35`, `Curve Judge`. */
-export function ruleLabel(rule: unknown): string {
+export function ruleLabel(rule: unknown, cqValues = false): string {
   const r = String(rule);
+  if (r === "linregpcr" && cqValues) return "The file’s Cq";
   if (r === "linregpcr") return "LinRegPCR";
   if (r === "learned") return "Curve Judge";
   const m = /^cq_le_(\d+(?:\.\d+)?)$/.exec(r);
@@ -508,7 +514,8 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
     const quantities = q.length ? `, quantities ${q[0]} to ${q[q.length - 1]}` : "";
     return `Samples ${span} (${names.length} in all, experiment ${str(d.experiment_id)}) form a dilution series ${s}${quantities}`;
   },
-  "curve.call_rule": (_s, d) => `Count a well as amplified by ${ruleWords(d.rule)}`,
+  "curve.call_rule": (_s, d) =>
+    `Count a well as amplified by ${ruleWords(d.rule, d.basis === "cq")}`,
   "choice.axis": (s, d) => {
     const question = AXIS_QUESTION[s];
     if (!question || !Array.isArray(d.options) || !d.options.length) throw new Error("not an axis");

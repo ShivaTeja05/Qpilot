@@ -40,6 +40,18 @@ the well's own efficiency, R², LinRegPCR's exclusion notes) is left empty, and 
 and plateau mean "the instrument gave a Cq". Every caller passes the study's ``settings.curves``,
 so the results, Trace, the Run Gate and the Prism export read the same table.
 
+**A file of Cq values only** (a person's Cq table, a Cq-only RDML: no run of the experiment holds
+an amplification data point) has nothing for LinRegPCR to fit, so whatever the settings say,
+each well's row is built from the reaction itself (:func:`cq_only_run`): its Cq is the one in
+the file, its quantity ``2^-Cq`` (``eff_target`` 2.0, assumed), and what only a fit gives
+(baseline, the well's own efficiency, R², LinRegPCR's note) is empty on every row, which is
+how :func:`without_curves` knows the table. Sample types, exclusions and well names are
+LinRegPCR's own (the same RDML lookups), so the rest of the engine reads the table as it reads
+any other; :func:`qpilot.qpcr.designs.design_curves` then takes each assay's efficiency from
+its dilution series where the design has one (:mod:`qpilot.qpcr.cq_only`). An experiment whose
+runs mix curves and Cq values only is refused under LinRegPCR (two different quantities in one
+study).
+
 Results are cached as CSV in the cache directory, keyed by the input file's SHA-256, the
 experiment, the reference genes and the analysis settings, so a second analysis of the same file
 takes about a second. Cache files are written to a temporary name and renamed into place.
@@ -65,8 +77,7 @@ import pandas as pd
 from lxml import etree
 
 from qpilot.io.datasets import default_cache_dir
-from qpilot.io.rdml_io import NS as RDML_NS
-from qpilot.io.rdml_io import load, names_key, runs
+from qpilot.io.rdml_io import NS, load, names_key, runs
 from qpilot.vendor.rdmlpython import rdml
 
 log = logging.getLogger(__name__)
@@ -136,6 +147,7 @@ INSTRUMENT_CQ = "instrument_cq"  # quantities from the instrument's Cq, efficien
 QUANTITIES = (LINREGPCR, INSTRUMENT_CQ)
 ASSUMED_EFFICIENCY = 2.0
 INSTRUMENT_NOTE = "the instrument's Cq; the curve is not used"
+FITTED_COLUMNS = ("baseline", "eff_indiv", "r2")  # what only LinRegPCR's fit of a curve gives
 #: In the cache key of a table with several curves in one well (each dye analysed on its own).
 MULTIPLEX_CACHE = "per-dye-1"
 
@@ -301,15 +313,15 @@ def _linregpcr(run: rdml.Run, run_id: str, settings: CurveSettings) -> pd.DataFr
 
 
 def _tar(data: Any) -> str:
-    ref = data.find(RDML_NS + "tar")
+    ref = data.find(NS + "tar")
     return "" if ref is None else str(ref.get("id", ""))
 
 
 def target_dyes(root: Any) -> dict[str, str]:
     """Target id -> the id of the dye it is read in (RDML ``<target><dyeId>``); ``""``: none."""
     out: dict[str, str] = {}
-    for target in root.findall(RDML_NS + "target"):
-        dye = target.find(RDML_NS + "dyeId")
+    for target in root.findall(NS + "target"):
+        dye = target.find(NS + "dyeId")
         out[str(target.get("id", ""))] = "" if dye is None else str(dye.get("id") or "").strip()
     return out
 
@@ -326,13 +338,13 @@ def channels(run: rdml.Run) -> list[frozenset[str]] | None:
     sees at most one curve per well (see :func:`analyse_run`).
     """
     node = run._node
-    reacts = node.findall(RDML_NS + "react")
-    if not any(len(react.findall(RDML_NS + "data")) > 1 for react in reacts):
+    reacts = node.findall(NS + "react")
+    if not any(len(react.findall(NS + "data")) > 1 for react in reacts):
         return None
     dyes = target_dyes(node.getparent().getparent())
     by_dye: dict[str, list[str]] = {}
     for react in reacts:
-        for data in react.findall(RDML_NS + "data"):
+        for data in react.findall(NS + "data"):
             target = _tar(data)
             members = by_dye.setdefault(dyes.get(target) or f"\x00{target}", [])
             if target not in members:
@@ -341,8 +353,7 @@ def channels(run: rdml.Run) -> list[frozenset[str]] | None:
     for members in by_dye.values():
         group = frozenset(members)
         crowded = any(
-            sum(_tar(data) in group for data in react.findall(RDML_NS + "data")) > 1
-            for react in reacts
+            sum(_tar(data) in group for data in react.findall(NS + "data")) > 1 for react in reacts
         )
         groups.extend([frozenset([t]) for t in members] if crowded else [group])
     return groups
@@ -360,15 +371,15 @@ def _sub_run(run: rdml.Run, targets: frozenset[str]) -> rdml.Run:
     root = experiment.getparent()
     doc = etree.Element(root.tag, attrib=dict(root.attrib), nsmap=root.nsmap)
     for child in root:
-        if child is not experiment and child.tag != RDML_NS + "experiment":
+        if child is not experiment and child.tag != NS + "experiment":
             doc.append(copy.deepcopy(child))
     holder = etree.SubElement(doc, experiment.tag, attrib=dict(experiment.attrib))
     copied = copy.deepcopy(node)
-    for react in copied.findall(RDML_NS + "react"):
-        for data in react.findall(RDML_NS + "data"):
+    for react in copied.findall(NS + "react"):
+        for data in react.findall(NS + "data"):
             if _tar(data) not in targets:
                 react.remove(data)
-        if react.find(RDML_NS + "data") is None:
+        if react.find(NS + "data") is None:
             copied.remove(react)
     holder.append(copied)
     return rdml.Run(copied, run._rdmlFilename)
@@ -394,8 +405,8 @@ def analyse_run(run: rdml.Run, settings: CurveSettings | None = None) -> pd.Data
             (str(react.get("id", "")), _tar(data)): position
             for position, (react, data) in enumerate(
                 (react, data)
-                for react in run._node.findall(RDML_NS + "react")
-                for data in react.findall(RDML_NS + "data")
+                for react in run._node.findall(NS + "react")
+                for data in react.findall(NS + "data")
             )
         }
         parts = [_linregpcr(_sub_run(run, group), run_id, settings) for group in groups]
@@ -541,7 +552,7 @@ def analyse_study(
         doc = load(path)
     found = runs(doc, experiment_id)
     _check_run_ids([str(run["id"]) for run in found])
-    plates = [analyse_run(run, settings) for run in found]
+    plates = _plates(found, settings, mixed=False)
     if not plates:
         raise CurveAnalysisError(f"experiment {experiment_id!r} has no runs")
     table = _tidy(pd.concat(plates, ignore_index=True), references)
@@ -573,6 +584,113 @@ def _cached_table(plain: Path, multiplex: Path) -> pd.DataFrame | None:
     return None
 
 
+def run_has_curves(run: rdml.Run) -> bool:
+    """Whether any reaction of the run holds an amplification data point (RDML ``<adp>``)."""
+    return next(run._node.iter(f"{NS}adp"), None) is not None
+
+
+def run_has_cq(run: rdml.Run) -> bool:
+    """Whether any reaction of the run holds a Cq (RDML ``<cq>``) that is a number above zero."""
+    return any(_cq_value(node.text) is not None for node in run._node.iter(f"{NS}cq"))
+
+
+def without_curves(table: pd.DataFrame) -> bool:
+    """True when the per-well table is a file's Cq values only (no well has a curve).
+
+    Such a table (:func:`cq_only_run`) has no baseline, no well's own efficiency, no R² and no
+    note on any row. A table LinRegPCR fitted has a baseline on its wells; the Import Trust
+    card's Cq only (:func:`instrument_quantities`) notes :data:`INSTRUMENT_NOTE` on each well,
+    and wells inspect could not analyse note "not analysed": neither is a file of Cq values.
+    """
+    columns = [*FITTED_COLUMNS, "note"]
+    if not len(table) or any(c not in table.columns for c in columns):
+        return False  # not a per-well table of the engine (a toy table): curves are assumed
+    if table[list(FITTED_COLUMNS)].notna().to_numpy().any():
+        return False
+    return bool(table["note"].fillna("").astype(str).eq("").all())
+
+
+def _plates(found: list, settings: CurveSettings, *, mixed: bool) -> list[pd.DataFrame]:
+    """Each run's wells: LinRegPCR's fit, or the reactions' Cq values for a run without curves.
+
+    ``mixed`` allows an experiment whose runs mix the two (the instrument's Cq is used for
+    every well then); otherwise such an experiment is refused, in words.
+    """
+    curved = [run_has_curves(run) for run in found]
+    if found and not any(curved) and not any(run_has_cq(run) for run in found):
+        raise CurveAnalysisError(
+            f"run {safe_name(str(found[0]['id']), 'run')}: the experiment holds neither "
+            "amplification curves nor Cq values, so there is nothing to analyse"
+        )
+    if any(curved) and not all(curved) and not mixed:
+        bare = next(run for run, has in zip(found, curved, strict=True) if not has)
+        raise CurveAnalysisError(
+            f"run {safe_name(str(bare['id']), 'run')} holds Cq values only (no amplification "
+            "curves) while other runs of the experiment hold curves; qPilot does not mix "
+            "LinRegPCR's quantities with Cq values in one study: open the runs as separate "
+            "studies"
+        )
+    return [
+        analyse_run(run, settings) if has else cq_only_run(run)
+        for run, has in zip(found, curved, strict=True)
+    ]
+
+
+def _excl_text(text: str) -> str:
+    """An RDML ``<excl>`` as LinRegPCR keeps it (its own warnings dropped, ``;`` trimmed)."""
+    if not text:
+        return ""
+    return re.sub(r"^;|;$", "", rdml._cleanErrorString(text, "amp"))
+
+
+def cq_only_run(run: rdml.Run) -> pd.DataFrame:
+    """One run without curves, as :func:`analyse_run` lists its wells (before :func:`_tidy`).
+
+    One row per reaction and target, named, typed and excluded as LinRegPCR would (the same
+    RDML lookups), with the file's Cq and the quantity ``2^-Cq`` (efficiency assumed 2.0, the
+    2^-ΔΔCq assumption). What only a fit of a curve gives (baseline, the well's own efficiency,
+    R², LinRegPCR's note) is empty; amplification and plateau mean "the file gives a Cq". A Cq
+    of zero or below (a vendor's "none") is no Cq.
+    """
+    run_id = safe_name(str(run["id"]), "run")
+    columns = int(run["pcrFormat_columns"])
+    root = run._node.getparent().getparent()
+    types = rdml._sampleTypeToDics(root)
+    rows = []
+    for react in run._node.iter(f"{NS}react"):
+        position = int(react.get("id"))
+        well = chr(ord("A") + (position - 1) // columns) + str((position - 1) % columns + 1)
+        node = rdml._get_first_child(react, "sample")
+        sample = str(node.get("id") or "") if node is not None else ""
+        for data in rdml._get_all_children(react, "data"):
+            node = rdml._get_first_child(data, "tar")
+            target = str(node.get("id") or "") if node is not None else ""
+            cq = _cq_value(rdml._get_first_child_text(data, "cq"))
+            found = "Yes" if cq is not None else "No"
+            rows.append(
+                {
+                    "well": well,
+                    "sample": sample,
+                    "sample_type": types.get(sample, {}).get(target, "") if target else "",
+                    "target_raw": target,
+                    "excluded": _excl_text(rdml._get_first_child_text(data, "excl")),
+                    "note": "",
+                    "baseline": "",
+                    "eff_indiv": "",
+                    "r2": "",
+                    "eff_target": repr(ASSUMED_EFFICIENCY),
+                    "eff_target_sd": "",
+                    "cq": "" if cq is None else repr(cq),
+                    "n0": "" if cq is None else repr(float(np.exp2(-cq))),
+                    "amplification": found,
+                    "plateau": found,
+                }
+            )
+    table = pd.DataFrame(rows, columns=list(RESULT_COLUMNS.values()))
+    table.insert(0, "run_id", run_id)
+    return table
+
+
 def _instrument_study(
     source: str | Path | rdml.Rdml,
     experiment_id: str,
@@ -591,10 +709,19 @@ def _instrument_study(
         if cached.exists():
             return _read_cache(cached)
     fitted = replace(settings, quantities=LINREGPCR)
-    table = analyse_study(
-        source, experiment_id, references, fitted, cache_dir=cache_dir, use_cache=use_cache
-    )
     doc = source if isinstance(source, rdml.Rdml) else load(Path(source))
+    found = runs(doc, experiment_id)
+    if all(run_has_curves(run) for run in found):
+        table = analyse_study(
+            source, experiment_id, references, fitted, cache_dir=cache_dir, use_cache=use_cache
+        )
+    else:  # a run without curves: its rows come from its reactions (never LinRegPCR's fit)
+        _check_run_ids([str(run["id"]) for run in found])
+        plates = _plates(found, fitted, mixed=True)
+        if not plates:
+            raise CurveAnalysisError(f"experiment {experiment_id!r} has no runs")
+        table = _tidy(pd.concat(plates, ignore_index=True), references)
+        _check_well_keys(table)
     table = instrument_quantities(table, instrument_cq(doc, experiment_id))
     if cached is not None:
         _write_cache(table, cached)

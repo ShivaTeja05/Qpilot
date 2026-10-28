@@ -48,6 +48,12 @@ log = logging.getLogger(__name__)
 
 #: Columns of :attr:`FileFacts.wells`: the curve table plus the experiment it belongs to.
 WELL_COLUMNS = ("experiment_id", *curves.COLUMN_ORDER)
+#: The summary's note for an experiment of Cq values only (``docs/cq-tables.md``).
+CQ_ONLY_NOTE = (
+    "Experiment {experiment} holds Cq values only (no amplification curves), so there is no "
+    "curve to fit: qPilot analyses those Cq values, with each assay's efficiency from its "
+    "dilution series when the design has one, else assumed to be 2.0."
+)
 
 
 @dataclass
@@ -288,18 +294,14 @@ def _build(
             table = curves.analyse_study(path, original, cache_dir=cache_dir)
         except curves.CurveAnalysisError as err:
             log.warning("LinRegPCR failed on an experiment of %s: %s", path.name, err)
-            curveless = not any(_has(run, "adp") for run in runs)
-            if curveless and any(_has(run, "cq") for run in runs):
-                notes.append(  # a Cq table or a Cq-only RDML: nothing to fit, nothing failed
-                    f"Experiment {exp_text_id} holds Cq values only (no amplification curves), "
-                    "so LinRegPCR has nothing to fit; only those Cq values can be analysed."
-                )
-            else:
-                notes.append(
-                    f"LinRegPCR could not analyse experiment {exp_text_id}; its wells are listed "
-                    "without Cq or efficiency."
-                )
+            notes.append(
+                f"LinRegPCR could not analyse experiment {exp_text_id}; its wells are listed "
+                "without Cq or efficiency."
+            )
             table = _wells_without_curves(runs, sample_types, target_names)
+        else:
+            if curves.without_curves(table):  # a Cq table or a Cq-only RDML: nothing failed
+                notes.append(CQ_ONLY_NOTE.format(experiment=exp_text_id))
         table = table.copy()
         table.insert(0, "experiment_id", exp_safe)
         tables.append(table)
@@ -366,11 +368,6 @@ def _build(
         sheet=sheet,
         target_dyes=target_dyes,
     )
-
-
-def _has(run, tag: str) -> bool:
-    """Whether any reaction of an RDML run holds a ``tag`` element (``adp``, ``cq``)."""
-    return next(run._node.iter(f"{rdml_io.NS}{tag}"), None) is not None
 
 
 def declared_type_label(types: tuple[tuple[str, str], ...]) -> str:

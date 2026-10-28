@@ -22,6 +22,8 @@ import type { PlateView } from "./api";
 export const ALL_GENES = "__all__";
 
 const LAYERS: PlateLayer[] = ["call", "cq", "efficiency", "r2", "role"];
+/** A file of Cq values only has no efficiency or R² per well (docs/cq-tables.md). */
+const CQ_ONLY_LAYERS: PlateLayer[] = ["call", "cq", "role"];
 
 export interface PlatePanelProps {
   plate: PlateView | undefined;
@@ -169,7 +171,7 @@ export function PlatePanel({
               label="Colour the wells by"
               value={layer}
               onValueChange={onLayerChange}
-              options={layerOptions(LAYERS).map((o) => ({
+              options={layerOptions(plate?.cq_only ? CQ_ONLY_LAYERS : LAYERS).map((o) => ({
                 ...o,
                 disabled: o.value !== "role" && plate != null && !plate.curves_shown,
               }))}
@@ -196,19 +198,29 @@ export function PlatePanel({
               onSelectedChange={onSelectedChange}
               onActivate={onActivate}
               caption={
-                <>
-                  {plate.curves_note} The Curve Judge {plate.curve_judge}.{" "}
-                  {!plate.run.in_design
-                    ? "This plate is not in the experiment the design analyses. "
-                    : null}
-                  {plate.multiplex
-                    ? gene === ALL_GENES
-                      ? "Each well holds several dyes, one curve per gene: pick a gene to see its curves. "
-                      : `Each well holds several dyes; shown: ${gene}. `
-                    : null}
-                  Click a well for its curve; ⌘/Ctrl-click or Shift-click to compare several; arrow
-                  keys move, Space selects, Enter opens.
-                </>
+                plate.cq_only ? (
+                  <>
+                    {plate.curves_note}{" "}
+                    {!plate.run.in_design
+                      ? "This plate is not in the experiment the design analyses. "
+                      : null}
+                    Each well’s Cq is in the Cq table; arrow keys move, Space selects.
+                  </>
+                ) : (
+                  <>
+                    {plate.curves_note} The Curve Judge {plate.curve_judge}.{" "}
+                    {!plate.run.in_design
+                      ? "This plate is not in the experiment the design analyses. "
+                      : null}
+                    {plate.multiplex
+                      ? gene === ALL_GENES
+                        ? "Each well holds several dyes, one curve per gene: pick a gene to see its curves. "
+                        : `Each well holds several dyes; shown: ${gene}. `
+                      : null}
+                    Click a well for its curve; ⌘/Ctrl-click or Shift-click to compare several;
+                    arrow keys move, Space selects, Enter opens.
+                  </>
+                )
               }
             />
           </div>

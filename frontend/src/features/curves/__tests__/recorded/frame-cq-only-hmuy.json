@@ -1,0 +1,145 @@
+{
+ "key": "3e231e2ed42c",
+ "kind": "session",
+ "title": "hmuy_cq_values.xlsx",
+ "stages": [
+  {
+   "stage": "design",
+   "open": true,
+   "confirmed": true,
+   "pending": 0,
+   "blockers": [],
+   "consistent": 0,
+   "confirm_waiting": false
+  },
+  {
+   "stage": "curves",
+   "open": true,
+   "confirmed": false,
+   "pending": 1,
+   "blockers": [],
+   "consistent": 0,
+   "confirm_waiting": false
+  },
+  {
+   "stage": "choices",
+   "open": false,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": [],
+   "consistent": 0,
+   "confirm_waiting": false
+  },
+  {
+   "stage": "prism",
+   "open": false,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": [],
+   "consistent": 0,
+   "confirm_waiting": false
+  },
+  {
+   "stage": "roundtrip",
+   "open": false,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": [
+    "nothing has been sent to Prism yet"
+   ],
+   "consistent": 0,
+   "confirm_waiting": false
+  }
+ ],
+ "results_visible": false,
+ "study_id": null,
+ "proposals_head": "2373ae03fd2951a294184d6b9a4aa6286dab749ea113a8d32575c1d852ea32e1",
+ "decisions_head": null,
+ "next_step": {
+  "title": "Review 1 curves proposal",
+  "detail": "Accept, edit or reject each one; contradicted proposals come first.",
+  "section": "curves",
+  "action": null
+ },
+ "active_jobs": [],
+ "has_audit": false,
+ "is_demo": false,
+ "warming": false,
+ "autonomy": null,
+ "capture": {
+  "connector": "tidy",
+  "label": "Tidy table (long amplification data or a Cq table)",
+  "dialect": "tidy.cq.design",
+  "sources": [
+   {
+    "name": "hmuy_cq_values.xlsx",
+    "role": "cq",
+    "bytes": 17703
+   }
+  ],
+  "unused": [],
+  "value_kind": "unknown",
+  "value_words": "No curves: Cq values only",
+  "layers": {
+   "amplification": false,
+   "melt": false,
+   "cq": true,
+   "sample_types": false,
+   "targets": true,
+   "quantities": false
+  },
+  "plates": [
+   {
+    "run_id": "hmuy Hm vs DIP",
+    "rows": 8,
+    "columns": 12,
+    "n_wells": 36,
+    "n_reactions": 36,
+    "n_cycles": 0,
+    "targets": [
+     "hmuYPe",
+     "16S rRNA"
+    ],
+    "dyes": [],
+    "sample_types": {
+     "unkn": 36
+    },
+    "n_unmapped_types": 0,
+    "n_with_vendor_cq": 36,
+    "vendor_omitted": [],
+    "value_kind": "unknown",
+    "verdict": "cq_only"
+   }
+  ],
+  "rawness": {
+   "verdict": "cq_only",
+   "title": "Cq values only",
+   "meaning": "There are no curves to check: only the Cq values in the file. Each assay's efficiency comes from its dilution series when the design has one, else it is assumed to be 2.0, and confidence is capped (at Low while an efficiency is assumed).",
+   "linregpcr_ok": false,
+   "import_trust": false
+  },
+  "warnings": [
+   {
+    "code": "READER_NOTE",
+    "message": "The table has no well column; qPilot numbered its rows as wells A1, A2 ... in the order they appear."
+   },
+   {
+    "code": "READER_NOTE",
+    "message": "1 more sheet repeats the same sample and gene names (another experiment): qPilot read the first Cq table of the workbook only. Save each experiment as its own file to open it."
+   },
+   {
+    "code": "NO_SAMPLE_TYPES",
+    "message": "The file declares no sample types; every well is treated as an unknown until you type your controls (NTC, no-RT, standards)."
+   },
+   {
+    "code": "DECLARED_REFERENCES",
+    "message": "The table names 1 reference gene in its gene type column; Design proposes it as reference genes for you to confirm."
+   },
+   {
+    "code": "CQ_ONLY",
+    "message": "Only Cq values were provided. Efficiency is assumed, not measured, so confidence is capped at Low."
+   }
+  ],
+  "n_quarantined": 9
+ }
+}

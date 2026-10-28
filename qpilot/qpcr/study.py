@@ -57,6 +57,7 @@ from qpilot.core.decisions import CardSpec, OptionSpec, View, build_cards, card_
 from qpilot.core.facts import FactRegistry, slug
 from qpilot.core.store import atomic_write, dump_json
 from qpilot.io.trust import cap_for, not_measured
+from qpilot.qpcr import cq_only
 from qpilot.qpcr import interrun as irc
 from qpilot.qpcr.amp_call import (
     DEFAULT_AMP_CALLS,
@@ -79,12 +80,14 @@ from qpilot.qpcr.contrast import (
     bh,
     welch_anova,
 )
+from qpilot.qpcr.cq_only import EfficiencyPlan
 from qpilot.qpcr.curves import (
     DEMO_EXPERIMENT,
     INSTRUMENT_CQ,
     REFERENCE_TARGETS,
     CurveSettings,
     analyse_study,
+    without_curves,
 )
 from qpilot.qpcr.design import (
     DEMO_GROUP_VAR,
@@ -320,6 +323,8 @@ def _inputs(
 ) -> _Inputs:
     design = settings.design
     legacy = design is None and settings.amp_calls == DEFAULT_AMP_CALLS
+    if design is None and without_curves(curves):  # Cq values only, no design: names' series
+        curves = cq_only.with_efficiency(curves, cq_only.efficiency_plan(curves))
     if legacy and not extra_excluded:  # the legacy path (the demo: every unit has every gene)
         matrix = log2_matrix(curves)
         missing = units_not_measured(curves)
@@ -501,6 +506,7 @@ class StudyModel:
     screens: dict[str, robustness.AxisScreen] = field(default_factory=dict)
     axis_notes: dict[str, dict] = field(default_factory=dict)  # per opt-in axis, for facts
     tables: CellTables | None = None
+    cq_only: EfficiencyPlan | None = None  # a file of Cq values only: each assay's E
 
     def cell_table(self, cell: Mapping[str, Any]) -> pd.DataFrame:
         """The per-well table a cell's matrix is built from (see :class:`CellTables`)."""
@@ -656,6 +662,7 @@ def build_model(
         notes["normaliser"] = norm_notes
     if irc_notes:
         notes["interrun"] = irc_notes
+    plan = cq_only.efficiency_plan(inputs.table, settings.design)
     return StudyModel(
         settings,
         inputs,
@@ -669,6 +676,7 @@ def build_model(
         screens,
         notes,
         tables,
+        plan if plan.assays else None,
     )
 
 
@@ -835,6 +843,7 @@ def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> tuple[dict, di
     every = eff_axis.unavailable(inputs.table, curves)  # asked for or not: said in the facts
     trust = settings.design.import_trust if settings.design is not None else None
     every.update(not_measured(trust))
+    every.update(cq_only.not_measured(cq_only.efficiency_plan(inputs.table, settings.design)))
     missing = {k: v for k, v in every.items() if k in offered}
     kept = [o for o in offered if o not in missing]
     tables = CellTables(inputs, settings.amp_calls[0], legacy, calls, curves)
@@ -879,23 +888,31 @@ def study_from_curves(
         genorm=stability,
         contrasts=space.evaluate(space.primary),
         robustness=summary,
-        efficiency=_efficiency(curves),
+        efficiency=_efficiency(inputs.table if model.cq_only is not None else curves),
         conclusion_rule=settings.rule.as_dict(),
     )
     cap = cap_for(settings.design.import_trust if settings.design is not None else None)
-    confidence = {gene: _grade(gene, base, fragility, cap) for gene in space.items}
+    assay: dict[str, str] = {}
+    if model.cq_only is not None:
+        cap = cap or cq_only.cap_for(model.cq_only, analysed_genes(model))
+        assay = {gene: cq_only.assay_note(model.cq_only, gene) for gene in space.items}
+    confidence = {gene: _grade(gene, base, fragility, cap, assay) for gene in space.items}
     outcomes = None
     if space.comparisons:
         every = comparison_grid(space, grid)
         grid.attrs[COMPARISON_GRID_ATTR] = every
         primary = (base.contrasts, summary, confidence)
-        outcomes = _comparison_outcomes(space, every, base, primary, settings, cap)
+        outcomes = _comparison_outcomes(space, every, base, primary, settings, cap, assay)
     headline = [gene for gene in settings.headline if gene in space.items]
     views = _card_views(space, outcomes, grid)
     others = [view.summary for view in views.values()]
     specs = _card_specs(space, stability, summary, settings, headline, counts, others)
     if "amp_call" in space.dimensions:
-        specs.append(_amp_call_spec(space, grid, summary, headline, inputs.not_amplified))
+        specs.append(
+            _amp_call_spec(
+                space, grid, summary, headline, inputs.not_amplified, model.cq_only is not None
+            )
+        )
     if "efficiency" in space.dimensions:
         specs.append(_efficiency_spec(space, grid, summary, headline, model.axis_notes))
     if "normaliser" in space.dimensions:
@@ -943,6 +960,8 @@ def study_from_curves(
         not_measured=_not_measured_words(inputs.not_measured, settings.candidates),
         comparisons=outcomes,
         dimensions=tuple(space.dimensions),
+        cq_only=model.cq_only,
+        analysed=analysed_genes(model),
     )
     facts = _facts(base, confidence, cards, space, settings, headline, counts, extras)
     update: dict[str, Any] = {"confidence": confidence, "facts": facts.as_dict()}
@@ -980,6 +999,7 @@ def _comparison_outcomes(
     primary: tuple[dict, dict, dict],
     settings: StudySettings,
     cap: Cap | None,
+    assay: Mapping[str, str] | None = None,
 ) -> ComparisonsResult:
     """Each comparison's results, corrected p-values, q-values, robustness and grades.
 
@@ -1004,7 +1024,7 @@ def _comparison_outcomes(
             fragility = robustness.fragility(rows, view)
             contrasts = a.results()
             graded = base.model_copy(update={"contrasts": contrasts, "robustness": summary})
-            confidence = {g: _grade(g, graded, fragility, cap) for g in tested}
+            confidence = {g: _grade(g, graded, fragility, cap, assay) for g in tested}
         q = bh(np.array([a.p[index[g]] for g in tested], dtype=float))
         reason = (
             "fewer than two complete pairs (a value in both groups)"
@@ -1181,6 +1201,11 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def analysed_genes(model: StudyModel) -> tuple[str, ...]:
+    """The genes a study's numbers use: its compared genes and its control genes, sorted."""
+    return tuple(sorted({*model.space.items, *model.settings.candidates}))
+
+
 def _efficiency(curves: pd.DataFrame) -> dict[str, float]:
     """Each gene's mean PCR efficiency (median over its plates)."""
     per_gene = curves.dropna(subset=["eff_target"]).groupby("target")["eff_target"].median()
@@ -1210,9 +1235,13 @@ def _summary_of_design(
 
 
 def _grade(
-    gene: str, result: StudyResult, fragility: dict[str, int], cap: Cap | None = None
+    gene: str,
+    result: StudyResult,
+    fragility: dict[str, int],
+    cap: Cap | None = None,
+    assay: Mapping[str, str] | None = None,
 ) -> Grade:
-    checks = checks_for(gene, result, fragility)
+    checks = checks_for(gene, result, fragility, (assay or {}).get(gene))
     holds = result.robustness[gene].holds
     return grade(
         START_LEVEL,
@@ -1618,19 +1647,28 @@ def _amp_call_spec(
     summary: dict[str, GeneRobustness],
     headline: Sequence[str],
     not_amplified: Mapping[str, int],
+    cq_values: bool = False,
 ) -> CardSpec:
     """The "Which curves count as amplified" card (only when the dimension is in the grid).
 
     The recommended option is the primary rule (``linregpcr`` unless a person chose another).
+    In a file of Cq values only (``cq_values``) that rule reads the file's own Cq, and its label
+    says so (:data:`qpilot.qpcr.cq_only.CQ_RULE_LABEL`).
     """
     options = list(space.dimensions["amp_call"])
     flips = amp_flip_counts(grid, space, summary)
     slugs = [slug(rule_id) for rule_id in options]
+
+    def label(rule_id: str) -> str:
+        if cq_values and rule_id == RECOMMENDED:
+            return cq_only.CQ_RULE_LABEL
+        return RULES[rule_id].label
+
     return CardSpec(
         card_id="card_amp_call",
         kind="amp_call",
         dimension="amp_call",
-        options=[OptionSpec(id=r, label=RULES[r].label, value=r) for r in options],
+        options=[OptionSpec(id=r, label=label(r), value=r) for r in options],
         recommended=space.primary["amp_call"],
         rationale_template="ampcall_v1",
         evidence={
@@ -1668,6 +1706,8 @@ class _Extras:
     not_measured: Mapping[str, str] = field(default_factory=dict)
     comparisons: ComparisonsResult | None = None
     dimensions: tuple[str, ...] = ()
+    cq_only: EfficiencyPlan | None = None
+    analysed: tuple[str, ...] = ()  # the study's genes and its control genes
 
 
 #: A grid dimension's name in the flip-count fact ids (``f_n_flipped_refset``, ...).
@@ -1864,7 +1904,9 @@ def _amp_call_facts(add: Callable[..., None], card: DecisionCard) -> None:
     """Facts for the amplification-call card, read from the card itself."""
     root = f"cards.{card.id}.evidence"
     evidence = card.evidence
-    add("f_amp_primary", RULES[card.recommended].label, path=f"{root}.rules.{card.recommended}")
+    primary = next((o.label for o in card.options if o.id == card.recommended), None)
+    label = primary or RULES[card.recommended].label
+    add("f_amp_primary", label, path=f"{root}.rules.{card.recommended}")
     for option in card.options:
         s = slug(option.id)
         add(f"f_amp_label_{s}", option.label, path=f"{root}.rules.{option.id}.label")
@@ -2020,3 +2062,24 @@ def _extra_facts(add: Callable[..., None], extras: _Extras, settings: StudySetti
             add(f"f_screen_amp_flips_{s}", rule.n_flipped, path=f"{path}.flipped")
             delta = rule.max_delta_log2fc
             add(f"f_screen_amp_dlog2fc_{s}", delta, "{:.2f}", path=f"{path}.max_delta_log2fc")
+    if extras.cq_only is not None:
+        _cq_only_facts(add, extras.cq_only, extras.analysed)
+
+
+def _cq_only_facts(add: Callable[..., None], plan: EfficiencyPlan, analysed: Sequence[str]) -> None:
+    """A file of Cq values only: that it is, and where each analysed gene's efficiency is from.
+
+    None exist for a study with curves (``f_cq_only`` marks a Cq-only study for every view).
+    """
+    add("f_cq_only", "Cq values only", path="cq_only")
+    genes = [g for g in analysed if g in plan.assays]
+    assumed = [g for g in genes if plan.assays[g].source == "assumed"]
+    add("f_n_eff_assumed", len(assumed), path="cq_only.assumed")
+    add("f_n_eff_series", len(genes) - len(assumed), path="cq_only.measured")
+    add("f_eff_assumed_genes", ", ".join(assumed) or "none", path="cq_only.assumed")
+    add("f_eff_assumed_value", cq_only.ASSUMED_EFFICIENCY, "{:.1f}", path="cq_only.assumed_e")
+    for gene in genes:
+        assay, s = plan.assays[gene], slug(gene)
+        source = "dilution series" if assay.source == "dilution_series" else "assumed"
+        add(f"f_eff_source_{s}", source, path=f"cq_only.{gene}.source")
+        add(f"f_eff_words_{s}", cq_only.efficiency_words(assay), path=f"cq_only.{gene}.words")

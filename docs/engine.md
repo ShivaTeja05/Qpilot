@@ -61,10 +61,10 @@ The first run analyses 24,576 curves in about 12 seconds; after that the cached 
 
 - **One gene per plate** in the demo study, so plate effects cannot be separated from gene effects; there is no plate-effect or mixed model.
 - **No technical replicates** in the demo: each sample is measured once per gene.
-- **No melt-curve analysis** and no kinetic outlier test.
+- **No kinetic outlier test.** Melt curves are analysed beside the engine (`qpilot/qpcr/melt.py`, the Run Gate's G-MELT; [method card](../methods/melt_curve.md)); they label wells and never change a number by themselves.
 - **One instrument platform:** validated on one published study run on LightCycler 480 with SYBR Green I.
 - **Groups are expression-defined:** MYCN-high means the top 15 % by MYCN expression, not the clinical MYCN amplification call.
-- **No multiple-testing correction** across the 58 compared genes. The robustness meter measures sensitivity to analysis choices, not significance.
+- **No multiple-testing correction across genes in the call** (Benjamini–Hochberg q-values are shown beside p; with several comparisons each gene's p-values are corrected across its comparisons, [method card](../methods/comparisons.md)). The robustness meter measures sensitivity to analysis choices, not significance.
 - **Research use only.** Not for clinical or diagnostic use.
 
 ## Built vs borrowed
@@ -72,7 +72,7 @@ The first run analyses 24,576 curves in about 12 seconds; after that the cached 
 **Borrowed, credited and unchanged**
 - LinRegPCR: rdmlpython by the RDML consortium (MIT), vendored at commit `fce7a44`.
 - The RDML format and its XML schemas (RDML consortium).
-- The geNorm method (Vandesompele et al., 2002), reimplemented from the paper.
+- The geNorm method (Vandesompele et al., 2002) and NormFinder (Andersen et al., 2004), reimplemented from the papers.
 - Welch's t-test and the t distribution (SciPy).
 - The demo data (Vermeulen et al., 2009; Ruijter et al., 2013; CC BY 4.0) and the published benchmark tables (RDML consortium).
 
@@ -85,4 +85,4 @@ The first run analyses 24,576 curves in about 12 seconds; after that the cached 
 
 ## Results and RDML
 
-qPilot reads RDML, and the Analysis Record keeps the input file byte for byte. It does **not** yet write its results back into the RDML file; that is on the roadmap. LinRegPCR can already update the RDML object it analyses, so any RDML-aware tool could then read qPilot's numbers. Instrument desktop software exports RDML but generally cannot import it, so results will not flow back into the instrument's own software either way.
+qPilot reads RDML, and the Analysis Record keeps the input file byte for byte. The journal supplement (Report → Export, `qpilot export supplement`) adds a copy of the RDML file with qPilot's results written back: the Cq of every well, N0 and the efficiency from RDML 1.3 on, and every well a person left out with the reason, checked against the RDML schema of its version ([exports.md](exports.md)), so any RDML-aware tool can read qPilot's numbers. Instrument desktop software exports RDML but generally cannot import it, so results will not flow back into the instrument's own software either way.
