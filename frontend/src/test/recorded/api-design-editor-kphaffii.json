@@ -1,0 +1,1298 @@
+{
+ "head": "e5da4fe9f8d68683c71703511745e6f13ce6d87398a14bf06e33072a312ca369",
+ "samples": [
+  {
+   "sample": "P25A_3",
+   "text_id": "t_47b5c8aeeaee",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/D12",
+    "KB018_ACT1/E12",
+    "KB018_ACT1/F12",
+    "KB031_TFC1/C1",
+    "KB031_TFC1/D1",
+    "KB031_TFC1/E1",
+    "KB013_HAC1u/D12",
+    "KB013_HAC1u/E12",
+    "KB013_HAC1u/F12",
+    "KB025_HAC1i/D12",
+    "KB025_HAC1i/E12",
+    "KB025_HAC1i/F12",
+    "KB026_HRD1/D12",
+    "KB026_HRD1/E12",
+    "KB026_HRD1/F12",
+    "KB027_DOA10/D12",
+    "KB027_DOA10/E12",
+    "KB027_DOA10/F12"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "P25A_2",
+   "text_id": "t_f8258b565e5d",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/D11",
+    "KB018_ACT1/E11",
+    "KB018_ACT1/F11",
+    "KB031_TFC1/C2",
+    "KB031_TFC1/D2",
+    "KB031_TFC1/E2",
+    "KB013_HAC1u/D11",
+    "KB013_HAC1u/E11",
+    "KB013_HAC1u/F11",
+    "KB025_HAC1i/D11",
+    "KB025_HAC1i/E11",
+    "KB025_HAC1i/F11",
+    "KB026_HRD1/D11",
+    "KB026_HRD1/E11",
+    "KB026_HRD1/F11",
+    "KB027_DOA10/D11",
+    "KB027_DOA10/E11",
+    "KB027_DOA10/F11"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "P25A_1",
+   "text_id": "t_511c7ce43bde",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/D10",
+    "KB018_ACT1/E10",
+    "KB018_ACT1/F10",
+    "KB031_TFC1/C3",
+    "KB031_TFC1/D3",
+    "KB031_TFC1/E3",
+    "KB013_HAC1u/D10",
+    "KB013_HAC1u/E10",
+    "KB013_HAC1u/F10",
+    "KB025_HAC1i/D10",
+    "KB025_HAC1i/E10",
+    "KB025_HAC1i/F10",
+    "KB026_HRD1/D10",
+    "KB026_HRD1/E10",
+    "KB026_HRD1/F10",
+    "KB027_DOA10/D10",
+    "KB027_DOA10/E10",
+    "KB027_DOA10/F10"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "S4_3",
+   "text_id": "t_a9b0c56b4e3a",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/D9",
+    "KB018_ACT1/E9",
+    "KB018_ACT1/F9",
+    "KB031_TFC1/C4",
+    "KB031_TFC1/D4",
+    "KB031_TFC1/E4",
+    "KB013_HAC1u/D9",
+    "KB013_HAC1u/E9",
+    "KB013_HAC1u/F9",
+    "KB025_HAC1i/D9",
+    "KB025_HAC1i/E9",
+    "KB025_HAC1i/F9",
+    "KB026_HRD1/D9",
+    "KB026_HRD1/E9",
+    "KB026_HRD1/F9",
+    "KB027_DOA10/D9",
+    "KB027_DOA10/E9",
+    "KB027_DOA10/F9"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "S4_2",
+   "text_id": "t_d6d10c8b67ad",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/D8",
+    "KB018_ACT1/E8",
+    "KB018_ACT1/F8",
+    "KB031_TFC1/C5",
+    "KB031_TFC1/D5",
+    "KB031_TFC1/E5",
+    "KB013_HAC1u/D8",
+    "KB013_HAC1u/E8",
+    "KB013_HAC1u/F8",
+    "KB025_HAC1i/D8",
+    "KB025_HAC1i/E8",
+    "KB025_HAC1i/F8",
+    "KB026_HRD1/D8",
+    "KB026_HRD1/E8",
+    "KB026_HRD1/F8",
+    "KB027_DOA10/D8",
+    "KB027_DOA10/E8",
+    "KB027_DOA10/F8"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "S4_1",
+   "text_id": "t_b5a88e50b79c",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/D7",
+    "KB018_ACT1/E7",
+    "KB018_ACT1/F7",
+    "KB031_TFC1/C6",
+    "KB031_TFC1/D6",
+    "KB031_TFC1/E6",
+    "KB013_HAC1u/D7",
+    "KB013_HAC1u/E7",
+    "KB013_HAC1u/F7",
+    "KB025_HAC1i/D7",
+    "KB025_HAC1i/E7",
+    "KB025_HAC1i/F7",
+    "KB026_HRD1/D7",
+    "KB026_HRD1/E7",
+    "KB026_HRD1/F7",
+    "KB027_DOA10/D7",
+    "KB027_DOA10/E7",
+    "KB027_DOA10/F7"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "S3_3",
+   "text_id": "t_4c543108f31e",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/D6",
+    "KB018_ACT1/E6",
+    "KB018_ACT1/F6",
+    "KB031_TFC1/C7",
+    "KB031_TFC1/D7",
+    "KB031_TFC1/E7",
+    "KB013_HAC1u/D6",
+    "KB013_HAC1u/E6",
+    "KB013_HAC1u/F6",
+    "KB025_HAC1i/D6",
+    "KB025_HAC1i/E6",
+    "KB025_HAC1i/F6",
+    "KB026_HRD1/D6",
+    "KB026_HRD1/E6",
+    "KB026_HRD1/F6",
+    "KB027_DOA10/D6",
+    "KB027_DOA10/E6",
+    "KB027_DOA10/F6"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "S3_2",
+   "text_id": "t_7da70c4c551f",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/D5",
+    "KB018_ACT1/E5",
+    "KB018_ACT1/F5",
+    "KB031_TFC1/C8",
+    "KB031_TFC1/D8",
+    "KB031_TFC1/E8",
+    "KB013_HAC1u/D5",
+    "KB013_HAC1u/E5",
+    "KB013_HAC1u/F5",
+    "KB025_HAC1i/D5",
+    "KB025_HAC1i/E5",
+    "KB025_HAC1i/F5",
+    "KB026_HRD1/D5",
+    "KB026_HRD1/E5",
+    "KB026_HRD1/F5",
+    "KB027_DOA10/D5",
+    "KB027_DOA10/E5",
+    "KB027_DOA10/F5"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "S3_1",
+   "text_id": "t_ffe88db65dce",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/D4",
+    "KB018_ACT1/E4",
+    "KB018_ACT1/F4",
+    "KB031_TFC1/C9",
+    "KB031_TFC1/D9",
+    "KB031_TFC1/E9",
+    "KB013_HAC1u/D4",
+    "KB013_HAC1u/E4",
+    "KB013_HAC1u/F4",
+    "KB025_HAC1i/D4",
+    "KB025_HAC1i/E4",
+    "KB025_HAC1i/F4",
+    "KB026_HRD1/D4",
+    "KB026_HRD1/E4",
+    "KB026_HRD1/F4",
+    "KB027_DOA10/D4",
+    "KB027_DOA10/E4",
+    "KB027_DOA10/F4"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "S1_3",
+   "text_id": "t_a5248f4b1304",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/D3",
+    "KB018_ACT1/E3",
+    "KB018_ACT1/F3",
+    "KB031_TFC1/C10",
+    "KB031_TFC1/D10",
+    "KB031_TFC1/E10",
+    "KB013_HAC1u/D3",
+    "KB013_HAC1u/E3",
+    "KB013_HAC1u/F3",
+    "KB025_HAC1i/D3",
+    "KB025_HAC1i/E3",
+    "KB025_HAC1i/F3",
+    "KB026_HRD1/D3",
+    "KB026_HRD1/E3",
+    "KB026_HRD1/F3",
+    "KB027_DOA10/D3",
+    "KB027_DOA10/E3",
+    "KB027_DOA10/F3"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "S1_2",
+   "text_id": "t_7f59c5e2f3be",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/D2",
+    "KB018_ACT1/E2",
+    "KB018_ACT1/F2",
+    "KB031_TFC1/C11",
+    "KB031_TFC1/D11",
+    "KB031_TFC1/E11",
+    "KB013_HAC1u/D2",
+    "KB013_HAC1u/E2",
+    "KB013_HAC1u/F2",
+    "KB025_HAC1i/D2",
+    "KB025_HAC1i/E2",
+    "KB025_HAC1i/F2",
+    "KB026_HRD1/D2",
+    "KB026_HRD1/E2",
+    "KB026_HRD1/F2",
+    "KB027_DOA10/D2",
+    "KB027_DOA10/E2",
+    "KB027_DOA10/F2"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "S1_1",
+   "text_id": "t_0410ddf591e5",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/D1",
+    "KB018_ACT1/E1",
+    "KB018_ACT1/F1",
+    "KB031_TFC1/C12",
+    "KB031_TFC1/D12",
+    "KB031_TFC1/E12",
+    "KB013_HAC1u/D1",
+    "KB013_HAC1u/E1",
+    "KB013_HAC1u/F1",
+    "KB025_HAC1i/D1",
+    "KB025_HAC1i/E1",
+    "KB025_HAC1i/F1",
+    "KB026_HRD1/D1",
+    "KB026_HRD1/E1",
+    "KB026_HRD1/F1",
+    "KB027_DOA10/D1",
+    "KB027_DOA10/E1",
+    "KB027_DOA10/F1"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "28_3",
+   "text_id": "t_2b15dd3e8797",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/A12",
+    "KB018_ACT1/B12",
+    "KB018_ACT1/C12",
+    "KB031_TFC1/F1",
+    "KB031_TFC1/G1",
+    "KB031_TFC1/H1",
+    "KB013_HAC1u/A12",
+    "KB013_HAC1u/B12",
+    "KB013_HAC1u/C12",
+    "KB025_HAC1i/A12",
+    "KB025_HAC1i/B12",
+    "KB025_HAC1i/C12",
+    "KB026_HRD1/A12",
+    "KB026_HRD1/B12",
+    "KB026_HRD1/C12",
+    "KB027_DOA10/A12",
+    "KB027_DOA10/B12",
+    "KB027_DOA10/C12"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "28_2",
+   "text_id": "t_1aa45ac7e9df",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/A11",
+    "KB018_ACT1/B11",
+    "KB018_ACT1/C11",
+    "KB031_TFC1/F2",
+    "KB031_TFC1/G2",
+    "KB031_TFC1/H2",
+    "KB013_HAC1u/A11",
+    "KB013_HAC1u/B11",
+    "KB013_HAC1u/C11",
+    "KB025_HAC1i/A11",
+    "KB025_HAC1i/B11",
+    "KB025_HAC1i/C11",
+    "KB026_HRD1/A11",
+    "KB026_HRD1/B11",
+    "KB026_HRD1/C11",
+    "KB027_DOA10/A11",
+    "KB027_DOA10/B11",
+    "KB027_DOA10/C11"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "28_1",
+   "text_id": "t_af21e58c9b5f",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/A10",
+    "KB018_ACT1/B10",
+    "KB018_ACT1/C10",
+    "KB031_TFC1/F3",
+    "KB031_TFC1/G3",
+    "KB031_TFC1/H3",
+    "KB013_HAC1u/A10",
+    "KB013_HAC1u/B10",
+    "KB013_HAC1u/C10",
+    "KB025_HAC1i/A10",
+    "KB025_HAC1i/B10",
+    "KB025_HAC1i/C10",
+    "KB026_HRD1/A10",
+    "KB026_HRD1/B10",
+    "KB026_HRD1/C10",
+    "KB027_DOA10/A10",
+    "KB027_DOA10/B10",
+    "KB027_DOA10/C10"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "20_3",
+   "text_id": "t_0704992a8db9",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/A9",
+    "KB018_ACT1/B9",
+    "KB018_ACT1/C9",
+    "KB031_TFC1/F4",
+    "KB031_TFC1/G4",
+    "KB031_TFC1/H4",
+    "KB013_HAC1u/A9",
+    "KB013_HAC1u/B9",
+    "KB013_HAC1u/C9",
+    "KB025_HAC1i/A9",
+    "KB025_HAC1i/B9",
+    "KB025_HAC1i/C9",
+    "KB026_HRD1/A9",
+    "KB026_HRD1/B9",
+    "KB026_HRD1/C9",
+    "KB027_DOA10/A9",
+    "KB027_DOA10/B9",
+    "KB027_DOA10/C9"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "20_2",
+   "text_id": "t_9eb3f197171f",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/A8",
+    "KB018_ACT1/B8",
+    "KB018_ACT1/C8",
+    "KB031_TFC1/F5",
+    "KB031_TFC1/G5",
+    "KB031_TFC1/H5",
+    "KB013_HAC1u/A8",
+    "KB013_HAC1u/B8",
+    "KB013_HAC1u/C8",
+    "KB025_HAC1i/A8",
+    "KB025_HAC1i/B8",
+    "KB025_HAC1i/C8",
+    "KB026_HRD1/A8",
+    "KB026_HRD1/B8",
+    "KB026_HRD1/C8",
+    "KB027_DOA10/A8",
+    "KB027_DOA10/B8",
+    "KB027_DOA10/C8"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "20_1",
+   "text_id": "t_bc86566c011e",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/A7",
+    "KB018_ACT1/B7",
+    "KB018_ACT1/C7",
+    "KB031_TFC1/F6",
+    "KB031_TFC1/G6",
+    "KB031_TFC1/H6",
+    "KB013_HAC1u/A7",
+    "KB013_HAC1u/B7",
+    "KB013_HAC1u/C7",
+    "KB025_HAC1i/A7",
+    "KB025_HAC1i/B7",
+    "KB025_HAC1i/C7",
+    "KB026_HRD1/A7",
+    "KB026_HRD1/B7",
+    "KB026_HRD1/C7",
+    "KB027_DOA10/A7",
+    "KB027_DOA10/B7",
+    "KB027_DOA10/C7"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "D28_3",
+   "text_id": "t_2c03b030fa76",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/A6",
+    "KB018_ACT1/B6",
+    "KB018_ACT1/C6",
+    "KB031_TFC1/F7",
+    "KB031_TFC1/G7",
+    "KB031_TFC1/H7",
+    "KB013_HAC1u/A6",
+    "KB013_HAC1u/B6",
+    "KB013_HAC1u/C6",
+    "KB025_HAC1i/A6",
+    "KB025_HAC1i/B6",
+    "KB025_HAC1i/C6",
+    "KB026_HRD1/A6",
+    "KB026_HRD1/B6",
+    "KB026_HRD1/C6",
+    "KB027_DOA10/A6",
+    "KB027_DOA10/B6",
+    "KB027_DOA10/C6"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "D28_2",
+   "text_id": "t_b5f41fe6d6b6",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/A5",
+    "KB018_ACT1/B5",
+    "KB018_ACT1/C5",
+    "KB031_TFC1/F8",
+    "KB031_TFC1/G8",
+    "KB031_TFC1/H8",
+    "KB013_HAC1u/A5",
+    "KB013_HAC1u/B5",
+    "KB013_HAC1u/C5",
+    "KB025_HAC1i/A5",
+    "KB025_HAC1i/B5",
+    "KB025_HAC1i/C5",
+    "KB026_HRD1/A5",
+    "KB026_HRD1/B5",
+    "KB026_HRD1/C5",
+    "KB027_DOA10/A5",
+    "KB027_DOA10/B5",
+    "KB027_DOA10/C5"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "D28_1",
+   "text_id": "t_2d8294ec5781",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/A4",
+    "KB018_ACT1/B4",
+    "KB018_ACT1/C4",
+    "KB031_TFC1/F9",
+    "KB031_TFC1/G9",
+    "KB031_TFC1/H9",
+    "KB013_HAC1u/A4",
+    "KB013_HAC1u/B4",
+    "KB013_HAC1u/C4",
+    "KB025_HAC1i/A4",
+    "KB025_HAC1i/B4",
+    "KB025_HAC1i/C4",
+    "KB026_HRD1/A4",
+    "KB026_HRD1/B4",
+    "KB026_HRD1/C4",
+    "KB027_DOA10/A4",
+    "KB027_DOA10/B4",
+    "KB027_DOA10/C4"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "D20_3",
+   "text_id": "t_4d9899a404f2",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/A3",
+    "KB018_ACT1/B3",
+    "KB018_ACT1/C3",
+    "KB031_TFC1/F10",
+    "KB031_TFC1/G10",
+    "KB031_TFC1/H10",
+    "KB013_HAC1u/A3",
+    "KB013_HAC1u/B3",
+    "KB013_HAC1u/C3",
+    "KB025_HAC1i/A3",
+    "KB025_HAC1i/B3",
+    "KB025_HAC1i/C3",
+    "KB026_HRD1/A3",
+    "KB026_HRD1/B3",
+    "KB026_HRD1/C3",
+    "KB027_DOA10/A3",
+    "KB027_DOA10/B3",
+    "KB027_DOA10/C3"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "D20_2",
+   "text_id": "t_965ed4a80ef1",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/A2",
+    "KB018_ACT1/B2",
+    "KB018_ACT1/C2",
+    "KB031_TFC1/F11",
+    "KB031_TFC1/G11",
+    "KB031_TFC1/H11",
+    "KB013_HAC1u/A2",
+    "KB013_HAC1u/B2",
+    "KB013_HAC1u/C2",
+    "KB025_HAC1i/A2",
+    "KB025_HAC1i/B2",
+    "KB025_HAC1i/C2",
+    "KB026_HRD1/A2",
+    "KB026_HRD1/B2",
+    "KB026_HRD1/C2",
+    "KB027_DOA10/A2",
+    "KB027_DOA10/B2",
+    "KB027_DOA10/C2"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "D20_1",
+   "text_id": "t_83e8bf7edff2",
+   "declared_type": "unkn",
+   "n_wells": 18,
+   "wells": [
+    "KB018_ACT1/A1",
+    "KB018_ACT1/B1",
+    "KB018_ACT1/C1",
+    "KB031_TFC1/F12",
+    "KB031_TFC1/G12",
+    "KB031_TFC1/H12",
+    "KB013_HAC1u/A1",
+    "KB013_HAC1u/B1",
+    "KB013_HAC1u/C1",
+    "KB025_HAC1i/A1",
+    "KB025_HAC1i/B1",
+    "KB025_HAC1i/C1",
+    "KB026_HRD1/A1",
+    "KB026_HRD1/B1",
+    "KB026_HRD1/C1",
+    "KB027_DOA10/A1",
+    "KB027_DOA10/B1",
+    "KB027_DOA10/C1"
+   ],
+   "targets": [
+    "ACT1",
+    "DOA10",
+    "HAC1i",
+    "HAC1u",
+    "HRD1",
+    "TFC1"
+   ],
+   "experiments": [
+    "202502_K_phaffii"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  }
+ ],
+ "membership": [
+  {
+   "sample": "P25A_3",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "P25A_2",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "P25A_1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "S4_3",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "S4_2",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "S4_1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "S3_3",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "S3_2",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "S3_1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "S1_3",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "S1_2",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "S1_1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "28_3",
+   "group": "28",
+   "unit": null
+  },
+  {
+   "sample": "28_2",
+   "group": "28",
+   "unit": null
+  },
+  {
+   "sample": "28_1",
+   "group": "28",
+   "unit": null
+  },
+  {
+   "sample": "20_3",
+   "group": "20",
+   "unit": null
+  },
+  {
+   "sample": "20_2",
+   "group": "20",
+   "unit": null
+  },
+  {
+   "sample": "20_1",
+   "group": "20",
+   "unit": null
+  },
+  {
+   "sample": "D28_3",
+   "group": "D28",
+   "unit": null
+  },
+  {
+   "sample": "D28_2",
+   "group": "D28",
+   "unit": null
+  },
+  {
+   "sample": "D28_1",
+   "group": "D28",
+   "unit": null
+  },
+  {
+   "sample": "D20_3",
+   "group": "D20",
+   "unit": null
+  },
+  {
+   "sample": "D20_2",
+   "group": "D20",
+   "unit": null
+  },
+  {
+   "sample": "D20_1",
+   "group": "D20",
+   "unit": null
+  }
+ ],
+ "targets": [
+  {
+   "target": "DOA10",
+   "text_id": "t_4125933a1bf8",
+   "declared_type": "toi",
+   "n_wells": 72,
+   "runs": [
+    "KB027_DOA10"
+   ],
+   "role": null,
+   "waiting": []
+  },
+  {
+   "target": "HRD1",
+   "text_id": "t_1e18146d2c97",
+   "declared_type": "toi",
+   "n_wells": 72,
+   "runs": [
+    "KB026_HRD1"
+   ],
+   "role": null,
+   "waiting": [
+    "design.gene_symbol"
+   ]
+  },
+  {
+   "target": "HAC1i",
+   "text_id": "t_7c0972fdd781",
+   "declared_type": "toi",
+   "n_wells": 72,
+   "runs": [
+    "KB025_HAC1i"
+   ],
+   "role": null,
+   "waiting": []
+  },
+  {
+   "target": "HAC1u",
+   "text_id": "t_81e1bb3fc1b2",
+   "declared_type": "toi",
+   "n_wells": 72,
+   "runs": [
+    "KB013_HAC1u"
+   ],
+   "role": null,
+   "waiting": []
+  },
+  {
+   "target": "TFC1",
+   "text_id": "t_fbefd55787ed",
+   "declared_type": "ref",
+   "n_wells": 72,
+   "runs": [
+    "KB031_TFC1"
+   ],
+   "role": "ref",
+   "waiting": []
+  },
+  {
+   "target": "ACT1",
+   "text_id": "t_a225cc88863a",
+   "declared_type": "ref",
+   "n_wells": 72,
+   "runs": [
+    "KB018_ACT1"
+   ],
+   "role": "ref",
+   "waiting": [
+    "design.gene_symbol"
+   ]
+  }
+ ],
+ "groups": {
+  "20": 3,
+  "28": 3,
+  "D20": 3,
+  "D28": 3
+ },
+ "units": {},
+ "comparison": null,
+ "comparison_plan": null,
+ "pair_by": null,
+ "n_paired": 0,
+ "preset": null,
+ "experiments": [
+  "202502_K_phaffii"
+ ],
+ "needs": [
+  {
+   "code": "comparison",
+   "words": "No comparison yet: choose which group is compared with which (the reference group is the baseline)",
+   "where": "comparison"
+  },
+  {
+   "code": "waiting",
+   "words": "2 proposals still wait for a decision: decide them in the inbox, or set the item yourself (your choice settles a waiting proposal on the same item)",
+   "where": "inbox"
+  }
+ ],
+ "waiting": 2,
+ "confirmed": false,
+ "sample_types": [
+  {
+   "value": "unkn",
+   "label": "Study sample",
+   "hint": "measured and compared; it can join a group"
+  },
+  {
+   "value": "std",
+   "label": "Standard",
+   "hint": "a known quantity (copies or a relative dilution) on a standard curve"
+  },
+  {
+   "value": "ntc",
+   "label": "No-template control (NTC)",
+   "hint": "water instead of template; should not amplify"
+  },
+  {
+   "value": "nrt",
+   "label": "No-RT control",
+   "hint": "RNA without reverse transcription; checks for genomic DNA"
+  },
+  {
+   "value": "nac",
+   "label": "No-amplification control",
+   "hint": "no polymerase or no primers; should not amplify"
+  },
+  {
+   "value": "pos",
+   "label": "Positive control",
+   "hint": "a sample known to carry the target"
+  },
+  {
+   "value": "ntp",
+   "label": "No-target-present control",
+   "hint": "a real sample known to lack the target"
+  },
+  {
+   "value": "opt",
+   "label": "Calibrator",
+   "hint": "a calibrator measured on the plate (inter-run or optical); kept out of the groups, and qPilot does not correct between plates with it"
+  }
+ ],
+ "target_roles": [
+  {
+   "value": "ref",
+   "label": "Reference gene",
+   "hint": "the other genes are normalised to it (housekeeping gene)"
+  },
+  {
+   "value": "toi",
+   "label": "Gene of interest",
+   "hint": "compared between the groups"
+  },
+  {
+   "value": "ignore",
+   "label": "Leave out",
+   "hint": "not part of this study: none of its wells is used"
+  }
+ ],
+ "has_sheet": false,
+ "sheet_name": null,
+ "template_url": "/api/sessions/12984ba0e0d9/design/template.csv"
+}

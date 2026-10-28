@@ -2744,8 +2744,11 @@ def trace_store(
     sample: str | None = None,
     well: str | None = None,
     top: int = 3,
+    comparison: str | None = None,
 ) -> TraceResult:
     """Trace a stored study, read-only: exactly one of ``gene``, ``sample`` or ``well``.
+
+    ``comparison``: a study with several comparisons, the one traced (its id; the first).
 
     The settings come from the study's confirmed design (the demo settings without one), the
     per-well table from the curve cache (nothing is written when it is absent) and the model
@@ -2761,7 +2764,7 @@ def trace_store(
     if len(given) != 1 or not isinstance(given[0][1], str):
         raise TraceError("give exactly one of gene, sample or well (PLATE:WELL)")
     _check_top(top)
-    ctx = _store_context(store, study_id)
+    ctx = _store_context(store, study_id, comparison=comparison)
     kind, value = given[0]
     if kind == "gene":
         return trace_gene(ctx, value, top=top)
@@ -2771,7 +2774,10 @@ def trace_store(
 
 
 def _store_context(
-    store: StudyStore, study_id: str, choice: Mapping[str, str] | None = None
+    store: StudyStore,
+    study_id: str,
+    choice: Mapping[str, str] | None = None,
+    comparison: str | None = None,
 ) -> TraceContext:
     """Trace's context for a stored study: the planned analysis, or the one ``choice`` names.
 
@@ -2808,12 +2814,18 @@ def _store_context(
         (primary[g].fc, primary[g].p) != (stored[g].fc, stored[g].p) for g in primary
     ):
         raise TraceError("a re-analysis does not reproduce the stored results; nothing traced")
+    robust = result.robustness
+    found = result.comparisons
+    if comparison:
+        if found is None or comparison not in {o.id for o in found.comparisons}:
+            raise TraceError(f"this study has no comparison {comparison!r}")
+        robust = next(o.robustness for o in found.comparisons if o.id == comparison)
     if choice:
         from qpilot.trace.context import cell_of
 
         cell = cell_of(model, choice)
-        return build_context(curves, model, robustness=result.robustness, cell=cell)
-    return build_context(curves, model, robustness=result.robustness)
+        return build_context(curves, model, robustness=robust, cell=cell, comparison=comparison)
+    return build_context(curves, model, robustness=robust, comparison=comparison)
 
 
 def trace_all_genes(ctx: TraceContext, *, top: int = 3) -> dict[str, TraceResult]:

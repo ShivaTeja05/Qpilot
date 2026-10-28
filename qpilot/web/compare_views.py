@@ -210,9 +210,10 @@ Q_NOTE = (
     "for a call."
 )
 PRIMARY_ONLY_NOTE = (
-    "The Decision Cards, Trace, the robustness audit and the Run Review describe the first "
-    "comparison ({label}); a choice you make on a card applies to every comparison. The gene "
-    "table and the robustness map follow the comparison you pick."
+    "A choice on a Decision Card applies to every comparison, and a card waits for a person "
+    "when it changes a call in any of them. The gene table, the robustness map, Trace, a gene's "
+    "page and History follow the comparison you pick; the Run Review lists every one. The "
+    "robustness audit audits the first comparison ({label}) only."
 )
 OMNIBUS_NOTE = (
     "“Any difference” asks whether a gene differs anywhere among {groups}: Welch's one-way "

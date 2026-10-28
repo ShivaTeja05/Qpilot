@@ -6150,7 +6150,7 @@ export type components = {
             };
             /**
              * Primary
-             * @description The first comparison: the one the Decision Cards describe.
+             * @description The first comparison: listed first everywhere, and the one the audit audits.
              */
             primary: boolean;
         };

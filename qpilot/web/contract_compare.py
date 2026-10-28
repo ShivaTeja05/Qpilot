@@ -32,7 +32,9 @@ class ComparisonInfo(BaseModel):
     label: str
     group_a: str
     group_b: str
-    primary: bool = Field(description="The first comparison: the one the Decision Cards describe.")
+    primary: bool = Field(
+        description="The first comparison: listed first everywhere, and the one the audit audits."
+    )
     n_a: int = Field(description="Biological units in group A (pairs, when paired).")
     n_b: int = Field(description="Biological units in group B (pairs, when paired).")
     n_pairs: int | None = Field(default=None, description="Complete pairs (paired designs only).")

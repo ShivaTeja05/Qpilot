@@ -17,7 +17,11 @@ only) under its design (each drug vs Control, Holm) in a throwaway store, asks t
 * ``api-units-compare-b.json``: ``GET /api/studies/{id}/genes/MYC/units?comparison=…``;
 * ``api-history-compare-b.json``: ``GET /api/studies/{id}/history?comparison=…`` after a
   person's decision on the reference-set card;
-* ``api-review-compare.json``: ``GET /api/studies/{id}/review`` (the comparisons named).
+* ``api-review-compare.json``: ``GET /api/studies/{id}/review`` (the comparisons named);
+* ``api-design-editor-kphaffii.json``: ``GET /api/sessions/{sid}/design/editor`` of a Studio
+  session on a real file (the K. phaffii UPR RDML of the corpus) after a person put four
+  conditions (20, 28, D20, D28) in their groups and marked the reference genes: the Design
+  page's comparisons editor starts from it.
 """
 
 from __future__ import annotations
@@ -90,8 +94,35 @@ def main() -> None:
                 )
                 r.raise_for_status()
                 _write("api-history-compare-b.json", get(f"{api}/history", comparison=B))
+                _write("api-design-editor-kphaffii.json", _kphaffii_editor(client))
         finally:
             ctx.close()
+
+
+def _kphaffii_editor(client) -> dict:
+    """The Design editor of a session on the corpus' K. phaffii RDML, four groups set."""
+    from tests.web.conftest import wait_job
+    from tests.web.test_design_editor import editor, record
+
+    rdml = REPO / (
+        "tests/fixtures/corpus/rdml/linregpcr-rdml-1.3-lc480-kphaffii/"
+        "12934_2025_2809_MOESM5_ESM.rdml"
+    )
+    r = client.post("/api/workspaces", files={"rdml": (rdml.name, rdml.read_bytes(), "x")})
+    sid = wait_job(client, r.json()["job"])["result"]["key"]
+    r = client.post(f"/api/sessions/{sid}/propose/design", json={})
+    wait_job(client, r.json()["job"])
+    samples = [s["sample"] for s in editor(client, sid)["samples"] if s["role"] == "unkn"]
+    items = [
+        {"kind": "design.target_role", "subject": t, "payload": {"role": "ref"}}
+        for t in ("ACT1", "TFC1")
+    ]
+    for sample in samples:
+        group = sample.rsplit("_", 1)[0]
+        if group in ("20", "28", "D20", "D28"):
+            items.append({"kind": "design.group", "subject": sample, "payload": {"group": group}})
+    record(client, sid, items, reason="the conditions of our protocol")
+    return editor(client, sid)
 
 
 if __name__ == "__main__":

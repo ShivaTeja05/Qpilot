@@ -236,9 +236,9 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
               <ComparisonPicker tabs={view.comparisons} value={shownId} onChange={show} />
               <p className="text-[12.5px] text-muted" role="status">
                 Showing {shownLabel ?? "the first comparison"}: the summary, the map, every gene and
-                the flip matrix below are this comparison&apos;s. The Decision Cards, Trace and a
-                gene&apos;s own page describe the first comparison; a choice on a card applies to
-                every comparison.
+                the flip matrix below are this comparison&apos;s, and Trace, a gene&apos;s page and
+                History follow it too. A choice on a Decision Card applies to every comparison; a
+                card waits for you when it changes a call in any of them.
               </p>
             </div>
           )}

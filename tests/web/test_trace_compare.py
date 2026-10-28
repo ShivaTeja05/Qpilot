@@ -176,3 +176,15 @@ def test_where_to_look_calls_are_exact_under_a_correction(studies):
         for j in range(len(ctx.items)):
             if ctx.valid[i, j]:
                 assert ctx.loo_call[i, j] == exact.conclusion[j]
+
+
+def test_the_mcp_trace_follows_a_comparison(studies):
+    from qpilot.mcp_server import QpilotTools
+
+    tools = QpilotTools(studies["store"])
+    sid = studies["holm"]
+    out = tools.qpcr_trace(sid, gene="MYC", comparison=B)
+    assert out["study_id"] == sid and "code" not in out
+    assert out["root"] == {"kind": "gene", "id": "MYC"}
+    refused = tools.qpcr_trace(sid, gene="MYC", comparison="nope")
+    assert refused["code"] and "no comparison" in refused["message"]
