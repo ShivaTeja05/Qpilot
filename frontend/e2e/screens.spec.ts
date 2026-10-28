@@ -43,6 +43,9 @@ for (const theme of THEMES) {
 
       for (const section of SECTIONS) {
         test(`${section.label}`, async ({ app, api }) => {
+          // A full-page screenshot and axe at every width: heavy on a loaded machine (the run of
+          // 28 Oct at load ~60 timed out at 120 s with nothing wrong on the page).
+          test.slow();
           const demo = section.scope === "workspace" ? await demoSession(api) : null;
           const rest: string[] = [];
           if (section.id === "gene") {

@@ -29,9 +29,12 @@ interface WherePlace {
   sample: string;
   can_decide: boolean;
   card_id: string;
+  options: { id: string }[];
 }
 interface Where {
   head: string;
+  /** A Studio session's current analysis: Decide… sets wells aside in place. */
+  can_apply: boolean;
   places: WherePlace[];
   text: Fact[];
 }
@@ -104,7 +107,7 @@ test.describe("Results: what this study cannot tell you", () => {
 });
 
 test.describe("Trace: where to look and Decide…", () => {
-  test("a gene's places come from the API, and Decide… opens the card on Results", async ({
+  test("a gene's places come from the API; in a Studio session Decide… offers the place's options", async ({
     app,
     api,
   }) => {
@@ -118,11 +121,18 @@ test.describe("Trace: where to look and Decide…", () => {
     const place = where.places.find((p) => p.can_decide)!;
     await expect(places).toContainText(place.sample);
     await app.axe("trace where to look");
+    // A Studio session decides in place (set aside, with a reason; e2e/trace-decide.spec.ts
+    // goes through with it); a study analysed outside Studio opens the place's card on Results.
+    const row = places.getByRole("listitem").filter({ hasText: place.sample }).first();
+    await row.getByRole("button", { name: /^Decide/ }).click();
+    if (where.can_apply) {
+      const options = row.getByRole("radiogroup", { name: "What to do at this place" });
+      await expect(options.getByRole("radio")).toHaveCount(place.options.length);
+      await row.getByRole("button", { name: "Cancel" }).click();
+      await expect(options).toBeHidden();
+      return;
+    }
     test.skip(E2E.readOnly, "E2E_READONLY: Decide… writes to the store");
-    await places
-      .getByRole("button", { name: /^Decide/ })
-      .first()
-      .click();
     await app.page.getByRole("button", { name: "Go to the card" }).click();
     await expect(app.page.getByText("Opened from Trace").first()).toBeVisible();
     const cards = await getJson<{ cards: { card: { id: string } }[] }>(
@@ -195,11 +205,21 @@ test.describe("Instruments", () => {
       .getByRole("dialog")
       .getByRole("button", { name: /Register/ })
       .click();
-    const listed = await getJson<{
-      instruments: { instrument_id: string; display_name: string }[];
-    }>(api, "/api/instruments");
-    const inst = listed.instruments.find((i) => i.display_name === name);
-    expect(inst, "the instrument is registered").toBeTruthy();
+    // The registration is a request of its own: wait for the server to list it (on a loaded
+    // machine the dialog's POST can still be in flight when the next line runs).
+    let inst: { instrument_id: string; display_name: string } | undefined;
+    await expect
+      .poll(
+        async () => {
+          const listed = await getJson<{
+            instruments: { instrument_id: string; display_name: string }[];
+          }>(api, "/api/instruments");
+          inst = listed.instruments.find((i) => i.display_name === name);
+          return Boolean(inst);
+        },
+        { message: "the instrument is registered", timeout: 60_000 },
+      )
+      .toBe(true);
     const store = process.env.QPILOT_STUDIES_DIR;
     test.skip(!store, "QPILOT_STUDIES_DIR is not set: no agent proposal can be made");
     python(

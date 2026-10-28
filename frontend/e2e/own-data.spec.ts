@@ -336,13 +336,13 @@ test.describe("a LightCycler 96 file with no model", () => {
     const project = main.getByRole("region", { name: "The Prism project", exact: true });
     await expect(project).toBeVisible({ timeout: 120_000 });
     const draft = project.getByRole("button", { name: /^Draft (the Prism project|it again)$/ });
+    // The drafted project waits for a person: accept it (it is a proposal like any other).
+    const drafted = project.getByRole("article", { name: /^Prism project/ });
     if (await draft.count()) {
       await draft.click();
       await jobsDone(api, sid);
-      await app.settle(60_000);
+      await expect(drafted).toBeVisible({ timeout: 120_000 });
     }
-    // The drafted project waits for a person: accept it (it is a proposal like any other).
-    const drafted = project.getByRole("article", { name: /^Prism project/ });
     if (await drafted.count()) {
       await expect(drafted).toContainText(gene);
       await drafted.getByRole("button", { name: /^Accept(…)?$/ }).click();
@@ -351,10 +351,13 @@ test.describe("a LightCycler 96 file with no model", () => {
         await why.fill(REASON);
         await drafted.getByRole("button", { name: "Accept", exact: true }).click();
       }
+      await expect(drafted).toBeHidden({ timeout: 120_000 });
       await app.settle(60_000);
     }
     const send = main.getByRole("region", { name: "Send to Prism" });
-    await send.getByRole("button", { name: /^(Send to Prism|Send again)$/ }).click();
+    const sendButton = send.getByRole("button", { name: /^(Send to Prism|Send again)$/ });
+    await expect(sendButton).toBeEnabled({ timeout: 120_000 });
+    await sendButton.click();
     const bundleLink = send.getByRole("link", { name: /^Download the bundle/ });
     await expect(bundleLink).toBeVisible({ timeout: 300_000 });
     await app.axe("prism, sent");

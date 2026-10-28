@@ -78,8 +78,13 @@ test.describe("Record", () => {
     const changed = test.info().outputPath("changed.zip");
     writeFileSync(changed, bytes);
     await verifyCard.locator('input[type="file"]').setInputFiles(changed);
+    // A flipped byte is called what it is (VerifyCard: "altered or damaged after export").
     await expect(
-      verifyCard.getByText(/This record does not check out|This file could not be checked/),
+      verifyCard
+        .getByText(
+          /This record was altered or damaged after export|This record does not check out|This file could not be checked/,
+        )
+        .first(),
     ).toBeVisible({ timeout: 120_000 });
     await expect(verifyCard.getByText("This record checks out")).toHaveCount(0);
     app.allowConsole(/status of 4\d\d/);
