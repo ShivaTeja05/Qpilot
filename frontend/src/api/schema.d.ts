@@ -10371,6 +10371,12 @@ export type components = {
             /** File Name */
             file_name: string;
             /**
+             * Headline
+             * @description The outcome in one plain sentence.
+             * @default
+             */
+            headline: string;
+            /**
              * Known Study
              * @description The record's study is in this qPilot's store.
              */
@@ -10382,6 +10388,13 @@ export type components = {
              * @description The record verifies (and its audit, when one is bound).
              */
             ok: boolean;
+            /**
+             * Outcome
+             * @description verified; altered (a file changed, damaged, missing or added after export); chain_broken (the files match their checksums but a hash chain does not link); inconsistent (the files disagree with the chain).
+             * @default verified
+             * @enum {string}
+             */
+            outcome: "verified" | "altered" | "chain_broken" | "inconsistent";
             record: components["schemas"]["RecordFacts"];
             report: components["schemas"]["VerifyReport"];
             /**
@@ -12735,6 +12748,10 @@ export type components = {
         /**
          * VerifyReport
          * @description Outcome of :func:`verify`; ``ok`` only when nothing failed.
+         *
+         *     ``damaged`` lists the zip members whose bytes fail the zip's own check (a CRC or a deflate
+         *     stream that does not decode): the file was altered or damaged after the zip was written, so
+         *     its contents cannot be trusted (see :meth:`with_damaged`).
          */
         VerifyReport: {
             /** Chain Broken At */
@@ -12744,6 +12761,11 @@ export type components = {
              * @default []
              */
             changed: string[];
+            /**
+             * Damaged
+             * @default []
+             */
+            damaged: string[];
             /**
              * Has Proposals
              * @default false

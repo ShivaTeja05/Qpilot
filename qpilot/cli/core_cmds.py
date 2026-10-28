@@ -9,8 +9,12 @@ from pathlib import Path
 from qpilot.cli._types import Command
 
 
-def _record_dir(path: str, scratch: Path) -> Path:
-    """A record folder, unpacking a zip record (any name or case) safely first."""
+def _record_dir(path: str, scratch: Path, damaged: list[str] | None = None) -> Path:
+    """A record folder, unpacking a zip record (any name or case) safely first.
+
+    With ``damaged`` a list, zip members that fail the zip's own check are named there instead
+    of stopping the unpacking (see :func:`qpilot.core.record.unzip_record`).
+    """
     import zipfile
 
     from qpilot.core.record import RecordError, unzip_record
@@ -19,7 +23,7 @@ def _record_dir(path: str, scratch: Path) -> Path:
     if p.is_dir():
         return p
     if p.suffix.lower() == ".zip" or (p.is_file() and zipfile.is_zipfile(p)):
-        return unzip_record(p, scratch / p.stem)
+        return unzip_record(p, scratch / p.stem, damaged=damaged)
     if p.exists():
         raise RecordError(f"not an Analysis Record folder or zip: {p}")
     raise RecordError(f"no such record: {p}")
@@ -77,14 +81,25 @@ def _verify_arguments(parser: argparse.ArgumentParser) -> None:
 def _verify(args: argparse.Namespace) -> int:
     import tempfile
 
-    from qpilot.core.record import RecordError, verify
+    from qpilot.core.record import RecordError, member_names, verify
 
     with tempfile.TemporaryDirectory() as tmp:
+        damaged: list[str] = []
         try:
-            report = verify(_record_dir(args.record, Path(tmp)))
+            folder = _record_dir(args.record, Path(tmp), damaged)
+            if damaged and not (folder / "CHECKSUMS.sha256").exists():
+                raise RecordError(
+                    f"this record was altered or damaged after export: {', '.join(damaged[:3])} "
+                    "fails the zip's own check, so it cannot be verified"
+                )
+            report = verify(folder)
         except RecordError as err:
             print(f"qpilot verify: {err}", file=sys.stderr)
             return 2
+        report = report.with_damaged(
+            member_names(damaged, folder, Path(tmp) / Path(args.record).stem)
+        )
+    print(report.headline())
     print(report.summary())
     print("(tamper-evident, not tamper-proof)")
     return 0 if report.ok else 1

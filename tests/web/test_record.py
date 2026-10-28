@@ -225,6 +225,61 @@ def test_an_edited_chain_fails_even_with_fresh_checksums(study, exported):
     assert out["report"]["chain_broken_at"] is not None
 
 
+def _flip(data: bytes, member: str) -> bytes:
+    """One byte of a member's compressed data flipped (an edit in a hex editor, a bad disk)."""
+    out = bytearray(data)
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        info = zf.getinfo(member)
+    out[info.header_offset + 30 + len(info.filename) + len(info.extra) + 7] ^= 0x01
+    return bytes(out)
+
+
+@pytest.mark.parametrize("prefix", ["", "rec/"])
+def test_a_flipped_byte_is_called_altered_and_names_the_file(study, exported, prefix):
+    """Not "could not be checked": altered or damaged after export, and which file."""
+    client, *_ = study
+    _, r = exported
+    data = _flip(rezip(r.content, prefix=prefix), f"{prefix}decisions.jsonl")
+    resp = verify(client, data, "flipped record.zip")
+    assert resp.status_code == 200, resp.text
+    out = resp.json()
+    assert out["ok"] is False and out["outcome"] == "altered"
+    assert out["headline"] == "This record was altered or damaged after export: decisions.jsonl."
+    assert out["report"]["damaged"] == ["decisions.jsonl"]
+    assert "decisions.jsonl" not in out["report"]["missing"]
+    assert out["file_name"] == "flipped record.zip"
+    good = verify(client, r.content).json()
+    assert good["outcome"] == "verified" and good["headline"].startswith("This record checks out")
+
+
+def test_a_resealed_chain_is_called_broken(study, exported):
+    client, *_ = study
+    _, r = exported
+    with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
+        log = zf.read("decisions.jsonl")
+    forged = log.replace(b'"reason":"', b'"reason":"(edited) ', 1)
+
+    def edit(name: str, content: bytes) -> bytes:
+        if name == "decisions.jsonl":
+            return forged
+        if name == "CHECKSUMS.sha256":
+            old = hashlib.sha256(log).hexdigest().encode()
+            return content.replace(old, hashlib.sha256(forged).hexdigest().encode())
+        return content
+
+    out = verify(client, rezip(r.content, edit)).json()
+    assert out["outcome"] == "chain_broken" and "decision chain is broken" in out["headline"]
+
+
+def test_a_zip_that_is_not_a_record_says_so(study):
+    client, *_ = study
+    plain = io.BytesIO()
+    with zipfile.ZipFile(plain, "w") as zf:
+        zf.writestr("notes.txt", "hello")
+    resp = verify(client, plain.getvalue(), "notes.zip")
+    assert resp.json()["error"]["message"].startswith("notes.zip is not a qPilot record")
+
+
 def test_unsafe_or_wrong_uploads_are_refused(study, exported, tmp_path):
     client, ctx, _ = study
     _, r = exported

@@ -99,7 +99,7 @@ describe("Decision Cards", { timeout: 30_000 }, () => {
       ...cutoff,
       card: { ...cutoff.card, status: "decided", decision: "cut_15", decided_by: "human" },
       status_line:
-        "Decided by human: Top 15 %, carried from the earlier analysis cf49ccd72052. Reason: protocol",
+        "Decided by you: Top 15 %, carried from the earlier analysis cf49ccd72052. Reason: protocol",
       carried: {
         study_id: "cf49ccd72052",
         entry_hash: "ab".repeat(32),

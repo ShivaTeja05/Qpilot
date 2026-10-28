@@ -990,7 +990,7 @@ def card_view(
     own words as the reason; ``asked`` is a person's earlier decision asked again here.
     """
     from qpilot.ai.explain import KIND_TITLE
-    from qpilot.app_state import FLIPPED_FACT, _status_line
+    from qpilot.app_state import FLIPPED_FACT, _status_line, decider_words
     from qpilot.core.validator import names_from_result
     from qpilot.explain.templates import TemplateError, render_template
 
@@ -1001,8 +1001,8 @@ def card_view(
     if carried is not None and card.status == "decided":
         chosen = labels.get(card.decision or "", card.decision or "")
         status = (
-            f"Decided by {card.decided_by}: {chosen}, carried from the earlier analysis "
-            f"{carried.study_id}. Reason: {carried.reason}"
+            f"Decided by {decider_words(card.decided_by)}: {chosen}, carried from the earlier "
+            f"analysis {carried.study_id}. Reason: {carried.reason}"
         )
     try:
         rendered = render_template(
