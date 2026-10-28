@@ -1,17 +1,23 @@
 /**
- * Write the report as a file: Markdown, a printable page, the study passport (one offline HTML
- * file bound to a fresh Analysis Record), or the results as an Excel workbook with Trace's places
- * to look. Each is a job with its card (and the server's warnings); the files written since
+ * Write the report as a file (Markdown, a printable page, the study passport bound to a fresh
+ * Analysis Record), or the study's numbers and figures: an Excel workbook (numbers as numbers,
+ * per gene, per biological unit, per well), the same tables as CSV, a figure per gene (SVG, PNG,
+ * source data) and a journal supplement. The numbers follow the options chosen on the Decision
+ * Cards ("as decided"); when those are not the recommended ones, the recommended analysis comes
+ * too. Each file is a job with its card (and the server's warnings); the files written since
  * qPilot started stay listed with their downloads.
  */
 import {
   AlertTriangle,
   BookMarked,
+  ChartScatter,
   Download,
+  FileArchive,
   FileCode2,
   FileSpreadsheet,
   FileText,
   Printer,
+  Table2,
 } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
 import { useJob } from "@/api/jobs";
@@ -27,6 +33,8 @@ import {
   type ReportFormat,
 } from "./api";
 
+export type ExportGroup = "report" | "numbers";
+
 export const FORMATS: {
   format: ReportFormat;
   title: string;
@@ -34,6 +42,7 @@ export const FORMATS: {
   icon: ReactNode;
   /** The write button's words. */
   action: string;
+  group: ExportGroup;
 }[] = [
   {
     format: "passport",
@@ -41,6 +50,7 @@ export const FORMATS: {
     hint: "One HTML file a reviewer opens offline with a double-click: summary, charts, every gene, decisions, the audit, Methods, MIQE and how to verify it. Writes a fresh Analysis Record beside it.",
     icon: <BookMarked />,
     action: "Write the passport",
+    group: "report",
   },
   {
     format: "html",
@@ -48,6 +58,7 @@ export const FORMATS: {
     hint: "The reviewer's report, Methods, the MIQE checklist and the limitations, laid out to print or save as PDF.",
     icon: <Printer />,
     action: "Write the printable page",
+    group: "report",
   },
   {
     format: "md",
@@ -55,20 +66,71 @@ export const FORMATS: {
     hint: "The same report as text for a lab notebook, a repository or a manuscript draft.",
     icon: <FileCode2 />,
     action: "Write the Markdown",
+    group: "report",
   },
   {
     format: "xlsx",
-    title: "Excel workbook: results and where to look",
-    hint: "Every gene's result in a spreadsheet, with Trace's places to look for each one: the samples and wells to check first, and what each does to the call.",
+    title: "Excel workbook",
+    hint: "Real numbers you can calculate with: each gene's fold change, its 95 % confidence interval as two columns, p and n; each biological unit's ΔCq and relative quantity; every well's Cq, N0 and efficiency, and why a well was left out. With the decisions, the settings, the Methods and where to look first.",
     icon: <FileSpreadsheet />,
     action: "Write the workbook",
+    group: "numbers",
+  },
+  {
+    format: "csv",
+    title: "CSV tables",
+    hint: "The same tables as plain CSV files, one per table, for R, Python or Prism. Numbers keep every digit.",
+    icon: <Table2 />,
+    action: "Write the CSV tables",
+    group: "numbers",
+  },
+  {
+    format: "figures",
+    title: "Figures",
+    hint: "A figure per headline gene for a lab meeting or a paper: each dot a biological unit, the group mean with its 95 % confidence interval, the call. SVG you can edit, PNG at 300 dpi, the data behind each figure and its caption.",
+    icon: <ChartScatter />,
+    action: "Write the figures",
+    group: "numbers",
+  },
+  {
+    format: "supplement",
+    title: "Journal supplement",
+    hint: "One zip for a journal: the workbook, every table as CSV, the MIQE 2.0 checklist, the figures, your RDML file with qPilot's Cq, N0 and left-out wells written into it, and the Analysis Record anyone can check and re-run.",
+    icon: <FileArchive />,
+    action: "Write the supplement",
+    group: "numbers",
+  },
+];
+
+const GROUPS: { group: ExportGroup; title: string; hint: string }[] = [
+  {
+    group: "numbers",
+    title: "Your numbers and figures",
+    hint: "As decided on the Decision Cards. When a choice you made is not the recommended one, the recommended analysis comes too, marked as such.",
+  },
+  {
+    group: "report",
+    title: "The report",
+    hint: "The reviewer's report, Methods, the MIQE 2.0 checklist and the limitations.",
   },
 ];
 
 /** The format of a running export job, from its title (the server's words). */
 export function formatOf(title: string): ReportFormat {
+  if (title.includes("supplement")) return "supplement";
+  if (title.includes("figure per gene")) return "figures";
+  if (title.includes("CSV")) return "csv";
   if (title.includes("Excel")) return "xlsx";
   return title.includes("passport") ? "passport" : title.includes("Markdown") ? "md" : "html";
+}
+
+/** Which analyses a written file holds, in words ("" for the report files). */
+export function basesWords(bases: readonly string[] | undefined): string {
+  if (!bases?.length) return "";
+  const decided = bases.includes("as_decided");
+  const recommended = bases.includes("recommended");
+  if (decided && recommended) return "As decided, and the recommended analysis";
+  return decided ? "As decided on the Decision Cards" : "The recommended analysis";
 }
 
 export function ExportPanel({
@@ -96,34 +158,42 @@ export function ExportPanel({
     <Card as="section" aria-labelledby="report-export-title">
       <CardHeader
         id="report-export-title"
-        title="Write the report as a file"
+        title="Export: numbers, figures and the report"
         hint="Every file is written from this study's own numbers, nothing else; strings from your files are kept as text, never as markup or formulas."
       />
       <CardBody className="@container flex flex-col gap-4">
-        <ul className="grid gap-3 @xl:grid-cols-2">
-          {FORMATS.map((f) => (
-            <li
-              key={f.format}
-              className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-3.5"
-            >
-              <p className="flex items-center gap-2 text-[14px] font-semibold text-fg [&_svg]:size-4 [&_svg]:text-accent-strong">
-                {f.icon}
-                {f.title}
-              </p>
-              <p className="flex-1 text-[12.5px] leading-relaxed text-muted">{f.hint}</p>
-              <Button
-                ref={f.format === "passport" ? passportRef : undefined}
-                variant={f.format === "passport" ? "primary" : "secondary"}
-                size="sm"
-                className="self-start"
-                loading={start.isPending && start.variables?.format === f.format}
-                onClick={() => start.mutate({ format: f.format, head })}
-              >
-                {f.action}
-              </Button>
-            </li>
-          ))}
-        </ul>
+        {GROUPS.map((g) => (
+          <section key={g.group} aria-labelledby={`report-export-${g.group}`}>
+            <h3 id={`report-export-${g.group}`} className="text-[13px] font-semibold text-fg">
+              {g.title}
+            </h3>
+            <p className="mt-0.5 mb-2 text-[12.5px] text-muted">{g.hint}</p>
+            <ul className="grid gap-3 @xl:grid-cols-2">
+              {FORMATS.filter((f) => f.group === g.group).map((f) => (
+                <li
+                  key={f.format}
+                  className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-3.5"
+                >
+                  <p className="flex items-center gap-2 text-[14px] font-semibold text-fg [&_svg]:size-4 [&_svg]:text-accent-strong">
+                    {f.icon}
+                    {f.title}
+                  </p>
+                  <p className="flex-1 text-[12.5px] leading-relaxed text-muted">{f.hint}</p>
+                  <Button
+                    ref={f.format === "passport" ? passportRef : undefined}
+                    variant={f.format === "passport" ? "primary" : "secondary"}
+                    size="sm"
+                    className="self-start"
+                    loading={start.isPending && start.variables?.format === f.format}
+                    onClick={() => start.mutate({ format: f.format, head })}
+                  >
+                    {f.action}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
         {FORMATS.filter((f) => jobs[f.format]).map((f) => (
           <ExportJob
             key={f.format}
@@ -185,6 +255,12 @@ function DownloadLinks({ file }: { file: ReportExported }) {
           <span className="font-normal text-muted">{bytes(file.download.bytes)}</span>
         </a>
       </Button>
+      {basesWords(file.bases) ? (
+        <p className="text-[12px] text-muted">
+          Holds: {basesWords(file.bases)}
+          {file.genes?.length ? ` · figures of ${file.genes.join(", ")}` : ""}
+        </p>
+      ) : null}
       {file.record ? (
         <Button asChild size="sm" variant="ghost" className="max-w-full self-start">
           <a href={file.record.download.url} download={file.record.download.name}>
@@ -227,6 +303,9 @@ function WrittenFile({
           >
             {relativeTime(file.written_at, now)}
           </time>
+          {basesWords(file.bases) ? (
+            <span className="text-xs text-muted">{basesWords(file.bases)}</span>
+          ) : null}
           {!current ? <span className="text-xs text-warn">decisions were made since</span> : null}
         </span>
         <span className="flex flex-wrap gap-1">
