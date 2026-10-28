@@ -280,7 +280,8 @@ def _build(
             table = curves.analyse_study(path, original, cache_dir=cache_dir)
         except curves.CurveAnalysisError as err:
             log.warning("LinRegPCR failed on an experiment of %s: %s", path.name, err)
-            if not any(next(run._node.iter(f"{rdml_io.NS}adp"), None) is not None for run in runs):
+            curveless = not any(_has(run, "adp") for run in runs)
+            if curveless and any(_has(run, "cq") for run in runs):
                 notes.append(  # a Cq table or a Cq-only RDML: nothing to fit, nothing failed
                     f"Experiment {exp_text_id} holds Cq values only (no amplification curves), "
                     "so LinRegPCR has nothing to fit; only those Cq values can be analysed."
@@ -356,6 +357,11 @@ def _build(
         target_text_ids=target_text_ids,
         sheet=sheet,
     )
+
+
+def _has(run, tag: str) -> bool:
+    """Whether any reaction of an RDML run holds a ``tag`` element (``adp``, ``cq``)."""
+    return next(run._node.iter(f"{rdml_io.NS}{tag}"), None) is not None
 
 
 def declared_type_label(types: tuple[tuple[str, str], ...]) -> str:

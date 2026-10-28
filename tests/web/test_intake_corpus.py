@@ -149,6 +149,9 @@ def test_a_persons_cq_table_alone_opens_with_groups_and_its_reference_gene(sclie
     assert {"DECLARED_REFERENCES", "CQ_ONLY"} <= {w["code"] for w in capture["warnings"]}
     targets = {t["target"]: t["declared_type"] for t in view["summary"]["targets"]}
     assert targets == {"hmuYPe": "toi", "16S rRNA": "ref"}
+    notes = view["summary"]["notes"]
+    assert any("Cq values only" in n for n in notes)
+    assert not any("LinRegPCR could not analyse" in n for n in notes)  # nothing failed
     assert view["facts"]["sheet_name"] == "hmuy_cq_values (sample columns).csv"
     proposals = design(sclient, sid)
     roles = {p["subject"]: p["payload"] for p in proposals if p["kind"] == "design.target_role"}
