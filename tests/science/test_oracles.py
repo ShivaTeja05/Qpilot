@@ -331,3 +331,58 @@ def test_global_mean_is_each_gene_centred_then_averaged(wells):
     for unit in values.index:
         have = [centred[g][unit] for g in genes if not pd.isna(values.at[unit, g])]
         assert found[unit] == pytest.approx(sum(have) / len(have), abs=TIGHT)
+
+
+# ---- correction between plates ------------------------------------------------------------------
+
+
+def _split_over_plates(wells, gap=False):
+    """K. phaffii's ACT1 and HAC1i wells spread over three plates with known offsets.
+
+    Plate P1 holds samples 0-9, P2 8-17, P3 16-23 and 0-1 (each sample's three wells on each
+    plate it is on); P2 reads 2^0.7 higher, P3 2^-0.4 lower. Sample 20_1 is also put on every
+    plate as an inter-run calibrator (RDML type ``pos``) of ACT1. With ``gap`` there is no
+    calibrator and P3 shares nothing with P1: their ratio is estimated through P2 (Eq. 3).
+    """
+    rows = []
+    samples = list(kp.SAMPLES)
+    third = samples[16:24] if gap else samples[16:24] + samples[0:2]
+    plates = {"P1": samples[0:10], "P2": samples[8:18], "P3": third}
+    offset = {"P1": 0.0, "P2": 0.7, "P3": -0.4}
+    src = wells[wells["target"].isin(["ACT1", "HAC1i"])]
+    for plate, members in plates.items():
+        for row in src[src["sample"].isin(members)].itertuples(index=False):
+            rows.append((plate, row.sample, "unkn", row.target, row.n0 * 2 ** offset[plate]))
+        irc = src[(src["sample"] == "20_1") & (src["target"] == "ACT1")] if not gap else src[:0]
+        for row in irc.itertuples():
+            rows.append((plate, "IRC_20_1", "pos", row.target, row.n0 * 2 ** offset[plate]))
+    return pd.DataFrame(rows, columns=["run_id", "sample", "sample_type", "target", "n0"])
+
+
+@pytest.mark.parametrize("gap", [False, True])
+def test_factor_correction_and_calibration_equal_the_papers(wells, gap):
+    from qpilot.qpcr import interrun as irc
+    from validation.excellence import interrun_oracle as io
+
+    table = _split_over_plates(wells, gap)
+    tuples = list(table[["run_id", "sample", "target", "n0"]].itertuples(index=False, name=None))
+    found, uncorrected = irc.plate_factors(table)
+    want = io.plate_factors(tuples)
+    assert not uncorrected and set(found) == set(want) == {"P1", "P2", "P3"}
+    for plate, value in found.items():
+        assert value == pytest.approx(math.log2(want[plate]), abs=1e-12)
+    # the factors recover the offsets put in, up to a constant (they cancel in a fold change)
+    centred = {p: v - found["P1"] for p, v in found.items()}
+    assert centred == pytest.approx({"P1": 0.0, "P2": 0.7, "P3": -0.4}, abs=1e-12)
+    if gap:
+        _, matrix = irc.ratio_matrix(table)
+        assert np.isnan(matrix[0, 2])  # P1 and P3 share nothing: filled through P2
+        return
+    cal = irc.calibrate(table)
+    want_cal = io.calibration_factors(
+        [t for t in tuples if t[1] == "IRC_20_1"], {"ACT1": ["IRC_20_1"]}
+    )
+    assert set(cal.factors) == set(want_cal)
+    for key, value in cal.factors.items():
+        assert value == pytest.approx(math.log2(want_cal[key]), abs=1e-12)
+    assert cal.uncorrected == ("HAC1i",)  # no calibrator of its own on every plate
