@@ -12,6 +12,8 @@ refusals, the idempotency and that a request never changes the analysis.
 from __future__ import annotations
 
 import json
+import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -183,7 +185,6 @@ def test_robustness_and_units_follow_the_comparison_asked_for(studies):
 def test_the_exported_tables_hold_every_comparisons_units(studies, tmp_path):
     import io
     import zipfile
-    from pathlib import Path
 
     tools = QpilotTools(studies["store"])
     out = tools.qpcr_export(studies["several"], "csv")
@@ -372,7 +373,7 @@ def test_a_request_needs_a_studio_session(tools, called, fixture_result, fixture
     from qpilot.core.store import sha256_file
 
     store = called["store"]
-    rdml = called["root"] / "outside.rdml"
+    rdml = Path(tempfile.mkdtemp(dir=called["root"])) / "outside.rdml"
     rdml.write_bytes(b"<rdml>a study analysed outside studio</rdml>")
     digest = sha256_file(rdml)
     result = fixture_result.model_copy(update={"input_sha256": digest, "study_id": digest[:12]})
@@ -418,7 +419,6 @@ def test_a_keyed_retry_files_nothing_twice(tools, called):
 def test_the_workbook_is_written_into_the_export_folder_the_page_lists(tools, called, tmp_path):
     import io
     import zipfile
-    from pathlib import Path
 
     import openpyxl
 
@@ -442,11 +442,8 @@ def test_the_workbook_is_written_into_the_export_folder_the_page_lists(tools, ca
 
 
 def test_a_copy_goes_only_into_a_folder_inside_the_data_roots(tools, called):
-    from pathlib import Path
-
     study, store = called["study"], called["store"]
-    folder = called["root"] / "figures-for-the-paper"
-    folder.mkdir()
+    folder = Path(tempfile.mkdtemp(prefix="figures-for-the-paper-", dir=called["root"]))
     out = tools.qpcr_export(study, "csv", out_dir=str(folder))
     assert "error" not in out, out
     copy = Path(out["copied_to"]["path"])
@@ -512,8 +509,6 @@ def test_a_stale_export_writes_nothing(tools, called):
 
 
 def test_a_keyed_export_is_written_once(tools, called):
-    from pathlib import Path
-
     study = called["study"]
     first = tools.qpcr_export(study, "csv", idempotency_key="export-1")
     path = Path(first["file"]["path"])
@@ -559,3 +554,100 @@ def test_nothing_is_answered_for_a_session_whose_design_is_not_confirmed(tools, 
     assert not (called["store"].root.parent / "exports" / study).exists() or not list(
         (called["store"].root.parent / "exports" / study).glob("record-report-*/*.xlsx")
     )
+
+
+# ---- the Prism project (.pzfx): what came back from Prism, read-only -----------------------------
+
+
+def _saved_project(called) -> tuple:
+    """A person sends the study to Prism (the bundle), then Prism saves it with one value
+    excluded; returns the bundle folder, the saved project and the value excluded."""
+    from lxml import etree
+
+    from qpilot.prism import export_study, pzfx
+
+    mine = Path(tempfile.mkdtemp(prefix="prism-", dir=called["root"]))  # the root is shared
+    folder = mine / "bundle"
+    exported = export_study(called["store"], called["study"], folder, platform="macos")
+    ns = {"p": pzfx.NAMESPACE}
+    root = etree.fromstring(exported.project.read_bytes())
+    table = root.find("p:Table", ns)
+    cell = next(d for d in table.iterfind(".//p:YColumn//p:d", ns) if (d.text or "").strip())
+    cell.set("Excluded", "1")
+    block = etree.SubElement(root, f"{{{pzfx.NAMESPACE}}}Template")
+    block.text = "QUJDREVG" * 50  # Prism's own binary part, which qPilot never reads
+    saved = mine / "saved-in-prism.pzfx"
+    saved.write_bytes(b'<?xml version="1.0" encoding="UTF-8"?>\n' + etree.tostring(root))
+    return folder, saved, float(cell.text.replace(",", "."))
+
+
+def test_a_saved_prism_project_is_read_without_storing_anything(tools, called):
+    store, sid, study = called["store"], called["sid"], called["study"]
+    folder, saved, value = _saved_project(called)
+    before = (inbox_state(called), store.chain_head(study))
+    out = tools.qpcr_prism_diff(study, str(folder), project_path=str(saved))
+    assert "error" not in out, out
+    assert out["source"] == "project" and out["saved"] is False
+    (item,) = out["items"]
+    assert item["kind"] == "excluded" and item["exported"] == pytest.approx(value)
+    (proposal,) = out["proposals"]
+    assert proposal["kind"] == "prism.exclusion_reason" and proposal["status"] == "proposed"
+    assert (inbox_state(called), store.chain_head(study)) == before  # no proposal was filed
+    assert sid
+    # the bundle folder itself (holding the project as qPilot wrote it) brings back nothing
+    unchanged = tools.qpcr_prism_diff(study, str(folder), project_path=str(folder))
+    assert unchanged["items"] == [] and "exactly as qPilot wrote it" in " ".join(unchanged["notes"])
+
+
+def test_the_prism_diff_takes_one_return_and_only_inside_the_data_roots(tools, called, tmp_path):
+    study = called["study"]
+    folder, saved, _ = _saved_project(called)
+    both = refused(
+        tools.qpcr_prism_diff(study, str(folder), str(folder), project_path=str(saved)),
+        "invalid_argument",
+        "project_path",
+    )
+    assert "exactly one" in both["error"]
+    refused(tools.qpcr_prism_diff(study, str(folder)), "invalid_argument", "project_path")
+    refused(
+        tools.qpcr_prism_diff(5, str(folder), project_path=str(saved)),
+        "invalid_argument",
+        "study_id",
+    )  # type: ignore[arg-type]
+    outside = tmp_path / "elsewhere.pzfx"
+    outside.write_bytes(saved.read_bytes())
+    refused(
+        tools.qpcr_prism_diff(study, str(folder), project_path=str(outside)),
+        "path_not_allowed",
+        "project_path",
+    )
+    note = folder.parent / "notes.txt"
+    note.write_text("not a project", encoding="utf-8")
+    refused(
+        tools.qpcr_prism_diff(study, str(folder), project_path=str(note)),
+        "unsupported_input",
+        "project_path",
+    )
+    refused(
+        tools.qpcr_prism_diff(study, "/etc", project_path=str(saved)),
+        "path_not_allowed",
+        "bundle_dir",
+    )
+    refused(
+        tools.qpcr_prism_diff("abcdef123456", str(folder), project_path=str(saved)), "unknown_study"
+    )
+    other = folder.parent / "other-bundle"
+    other.mkdir()
+    refused(tools.qpcr_prism_diff(study, str(other), project_path=str(saved)), "input_unreadable")
+
+
+def test_prism_replies_stay_hidden_for_a_study_whose_session_is_not_confirmed(tools, called):
+    studio, sid, study = called["studio"], called["sid"], called["study"]
+    folder, saved, _ = _saved_project(called)
+    assert "error" not in tools.qpcr_prism_preview(study)
+    tools.qpcr_propose(sid, "design.group", "KO_1", {"group": "WT"})
+    change = next(p for p in studio.inbox(sid, "design", "proposed") if p.kind == "design.group")
+    studio.accept(sid, change.id, "human", "the lab book says WT")
+    assert not studio.results_visible(sid)
+    refused(tools.qpcr_prism_preview(study), "results_hidden")
+    refused(tools.qpcr_prism_diff(study, str(folder), project_path=str(saved)), "results_hidden")

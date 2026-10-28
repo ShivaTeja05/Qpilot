@@ -153,15 +153,24 @@ class CapabilityTools:
             except StudyNotFound:
                 self.store.workspace(study_id)
                 self.store.get(study_id)
-                session = session_of_study(self.store, study_id)
-                if session is not None and not self.studio.results_visible(session):
-                    return refuse(Code.RESULTS_HIDDEN, srv.BLIND)
-                return study_id, session
+                hidden = self._blind(study_id)
+                if hidden is not None:
+                    return hidden
+                return study_id, session_of_study(self.store, study_id)
             return self.studio.study(study_id), study_id
         except StudyNotFound:
             return refuse(Code.UNKNOWN_STUDY, srv.UNKNOWN_STUDY)
         except StudioError as err:
             return srv._studio_refusal(err)
+
+    def _blind(self, study_id: str) -> dict[str, Any] | None:
+        """``results_hidden`` for a study analysed from a session that is not confirmed now."""
+        from qpilot.web.results_views import session_of_study
+
+        session = session_of_study(self.store, study_id)
+        if session is not None and not self.studio.results_visible(session):
+            return refuse(Code.RESULTS_HIDDEN, _srv().BLIND)
+        return None
 
     # ---- several comparisons ---------------------------------------------------------------
 

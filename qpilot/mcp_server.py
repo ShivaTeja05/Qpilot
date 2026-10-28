@@ -270,6 +270,14 @@ def check_sheet(sheet_path: str) -> Path:
     return path
 
 
+def check_prism_return(raw: str) -> Path:
+    """Resolve what came back from Prism: a ``.pzfx`` project or a folder, inside a data root."""
+    path = _resolve(raw, "file not found")
+    if path.is_dir() or (path.is_file() and path.suffix.lower() == ".pzfx"):
+        return path
+    raise PathRefused("not a Prism project (.pzfx) or a folder", Code.UNSUPPORTED_INPUT)
+
+
 def check_dir(directory: str) -> Path:
     """Resolve a folder (a Prism bundle or sent-back folder) and require it inside a data root."""
     path = _resolve(directory, "folder not found")
@@ -1398,6 +1406,9 @@ class QpilotTools(CapabilityTools):
                 self.store.find_session(study_id)
             except StudyNotFound:
                 self.store.workspace(study_id)
+                hidden = self._blind(study_id)
+                if hidden is not None:
+                    return hidden
                 return preview(self.store, study_id)
             return self.studio.preview_prism(study_id)
         except (StudyNotFound, StudioError) as err:
@@ -1405,23 +1416,55 @@ class QpilotTools(CapabilityTools):
         except Exception as err:  # the export refused: answer, never raise
             return refuse(Code.ENGINE_REFUSED, f"no preview ({type(err).__name__}: {err})")
 
-    def qpcr_prism_diff(self, study_id: str, bundle_dir: str, sent_back_dir: str) -> dict[str, Any]:
+    def qpcr_prism_diff(
+        self,
+        study_id: str,
+        bundle_dir: str,
+        sent_back_dir: str | None = None,
+        project_path: str | None = None,
+    ) -> dict[str, Any]:
         """What changed in Prism since export, as diff items and proposals; stores nothing.
 
-        ``bundle_dir`` is the folder qPilot wrote; ``sent_back_dir`` the tables Prism's
-        ``send_back.pzc`` exported. Both must be inside ``QPILOT_DATA_ROOTS``.
+        ``bundle_dir`` is the folder qPilot wrote (its Prism project, tables and provenance).
+        Give what came back from Prism as exactly one of ``project_path`` (the Prism project
+        the person saved: a ``.pzfx`` file, or a folder holding it such as the bundle folder
+        itself) or ``sent_back_dir`` (the tables the optional ``send_back.pzc`` script
+        exported). All of them must be inside ``QPILOT_DATA_ROOTS``. Results stay hidden for a
+        Studio session until a person confirms the design and the curves.
         """
         from qpilot.prism import diff_report
 
-        folders = {}
-        for field, value in (("bundle_dir", bundle_dir), ("sent_back_dir", sent_back_dir)):
-            try:
-                folders[field] = check_dir(value)
-            except PathRefused as err:
-                return err.refusal(field)
-        bundle, sent = folders["bundle_dir"], folders["sent_back_dir"]
+        if not isinstance(study_id, str):
+            return refuse(Code.INVALID_ARGUMENT, "study_id must be text", field="study_id")
+        if (sent_back_dir is None) == (project_path is None):
+            return refuse(
+                Code.INVALID_ARGUMENT,
+                "give exactly one of project_path (the Prism project that came back) or "
+                "sent_back_dir (the tables send_back.pzc exported)",
+                field="project_path",
+            )
+        folders: dict[str, Path] = {}
         try:
-            report = diff_report(self.store, study_id, bundle, sent)
+            folders["bundle_dir"] = check_dir(bundle_dir)
+        except PathRefused as err:
+            return err.refusal("bundle_dir")
+        returned_field = "project_path" if project_path is not None else "sent_back_dir"
+        try:
+            if project_path is not None:
+                returned = check_prism_return(project_path)
+            else:
+                returned = check_dir(sent_back_dir)  # type: ignore[arg-type]
+        except PathRefused as err:
+            return err.refusal(returned_field)
+        try:
+            self.store.workspace(study_id)
+        except StudyNotFound:
+            return refuse(Code.UNKNOWN_STUDY, UNKNOWN_STUDY)
+        hidden = self._blind(study_id)
+        if hidden is not None:
+            return hidden
+        try:
+            report = diff_report(self.store, study_id, folders["bundle_dir"], returned)
         except StudyNotFound:
             return refuse(Code.UNKNOWN_STUDY, UNKNOWN_STUDY)
         except Exception as err:  # unverifiable bundle or unreadable tables: answer, never raise
