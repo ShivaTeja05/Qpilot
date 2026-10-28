@@ -69,7 +69,7 @@ Things to know on Windows:
 
 ## 3. macOS and Linux notes
 
-* **macOS first run.** `brew install pipx` (or uv) is the shortest path; the Python that comes with the Xcode tools may be older than 3.11. The first `qpilot` command after an install takes a few seconds longer (Python compiles the libraries once). The first time qPilot reads a file in **Documents, Desktop or Downloads** from the Terminal, macOS asks whether the Terminal (or Python) may access that folder: allow it, or put the file somewhere else. Files you drop onto the page need no permission. If a browser does not open by itself, copy the link from the terminal.
+* **macOS first run.** `brew install pipx` (or uv) is the shortest path; the Python that comes with the Xcode tools may be older than 3.11. The first `qpilot` command after an install can take up to a minute (macOS checks the new native libraries once, and Python compiles the rest); later commands start in seconds. The first time qPilot reads a file in **Documents, Desktop or Downloads** from the Terminal, macOS asks whether the Terminal (or Python) may access that folder: allow it, or put the file somewhere else. Files you drop onto the page need no permission. If a browser does not open by itself, copy the link from the terminal.
 * **Linux.** Debian and Ubuntu: `sudo apt install pipx python3-venv` (Python 3.11 or newer; Ubuntu 22.04 has 3.10, so use uv or the deadsnakes/pyenv Python there). If `qpilot` is "command not found" after `pipx ensurepath`, open a new terminal.
 * **A server or a container** with no browser: `qpilot app --no-open --port 7860` prints the link; reach it with an SSH tunnel (`ssh -L 7860:127.0.0.1:7860 host`), never by binding another address (qPilot refuses other hosts on purpose).
 

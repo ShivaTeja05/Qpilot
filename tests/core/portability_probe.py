@@ -29,7 +29,7 @@ def main_probe(fixtures: Path) -> dict:
         DecisionCard.model_validate(c)
         for c in json.loads((fixtures / "cards.json").read_text(encoding="utf-8"))
     ]
-    with tempfile.TemporaryDirectory() as tmp:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
         root = Path(tmp)
         rdml = root / "input.rdml"
         rdml.write_bytes(b"<rdml>portability probe</rdml>")
