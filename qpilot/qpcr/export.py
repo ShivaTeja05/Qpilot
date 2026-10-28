@@ -744,6 +744,14 @@ def _cell(inputs: ExportInputs, model: StudyModel) -> dict[str, Any]:
         raise ExportError(
             f"the efficiency model {efficiency!r} is no longer an option of the study"
         )
+    primary = model.settings.interrun[0]
+    between = chosen.get("interrun", primary)
+    if between in space.dimensions.get("interrun", ()):
+        cell["interrun"] = between
+    elif between != primary:
+        raise ExportError(
+            f"the correction between plates {between!r} is no longer an option of the study"
+        )
     return cell
 
 
@@ -862,13 +870,20 @@ def study_inputs(
         specs["card_amp_call"] = _RuleOptions(space.dimensions["amp_call"])
     if "efficiency" in space.dimensions:  # ... and the efficiency models' ids
         specs["card_efficiency"] = _RuleOptions(space.dimensions["efficiency"], "efficiency")
+    for name in ("normaliser", "interrun"):  # ... and the normalisers', the corrections'
+        if name in space.dimensions:
+            specs[f"card_{name}"] = _RuleOptions(space.dimensions[name], name)
     analysis_cards = [c for c in cards if c.kind not in ON_DEMAND_KINDS]
     choices = tuple(_choice(card, specs) for card in sorted(analysis_cards, key=lambda c: c.rank))
     value = {c.dimension: c.value for c in choices}
     rule_id = value.get("amp_call", settings.amp_calls[0])
     efficiency = value.get("efficiency", settings.efficiency[0])
-    if efficiency != settings.efficiency[0]:  # rebuilt quantities, then the rule
-        data = model.cell_table({"amp_call": rule_id, "efficiency": efficiency})
+    between = value.get("interrun", settings.interrun[0])
+    if efficiency != settings.efficiency[0] or between != settings.interrun[0]:
+        # rebuilt quantities, then the rule, then the correction between plates
+        data = model.cell_table(
+            {"amp_call": rule_id, "efficiency": efficiency, "interrun": between}
+        )
     elif rule_id == settings.amp_calls[0]:
         data = model.inputs.primary_table
     else:
@@ -892,7 +907,7 @@ def study_inputs(
         study_id=study_id,
         input_sha256=result.input_sha256,
         data=data,
-        refs=tuple(value.get("refs", space.primary["refs"])),
+        refs=_export_refs(model, value),
         undetermined=value.get("undetermined", space.primary["undetermined"]),
         groups=groups,
         group_order=order,
@@ -908,6 +923,28 @@ def study_inputs(
         at_primary=all(c.option == c.recommended for c in choices),
         design=design or vermeulen_design(),
         curves=curves,
+    )
+
+
+def _export_refs(model: StudyModel, value: Mapping[str, Any]) -> tuple[str, ...]:
+    """The control genes the export divides by: the refs card's, or a best pair a person chose.
+
+    A best pair is one of the ``refs`` options (every subset of the candidates), so the export
+    divides by it as by any other set. The global mean has no control genes to divide by.
+
+    Raises:
+        ExportError: The normaliser card chose the global mean.
+    """
+    refs = tuple(value.get("refs", model.space.primary["refs"]))
+    option = value.get("normaliser", "planned")
+    if option == "planned":
+        return refs
+    pairs = (model.axis_notes.get("normaliser") or {}).get("refs") or {}
+    if option in pairs:
+        return tuple(pairs[option])
+    raise ExportError(
+        "the normaliser card chose the global mean, and the per-unit tables divide by reference "
+        "genes; choose the reference genes or a best pair on that card to export them"
     )
 
 

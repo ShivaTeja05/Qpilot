@@ -44,7 +44,7 @@ import logging
 import re
 import statistics
 from collections.abc import Callable, Collection, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -57,6 +57,7 @@ from qpilot.core.decisions import CardSpec, OptionSpec, build_cards, card_impact
 from qpilot.core.facts import FactRegistry, slug
 from qpilot.core.store import atomic_write, dump_json
 from qpilot.io.trust import cap_for, not_measured
+from qpilot.qpcr import interrun as irc
 from qpilot.qpcr.amp_call import (
     DEFAULT_AMP_CALLS,
     METHOD_CARD_PATH,
@@ -67,6 +68,8 @@ from qpilot.qpcr.amp_call import (
     screen_amp_call,
 )
 from qpilot.qpcr.axes import efficiency as eff_axis
+from qpilot.qpcr.axes import get_axis
+from qpilot.qpcr.axes import normaliser as norm_axis
 from qpilot.qpcr.confidence_checks import START_LEVEL, checks_for, mde_fold, upgrade_rule
 from qpilot.qpcr.contrast import (
     CORRECTION_WORDS,
@@ -83,7 +86,13 @@ from qpilot.qpcr.curves import (
     CurveSettings,
     analyse_study,
 )
-from qpilot.qpcr.design import DEMO_GROUP_VAR, DEMO_MARKER, GroupSpec, design_summary
+from qpilot.qpcr.design import (
+    DEMO_GROUP_VAR,
+    DEMO_MARKER,
+    GroupSpec,
+    design_summary,
+    groups_by_cut,
+)
 from qpilot.qpcr.designs import (
     HEADLINE_GENES,
     DesignError,
@@ -189,7 +198,9 @@ class StudySettings:
     the amp_call screening), which the legacy output does not carry. ``efficiency`` are the
     options of the efficiency-model axis, primary first (opt-in; one option: no axis, see
     :mod:`qpilot.qpcr.axes.efficiency`); ``max_cells`` caps the grid with seeded sampling
-    (:func:`qpilot.core.robustness.run_grid`; ``None``: the full product).
+    (:func:`qpilot.core.robustness.run_grid`; ``None``: the full product). ``normaliser``
+    (:mod:`qpilot.qpcr.axes.normaliser`) and ``interrun`` (:mod:`qpilot.qpcr.interrun`) are
+    the options of the normaliser and the between-plate correction axes, opt-in the same way.
     """
 
     experiment_id: str | None = DEMO_EXPERIMENT
@@ -208,6 +219,8 @@ class StudySettings:
     studio_facts: bool = False
     efficiency: tuple[str, ...] = (eff_axis.PRIMARY,)
     max_cells: int | None = None
+    normaliser: tuple[str, ...] = (norm_axis.PRIMARY,)
+    interrun: tuple[str, ...] = (irc.PRIMARY,)
 
     @property
     def marker_label(self) -> str:
@@ -226,7 +239,8 @@ class StudySettings:
         The demo preset (:func:`qpilot.qpcr.designs.vermeulen_design`) gives exactly
         ``StudySettings()``, so its output is the legacy output byte for byte. Any other design
         is carried in ``design`` and switches the Studio facts on; its ``axes`` give the options
-        of the opt-in axes a person asked to test (``efficiency``). Control-gene candidates are
+        of the opt-in axes a person asked to test (``efficiency``, ``normaliser``,
+        ``interrun``). Control-gene candidates are
         ``reference_candidates``, or (when that is empty) the targets whose role is ``ref``,
         sorted by name.
 
@@ -247,6 +261,8 @@ class StudySettings:
             "design": None if legacy else design,
             "studio_facts": not legacy,
             "efficiency": tuple((design.axes or {}).get("efficiency", (eff_axis.PRIMARY,))),
+            "normaliser": tuple((design.axes or {}).get("normaliser", (norm_axis.PRIMARY,))),
+            "interrun": tuple((design.axes or {}).get("interrun", (irc.PRIMARY,))),
         }
         trust = design.import_trust
         if trust is not None and trust.analysis == "cq_only":  # the Import Trust card's Cq only
@@ -515,13 +531,20 @@ class CellTables:
     curves: Mapping[tuple[str, str], eff_axis.StdCurve]
 
     def table(self, cell: Mapping[str, Any]) -> pd.DataFrame:
-        """The per-well table under the cell's amplification rule and efficiency model."""
+        """The per-well table under the cell's rule, efficiency model and plate correction.
+
+        The correction between plates (:mod:`qpilot.qpcr.interrun`) comes last, on the wells
+        the rule counts as amplified.
+        """
         amp = str(cell.get("amp_call", self.amp_primary))
         efficiency = str(cell.get("efficiency", eff_axis.PRIMARY))
+        between = str(cell.get("interrun", irc.PRIMARY))
         if efficiency == eff_axis.PRIMARY and amp == self.amp_primary:
-            return self.inputs.primary_table
-        table = eff_axis.universe(self.inputs.table, efficiency, self.curves).table
-        return table if self.legacy else apply_rule(table, amp, self.calls)
+            table = self.inputs.primary_table
+        else:
+            table = eff_axis.universe(self.inputs.table, efficiency, self.curves).table
+            table = table if self.legacy else apply_rule(table, amp, self.calls)
+        return table if between == irc.PRIMARY else irc.correct(table, between).table
 
     def stage(self, cell: Mapping[str, Any]) -> MatrixStage:
         """Units x genes ``log2 N0`` of the cell's table, and the values left out entirely."""
@@ -582,8 +605,27 @@ def build_model(
     if specs:
         options.update(comparisons=specs, correction=settings.design.comparisons.correction)
     efficiency, eff_notes, tables = _efficiency_axis(inputs, settings)
+    between, irc_notes = _interrun_axis(inputs, settings, tables)
+    if between:
+        efficiency = {
+            "matrix_axes": {**efficiency.get("matrix_axes", {}), **between["matrix_axes"]},
+            "matrix_source": tables.stage,
+            "unavailable": {**efficiency.get("unavailable", {}), **between["unavailable"]},
+        }
+    normalisers, norm_notes = _normaliser_axis(
+        matrix, stability, settings, inputs, groups, specs, spec
+    )
+    if normalisers:
+        unavailable = {**efficiency.get("unavailable", {}), **normalisers.pop("unavailable")}
+        efficiency = {**efficiency, "unavailable": unavailable}
     space = QpcrSpace(
-        matrix, stability, spec, amp_alternatives=inputs.alternatives, **options, **efficiency
+        matrix,
+        stability,
+        spec,
+        amp_alternatives=inputs.alternatives,
+        **options,
+        **efficiency,
+        **normalisers,
     )
     screen = None
     if inputs.alternatives:
@@ -592,14 +634,24 @@ def build_model(
         if not screen.admitted:  # the choice changes nothing that matters: no axis in the grid
             space.hold("amp_call", "screened_out", SCREENED_REASON)
     screens = {}
-    if "efficiency" in space.dimensions:
-        screens["efficiency"] = robustness.screen_axis(space, "efficiency")
-        if not screens["efficiency"].admitted:
-            space.hold("efficiency", "screened_out", SCREENED_REASON)
+    for name in ("efficiency", "normaliser"):
+        if name in space.dimensions:
+            screens[name] = robustness.screen_axis(space, name)
+            if not screens[name].admitted:
+                space.hold(name, "screened_out", SCREENED_REASON)
+    if "interrun" in space.dimensions:  # a card only when a correction flips a call
+        screen = robustness.screen_axis(space, "interrun")
+        screens["interrun"] = replace(screen, admitted=any(screen.flipped.values()))
+        if not screens["interrun"].admitted:
+            space.hold("interrun", "screened_out", INTERRUN_SCREENED_REASON)
     high, rest = space.groups(settings.cut)
     if groups is None:
         _n_guard((high, rest), (settings.group_var, "rest"))
     notes = {"efficiency": eff_notes} if eff_notes else {}
+    if norm_notes:
+        notes["normaliser"] = norm_notes
+    if irc_notes:
+        notes["interrun"] = irc_notes
     return StudyModel(
         settings,
         inputs,
@@ -619,6 +671,107 @@ def build_model(
 SCREENED_REASON = (
     "no option, changed alone, flips a conclusion or moves a log2 fold change by more than 0.5"
 )
+INTERRUN_SCREENED_REASON = "no correction between plates, changed alone, flips a conclusion"
+
+
+def _interrun_axis(
+    inputs: _Inputs, settings: StudySettings, tables: CellTables
+) -> tuple[dict, dict]:
+    """``QpcrSpace`` keywords and notes for the correction between plates (opt-in).
+
+    Nothing when only ``none`` is offered. An option that cannot change anything here (every
+    gene on one plate, no calibrator on each plate of a split gene, no measurement two plates
+    share) is not offered and is reported, asked for or not. The corrected matrices come from
+    the study's :class:`CellTables` (the correction follows the rule and the efficiency model).
+    """
+    offered = tuple(settings.interrun)
+    if offered == (irc.PRIMARY,):
+        return {}, {}
+    if not offered or offered[0] != irc.PRIMARY:
+        raise DesignError(f"the inter-run options must start with {irc.PRIMARY!r}")
+    for option in offered:
+        if option not in irc.OPTIONS:
+            raise DesignError(f"unknown inter-run option {option!r}")
+    table = inputs.primary_table
+    every = irc.unavailable(table)
+    missing = {k: v for k, v in every.items() if k in offered}
+    kept = [o for o in offered if o not in missing]
+    notes: dict = {"unavailable": missing, **irc.summary(table)}
+    if "calibrator" in kept:
+        notes["calibrator_uncorrected"] = list(irc.calibrate(table).uncorrected)
+    if "factor" in kept:
+        factors, unlinked = irc.plate_factors(table)
+        notes["plate_factors"] = {run: round(value, 6) for run, value in factors.items()}
+        notes["factor_uncorrected"] = list(unlinked)
+    keywords = {
+        "matrix_axes": {"interrun": kept},
+        "matrix_source": tables.stage,
+        "unavailable": {"interrun": every},
+    }
+    return keywords, notes
+
+
+def _normaliser_groups(
+    settings: StudySettings,
+    matrix: pd.DataFrame,
+    groups: tuple[frozenset[str], frozenset[str]] | None,
+    spec: GroupSpec | None,
+    refs: tuple[str, ...],
+) -> tuple[dict[str, str | None], frozenset[str], frozenset[str]]:
+    """Unit -> group for NormFinder, and the primary comparison's two groups.
+
+    A design's groups are every group of the design (several comparisons share them); the
+    demo's expression-defined split is the primary cut-off's high group and the rest.
+    """
+    if groups is None:
+        assert spec is not None
+        primary = GroupSpec(spec.marker, spec.cut, refs, spec.group_var)
+        high, rest = groups_by_cut(matrix, primary, [spec.cut])[spec.cut]
+        label = {**{u: "high" for u in high}, **{u: "rest" for u in rest}}
+        return {u: label.get(u) for u in matrix.index}, high, rest
+    by_unit = unit_groups(settings.design) if settings.design is not None else {}
+    return {u: by_unit.get(u) for u in matrix.index}, groups[0], groups[1]
+
+
+def _normaliser_axis(
+    matrix: pd.DataFrame,
+    stability: GenormResult,
+    settings: StudySettings,
+    inputs: _Inputs,
+    groups: tuple[frozenset[str], frozenset[str]] | None,
+    specs: tuple[ComparisonSpec, ...],
+    spec: GroupSpec | None,
+) -> tuple[dict, dict]:
+    """``QpcrSpace`` keywords and notes for the normaliser axis (opt-in).
+
+    Nothing when only ``planned`` is offered. The best pairs (NormFinder with the study's
+    groups, geNorm) and the global mean's genes come from the primary matrix and stay fixed
+    across the grid; each cell reads their values from its own matrix.
+    """
+    offered = tuple(settings.normaliser)
+    if offered == (norm_axis.PRIMARY,):
+        return {}, {}
+    if not offered or offered[0] != norm_axis.PRIMARY:
+        raise DesignError(f"the normaliser options must start with {norm_axis.PRIMARY!r}")
+    for option in offered:
+        if option not in norm_axis.OPTIONS:
+            raise DesignError(f"unknown normaliser option {option!r}")
+    candidates = settings.candidates
+    refs = tuple(g for g in candidates if g in set(stability.recommended))
+    labels, high, rest = _normaliser_groups(settings, matrix, groups, spec, refs)
+    plan = norm_axis.plan(matrix, candidates, stability, refs, labels, offered, high, rest)
+    missing = {k: v for k, v in plan.unavailable.items() if k in offered}
+    notes: dict = {"unavailable": missing, **plan.evidence}
+
+    def source(option: str, block: pd.DataFrame) -> np.ndarray:
+        return norm_axis.normaliser_values(option, refs, block, plan)
+
+    keywords = {
+        "normaliser": list(plan.options),
+        "normaliser_source": source,
+        "unavailable": {"normaliser": plan.unavailable},
+    }
+    return keywords, notes
 
 
 def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> tuple[dict, dict, CellTables]:
@@ -709,6 +862,10 @@ def study_from_curves(
         specs.append(_amp_call_spec(space, grid, summary, headline, inputs.not_amplified))
     if "efficiency" in space.dimensions:
         specs.append(_efficiency_spec(space, grid, summary, headline, model.axis_notes))
+    if "normaliser" in space.dimensions:
+        specs.append(_normaliser_spec(space, grid, summary, headline, model.axis_notes))
+    if "interrun" in space.dimensions:
+        specs.append(_interrun_spec(space, grid, summary, headline, model.axis_notes))
     cards = build_cards(space, summary, specs, headline, settings.autonomy, grid=grid)
     ref_flips = refset_flip_counts(grid, space, summary)
     ref_effect = group_effect(matrix, settings.candidates, high, rest)
@@ -1222,6 +1379,117 @@ def _efficiency_spec(
     )
 
 
+NORMALISER_WORDING = (
+    "The answer depends on what each gene is divided by: the reference genes chosen for this "
+    "study, the pair NormFinder or geNorm ranks steadiest, or the mean of every gene measured. "
+    "The reference genes in use stay a person's choice."
+)
+INTERRUN_WORDING = (
+    "The answer depends on whether differences between plates are corrected, and how: with "
+    "the calibrator sample measured on every plate, or with the measurements plates share."
+)
+
+
+def _axis_card(
+    space: QpcrSpace,
+    grid: pd.DataFrame,
+    summary: dict[str, GeneRobustness],
+    headline: Sequence[str],
+    notes: Mapping[str, dict],
+    name: str,
+    prefix: str,
+    wording: str,
+    method_card: str,
+) -> CardSpec:
+    """The card of an opt-in axis whose options are the axis's own ids (one per option)."""
+    axis = space.axes[name]
+    options = list(space.dimensions[name])
+    by_value = {o.value: o for o in axis.options}
+    own = dict(notes.get(name, {}))
+    slugs = [slug(str(o)) for o in options]
+    return CardSpec(
+        card_id=f"card_{name}",
+        kind=get_axis(name).card_kind,
+        dimension=name,
+        options=[OptionSpec(id=str(o), label=by_value[o].label, value=o) for o in options],
+        recommended=str(space.primary[name]),
+        rationale_template=f"{name}_v1",
+        evidence={
+            "title": axis.title,
+            "wording": wording,
+            "n_flipped_by_option": flip_counts(grid, space, summary, name),
+            "unavailable": dict(axis.unavailable),
+            **{k: v for k, v in own.items() if k != "unavailable"},
+            "method_card": method_card,
+        },
+        facts=[
+            f"f_n_flipped_{name}",
+            "f_n_genes",
+            *[f"f_{prefix}_label_{s}" for s in slugs],
+            *[f"f_n_flipped_{prefix}_{s}" for s in slugs],
+            *_option_facts(headline, [str(o) for o in options]),
+        ],
+    )
+
+
+def _normaliser_spec(
+    space: QpcrSpace,
+    grid: pd.DataFrame,
+    summary: dict[str, GeneRobustness],
+    headline: Sequence[str],
+    notes: Mapping[str, dict],
+) -> CardSpec:
+    """The "What to normalise each gene to" card (only when the axis is in the grid)."""
+    card = _axis_card(
+        space,
+        grid,
+        summary,
+        headline,
+        notes,
+        "normaliser",
+        "norm",
+        NORMALISER_WORDING,
+        norm_axis.METHOD_CARD_PATH,
+    )
+    own = notes.get("normaliser", {})
+    pairs = own.get("refs") or {}
+    options = [
+        o.model_copy(update={"label": f"{o.label} ({', '.join(pairs[o.id])})"})
+        if o.id in pairs
+        else o
+        for o in card.options
+    ]
+    card = card.model_copy(update={"options": options})
+    extra = [
+        *(["f_nf_best_pair", "f_nf_pair_stability"] if own.get("normfinder") else []),
+        *(["f_genorm_best_pair"] if own.get("genorm_pair") else []),
+        *(["f_nf_agreement"] if own.get("agreement") else []),
+        *(["f_gm_n_genes", "f_gm_min_genes"] if own.get("global_mean") else []),
+    ]
+    return card.model_copy(update={"facts": list(dict.fromkeys([*card.facts, *extra]))})
+
+
+def _interrun_spec(
+    space: QpcrSpace,
+    grid: pd.DataFrame,
+    summary: dict[str, GeneRobustness],
+    headline: Sequence[str],
+    notes: Mapping[str, dict],
+) -> CardSpec:
+    """The "How to correct differences between plates" card (only when one flips a call)."""
+    return _axis_card(
+        space,
+        grid,
+        summary,
+        headline,
+        notes,
+        "interrun",
+        "irc",
+        INTERRUN_WORDING,
+        irc.METHOD_CARD_PATH,
+    )
+
+
 def _amp_call_spec(
     space: QpcrSpace,
     grid: pd.DataFrame,
@@ -1317,6 +1585,11 @@ def _facts(
             if "efficiency" in flipped
             else {}
         ),
+        **{
+            f"f_n_flipped_{name}": len(flipped[name])
+            for name in ("normaliser", "interrun")
+            if name in flipped
+        },
         "f_n_hold_lt_80": sum(result.robustness[gene].holds < HOLDS_LOW for gene in items),
         **{f"f_{key}": value for key, value in counts.items()},
     }
@@ -1371,6 +1644,8 @@ def _facts(
             _amp_call_facts(add, card)
         if card.id == "card_efficiency":
             _efficiency_card_facts(add, card)
+        if card.id in ("card_normaliser", "card_interrun"):
+            _axis_card_facts(add, card, "norm" if card.id == "card_normaliser" else "irc")
     worst = slug(stability.order[-1])
     for gene in headline:
         source = f"f_fc_{slug(gene)}_{worst}"
@@ -1480,6 +1755,60 @@ def _efficiency_card_facts(add: Callable[..., None], card: DecisionCard) -> None
         add(f"f_n_flipped_eff_{s}", flips, path=f"{root}.evidence.n_flipped_by_option.{option.id}")
 
 
+def _axis_card_facts(add: Callable[..., None], card: DecisionCard, prefix: str) -> None:
+    """Facts for the normaliser or inter-run card, read from the card itself."""
+    root = f"cards.{card.id}"
+    for option in card.options:
+        s = slug(option.id)
+        label = option.label  # inside a sentence; a name such as "NormFinder's" keeps its case
+        if label.split(" ", 1)[0][1:].islower():
+            label = label[:1].lower() + label[1:]
+        add(f"f_{prefix}_label_{s}", label, path=f"{root}.{option.id}.label")
+        flips = int(card.evidence["n_flipped_by_option"][option.id])
+        path = f"{root}.evidence.n_flipped_by_option.{option.id}"
+        add(f"f_n_flipped_{prefix}_{s}", flips, path=path)
+
+
+def _normaliser_facts(add: Callable[..., None], notes: Mapping[str, Any]) -> None:
+    """NormFinder's and geNorm's best pairs and the global mean's gene count (when offered)."""
+    base = "axes.normaliser"
+    found = notes.get("normfinder")
+    if found:
+        add("f_nf_best", str(found["best"]), path=f"{base}.normfinder.best")
+        add("f_nf_best_pair", " and ".join(found["best_pair"]), path=f"{base}.normfinder.best_pair")
+        add(
+            "f_nf_pair_stability",
+            float(found["pair_stability"]),
+            "{:.3f}",
+            path=f"{base}.normfinder.pair_stability",
+        )
+        for gene, value in found["stability"].items():
+            add(f"f_nf_{slug(gene)}", float(value), "{:.3f}", path=f"{base}.normfinder.stability")
+    if notes.get("genorm_pair"):
+        add("f_genorm_best_pair", " and ".join(notes["genorm_pair"]), path=f"{base}.genorm_pair")
+    if notes.get("agreement"):
+        add("f_nf_agreement", str(notes["agreement"]), path=f"{base}.agreement")
+    gm = notes.get("global_mean") or {}
+    if gm:
+        add("f_gm_n_genes", int(gm["n_genes"]), path=f"{base}.global_mean.n_genes")
+        add("f_gm_min_genes", int(gm["min_genes"]), path=f"{base}.global_mean.min_genes")
+        shift = gm.get("group_shift")
+        if shift:
+            path = f"{base}.global_mean.group_shift"
+            add("f_gm_shift_fold", float(shift["fold"]), FC_FMT, TIMES, f"{path}.fold")
+            add("f_gm_shift_p", float(shift["p"]), "{:.2g}", "", f"{path}.p")
+
+
+def _interrun_facts(add: Callable[..., None], notes: Mapping[str, Any]) -> None:
+    """How many genes are split over plates and what can correct them (when offered)."""
+    base = "axes.interrun"
+    add("f_irc_n_runs", int(notes["n_runs"]), path=f"{base}.n_runs")
+    add("f_irc_n_split", int(notes["n_split_targets"]), path=f"{base}.n_split_targets")
+    n_cal = len(notes.get("calibrators") or {})
+    add("f_irc_n_calibrated", n_cal, path=f"{base}.calibrators")
+    add("f_irc_n_pairs", int(notes["n_plate_pairs_sharing"]), path=f"{base}.n_plate_pairs_sharing")
+
+
 def _axis_facts(add: Callable[..., None], extras: _Extras) -> None:
     """Facts for the opt-in axes a study offered: status, screening, what did not apply.
 
@@ -1497,6 +1826,10 @@ def _axis_facts(add: Callable[..., None], extras: _Extras) -> None:
         if "std_curve_fallback" in notes:
             genes = ", ".join(notes["std_curve_fallback"]) or "none"
             add("f_eff_std_fallback", genes, path=f"{base}.std_curve_fallback")
+        if name == "normaliser":
+            _normaliser_facts(add, notes)
+        if name == "interrun":
+            _interrun_facts(add, notes)
         screen = extras.screens.get(name)
         if screen is not None:
             add(

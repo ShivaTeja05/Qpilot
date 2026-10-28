@@ -404,8 +404,29 @@ export const EFFICIENCY_MODEL_WORDS: Record<string, string> = {
   assumed_2: "efficiency assumed to be 2.0 (100 %)",
   standard_curve: "efficiency from the plate's dilution series",
 };
+/** The normalisers the grid can test (qpilot/qpcr/axes/normaliser.py), inside a sentence. */
+export const NORMALISER_WORDS: Record<string, string> = {
+  planned: "the reference genes chosen for this study",
+  normfinder_pair: "NormFinder's best pair of reference genes",
+  genorm_pair: "geNorm's best pair of reference genes",
+  global_mean: "the mean of every gene measured (global mean)",
+};
+/** The corrections between plates the grid can test (qpilot/qpcr/interrun.py). */
+export const INTERRUN_WORDS: Record<string, string> = {
+  none: "no correction between plates",
+  calibrator: "inter-run calibration: the same calibrator sample on every plate",
+  factor: "factor correction from the measurements plates share",
+};
+/** Each further choice's options in words, by axis. */
+export const AXIS_OPTION_WORDS: Record<string, Record<string, string>> = {
+  efficiency: EFFICIENCY_MODEL_WORDS,
+  normaliser: NORMALISER_WORDS,
+  interrun: INTERRUN_WORDS,
+};
 const AXIS_QUESTION: Record<string, string> = {
   efficiency: "which efficiency turns Cq into quantity",
+  normaliser: "what to normalise each gene to",
+  interrun: "how to correct differences between plates",
 };
 
 type Payload = Record<string, unknown>;
@@ -491,7 +512,8 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
   "choice.axis": (s, d) => {
     const question = AXIS_QUESTION[s];
     if (!question || !Array.isArray(d.options) || !d.options.length) throw new Error("not an axis");
-    const words = (o: unknown) => EFFICIENCY_MODEL_WORDS[String(o)] ?? String(o);
+    const named = AXIS_OPTION_WORDS[s] ?? {};
+    const words = (o: unknown) => named[String(o)] ?? String(o);
     const [primary, ...others] = d.options;
     if (!others.length) return `Stop testing ${question}; keep ${words(primary)} only`;
     return `Also test ${question}: ${others.map(words).join("; ")} (besides ${words(primary)}, the analysis in use)`;

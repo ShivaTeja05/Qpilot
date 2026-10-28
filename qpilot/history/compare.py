@@ -46,7 +46,7 @@ FIELD_TITLE = {
     "well_calls": "Curve calls a person resolved",
     "excluded_wells": "Wells left out",
     "amp_calls": "Amplification rules offered",
-    "axes": "Further choices tested (efficiency models)",
+    "axes": "Further choices tested (efficiency models, normalisers, corrections between plates)",
     "note": "Note",
 }
 MAX_TEXT = 200

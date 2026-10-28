@@ -8,17 +8,20 @@ and the stages before it, so adding an axis never recomputes curves:
 ===============  ===============================================================================
 stage            what it does
 ===============  ===============================================================================
-``matrix``       per-well quantities -> units x genes ``log2 N0`` (``amp_call``, ``efficiency``)
+``matrix``       per-well quantities -> units x genes ``log2 N0`` (``amp_call``, ``efficiency``,
+                 ``interrun``: the correction between plates)
 ``aggregation``  technical replicates -> biological units (reserved)
 ``nondetect``    what a well that never amplified becomes (``undetermined``)
-``normaliser``   divide by the mean of the control genes (``refs``)
+``normaliser``   divide by the mean of the control genes (``refs``), or by another normaliser
+                 (``normaliser``: NormFinder's or geNorm's best pair, the global mean)
 ``groups``       which units are compared (``cut``)
 ``test``         the two-group test (vectorised Welch)
 ===============  ===============================================================================
 
 The registry also fixes the **dimension order**, so the column and row order of ``grid.csv``
 never depend on which optional axes a study switches on: ``refs, cut, undetermined, amp_call``
-(the legacy grid, exactly as before the registry existed), then the opt-in axes.
+(the legacy grid, exactly as before the registry existed), then the opt-in axes in the order
+they were added (``amp_call``, ``efficiency``, ``normaliser``, ``interrun``).
 
 Legacy axes are always in the grid when they apply; opt-in axes are offered only when a
 setting, design or profile asks for them, and may be screened out
@@ -163,6 +166,27 @@ _EFFICIENCY = (
     ),
 )
 
+_NORMALISER = (
+    AxisOption("planned", "planned", "The reference genes chosen for this study", "primary"),
+    AxisOption("normfinder_pair", "normfinder_pair", "NormFinder's best pair of reference genes"),
+    AxisOption("genorm_pair", "genorm_pair", "geNorm's best pair of reference genes"),
+    AxisOption("global_mean", "global_mean", "The mean of every gene measured (global mean)"),
+)
+
+_INTERRUN = (
+    AxisOption("none", "none", "No correction between plates", "primary"),
+    AxisOption(
+        "calibrator",
+        "calibrator",
+        "Inter-run calibration: the same calibrator sample on every plate",
+    ),
+    AxisOption(
+        "factor",
+        "factor",
+        "Factor correction from the measurements plates share",
+    ),
+)
+
 AXES: dict[str, AxisDef] = {
     axis.name: axis
     for axis in (
@@ -205,6 +229,24 @@ AXES: dict[str, AxisDef] = {
             card_kind="numbers.efficiency_model",
             method_card="methods/efficiency_model.md",
             catalogue=_EFFICIENCY,
+        ),
+        AxisDef(
+            "normaliser",
+            "normaliser",
+            "What to normalise each gene to",
+            legacy=False,
+            card_kind="numbers.normaliser",
+            method_card="methods/normfinder.md",
+            catalogue=_NORMALISER,
+        ),
+        AxisDef(
+            "interrun",
+            "matrix",
+            "How to correct differences between plates",
+            legacy=False,
+            card_kind="numbers.interrun",
+            method_card="methods/inter_run_calibration.md",
+            catalogue=_INTERRUN,
         ),
     )
 }

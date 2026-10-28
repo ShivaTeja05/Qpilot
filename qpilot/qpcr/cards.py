@@ -23,6 +23,20 @@ register_card_kind(
     "numbers",
     dimension="efficiency",
 )
+# norm (ex/norm): the normaliser axis (NormFinder's / geNorm's best pair, the global mean) and
+# the correction between plates (inter-run calibrator, factor correction).
+register_card_kind(
+    "numbers.normaliser",
+    "What to normalise each gene to",
+    "numbers",
+    dimension="normaliser",
+)
+register_card_kind(
+    "numbers.interrun",
+    "How to correct differences between plates",
+    "numbers",
+    dimension="interrun",
+)
 # capture (agents/capture): the Import Trust Card. Its options have no grid dimension, so the
 # consequence cannot be measured: every card of the kind is a human decision.
 register_card_kind(

@@ -1336,7 +1336,10 @@ export type paths = {
         put?: never;
         /**
          * Propose Axis
-         * @description The rule proposes testing a further choice (the efficiency models), or no longer testing it.
+         * @description The rule proposes testing a further choice, or no longer testing it.
+         *
+         *     The further choices: the efficiency models, the normaliser (NormFinder's and geNorm's best
+         *     pairs, the global mean) and the correction between plates (inter-run calibrator, factor).
          *
          *     It joins the choices stage's inbox; nothing changes until a person accepts it, and then the
          *     study is analysed again with the choice as one more dimension of the grid. Results only
@@ -2497,6 +2500,26 @@ export type paths = {
          * @description The records of this study in qPilot's export folder, newest first.
          */
         get: operations["list_records"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/references": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get References
+         * @description Both rankings (geNorm, NormFinder) of the study's candidate reference genes.
+         */
+        get: operations["get_references"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4863,7 +4886,7 @@ export type components = {
         };
         /**
          * AxisView
-         * @description A further choice the grid can test on request (the efficiency models).
+         * @description A further choice the grid can test on request (efficiency, normaliser, between plates).
          */
         AxisView: {
             /**
@@ -11682,11 +11705,11 @@ export type components = {
         ProposeAxis: {
             /**
              * Axis
-             * @description The further choice: which efficiency turns Cq into quantity.
+             * @description The further choice: which efficiency turns Cq into quantity (efficiency), what to normalise each gene to (normaliser: NormFinder's and geNorm's best pairs, the global mean) or how to correct differences between plates (interrun).
              * @default efficiency
-             * @constant
+             * @enum {string}
              */
-            axis: "efficiency";
+            axis: "efficiency" | "normaliser" | "interrun";
             /**
              * On
              * @description True: test it; false: stop testing it.
@@ -12014,6 +12037,141 @@ export type components = {
              * @description One line per problem, or one OK line.
              */
             summary: string[];
+        };
+        /**
+         * ReferenceGeneRow
+         * @description One candidate reference gene under both methods (lower is steadier in each).
+         */
+        ReferenceGeneRow: {
+            /** Gene */
+            gene: string;
+            /**
+             * Genorm M
+             * @description geNorm M: the mean SD of its log2 ratio to each other candidate.
+             */
+            genorm_m?: number | null;
+            /**
+             * Genorm Rank
+             * @description 1 = steadiest by geNorm.
+             */
+            genorm_rank?: number | null;
+            /**
+             * Normfinder
+             * @description NormFinder's stability value: the error it would bring in (log2), from its variation within each group and its shift between the groups.
+             */
+            normfinder?: number | null;
+            /**
+             * Normfinder Rank
+             * @description 1 = steadiest by NormFinder.
+             */
+            normfinder_rank?: number | null;
+            /**
+             * Shift
+             * @description NormFinder's shift of the gene in each group (log2), before shrinkage.
+             */
+            shift?: {
+                [key: string]: number;
+            };
+            /**
+             * Used
+             * @description The analysis in use divides by it.
+             */
+            used: boolean;
+            /**
+             * Within Sd
+             * @description NormFinder's within-group SD (log2), mean over the groups.
+             */
+            within_sd?: number | null;
+        };
+        /**
+         * ReferencePair
+         * @description A best pair by one method, with its value where the method gives one.
+         */
+        ReferencePair: {
+            /** Genes */
+            genes: string[];
+            /** Value */
+            value?: number | null;
+        };
+        /**
+         * ReferenceStability
+         * @description geNorm M and NormFinder's stability side by side, and whether they agree.
+         */
+        ReferenceStability: {
+            /** Candidates */
+            candidates: string[];
+            /**
+             * Choice Note
+             * @description Which reference genes are used stays a person's choice.
+             */
+            choice_note: string;
+            /** @description geNorm's best pair (its last two genes; it cannot order them). */
+            genorm_pair?: components["schemas"]["ReferencePair"] | null;
+            /**
+             * Grouped
+             * @description NormFinder used the study's groups.
+             */
+            grouped: boolean;
+            /**
+             * Groups
+             * @description Group -> units used.
+             */
+            groups?: {
+                [key: string]: number;
+            };
+            /**
+             * Left Out Reasons
+             * @description Why units were left out -> how many.
+             */
+            left_out_reasons?: {
+                [key: string]: number;
+            };
+            /**
+             * N Left Out
+             * @description Units NormFinder could not use, and why below.
+             * @default 0
+             */
+            n_left_out: number;
+            /**
+             * N Units
+             * @default 0
+             */
+            n_units: number;
+            normfinder_pair?: components["schemas"]["ReferencePair"] | null;
+            /**
+             * Rows
+             * @description Every candidate, in candidate order.
+             */
+            rows: components["schemas"]["ReferenceGeneRow"][];
+            /** Sources */
+            sources: string[];
+            /** Study Id */
+            study_id: string;
+            /**
+             * Unavailable
+             * @description Why NormFinder could not run (then no NormFinder numbers).
+             */
+            unavailable?: string | null;
+            /**
+             * Used
+             * @description The reference genes the analysis in use divides by.
+             */
+            used: string[];
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "agree" | "share_one" | "disagree" | "not_available";
+            /**
+             * Warnings
+             * @description The paper's own requirements.
+             */
+            warnings?: string[];
+            /**
+             * Words
+             * @description What the two agree or disagree on, in plain words.
+             */
+            words: string;
         };
         /**
          * RefusedProposal
@@ -19512,6 +19670,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecordList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_references: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferenceStability"];
                 };
             };
             /** @description Validation Error */

@@ -426,6 +426,13 @@ def build_context(
     space: QpcrSpace = model.space
     cell = dict(space.primary if cell is None else cell)
     planned = cell == space.primary
+    if not planned:  # a best pair is traced as the control genes it is
+        from qpilot.qpcr.axes.normaliser import NotTraceable, as_refs_cell
+
+        try:
+            cell = as_refs_cell(cell, getattr(model, "axis_notes", {}).get("normaliser"))
+        except NotTraceable as err:
+            raise TraceError(f"Trace cannot follow this analysis: {err}") from None
     inputs = getattr(model, "inputs", None)
     table = getattr(inputs, "primary_table", None)
     table = curves if table is None else table
@@ -605,9 +612,13 @@ def _index_checks(ctx: TraceContext, unknown: pd.DataFrame) -> None:
 
 
 def _matrix_cell(cell: Mapping[str, Any], space: QpcrSpace) -> bool:
-    """True when the cell's per-well table differs from the primary one (rule or efficiency)."""
+    """True when the cell's per-well table differs from the primary one.
+
+    Its amplification rule, efficiency model or correction between plates.
+    """
     return any(
-        dim in cell and cell[dim] != space.primary.get(dim) for dim in ("amp_call", "efficiency")
+        dim in cell and cell[dim] != space.primary.get(dim)
+        for dim in ("amp_call", "efficiency", "interrun")
     )
 
 

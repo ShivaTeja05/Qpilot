@@ -49,6 +49,27 @@ REFERENCES: dict[str, str] = {
         "quantitative RT-PCR data by geometric averaging of multiple internal control genes. "
         "Genome Biol. 2002;3(7):research0034. doi:10.1186/gb-2002-3-7-research0034"
     ),
+    "andersen2004": (
+        "Andersen CL, Jensen JL, Ørntoft TF. Normalization of real-time quantitative reverse "
+        "transcription-PCR data: a model-based variance estimation approach to identify genes "
+        "suited for normalization, applied to bladder and colon cancer data sets. Cancer Res. "
+        "2004;64(15):5245–5250. doi:10.1158/0008-5472.CAN-04-0496"
+    ),
+    "mestdagh2009": (
+        "Mestdagh P, Van Vlierberghe P, De Weer A, et al. A novel and universal method for "
+        "microRNA RT-qPCR data normalization. Genome Biol. 2009;10(6):R64. "
+        "doi:10.1186/gb-2009-10-6-r64"
+    ),
+    "hellemans2007": (
+        "Hellemans J, Mortier G, De Paepe A, Speleman F, Vandesompele J. qBase relative "
+        "quantification framework and software for management and automated analysis of "
+        "real-time quantitative PCR data. Genome Biol. 2007;8(2):R19. doi:10.1186/gb-2007-8-2-r19"
+    ),
+    "ruijter2015": (
+        "Ruijter JM, Ruiz Villalba A, Hellemans J, Untergasser A, van den Hoff MJB. Removal of "
+        "between-run variation in a multi-plate qPCR experiment. Biomol Detect Quantif. "
+        "2015;5:10–14. doi:10.1016/j.bdq.2015.07.001"
+    ),
     "welch1947": (
         "Welch BL. The generalization of 'Student's' problem when several different population "
         "variances are involved. Biometrika. 1947;34(1–2):28–35."
@@ -259,6 +280,70 @@ def normalisation(c: Ctx, cite: Cites) -> list[Part]:
                 f"{tok('f_ref_ratio_top_p')})"
             )
         parts.append(".")
+    parts += _normalisers(c, cite)
+    parts += _between_plates(c, cite)
+    return parts
+
+
+def _normalisers(c: Ctx, cite: Cites) -> list[Part]:
+    """NormFinder, geNorm's pair and the global mean, when a person asked to test them."""
+    if not c.has("f_axis_normaliser"):
+        return []
+    parts: list[Part] = []
+    if c.has("f_nf_best_pair", "f_nf_pair_stability"):
+        parts += [
+            " NormFinder ",
+            cite("andersen2004"),
+            f" ranked the same candidates with the groups; its best pair is "
+            f"{tok('f_nf_best_pair')} (stability value {tok('f_nf_pair_stability')})",
+        ]
+        if c.has("f_nf_agreement"):
+            parts.append(f". {tok('f_nf_agreement')}")
+        else:
+            parts.append(".")
+    if c.has("f_gm_n_genes"):
+        parts += [
+            " The global mean ",
+            cite("mestdagh2009"),
+            f" (each of {tok('f_gm_n_genes')} genes weighted equally) was ",
+        ]
+        if c.has("f_axis_normaliser_unavailable_global_mean"):
+            parts.append(
+                f"not tested: qPilot offers it from {tok('f_gm_min_genes')} genes, its own "
+                "default (the paper asks for a large number of genes and gives no minimum)."
+            )
+        else:
+            parts.append("tested as another normaliser.")
+    if c.has("f_n_flipped_normaliser", "f_n_genes"):
+        parts.append(
+            f" Changing only the normaliser changes {tok('f_n_flipped_normaliser')} of "
+            f"{tok('f_n_genes')} calls; the reference genes in use were not changed by it."
+        )
+    elif c.has("f_screen_normaliser"):
+        parts.append(" No other normaliser, tried alone, changes a call.")
+    return parts
+
+
+def _between_plates(c: Ctx, cite: Cites) -> list[Part]:
+    """Inter-run calibration and factor correction, when a person asked to test them."""
+    if not c.has("f_axis_interrun", "f_irc_n_split", "f_irc_n_runs"):
+        return []
+    parts: list[Part] = [
+        f" Of the {tok('f_irc_n_runs')} plates, {tok('f_irc_n_split')} genes have their samples "
+        "on more than one; inter-run calibration ",
+        cite("hellemans2007"),
+        " and factor correction ",
+        cite("ruijter2015"),
+        " were tested as corrections between plates",
+    ]
+    if c.has("f_n_flipped_interrun", "f_n_genes"):
+        parts.append(
+            f": correcting changes {tok('f_n_flipped_interrun')} of {tok('f_n_genes')} calls."
+        )
+    elif c.facts.value("f_axis_interrun") == "not_applicable":
+        parts.append(", but neither can change a result in this study.")
+    else:
+        parts.append(": neither, tried alone, changes a call.")
     return parts
 
 
@@ -406,6 +491,8 @@ def robustness(c: Ctx, cite: Cites) -> list[Part]:
         "undetermined": ("rule for wells without a quantity", "rules for wells without a quantity"),
         "amp_call": ("amplification-call rule", "amplification-call rules"),
         "efficiency": ("efficiency model", "efficiency models"),
+        "normaliser": ("normaliser", "normalisers"),
+        "interrun": ("correction between plates", "corrections between plates"),
     }
     dims = []
     for dim, options in opts.items():
@@ -432,6 +519,8 @@ def robustness(c: Ctx, cite: Cites) -> list[Part]:
             ("f_n_flipped_amp_call", "the amplification-call rule"),
             ("f_n_flipped_undetermined", "the rule for wells without a quantity"),
             ("f_n_flipped_efficiency", "the efficiency model"),
+            ("f_n_flipped_normaliser", "the normaliser"),
+            ("f_n_flipped_interrun", "the correction between plates"),
         )
         if c.has(fid)
     ]
@@ -604,6 +693,7 @@ def software(c: Ctx, cite: Cites) -> list[Part]:
     text += (
         "; LinRegPCR from rdmlpython (MIT licence), geNorm reimplemented from its paper and "
         "Welch's test from SciPy's t distribution"
+        + (", NormFinder reimplemented from its paper" if c.has("f_nf_best_pair") else "")
     )
     if c.inputs.audit is not None:
         text += ", and the audit with qPilot's Decision Simulator"

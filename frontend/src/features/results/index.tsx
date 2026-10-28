@@ -180,7 +180,7 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
       ) : (
         <FlipPanel flips={flips.data} onOpen={openGene} />
       )}
-      <ReferencesPanel view={view} />
+      <ReferencesPanel view={view} workspaceKey={key} />
       <EvidencePanel workspaceKey={key} studyId={studyId} />
     </>
   );

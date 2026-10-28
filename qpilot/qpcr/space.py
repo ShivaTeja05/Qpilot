@@ -10,7 +10,12 @@ analysis choices a scientist has to make:
   the groups are defined from the data; groups from a confirmed design have no cut);
 * ``undetermined`` — what to do with wells that never amplified: ``drop`` or ``cap``;
 * ``amp_call`` — which curves count as amplified (:mod:`qpilot.qpcr.amp_call`); present only when
-  more than one rule is offered.
+  more than one rule is offered;
+* ``normaliser`` (opt-in) — what each gene is divided by: the control genes of the ``refs`` cell
+  (``planned``), NormFinder's or geNorm's best pair, or the global mean
+  (:mod:`qpilot.qpcr.axes.normaliser`). Its other options do not depend on ``refs``, so a cell
+  with another normaliser and a non-primary ``refs`` would repeat an analysis: such cells are
+  :meth:`QpcrSpace.redundant` and the grid leaves them out.
 
 3 x 31 x 2 = 186 cells on the demo. :meth:`QpcrSpace.evaluate` returns every gene's comparison
 for one cell. The comparison groups are computed once per cut-off **from the primary control
@@ -169,6 +174,11 @@ class QpcrSpace:
             evaluates all of them.
         correction: ``"holm"`` (each gene's p-values adjusted across its comparisons; the
             call uses the adjusted p) or ``"none"``. Only read with ``comparisons``.
+        normaliser: The options of the normaliser axis, ``"planned"`` first (one option or
+            none: no axis).
+        normaliser_source: ``(option, cell matrix) -> units x columns`` whose row mean is that
+            option's normaliser (every option but ``"planned"``); required with a second
+            normaliser option.
     """
 
     def __init__(
@@ -192,6 +202,8 @@ class QpcrSpace:
         unavailable: Mapping[str, Mapping[str, str]] | None = None,
         comparisons: Sequence[ComparisonSpec] | None = None,
         correction: str = "holm",
+        normaliser: Sequence[str] | None = None,
+        normaliser_source: Callable[[str, pd.DataFrame], np.ndarray] | None = None,
     ) -> None:
         specs = tuple(comparisons or ())
         if specs:
@@ -230,6 +242,14 @@ class QpcrSpace:
                 raise AxisError(f"axis {name!r} needs distinct options, primary first")
             if len(options) > 1 and matrix_source is None:
                 raise AxisError(f"axis {name!r} offers several options but no matrix_source")
+        norm_options = list(normaliser or ())
+        if norm_options and (
+            norm_options[0] != _DEFAULT_PRIMARY["normaliser"]
+            or len(set(norm_options)) != len(norm_options)
+        ):
+            raise AxisError("the normaliser options must be distinct and start with 'planned'")
+        if len(norm_options) > 1 and normaliser_source is None:
+            raise AxisError("the normaliser axis offers several options but no normaliser_source")
         self.rule = rule
         self.design: GroupSpec | None = (
             GroupSpec(design.marker, design.cut, primary_refs, design.group_var)
@@ -246,10 +266,11 @@ class QpcrSpace:
         if alternatives:
             self.dimensions["amp_call"] = [amp_call, *alternatives]
             self.primary["amp_call"] = amp_call
-        for name in ordered(list(extra)):
-            if len(extra[name]) > 1:
-                self.dimensions[name] = extra[name]
-                self.primary[name] = extra[name][0]
+        offered_axes = {**extra, **({"normaliser": norm_options} if norm_options else {})}
+        for name in ordered(list(offered_axes)):
+            if len(offered_axes[name]) > 1:
+                self.dimensions[name] = offered_axes[name]
+                self.primary[name] = offered_axes[name][0]
         self._amp_primary = amp_call
         # every matrix-stage axis has a primary, swept or not: it keys the stage caches
         self._matrix_primary: dict[str, Any] = {"amp_call": amp_call}
@@ -257,6 +278,10 @@ class QpcrSpace:
         self._matrix_names = [n for n in DIMENSION_ORDER if n in self._matrix_primary]
         self._matrix_source = matrix_source
         self._offered = {"amp_call": [amp_call, *alternatives], **extra}
+        if norm_options:
+            self._offered["normaliser"] = norm_options
+        self._normaliser_source = normaliser_source
+        self._norm_cache: dict[tuple[str, tuple[Any, ...]], np.ndarray] = {}
         excluded_genes = {*candidates, design.marker} if marker_mode else set(candidates)
         genes = [gene for gene in matrix.columns if gene not in excluded_genes]
         self._samples = matrix.index
@@ -383,12 +408,16 @@ class QpcrSpace:
     def _rule_arrays(
         self, matrix: pd.DataFrame, candidates: tuple[str, ...]
     ) -> tuple[np.ndarray, np.ndarray, pd.DataFrame]:
-        """Values of the items, their lowest detected value ("cap") and the control genes."""
+        """Values of the items, their lowest detected value ("cap") and the whole matrix.
+
+        The matrix (every gene, the control genes among them) is what a normaliser is read
+        from: the chosen control genes' columns, or every gene for the global mean.
+        """
         values = matrix[self.items].to_numpy(dtype=float)
         with warnings.catch_warnings():  # a gene that is undetermined everywhere has no lowest
             warnings.simplefilter("ignore", RuntimeWarning)
             lowest = np.nanmin(values, axis=0)  # per gene, for the "cap" option
-        return values, lowest, matrix[list(candidates)]
+        return values, lowest, matrix
 
     def _nondetect_values(self, key: tuple[Any, ...], rule: str) -> np.ndarray:
         """Stage 2: the items' values after the non-detect rule."""
@@ -474,6 +503,52 @@ class QpcrSpace:
             )
         return self._ref_mean[cache_key]
 
+    def _normaliser_of(self, cell: Mapping[str, Any]) -> str:
+        """The cell's normaliser option (``planned`` when the axis is not in the cell)."""
+        option = cell.get("normaliser", _DEFAULT_PRIMARY["normaliser"])
+        if option not in self._offered.get("normaliser", [_DEFAULT_PRIMARY["normaliser"]]):
+            raise AxisError(f"unknown normaliser option {option!r}")
+        return option
+
+    def _ref_block(self, cell: Mapping[str, Any], key: tuple[Any, ...]) -> np.ndarray:
+        """Units x columns whose row mean is the cell's normaliser (no copy for a cache hit)."""
+        option = self._normaliser_of(cell)
+        if option == _DEFAULT_PRIMARY["normaliser"]:
+            return self._matrix_arrays(key)[2][list(cell["refs"])].to_numpy(dtype=float)
+        cached = self._norm_cache.get((option, key))
+        if cached is None:
+            assert self._normaliser_source is not None  # checked in __init__
+            block = self._normaliser_source(option, self._matrix_arrays(key)[2])
+            cached = np.asarray(block, dtype=float).reshape(len(self._samples), -1)
+            self._norm_cache[(option, key)] = cached
+        return cached
+
+    def _reference_of(
+        self, cell: Mapping[str, Any], key: tuple[Any, ...]
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Stage 3 for a cell: its normaliser per unit, and where the unit has one."""
+        if self._normaliser_of(cell) == _DEFAULT_PRIMARY["normaliser"]:
+            return self._reference(tuple(cell["refs"]), key)
+        block = self._ref_block(cell, key)
+        return block.mean(axis=1), ~np.isnan(block).any(axis=1)
+
+    def redundant(self, cell: Mapping[str, Any]) -> bool:
+        """True for a cell that repeats another analysis, which the grid leaves out.
+
+        A normaliser other than ``planned`` does not read the ``refs`` choice, so only its cell
+        with the primary ``refs`` is evaluated.
+        """
+        if self._normaliser_of(cell) == _DEFAULT_PRIMARY["normaliser"]:
+            return False
+        return tuple(cell["refs"]) != tuple(self.primary["refs"])
+
+    def normaliser_label(self, cell: Mapping[str, Any]) -> str:
+        """What the cell divides by, in words (the control genes, or the global mean)."""
+        option = self._normaliser_of(cell)
+        if option == _DEFAULT_PRIMARY["normaliser"]:
+            return ", ".join(cell["refs"])
+        return next(o.label for o in self.axes["normaliser"].options if o.id == option)
+
     def evaluate(self, cell: dict[str, Any]) -> dict[str, ContrastResult]:
         """Every gene's group comparison (high vs rest, or group A vs B) under one cell.
 
@@ -486,7 +561,7 @@ class QpcrSpace:
             raise ValueError(f"unknown amp_call option {amp_call!r}")
         key = self._matrix_key(cell)
         values = self._nondetect_values(key, cell["undetermined"])
-        ref_mean, refs_ok = self._reference(refs, key)
+        ref_mean, refs_ok = self._reference_of({**cell, "refs": refs}, key)
         relative = values - ref_mean[:, None]
         valid = refs_ok[:, None] & ~np.isnan(relative)
         if self.comparisons:
@@ -539,8 +614,7 @@ class QpcrSpace:
             raise ValueError(f"unknown amp_call option {amp_call!r}")
         key = self._matrix_key(cell)
         values = self._nondetect_values(key, cell["undetermined"])
-        refs = self._matrix_arrays(key)[2][list(cell["refs"])].to_numpy(dtype=float)
-        return values, refs
+        return values, self._ref_block(cell, key)
 
     def _compare(
         self,
@@ -590,7 +664,8 @@ class QpcrSpace:
         ``values`` is units x :attr:`items` ``log2(n0)`` under the cell's amplification rule,
         with the cell's undetermined rule applied (``cap`` fills undetermined values with each
         gene's lowest value); ``ref_values`` is units x the cell's control genes, in the cell's
-        order. The primary cell when ``cell`` is ``None``.
+        order (another normaliser: the columns whose row mean it is, one column for the global
+        mean). The primary cell when ``cell`` is ``None``.
 
         Raises:
             ValueError: Unknown amplification or undetermined option.
@@ -601,7 +676,7 @@ class QpcrSpace:
             raise ValueError(f"unknown amp_call option {amp_call!r}")
         key = self._matrix_key(cell)  # the stage caches :meth:`evaluate` reads (any matrix axis)
         values = self._nondetect_values(key, cell["undetermined"])
-        ref_values = self._matrix_arrays(key)[2][list(cell["refs"])].to_numpy(dtype=float)
+        ref_values = np.array(self._ref_block(cell, key), dtype=float)
         return np.array(values, dtype=float), ref_values
 
     def evaluate_arrays(
@@ -754,6 +829,10 @@ class ComparisonView:
         """The call the result carries (made from the corrected p-value)."""
         return result.conclusion
 
+    def redundant(self, cell: Mapping[str, Any]) -> bool:
+        """The space's own answer (see :meth:`QpcrSpace.redundant`)."""
+        return self.space.redundant(cell)
+
 
 def _with_call_p(arrays: ContrastArrays, p_call: np.ndarray) -> ContrastArrays:
     """The arrays with their calls made from ``p_call`` (a corrected p-value)."""
@@ -875,7 +954,12 @@ def group_stats(values: np.ndarray, mask: np.ndarray) -> tuple[np.ndarray, ...]:
     return _group_stats(values, mask)
 
 
-_DEFAULT_PRIMARY: dict[str, Any] = {"amp_call": DEFAULT_AMP_CALL, "efficiency": "linregpcr"}
+_DEFAULT_PRIMARY: dict[str, Any] = {
+    "amp_call": DEFAULT_AMP_CALL,
+    "efficiency": "linregpcr",
+    "normaliser": "planned",
+    "interrun": "none",
+}
 
 
 def _option(
