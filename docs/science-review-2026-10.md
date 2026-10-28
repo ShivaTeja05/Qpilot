@@ -326,8 +326,8 @@ Holm S. A simple sequentially rejective multiple test procedure. *Scand J Stat* 
 Iglewicz B, Hoaglin DC. *How to Detect and Handle Outliers.* ASQC 1993.
 Klymus KE et al. Reporting the limits of detection and quantification for environmental DNA
 assays. *Environmental DNA* 2020;2:271–282.
-Kralik P, Ricchi M. A basic guide to real time PCR in microbial diagnostics. *Front Microbiol*
-2017;8:108.
+Kralik P, Ricchi M. A basic guide to real time PCR (definitions and parameters). *Front
+Microbiol* 2017;8:108.
 Kramer CY. Extension of multiple range tests to group means with unequal numbers of
 replications. *Biometrics* 1956;12:307–310.
 McCall MN et al. On non-detects in qPCR data. *Bioinformatics* 2014;30:2310–2316.
