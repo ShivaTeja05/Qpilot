@@ -117,7 +117,9 @@ def run_all(
         "qsim_version": __version__,
     }
     lock_hash = hashlib.sha256(json.dumps(lock, sort_keys=True).encode()).hexdigest()
-    (out / "lock.json").write_text(json.dumps({**lock, "sha256": lock_hash}, indent=1))
+    (out / "lock.json").write_text(
+        json.dumps({**lock, "sha256": lock_hash}, indent=1), encoding="utf-8", newline="\n"
+    )
     t = time.perf_counter()
     grid = engine.run(explore.full(space))
     timings["full_grid_s"] = time.perf_counter() - t
@@ -172,7 +174,7 @@ def run_all(
         genes["samples_whose_removal_flips"].fillna(0).astype(int)
     )
     genes.index.name = "gene"
-    genes.to_csv(out / "genes.csv")
+    genes.to_csv(out / "genes.csv", lineterminator="\n")
 
     decisions = pd.DataFrame(
         {
@@ -184,7 +186,7 @@ def run_all(
         }
     )
     decisions.index.name = "decision"
-    decisions.to_csv(out / "decisions.csv")
+    decisions.to_csv(out / "decisions.csv", lineterminator="\n")
     interactions = allf.interaction_share().mean().sort_values(ascending=False)
 
     check = []
@@ -199,8 +201,10 @@ def run_all(
         t = time.perf_counter()
         bench_summary, bench_detail = run_benchmark(study, trials=bench_trials, seed=seed)
         timings["benchmark_s"] = time.perf_counter() - t
-        bench_summary.to_csv(out / "benchmark.csv")
-        bench_detail.drop(columns=["truth"]).to_csv(out / "benchmark_trials.csv", index=False)
+        bench_summary.to_csv(out / "benchmark.csv", lineterminator="\n")
+        bench_detail.drop(columns=["truth"]).to_csv(
+            out / "benchmark_trials.csv", index=False, lineterminator="\n"
+        )
         changed = bench_detail[bench_detail["calls_changed"] > 0]
         unchanged = bench_detail[bench_detail["calls_changed"] == 0]
         bench_pooled = {
@@ -216,9 +220,11 @@ def run_all(
 
     issue_dicts = [i.__dict__ for i in queue]
     genes["verdict"] = verdicts(genes, issue_dicts)
-    genes.to_csv(out / "genes.csv")
+    genes.to_csv(out / "genes.csv", lineterminator="\n")
     explained = explain(engine, defn, genes, genes["verdict"])
-    (out / "explain.json").write_text(json.dumps(explained, indent=1, default=_json_default))
+    (out / "explain.json").write_text(
+        json.dumps(explained, indent=1, default=_json_default), encoding="utf-8", newline="\n"
+    )
     verdict_counts = {v: int((genes["verdict"] == v).sum()) for v in ORDER}
     t = time.perf_counter()
     from qsim import designs
@@ -227,7 +233,9 @@ def run_all(
         designs.run(study, space, draws=design_draws, seed=seed) if design_draws else None
     )
     if design_result:
-        (out / "designs.json").write_text(json.dumps(design_result, indent=1))
+        (out / "designs.json").write_text(
+            json.dumps(design_result, indent=1), encoding="utf-8", newline="\n"
+        )
     timings["designs_s"] = time.perf_counter() - t
     t = time.perf_counter()
     moves_value = (
@@ -236,7 +244,9 @@ def run_all(
         else None
     )
     if moves_value:
-        (out / "moves_value.json").write_text(json.dumps(moves_value, indent=1))
+        (out / "moves_value.json").write_text(
+            json.dumps(moves_value, indent=1), encoding="utf-8", newline="\n"
+        )
     timings["moves_value_s"] = time.perf_counter() - t
     question = {
         d: int(v)
@@ -244,11 +254,15 @@ def run_all(
         if space.decision(d).role == "question"
     }
     qf = queue_frame(queue)
-    qf.to_csv(out / "issues.csv", index=False)
-    (out / "issues.json").write_text(json.dumps([i.__dict__ for i in queue], indent=1, default=str))
-    loo_flips.to_csv(out / "one_sample_flips.csv", index=False)
+    qf.to_csv(out / "issues.csv", index=False, lineterminator="\n")
+    (out / "issues.json").write_text(
+        json.dumps([i.__dict__ for i in queue], indent=1, default=str),
+        encoding="utf-8",
+        newline="\n",
+    )
+    loo_flips.to_csv(out / "one_sample_flips.csv", index=False, lineterminator="\n")
     refw.sort_values(["genes_flipped", "max_abs_d_in_se"], ascending=False).head(50).to_csv(
-        out / "reference_wells_top50.csv", index=False
+        out / "reference_wells_top50.csv", index=False, lineterminator="\n"
     )
 
     base_counts = pd.Series([c for c in genes["all_baseline_call"]]).value_counts().to_dict()
@@ -357,8 +371,10 @@ def run_all(
         else bench_summary.reset_index().round(3).to_dict(orient="records"),
         "timings_s": {k: round(v, 2) for k, v in timings.items()},
     }
-    (out / "summary.json").write_text(json.dumps(summary, indent=1, default=_json_default))
-    (out / "REPORT.md").write_text(render_report(summary))
+    (out / "summary.json").write_text(
+        json.dumps(summary, indent=1, default=_json_default), encoding="utf-8", newline="\n"
+    )
+    (out / "REPORT.md").write_text(render_report(summary), encoding="utf-8", newline="\n")
     return summary
 
 

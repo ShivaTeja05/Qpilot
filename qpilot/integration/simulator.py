@@ -503,7 +503,7 @@ def _write_checksums(out_dir: Path) -> str:
         if p.is_file() and p.name != CHECKSUMS
     ]
     text = "\n".join(lines) + "\n"
-    (out_dir / CHECKSUMS).write_text(text, encoding="utf-8")
+    (out_dir / CHECKSUMS).write_text(text, encoding="utf-8", newline="\n")
     return hashlib.sha256(text.encode()).hexdigest()
 
 
@@ -563,7 +563,7 @@ def audit(
     )
     changes, unmapped = chosen_changes(prepared, analysis.inputs.choices)
     table = whatif(prepared.engine, changes)
-    table.to_csv(out / "your_choices.csv", index=False)
+    table.to_csv(out / "your_choices.csv", index=False, lineterminator="\n")
     flipped = table[table["call"] != table["base_call"]]
     genes = pd.read_csv(out / "genes.csv").set_index("gene")
     verdicts = genes["verdict"].astype(str).to_dict()
@@ -595,7 +595,9 @@ def audit(
         },
         "versions": {"qsim": qsim.__version__, "qpilot": _qpilot_version()},
     }
-    (out / MANIFEST).write_text(json.dumps(manifest, indent=1, default=str), encoding="utf-8")
+    (out / MANIFEST).write_text(
+        json.dumps(manifest, indent=1, default=str), encoding="utf-8", newline="\n"
+    )
     manifest["checksums_sha256"] = _write_checksums(out)
     return AuditResult(
         out_dir=out,
@@ -664,7 +666,11 @@ def verify_audit(audit_dir: str | Path, record_dir: str | Path | None = None) ->
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if not manifest.get("reproduces_qpilot", {}).get("ok"):
         problems.append("the audit does not record that it reproduces qPilot's result")
-    lock = json.loads((root / "lock.json").read_text()) if (root / "lock.json").exists() else {}
+    lock = (
+        json.loads((root / "lock.json").read_text(encoding="utf-8"))
+        if (root / "lock.json").exists()
+        else {}
+    )
     if lock.get("sha256") != manifest.get("lock_sha256"):
         problems.append("lock.json does not match the manifest")
     if lock.get("input_sha256") != manifest.get("input_sha256"):
@@ -691,7 +697,11 @@ def _record_binding(record_dir: Path, manifest: dict[str, Any]) -> list[str]:
     log = record_dir / "decisions.jsonl"
     head = manifest.get("chain_head")
     if head and log.exists():
-        hashes = {json.loads(line).get("hash") for line in log.read_text().splitlines() if line}
+        hashes = {
+            json.loads(line).get("hash")
+            for line in log.read_text(encoding="utf-8").splitlines()
+            if line
+        }
         if head not in hashes:
             problems.append("the audited decision chain head is not in the record's chain")
     return problems

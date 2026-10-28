@@ -171,7 +171,7 @@ def check_app(env: dict[str, str], cwd: Path, version: str) -> None:
     port = free_port()
     base = f"http://127.0.0.1:{port}"
     log = cwd / "app.log"
-    with log.open("w", encoding="utf-8") as sink:
+    with log.open("w", encoding="utf-8", newline="\n") as sink:
         proc = subprocess.Popen(  # noqa: S603
             [script("qpilot"), "app", "--no-open", "--port", str(port)],
             env={**env, "QPILOT_APP_TOKEN": TOKEN},

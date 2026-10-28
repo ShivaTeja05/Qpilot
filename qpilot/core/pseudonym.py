@@ -44,8 +44,13 @@ class PseudonymError(ValueError):
     """A key that is unsafe to use, or two names that would share one token."""
 
 
+#: Windows opens an ``os.open`` descriptor in text mode unless told otherwise, which turns a
+#: random 0x0A byte into CR LF on write and stops a read at the first 0x1A: the key must be binary.
+_BINARY = getattr(os, "O_BINARY", 0)
+
+
 def _read_key(path: Path) -> bytes:
-    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | _BINARY
     fd = os.open(path, flags)
     try:
         info = os.fstat(fd)
@@ -71,7 +76,7 @@ def hmac_key(workspace: str | Path) -> bytes:
     with FileLock(str(workspace / ".lock"), timeout=LOCK_TIMEOUT_S):
         if not path.exists():
             path.parent.mkdir(mode=0o700, exist_ok=True)
-            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0) | _BINARY
             fd = os.open(path, flags, 0o600)
             try:
                 os.write(fd, secrets.token_bytes(KEY_BYTES))

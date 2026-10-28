@@ -950,7 +950,7 @@ class ProposalStore:
 
     def _write(self, entries: list[ProposalEntry]) -> None:
         text = "".join(canonical_line(e) + "\n" for e in entries)
-        with open(self.path, "a", encoding="utf-8") as fh:
+        with open(self.path, "a", encoding="utf-8", newline="\n") as fh:
             fh.write(text)
             fh.flush()
             os.fsync(fh.fileno())

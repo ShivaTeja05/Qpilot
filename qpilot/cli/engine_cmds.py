@@ -342,7 +342,9 @@ def _explain(args: argparse.Namespace) -> int:
         return 0
     try:
         if args.results:
-            facts = StudyResult.model_validate_json(Path(args.results).read_text()).facts
+            facts = StudyResult.model_validate_json(
+                Path(args.results).read_text(encoding="utf-8")
+            ).facts
         else:
             from qpilot.qpcr.study import run_study
 

@@ -674,7 +674,9 @@ def export_record(
             warnings=warnings,
             commands=_commands(archive.name),
         )
-        (folder / EXPORT_FILE).write_text(exported.model_dump_json(), encoding="utf-8")
+        (folder / EXPORT_FILE).write_text(
+            exported.model_dump_json(), encoding="utf-8", newline="\n"
+        )
         return exported.model_dump(mode="json")
 
     view = _job(

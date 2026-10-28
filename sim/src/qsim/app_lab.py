@@ -456,7 +456,7 @@ class LabViews:
         ]
         val = self.dir / "validation_untergasser.json"
         if val.exists():
-            v = json.loads(val.read_text())
+            v = json.loads(val.read_text(encoding="utf-8"))
             eff = self.space.decision("efficiency")
             labels = {o.id: o.label for o in eff.options}
             out["known"] = {

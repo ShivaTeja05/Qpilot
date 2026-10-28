@@ -87,7 +87,10 @@ def has_run(folder: Path, digest: str) -> bool:
     if not all((folder / f).exists() for f in REQUIRED):
         return False
     try:
-        return json.loads((folder / "summary.json").read_text())["input_sha256"] == digest
+        return (
+            json.loads((folder / "summary.json").read_text(encoding="utf-8"))["input_sha256"]
+            == digest
+        )
     except (ValueError, KeyError):
         return False
 
@@ -258,7 +261,7 @@ def opened(results: str | Path) -> list[dict]:
         if not all((folder / f).exists() for f in REQUIRED):
             continue
         try:
-            s = json.loads(summary.read_text())
+            s = json.loads(summary.read_text(encoding="utf-8"))
         except ValueError:
             continue
         out.append(

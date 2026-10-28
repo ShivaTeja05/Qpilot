@@ -6,21 +6,28 @@ and the first character that page lacks (Δ, →) raises ``UnicodeEncodeError``.
 therefore writes UTF-8 whatever the code page says.
 """
 
+import os
 import sys
 
 
 def ensure_utf8_output() -> None:
-    """Make standard output and error UTF-8, replacing (never raising on) what cannot be shown."""
+    """Make standard output and error UTF-8, replacing (never raising on) what cannot be shown.
+
+    A stream that is not a terminal (a pipe, a file) also ends its lines with LF alone, so
+    ``--json`` output is byte-identical on every system.
+    """
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)  # a TextIOWrapper; None in a test double
         if reconfigure is None:
             continue
-        encoding = (
-            (getattr(stream, "encoding", None) or "").lower().replace("-", "").replace("_", "")
-        )
-        if encoding == "utf8":
-            continue
+        options: dict[str, str] = {}
+        encoding = str(getattr(stream, "encoding", None) or "").lower()
+        if encoding.replace("-", "").replace("_", "") != "utf8":
+            options.update(encoding="utf-8", errors="replace")
         try:
-            reconfigure(encoding="utf-8", errors="replace")
+            if os.name == "nt" and not stream.isatty():
+                options["newline"] = "\n"
+            if options:
+                reconfigure(**options)
         except (OSError, ValueError):  # a closed or detached stream: leave it as it is
             continue

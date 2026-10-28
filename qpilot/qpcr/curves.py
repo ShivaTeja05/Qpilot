@@ -361,11 +361,11 @@ def _read_cache(path: Path) -> pd.DataFrame:
 def _write_cache(table: pd.DataFrame, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     handle = tempfile.NamedTemporaryFile(
-        "w", dir=path.parent, suffix=".tmp", delete=False, newline=""
+        "w", dir=path.parent, suffix=".tmp", delete=False, newline="", encoding="utf-8"
     )
     try:
         with handle:
-            table.to_csv(handle, index=False)
+            table.to_csv(handle, index=False, lineterminator="\n")
         os.replace(handle.name, path)
     except BaseException:
         Path(handle.name).unlink(missing_ok=True)
