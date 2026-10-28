@@ -296,6 +296,29 @@ def test_route_examples(store, study):
     assert route(ctx, "use SDHA(1) alone please")[1]["option"] == "sdha_1_alone"
 
 
+@pytest.mark.parametrize(
+    ("question", "gene"),
+    [
+        ("Is survivin really higher in MYCN-high tumours?", "BIRC5"),
+        ("Is TrkA robust?", "NTRK1"),
+        ("is prkacb robust", "PRKACB_bis"),
+        ("Where should I look for Survivin?", "BIRC5"),
+    ],
+)
+def test_route_knows_the_gene_by_its_alias_or_assay_name(store, study, question, gene):
+    """Ask resolves names as the Claim Auditor does (HGNC aliases, names without assay suffix)."""
+    ctx = _Context(store, study)
+    tool, args = route(ctx, question)
+    assert tool in ("qpcr_robustness", "qpcr_trace") and args == {"gene": gene}
+
+
+def test_an_alias_answer_says_which_gene_and_which_groups(store, study):
+    result = ask("Is survivin higher in MYCN-amplified tumours?", store, study, log=False)
+    assert result.tool_calls[0]["args"] == {"gene": "BIRC5"}
+    assert result.plain.startswith("Survivin is BIRC5 in this study. ")
+    assert "not MYCN amplification" in result.plain and result.validated
+
+
 # ---- profile ------------------------------------------------------------------------------
 
 

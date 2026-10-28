@@ -74,6 +74,14 @@ def test_a_gene_question_is_answered_from_the_robustness_grid(client, no_model, 
     assert answer["status"] is None and answer["head_after"] == answer["head_before"]
 
 
+def test_a_gene_asked_by_its_alias_is_answered_not_the_overview(client, no_model, study):
+    """Asked "Is survivin really higher…?": BIRC5 (an HGNC alias), not the whole study."""
+    answer = ask(client, study, "Is survivin really higher in MYCN-high tumours?")
+    assert answer["tool"] == "qpcr_robustness" and answer["args"] == {"gene": "BIRC5"}
+    assert answer["answer"].startswith("Survivin is BIRC5 in this study.")
+    assert answer["validated"] is True
+
+
 def test_new_answers_say_what_each_number_is(client, no_model, study):
     for question in (
         "Which genes are up?",
