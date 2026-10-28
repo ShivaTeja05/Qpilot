@@ -1,9 +1,9 @@
 {
  "stage": "choices",
- "head": "4266bf457715c9d9204e0ec3c64019e966ded1992664a96d69efd82e9262e294",
+ "head": "f84145b26b846bff84d814139039f938b7bb8f745e24ad85f29d9bf44e3f365c",
  "proposals": [
   {
-   "id": "p_ae83285fe1e50a07",
+   "id": "p_8c8a282491c67a92",
    "study_id": "bc1d233e3866",
    "kind": "choice.axis",
    "subject": "normaliser",
@@ -74,7 +74,7 @@
    "reason": null,
    "edits": null,
    "superseded_by": null,
-   "created_at": "2026-10-28T18:28:55Z"
+   "created_at": "2026-10-28T18:38:31Z"
   },
   {
    "id": "p_1dda8f37467680d1",
@@ -129,7 +129,7 @@
   "accepted": 1
  },
  "descriptions": {
-  "p_ae83285fe1e50a07": "Also test what to normalise each gene to: NormFinder's best pair of reference genes; the mean of every gene measured (global mean) (besides the reference genes chosen for this study, the analysis in use)",
+  "p_8c8a282491c67a92": "Also test what to normalise each gene to: NormFinder's best pair of reference genes; the mean of every gene measured (global mean) (besides the reference genes chosen for this study, the analysis in use)",
   "p_1dda8f37467680d1": "Confirm the Choices stage: the Decision Cards of analysis cf49ccd72052"
  }
 }

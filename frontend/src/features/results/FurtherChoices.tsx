@@ -155,6 +155,12 @@ function upperFirst(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+/** A reason as the start of a sentence; a name such as "geNorm's" keeps its case. */
+export function sentenceStart(text: string): string {
+  const first = text.split(" ", 1)[0] ?? "";
+  return first.slice(1) === first.slice(1).toLowerCase() ? upperFirst(text) : text;
+}
+
 function OptionRow({ option }: { option: AxisView["options"][number] }) {
   const state = option.primary
     ? "In use"
@@ -172,9 +178,7 @@ function OptionRow({ option }: { option: AxisView["options"][number] }) {
         </span>
       </div>
       {option.unavailable ? (
-        <p className="text-xs text-muted">
-          {option.unavailable.charAt(0).toUpperCase() + option.unavailable.slice(1)}.
-        </p>
+        <p className="text-xs text-muted">{sentenceStart(option.unavailable)}.</p>
       ) : null}
       {option.flips && option.tested ? (
         <p className="text-xs text-muted">

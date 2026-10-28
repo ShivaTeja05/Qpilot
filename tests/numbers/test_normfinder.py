@@ -176,8 +176,8 @@ def test_units_left_out_and_reported():
     groups[matrix.index[1]] = None
     result = normfinder(matrix, list(matrix.columns), groups)
     assert result.left_out == {
-        matrix.index[0]: "no value for every candidate control gene",
-        matrix.index[1]: "not in a group",
+        matrix.index[0]: "missing a candidate's value",
+        matrix.index[1]: "in no group",
     }
     assert result.n_units == len(matrix) - 2
 

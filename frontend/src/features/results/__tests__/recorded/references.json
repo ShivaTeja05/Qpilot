@@ -106,8 +106,8 @@
  "n_units": 347,
  "n_left_out": 19,
  "left_out_reasons": {
-  "no value for every candidate control gene": 17,
-  "not in a group": 2
+  "in no group": 2,
+  "missing a candidate's value": 17
  },
  "warnings": [],
  "unavailable": null,

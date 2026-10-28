@@ -214,10 +214,10 @@
      "source": "template"
     },
     {
-     "plain": "Against the reference genes in use, the global mean differs 0.71× between the groups (p 5.6e-06).",
+     "plain": "Against the reference genes in use, the global mean is 0.71× in the first group compared with the second (p 5.6e-06).",
      "segments": [
       {
-       "text": "Against the reference genes in use, the global mean differs ",
+       "text": "Against the reference genes in use, the global mean is ",
        "fact": null
       },
       {
@@ -225,7 +225,7 @@
        "fact": "f_gm_shift_fold"
       },
       {
-       "text": " between the groups (p ",
+       "text": " in the first group compared with the second (p ",
        "fact": null
       },
       {

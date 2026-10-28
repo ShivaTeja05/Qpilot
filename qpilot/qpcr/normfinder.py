@@ -184,19 +184,19 @@ def normfinder(
     block = matrix[list(candidates)]
     left_out: dict[str, str] = {}
     for unit in block.index[block.isna().any(axis=1)]:
-        left_out[str(unit)] = "no value for every candidate control gene"
+        left_out[str(unit)] = "missing a candidate's value"
     block = block.dropna(how="any")
     if groups is None:
         labels = pd.Series("all", index=block.index, dtype=object)
     else:
         labels = pd.Series([groups.get(u) for u in block.index], index=block.index, dtype=object)
         for unit in labels.index[labels.isna()]:
-            left_out[str(unit)] = "not in a group"
+            left_out[str(unit)] = "in no group"
         labels = labels.dropna()
     sizes = labels.value_counts()
     for name in sorted(sizes.index[sizes < 2].astype(str)):
         for unit in labels.index[labels.astype(str) == name]:
-            left_out[str(unit)] = f"group {name} has fewer than two units"
+            left_out[str(unit)] = f"in group {name}, which has fewer than two units"
     kept = sorted(str(g) for g in sizes.index[sizes >= 2])
     if not kept:
         raise NormFinderError("NormFinder needs at least two units with every candidate")

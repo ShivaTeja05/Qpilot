@@ -134,8 +134,8 @@ def _notes(name: str, facts: Mapping) -> list:
         if "f_gm_shift_fold" in facts:
             notes.append(
                 fact_text(
-                    "Against the reference genes in use, the global mean differs "
-                    "{{f_gm_shift_fold}} between the groups (p {{f_gm_shift_p}}).",
+                    "Against the reference genes in use, the global mean is {{f_gm_shift_fold}} "
+                    "in the first group compared with the second (p {{f_gm_shift_p}}).",
                     facts,
                 )
             )

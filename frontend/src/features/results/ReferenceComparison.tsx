@@ -128,7 +128,7 @@ export function ReferenceComparisonView({ view }: { view: ReferencesView }) {
         <p className="text-xs text-muted">
           NormFinder left out {count(view.n_left_out)} {view.n_left_out === 1 ? "unit" : "units"}:{" "}
           {Object.entries(view.left_out_reasons ?? {})
-            .map(([why, n]) => `${count(n)} ${why}`)
+            .map(([why, n]) => `${why} (${count(n)})`)
             .join("; ")}
           .
         </p>
