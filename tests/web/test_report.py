@@ -268,6 +268,7 @@ def resolve(path: str, store: StudyStore, study: str, audit_dir: Path, view: dic
         return {
             "/rdml/version": meta.version,
             "/target@len": meta.n_targets,
+            "/run@len": meta.n_runs,
             "/react/data/adp@count": meta.n_reactions_with_curves,
             "/react/vol@distinct": ", ".join(f"{v:g}" for v in meta.volumes),
             "/target/sequences@count": meta.n_targets_with_primers,
