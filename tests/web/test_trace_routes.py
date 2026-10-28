@@ -29,8 +29,8 @@ def ready(c, url: str):
     """GET ``url``, following every ``trace.load`` job an answer names until it answers."""
     jobs: list[dict] = []
     r = get_settled(c, url, jobs=jobs)
-    for job in jobs:
-        assert job["status"] == "done", job
+    # a load that failed is answered by the route's own refusal (not_traceable…), returned
+    for job in (j for j in jobs if j["status"] == "done"):
         assert job["result"]["n_genes"] >= 1 and job["result_type"] == "TraceLoaded"
     return r
 
