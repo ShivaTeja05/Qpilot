@@ -1,16 +1,23 @@
 """CLI commands for exports and the GraphPad Prism bridge: ``export prism | excel``, ``prism``.
 
-``qpilot export prism --study ID [--template two_groups_log2] [--genes ODC1,NTRK1] [--share]
---out DIR`` writes the CSV tables, ``run.pzc``, ``send_back.pzc``, ``qpilot_provenance.json``,
-``qpilot_bundle.json`` and a short ``README.txt`` into a new folder. Nothing is written into the
+``qpilot export prism --study ID [--genes ODC1,NTRK1] [--share] --out DIR`` writes a Prism
+project (``qpilot_<study>.pzfx``: the Info sheet with qPilot's provenance, one Column table per
+gene, a Grouped table of all genes; Nested tables in ``qpilot_<study>_replicates.pzfx`` when
+units have technical replicates), the same tables as CSV, ``qpilot_provenance.json``,
+``qpilot_bundle.json`` and a ``README.txt`` with plain steps for Windows and macOS into a new
+folder. It opens in Prism as it is: no template, no script. ``--scripts`` adds the optional
+Prism scripts (``run.pzc``, ``send_back.pzc``) for a hand-made ``--template``;
+``--scripts-only`` writes the older bundle without a project. Nothing is written into the
 study's workspace.
 
 ``qpilot export excel --out FILE.xlsx [--study ID]`` writes one workbook: the results table with
 a ``Trace`` column (each gene's top place to look) and a "Where to look" sheet
 (:mod:`qpilot.report.excel`). The Prism options do not apply to it and are refused.
 
-``qpilot prism diff --study ID --bundle DIR --sent-back DIR`` prints, as JSON, what changed in
-the tables Prism sent back, and the proposals that follow (never accepted here).
+``qpilot prism diff --study ID --bundle DIR [--returned FILE_OR_DIR]`` prints, as JSON, what
+changed in Prism (the project Prism saved: a ``.pzfx`` file or the folder holding it, by default
+the bundle folder; or ``send_back.pzc``'s ``--sent-back`` folder), and the proposals that follow
+(never accepted here).
 ``qpilot prism verify --bundle DIR`` checks a bundle folder's provenance and checksums.
 
 Works with GraphPad Prism. Not affiliated with or endorsed by GraphPad Software or Dotmatics.
@@ -27,7 +34,17 @@ from qpilot.cli._types import Command
 DEFAULT_TEMPLATE = "two_groups_log2"
 DEFAULT_GRAPHS = "pdf"
 #: Options of ``export prism`` that ``export excel`` refuses.
-PRISM_ONLY = ("template", "genes", "share", "rdml", "platform", "prism_dir", "graphs")
+PRISM_ONLY = (
+    "template",
+    "genes",
+    "share",
+    "rdml",
+    "platform",
+    "prism_dir",
+    "graphs",
+    "scripts",
+    "scripts_only",
+)
 
 
 def _store_and_study(args: argparse.Namespace):
@@ -56,7 +73,18 @@ def _export_arguments(parser: argparse.ArgumentParser) -> None:
         "--template",
         default=None,
         choices=sorted(TEMPLATES),
-        help=f"prism: the template the tables are made for (default: {DEFAULT_TEMPLATE})",
+        help=f"prism: the template the optional scripts use (default: {DEFAULT_TEMPLATE})",
+    )
+    parser.add_argument(
+        "--scripts",
+        action="store_true",
+        help="prism: also write the optional Prism scripts (run.pzc, send_back.pzc) for a "
+        "hand-made template",
+    )
+    parser.add_argument(
+        "--scripts-only",
+        action="store_true",
+        help="prism: the older bundle (CSV tables and Prism scripts for a template), no project",
     )
     parser.add_argument(
         "--genes", default=None, help="comma-separated genes (default: the headline genes)"
@@ -74,17 +102,17 @@ def _export_arguments(parser: argparse.ArgumentParser) -> None:
         "--platform",
         choices=["windows", "macos"],
         default=None,
-        help="the computer that runs Prism (default: this one)",
+        help="the computer that runs Prism (default: this one): the README's steps start there",
     )
     parser.add_argument(
         "--prism-dir",
         default=None,
-        help="the bundle folder as the Prism computer sees it (default: --out)",
+        help="scripts: the bundle folder as the Prism computer sees it (default: --out)",
     )
     parser.add_argument(
         "--graphs",
         default=None,
-        help=f"prism: graph exports, pdf, png, pdf,png or none (default {DEFAULT_GRAPHS})",
+        help=f"scripts: graph exports, pdf, png, pdf,png or none (default {DEFAULT_GRAPHS})",
     )
 
 
@@ -95,6 +123,19 @@ def _export(args: argparse.Namespace) -> int:
     from qpilot.prism import export_study
     from qpilot.qpcr.export import ExportError
 
+    scripted = args.scripts or args.scripts_only
+    if not scripted:
+        given = [f for f, v in (("--graphs", args.graphs), ("--prism-dir", args.prism_dir)) if v]
+        if given:
+            print(
+                f"qpilot export prism: {', '.join(given)} only apply to the Prism scripts "
+                "(add --scripts)",
+                file=sys.stderr,
+            )
+            return 2
+    if args.scripts and args.scripts_only:
+        print("qpilot export prism: give --scripts or --scripts-only, not both", file=sys.stderr)
+        return 2
     store, study_id = _store_and_study(args)
     genes = [g.strip() for g in args.genes.split(",") if g.strip()] if args.genes else None
     chosen = args.graphs or DEFAULT_GRAPHS
@@ -111,6 +152,8 @@ def _export(args: argparse.Namespace) -> int:
             prism_dir=args.prism_dir,
             graphs=graphs,
             rdml_path=args.rdml,
+            project=not args.scripts_only,
+            scripts=True if args.scripts else None,
         )
     except (ExportError, StudyNotFound, OSError) as err:
         print(f"qpilot export prism: {err}", file=sys.stderr)
@@ -119,11 +162,15 @@ def _export(args: argparse.Namespace) -> int:
     print(f"Wrote {len(result.files)} files to {result.out_dir} (bundle {bundle.bundle_sha256})")
     for name in sorted(result.files):
         print(f"  {name}")
-    print(f"Template {bundle.template_id}: {bundle.test}")
+    print(f"Test: {bundle.test}")
     for note in result.notes:
         print(f"Note: {note}")
-    print(f"Run in Prism: {result.launch.command_line}")
-    print("Not yet checked on a real Prism seat (plan step 0.1); see docs/prism.md.")
+    if result.project is not None:
+        print(f"Open in Prism: double-click {result.project.name} (or File > Open in Prism).")
+        print("README.txt says how to add the t test and the graph, and how to bring changes back.")
+    else:
+        print(f"Template {bundle.template_id}. Run in Prism: {result.launch.command_line}")
+    print("Not yet opened in a real Prism by the qPilot team; see docs/prism.md.")
     return 0
 
 
@@ -161,7 +208,12 @@ def _prism_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--study", default=None, help="study id (diff; default: the only study)")
     parser.add_argument("--bundle", required=True, help="the folder `qpilot export prism` wrote")
     parser.add_argument(
-        "--sent-back", default=None, help="the folder send_back.pzc exported the tables to"
+        "--returned",
+        default=None,
+        help="diff: the project Prism saved (.pzfx) or the folder holding it (default: --bundle)",
+    )
+    parser.add_argument(
+        "--sent-back", default=None, help="diff: the folder send_back.pzc exported the tables to"
     )
     parser.add_argument(
         "--rdml", default=None, help="the study's input file, when qPilot no longer knows it"
@@ -179,16 +231,17 @@ def _prism(args: argparse.Namespace) -> int:
         problems = verify_provenance(args.bundle)
         print("\n".join(problems) if problems else "OK: provenance and checksums verify")
         return 1 if problems else 0
-    if not args.sent_back:
-        print("qpilot prism diff: give --sent-back <folder>", file=sys.stderr)
+    if args.returned and args.sent_back:
+        print("qpilot prism diff: give --returned or --sent-back, not both", file=sys.stderr)
         return 2
+    returned = args.returned or args.sent_back or args.bundle
     store, study_id = _store_and_study(args)
     try:
         report = diff_report(
             store,
             study_id,
             args.bundle,
-            args.sent_back,
+            returned,
             proposals=not args.items_only,
             rdml_path=args.rdml,
         )
@@ -202,8 +255,8 @@ def _prism(args: argparse.Namespace) -> int:
 COMMANDS: list[Command] = [
     (
         "export",
-        "export a study: `export prism` writes tables and a Prism script; `export excel` a "
-        "workbook with Trace's places to look",
+        "export a study: `export prism` writes a Prism project (.pzfx) that opens as it is; "
+        "`export excel` a workbook with Trace's places to look",
         _export_arguments,
         _export,
     ),
