@@ -74,10 +74,12 @@ def test_quantities_are_blind_until_the_session_is_confirmed_again(walked):
 def test_a_person_records_the_reaction_input(walked):
     c, study, sid, studio = walked["client"], walked["study"], walked["sid"], walked["studio"]
     url = f"/api/studies/{study}/quantities/reaction"
-    assert c.post(url, json={"template_ul": 2, "input_ng": 10}).status_code == 422  # no reason
-    assert c.post(url, json={"template_ul": -1, "reason": "x"}).status_code == 422
-    head = studio.head(sid)
-    r = c.post(url, json={"template_ul": 2, "input_ng": 10, "reason": "2 µL of cDNA from 10 ng"})
+    head = c.get(f"/api/studies/{study}/quantities").json()["inbox_head"]
+    assert head == studio.head(sid)  # the view carries the inbox head the page sends back
+    ask = {"template_ul": 2, "input_ng": 10, "expected_head": head}
+    assert c.post(url, json=ask).status_code == 422  # no reason
+    assert c.post(url, json={**ask, "template_ul": -1, "reason": "x"}).status_code == 422
+    r = c.post(url, json={**ask, "reason": "2 µL of cDNA from 10 ng"})
     assert r.status_code == 200 and r.json()["status"] == "accepted", r.text
     assert r.json()["head"] != head
     assert studio.results_visible(sid)  # the blind stages stay confirmed
@@ -101,9 +103,42 @@ def test_a_person_records_the_reaction_input(walked):
     }
     again = c.post(
         f"/api/studies/{new}/quantities/reaction",
-        json={"template_ul": 2, "input_ng": 10, "reason": "same"},
+        json={
+            "template_ul": 2,
+            "input_ng": 10,
+            "reason": "same",
+            "expected_head": r.json()["head"],
+        },
     )
     assert again.status_code == 200 and again.json()["status"] == "unchanged"
+
+
+# RT-EX-012
+def test_the_reaction_input_needs_the_head_the_page_showed(walked):
+    """Two tabs: the later one no longer wins unseen. Without ``expected_head`` the request is
+    refused (422); with a head that moved, 409 ``stale`` in words, and nothing is written."""
+    c, study, sid, studio = walked["client"], walked["study"], walked["sid"], walked["studio"]
+    url = f"/api/studies/{study}/quantities/reaction"
+    shown = c.get(f"/api/studies/{study}/quantities").json()["inbox_head"]
+    body = {"template_ul": 2, "input_ng": 10, "reason": "2 µL of cDNA from 10 ng"}
+    missing = c.post(url, json=body)
+    assert missing.status_code == 422, missing.text
+    where = [p["where"] for p in missing.json()["error"]["details"]["problems"]]
+    assert any("expected_head" in w for w in where)
+    assert c.post(url, json={**body, "expected_head": ""}).status_code == 422
+    first = c.post(url, json={**body, "expected_head": shown})  # the first tab
+    assert first.status_code == 200, first.text
+    head = studio.head(sid)
+    second = c.post(  # the second tab, still showing the old head
+        f"/api/studies/{studio.study(sid)}/quantities/reaction",
+        json={**body, "template_ul": 5, "expected_head": shown},
+    )
+    assert second.status_code == 409, second.text
+    error = second.json()["error"]
+    assert error["code"] == "stale" and "read the quantities again" in error["message"]
+    assert studio.head(sid) == head  # nothing written
+    design = studio.store.design(studio.study(sid))
+    assert design.reaction_input.template_ul == 2.0
 
 
 def test_exports_methods_and_miqe_carry_the_curves(walked):

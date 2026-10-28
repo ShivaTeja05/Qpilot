@@ -91,6 +91,8 @@ export interface ReactionWrite {
   input_ng: number | null;
   unit: string | null;
   reason: string;
+  /** The quantities view's `inbox_head`: a 409 `stale` when something was decided since. */
+  expected_head: string;
 }
 
 /** A person records what one reaction held; the study is analysed again with it. */
@@ -106,6 +108,7 @@ export function useRecordReaction(key: string, studyId: string) {
             input_ng: w.input_ng,
             unit: w.unit,
             reason: w.reason,
+            expected_head: w.expected_head,
           },
         }),
       ),

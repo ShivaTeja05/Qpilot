@@ -226,17 +226,31 @@ def test_a_declared_control_is_refused_in_words_and_nothing_is_written(sclient, 
 
 def test_a_reason_is_required_and_a_stale_head_is_refused(sclient, cfx_session):
     items = items_of(("design.target_role", "REF", {"role": "ref"}))
-    r = sclient.post(
-        f"/api/sessions/{cfx_session}/design/set", json={"items": items, "reason": "  "}
-    )
-    assert r.status_code == 422
     view = editor(sclient, cfx_session)
+    r = sclient.post(
+        f"/api/sessions/{cfx_session}/design/set",
+        json={"items": items, "reason": "  ", "expected_head": view["head"]},
+    )
+    assert r.status_code == 422 and "Say why" in r.json()["error"]["message"]
     record(sclient, cfx_session, items_of(("design.group", "S1", {"group": "A"})))
     r = sclient.post(
         f"/api/sessions/{cfx_session}/design/set",
         json={"items": items, "reason": REASON, "expected_head": view["head"]},
     )
     assert r.status_code == 409 and r.json()["error"]["code"] == "stale"
+
+
+# RT-EX-012
+def test_design_set_needs_the_head_the_page_showed(sclient, cfx_session):
+    """Without ``expected_head`` the design is not written (422), never "the later tab wins"."""
+    sid = cfx_session
+    before = editor(sclient, sid)["head"]
+    items = items_of(("design.target_role", "REF", {"role": "ref"}))
+    r = sclient.post(f"/api/sessions/{sid}/design/set", json={"items": items, "reason": REASON})
+    assert r.status_code == 422, r.text
+    where = [p["where"] for p in r.json()["error"]["details"]["problems"]]
+    assert any("expected_head" in w for w in where)
+    assert editor(sclient, sid)["head"] == before  # nothing written
 
 
 def test_bad_names_and_unknown_subjects_are_refused_in_words(sclient, cfx_session):

@@ -62,9 +62,12 @@ def get_quantities(study_id: str, ctx: Ctx) -> QuantitiesView:
 
     sid = study(ctx, study_id)
     try:
-        return quantities_view(ctx.store, study_id, can_set_reaction=sid is not None)
+        view = quantities_view(ctx.store, study_id, can_set_reaction=sid is not None)
     except QuantitiesUnavailable as err:
         raise _unavailable(err) from err
+    if sid is not None:  # the page sends it back when it records the reaction input
+        view = view.model_copy(update={"inbox_head": ctx.studio.head(sid)})
+    return view
 
 
 @router.get("/studies/{study_id}/quantities/{target}", response_model=AssayQuantities)
