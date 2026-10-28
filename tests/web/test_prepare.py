@@ -161,3 +161,33 @@ def test_background_work_never_takes_a_worker_from_a_persons_jobs(web_ctx):
     finally:
         release.set()
     assert wait_job_obj(web_ctx, mine).status == "done"
+
+
+def test_the_curve_check_is_prepared_once_the_design_is_confirmed(web_ctx, monkeypatch):
+    """After the design confirm, the Curve Judge's read of every curve starts in the background."""
+    from types import SimpleNamespace
+
+    from qpilot.qpcr import curve_judge
+
+    read: list[tuple] = []
+    confirmed = {"design": SimpleNamespace(design=object()), "curves": None}
+    monkeypatch.setattr(
+        web_ctx.studio, "confirmed_assembly", lambda sid, through="curves": confirmed[through]
+    )
+    monkeypatch.setattr(web_ctx.studio, "source", lambda sid: "file.rdml")
+    monkeypatch.setattr(
+        "qpilot.qpcr.study.StudySettings.from_design",
+        staticmethod(lambda design: SimpleNamespace(experiment_id="exp")),
+    )
+    monkeypatch.setattr(curve_judge, "validated", lambda path: True)
+    monkeypatch.setattr(curve_judge, "features_kept", lambda path, exp: bool(read))
+    monkeypatch.setattr(curve_judge, "features_from_rdml", lambda p, e: read.append((p, e)))
+    job = warm.prepare_curve_check(web_ctx, "abcabcabcabc")
+    assert job is not None and wait_job_obj(web_ctx, job).status == "done"
+    assert read == [("file.rdml", "exp")]
+    assert warm.prepare_curve_check(web_ctx, "abcabcabcabc") is None  # already in memory
+    read.clear()
+    confirmed["curves"] = SimpleNamespace(design=object())
+    assert warm.prepare_curve_check(web_ctx, "abcabcabcabc") is None  # the check is behind
+    confirmed["curves"], confirmed["design"] = None, None
+    assert warm.prepare_curve_check(web_ctx, "abcabcabcabc") is None  # design not confirmed

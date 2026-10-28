@@ -326,11 +326,58 @@ def prepare_views(ctx: AppContext, app: Any, study_ids: list[str]) -> Any:
     )
 
 
+def prepare_curve_check(ctx: AppContext, sid: str) -> Any:
+    """Once a session's design is confirmed, read its curves for the Curve Judge in advance.
+
+    "Check the curves" is the next step then, and its first part reads every curve of the file
+    (~15 s on the demo); a background ``prepare`` job reads them now, only for a file the Curve
+    Judge is validated for, and only when they are not in memory already. None: nothing to do.
+    """
+    try:
+        from qpilot.qpcr import curve_judge
+        from qpilot.qpcr.study import StudySettings
+
+        assembly = ctx.studio.confirmed_assembly(sid, through="design")
+        if assembly is None or assembly.design is None:
+            return None
+        if ctx.studio.confirmed_assembly(sid, through="curves") is not None:
+            return None  # the curves are confirmed: the check is behind
+        experiment = StudySettings.from_design(assembly.design).experiment_id
+        path = ctx.studio.source(sid)
+        if curve_judge.features_kept(path, experiment) or not curve_judge.validated(path):
+            return None
+    except Exception:  # anything unreadable: the check itself says so when it runs
+        return None
+
+    def work(progress: Any) -> dict[str, Any]:
+        progress("Reading every curve for the curve check")
+        curve_judge.features_from_rdml(path, experiment)
+        return {"key": sid}
+
+    return ctx.jobs.submit(
+        "prepare",
+        work,
+        title="Preparing the curve check",
+        key=None,
+        typical_s=CURVES_S,
+        tag=f"curves:{sid}",
+        background=True,
+    )
+
+
+CURVES_S = 15.0  # the demo's curves read for the Curve Judge, measured
+
+
 def follow_new_studies(ctx: AppContext, app: Any) -> None:
-    """Prepare each study the moment it is analysed (told by its ``study.changed`` event)."""
+    """Prepare what a person opens next as soon as an event says it is next.
+
+    A study the moment it is analysed (its ``study.changed`` event), and a session's curve check
+    the moment its design is confirmed (the page's ``proposals.changed``).
+    """
     from qpilot.web.views import session_meta
 
     pending: set[str] = set()
+    sessions: set[str] = set()
     lock = threading.Lock()
     timer: list[threading.Timer] = []
 
@@ -338,7 +385,11 @@ def follow_new_studies(ctx: AppContext, app: Any) -> None:
         with lock:
             keys = list(pending)
             pending.clear()
+            asked = list(sessions)
+            sessions.clear()
             timer.clear()
+        for sid in asked:
+            prepare_curve_check(ctx, sid)
         studies: list[str] = []
         for key in keys:
             try:
@@ -353,8 +404,21 @@ def follow_new_studies(ctx: AppContext, app: Any) -> None:
         if studies:
             prepare_views(ctx, app, studies)
 
+    def later() -> None:
+        if not timer:
+            t = threading.Timer(2.0, run)
+            t.daemon = True
+            timer.append(t)
+            t.start()
+
     def hook(event: dict[str, Any]) -> None:
         key = event.get("key")
+        if event.get("type") == "proposals.changed" and event.get("source") == "page":
+            if isinstance(key, str) and KEY.match(key):
+                with lock:
+                    sessions.add(key)
+                    later()
+            return
         if event.get("type") != "study.changed":
             return
         if key is None:  # everything may have changed (a fresh demo): prepare again on change
@@ -366,11 +430,7 @@ def follow_new_studies(ctx: AppContext, app: Any) -> None:
             return
         with lock:
             pending.add(key)
-            if not timer:
-                t = threading.Timer(2.0, run)
-                t.daemon = True
-                timer.append(t)
-                t.start()
+            later()
 
     ctx.bus.on_publish(hook)
 
