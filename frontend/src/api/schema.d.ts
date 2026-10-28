@@ -2493,6 +2493,46 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/review/repeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Repeat
+         * @description What to repeat and why, ranked by consequence, and the repeat plate (read-only).
+         */
+        get: operations["get_repeat"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/review/repeat.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Repeat Csv
+         * @description The repeat plate as the planner's CSV (plate, well, sample, group, target, type).
+         */
+        get: operations["get_repeat_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/review/sign-off": {
         parameters: {
             query?: never;
@@ -2613,6 +2653,30 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/where-to-look/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Decide Place
+         * @description A person's Decide… in a Studio session: the option leaves wells out or puts them back.
+         *
+         *     The place is traced again at the analysis in use and must still be the one shown (``stale``
+         *     when the chain head moved); only an option that changes the analysis (keep or a set-aside)
+         *     is applied. The study is analysed again (the ``analyse`` job) when the design changed.
+         */
+        post: operations["post_decide_place"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/where-to-look/open": {
         parameters: {
             query?: never;
@@ -2627,6 +2691,46 @@ export type paths = {
          * @description A person's Decide…: the place at ``rank`` becomes a Decision Card on Results.
          */
         post: operations["post_open_place"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/where-to-look/put-back": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Put Back
+         * @description A person puts back the wells they set aside at a place (a Studio session only).
+         */
+        post: operations["post_put_back"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/where-to-look/set-aside": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Set Aside
+         * @description What a person set aside from Trace in this session that is out of the analysis now.
+         */
+        get: operations["get_set_aside"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6910,6 +7014,25 @@ export type components = {
             worst: "pass" | "warn" | "fail" | "not_applicable";
         };
         /**
+         * GatePlateLine
+         * @description What the Run Gate says about one plate: verdict counts and the rules that warn or fail.
+         */
+        GatePlateLine: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Findings */
+            findings: components["schemas"]["RepeatReason"][];
+            /** Plate */
+            plate: string;
+            /**
+             * Worst
+             * @description fail, warn, pass or not_applicable (the worst verdict).
+             */
+            worst: string;
+        };
+        /**
          * GateRequestView
          * @description An agent's request on a Run Gate card, waiting for a person (curve exclusions).
          */
@@ -11047,6 +11170,181 @@ export type components = {
             study_id: string;
         };
         /**
+         * RepeatItem
+         * @description One sample x gene to re-run (``target`` None: the whole sample), with why and what for.
+         */
+        RepeatItem: {
+            /** Changed Calls */
+            changed_calls: string[];
+            /**
+             * Consequence
+             * @enum {string}
+             */
+            consequence: "changes_call" | "beyond_ci" | "no_value" | "unknown" | "changes_nothing";
+            /** Consequence Words */
+            consequence_words: string;
+            /**
+             * Group
+             * @default
+             */
+            group: string;
+            /**
+             * On Plate
+             * @description Its reactions are on the repeat plate.
+             * @default false
+             */
+            on_plate: boolean;
+            /** Plates */
+            plates: string[];
+            /**
+             * Rank
+             * @default 0
+             */
+            rank: number;
+            /** Reasons */
+            reasons: components["schemas"]["RepeatReason"][];
+            /**
+             * Repeat
+             * @description Genes it re-runs (the refs are added on the plate).
+             */
+            repeat: string[];
+            /** Sample */
+            sample: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "reaction" | "sample";
+            /** Target */
+            target: string | null;
+            /** Wells */
+            wells: string[];
+        };
+        /**
+         * RepeatPlan
+         * @description What to repeat and why, ranked; the repeat plate; what was looked at and needs no repeat.
+         */
+        RepeatPlan: {
+            /** Calibrator */
+            calibrator?: string | null;
+            /**
+             * Counts
+             * @description Items by consequence.
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /**
+             * Gate Lines
+             * @description The Run Gate per plate (none unread).
+             */
+            gate_lines: components["schemas"]["GatePlateLine"][];
+            /** Items */
+            items: components["schemas"]["RepeatItem"][];
+            /** N Plates */
+            n_plates: number;
+            /**
+             * N Reactions
+             * @description Sample x assay pairs on the repeat plates (refs too).
+             */
+            n_reactions: number;
+            /** N Samples */
+            n_samples: number;
+            /** N Wells */
+            n_wells: number;
+            /** Not Repeated */
+            not_repeated: components["schemas"]["RepeatReason"][];
+            /** Notes */
+            notes: string[];
+            /** Plate Size */
+            plate_size: number;
+            /** Replicates */
+            replicates: number;
+            /** Study Id */
+            study_id: string;
+            /** Warnings */
+            warnings: string[];
+            /** Wells */
+            wells: components["schemas"]["RepeatPlateWell"][];
+        };
+        /**
+         * RepeatPlateWell
+         * @description One well of the repeat plate, as the planner's CSV writes it.
+         */
+        RepeatPlateWell: {
+            /** Group */
+            group: string;
+            /** Plate */
+            plate: number;
+            /** Sample */
+            sample: string;
+            /** Target */
+            target: string;
+            /** Type */
+            type: string;
+            /** Well */
+            well: string;
+        };
+        /**
+         * RepeatReason
+         * @description One reason to re-run a reaction (or a reason that needs no repeat), in plain words.
+         */
+        RepeatReason: {
+            /**
+             * Code
+             * @description The rule id (G-NTC-1), the check (S1) or the kind of reason.
+             */
+            code: string;
+            /**
+             * Source
+             * @description run_gate, set_aside, no_comparison, no_amplification, trace.
+             */
+            source: string;
+            /**
+             * What To Check
+             * @default
+             */
+            what_to_check: string;
+            /** Words */
+            words: string;
+        };
+        /**
+         * RepeatView
+         * @description ``GET /studies/{id}/review/repeat``: what to repeat and why, ranked, and the repeat plate.
+         *
+         *     Read at the analysis in use from the Run Gate, the wells a person left out, the samples in
+         *     no comparison, wells with no amplification where one was expected and Trace's places to
+         *     look (:mod:`qpilot.qpcr.repeat`). ``plan.gate_lines`` are the Run Gate's lines per plate.
+         *     Read-only; the plate downloads as CSV from ``…/review/repeat.csv``.
+         */
+        RepeatView: {
+            /**
+             * Csv Name
+             * @description The file name the CSV downloads as.
+             */
+            csv_name: string;
+            /**
+             * Csv Url
+             * @description Where the repeat plate downloads as CSV (GET).
+             */
+            csv_url: string;
+            /**
+             * Include
+             * @enum {string}
+             */
+            include: "consequential" | "all";
+            /**
+             * Note
+             * @description What the plan is and is not, in words.
+             */
+            note: string;
+            plan: components["schemas"]["RepeatPlan"];
+            /** Session */
+            session?: string | null;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
          * ReportAudit
          * @description The robustness audit, when one was run.
          */
@@ -12476,6 +12774,63 @@ export type components = {
             undetermined: string;
         };
         /**
+         * TraceDecideBody
+         * @description ``POST …/where-to-look/decide``: a person's option at the place at ``rank`` of a trace.
+         */
+        TraceDecideBody: {
+            /**
+             * Expected Head
+             * @description The chain head the trace was read at (409 stale when it moved).
+             */
+            expected_head: string;
+            /**
+             * Expected Inbox
+             * @description The session's inbox head the trace showed.
+             */
+            expected_inbox?: string | null;
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Option */
+            option: string;
+            /** Rank */
+            rank: number;
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
+        };
+        /**
+         * TraceDecided
+         * @description What a Trace decision did: wells left out or put back (the study is analysed again).
+         */
+        TraceDecided: {
+            /** Card Id */
+            card_id: string;
+            /** Inbox Head */
+            inbox_head: string;
+            /** @description The analysis of the changed design, when it changed. */
+            job?: components["schemas"]["JobView"] | null;
+            /** Left Out */
+            left_out: string[];
+            /** Message */
+            message: string;
+            /** Put Back */
+            put_back: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "left_out" | "put_back" | "kept";
+            /**
+             * Study Id
+             * @description The analysis the choice was made at.
+             */
+            study_id: string;
+        };
+        /**
          * TraceFlipSet
          * @description The fewest samples found whose removal together changes the call.
          */
@@ -12777,6 +13132,24 @@ export type components = {
             study_id: string;
         };
         /**
+         * TracePutBackBody
+         * @description ``POST …/where-to-look/put-back``: a person puts back the wells set aside at a place.
+         */
+        TracePutBackBody: {
+            /** Card Id */
+            card_id: string;
+            /**
+             * Expected Inbox
+             * @description The session's inbox head the trace showed.
+             */
+            expected_inbox?: string | null;
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
+        };
+        /**
          * TraceReference
          * @description What one control gene does to this result.
          */
@@ -12871,6 +13244,27 @@ export type components = {
              * @description Robust z of that value within its group.
              */
             z_in_group?: number | null;
+        };
+        /**
+         * TraceSetAsideView
+         * @description ``GET …/where-to-look/set-aside``: what a person set aside from Trace, to put back.
+         *
+         *     Independent of any trace: a gene whose comparison a set-aside removed cannot be traced, and
+         *     its wells can still be put back here.
+         */
+        TraceSetAsideView: {
+            /** Apply Note */
+            apply_note: string;
+            /** Can Apply */
+            can_apply: boolean;
+            /** Inbox Head */
+            inbox_head?: string | null;
+            /** Session */
+            session: string | null;
+            /** Set Aside */
+            set_aside: components["schemas"]["WhereSetAside"][];
+            /** Study Id */
+            study_id: string;
         };
         /**
          * TraceStudy
@@ -13679,6 +14073,12 @@ export type components = {
          */
         WhereOption: {
             /**
+             * Applies
+             * @description In a Studio session, deciding it changes the analysis: keep (puts back what a person left out here) or a set-aside (leaves wells out). Reading a well from other wells is a what-if only.
+             * @default false
+             */
+            applies: boolean;
+            /**
              * Changed Calls
              * @description Genes whose call this option changes.
              */
@@ -13694,6 +14094,12 @@ export type components = {
             id: string;
             /** Label */
             label: string;
+            /**
+             * N Wells
+             * @description Wells a set-aside leaves out of the analysis.
+             * @default 0
+             */
+            n_wells: number;
         };
         /**
          * WherePlace
@@ -13737,6 +14143,46 @@ export type components = {
             well?: string | null;
         };
         /**
+         * WhereSetAside
+         * @description Wells a person set aside from Trace in this session that are out of the analysis now.
+         */
+        WhereSetAside: {
+            /**
+             * Card Id
+             * @description The place they were set aside at (send it to put back).
+             */
+            card_id: string;
+            /** Decided At */
+            decided_at: string;
+            /**
+             * Matters
+             * @description When decided, the option changed a call.
+             */
+            matters: boolean;
+            /** Option */
+            option: string;
+            /** Option Label */
+            option_label: string;
+            /** Plate */
+            plate?: string | null;
+            /**
+             * Reason
+             * @description The person's reason, as they wrote it.
+             */
+            reason: string;
+            /** Sample */
+            sample: string;
+            /** Target */
+            target?: string | null;
+            /** Well */
+            well?: string | null;
+            /**
+             * Wells
+             * @description The wells left out (RUN/WELL).
+             */
+            wells: string[];
+        };
+        /**
          * WhereView
          * @description ``GET /studies/{id}/where-to-look``: from a gene, a sample or a well to the places to look.
          *
@@ -13751,6 +14197,18 @@ export type components = {
              * @description place_to_look, choice_to_look_at, nothing_to_look_at or absent.
              */
             answer: string;
+            /**
+             * Apply Note
+             * @description What Decide… does here, in words.
+             * @default
+             */
+            apply_note: string;
+            /**
+             * Can Apply
+             * @description A Studio session's current analysis: Decide… leaves wells out of the analysis (or puts them back) and analyses the study again.
+             * @default false
+             */
+            can_apply: boolean;
             /** Cannot Show */
             cannot_show: string[];
             /** Checked Nothing Found */
@@ -13762,6 +14220,11 @@ export type components = {
              * @description The chain head it was read at; send it to open a card.
              */
             head: string;
+            /**
+             * Inbox Head
+             * @description The session's inbox head it was read at (send it to decide).
+             */
+            inbox_head?: string | null;
             /**
              * Method Card
              * @default methods/trace.md
@@ -13790,6 +14253,11 @@ export type components = {
             };
             /** Session */
             session: string | null;
+            /**
+             * Set Aside
+             * @description Wells a person set aside from Trace that are out of the analysis now.
+             */
+            set_aside?: components["schemas"]["WhereSetAside"][];
             /** Study Id */
             study_id: string;
             /** Text */
@@ -18115,6 +18583,72 @@ export interface operations {
             };
         };
     };
+    get_repeat: {
+        parameters: {
+            query?: {
+                include?: string;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RepeatView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_repeat_csv: {
+        parameters: {
+            query?: {
+                include?: string;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The repeat plate as CSV. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     post_sign_off: {
         parameters: {
             query?: never;
@@ -18320,6 +18854,41 @@ export interface operations {
             };
         };
     };
+    post_decide_place: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TraceDecideBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceDecided"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     post_open_place: {
         parameters: {
             query?: never;
@@ -18342,6 +18911,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlaceOpened"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_put_back: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TracePutBackBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceDecided"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_set_aside: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceSetAsideView"];
                 };
             };
             /** @description Validation Error */

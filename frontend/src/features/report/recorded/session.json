@@ -54,9 +54,9 @@
  "results_visible": true,
  "study_id": "e300000d4f9a",
  "proposals_head": "b27a0111f1164a55ee837e0525bb86597563954bd1f9aed5427ab899f574d95a",
- "decisions_head": "dfccbec9827bb6061eeb1e0e74cc482d864da6ca944c9cdf2fc433d05a64a168",
+ "decisions_head": "6092b26876c43a2773d7a39a31728ec90ba4a9a463fd6411bad2c280f6750128",
  "next_step": {
-  "title": "Decide 4 analysis choices",
+  "title": "Decide 3 analysis choices",
   "detail": "Each card shows what every option would change; you give the reason.",
   "section": "results",
   "action": "Decide"

@@ -10,10 +10,12 @@ frontend's types (``npm run gen:api``) with them.
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from qpilot.trace.schema import TraceGene, TracePlate, TraceStudy, TraceWithout
-from qpilot.web.contract import FactText
+from qpilot.web.contract import FactText, JobView
 
 
 class TraceGeneView(BaseModel):
@@ -90,6 +92,13 @@ class WhereOption(BaseModel):
     consequence: str = Field(description="changes_call, beyond_ci or changes_nothing.")
     consequence_word: str
     changed_calls: list[str] = Field(description="Genes whose call this option changes.")
+    applies: bool = Field(
+        default=False,
+        description="In a Studio session, deciding it changes the analysis: keep (puts back "
+        "what a person left out here) or a set-aside (leaves wells out). Reading a well from "
+        "other wells is a what-if only.",
+    )
+    n_wells: int = Field(default=0, description="Wells a set-aside leaves out of the analysis.")
 
 
 class WherePlace(BaseModel):
@@ -121,6 +130,22 @@ class WhereAbsent(BaseModel):
     why: str
 
 
+class WhereSetAside(BaseModel):
+    """Wells a person set aside from Trace in this session that are out of the analysis now."""
+
+    card_id: str = Field(description="The place they were set aside at (send it to put back).")
+    sample: str
+    plate: str | None = None
+    well: str | None = None
+    target: str | None = None
+    option: str
+    option_label: str
+    wells: list[str] = Field(description="The wells left out (RUN/WELL).")
+    reason: str = Field(description="The person's reason, as they wrote it.")
+    decided_at: str
+    matters: bool = Field(description="When decided, the option changed a call.")
+
+
 class WhereView(BaseModel):
     """``GET /studies/{id}/where-to-look``: from a gene, a sample or a well to the places to look.
 
@@ -148,6 +173,19 @@ class WhereView(BaseModel):
     n_absent: int
     decide_note: str
     method_card: str = "methods/trace.md"
+    can_apply: bool = Field(
+        default=False,
+        description="A Studio session's current analysis: Decide… leaves wells out of the "
+        "analysis (or puts them back) and analyses the study again.",
+    )
+    apply_note: str = Field(default="", description="What Decide… does here, in words.")
+    inbox_head: str | None = Field(
+        default=None, description="The session's inbox head it was read at (send it to decide)."
+    )
+    set_aside: list[WhereSetAside] = Field(
+        default_factory=list,
+        description="Wells a person set aside from Trace that are out of the analysis now.",
+    )
 
 
 class OpenPlaceBody(BaseModel):
@@ -170,3 +208,61 @@ class PlaceOpened(BaseModel):
     opened: bool = Field(description="False when the card was already open.")
     message: str
     head: str
+
+
+class TraceSetAsideView(BaseModel):
+    """``GET …/where-to-look/set-aside``: what a person set aside from Trace, to put back.
+
+    Independent of any trace: a gene whose comparison a set-aside removed cannot be traced, and
+    its wells can still be put back here.
+    """
+
+    study_id: str
+    session: str | None
+    can_apply: bool
+    apply_note: str
+    inbox_head: str | None = None
+    set_aside: list[WhereSetAside]
+
+
+class TraceDecideBody(BaseModel):
+    """``POST …/where-to-look/decide``: a person's option at the place at ``rank`` of a trace."""
+
+    kind: str = Field(pattern="^(gene|sample|well)$")
+    id: str = Field(min_length=1, max_length=200)
+    rank: int = Field(ge=1, le=50)
+    option: str = Field(min_length=1, max_length=64)
+    reason: str = Field(default="", max_length=2000)
+    expected_head: str = Field(
+        min_length=1,
+        max_length=128,
+        description="The chain head the trace was read at (409 stale when it moved).",
+    )
+    expected_inbox: str | None = Field(
+        default=None, max_length=128, description="The session's inbox head the trace showed."
+    )
+
+
+class TracePutBackBody(BaseModel):
+    """``POST …/where-to-look/put-back``: a person puts back the wells set aside at a place."""
+
+    card_id: str = Field(min_length=1, max_length=200)
+    reason: str = Field(default="", max_length=2000)
+    expected_inbox: str | None = Field(
+        default=None, max_length=128, description="The session's inbox head the trace showed."
+    )
+
+
+class TraceDecided(BaseModel):
+    """What a Trace decision did: wells left out or put back (the study is analysed again)."""
+
+    status: Literal["left_out", "put_back", "kept"]
+    message: str
+    study_id: str = Field(description="The analysis the choice was made at.")
+    card_id: str
+    left_out: list[str]
+    put_back: list[str]
+    inbox_head: str
+    job: JobView | None = Field(
+        default=None, description="The analysis of the changed design, when it changed."
+    )

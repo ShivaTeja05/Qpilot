@@ -337,11 +337,14 @@ def study_ledger(store: StudyStore, study_id: str) -> tuple[Any, str]:
         return None, f"the input file cannot be analysed again ({type(err).__name__})"
 
 
-def study_review(store: StudyStore, study_id: str, *, comments: bool = True) -> Any:
+def study_review(
+    store: StudyStore, study_id: str, *, comments: bool = True, repeat: Any = None
+) -> Any:
     """The Run Review of a stored study with its recorded sign-offs (read-only).
 
     ``comments=False`` leaves out what reviewers typed (the view an agent gets); the outcome,
-    the reviewer and the time stay.
+    the reviewer and the time stay. ``repeat``: the study's repeat plan, for what to repeat and
+    why and the Run Gate per plate (:func:`qpilot.report.run_review.repeat_plan_store`).
     """
     from qpilot.report.run_review import HEADLINE_GENES, build_review
 
@@ -353,7 +356,7 @@ def study_review(store: StudyStore, study_id: str, *, comments: bool = True) -> 
     if not comments:
         entries = [{**e, "reason": ""} for e in entries]
     return build_review(result, headline=headline, ledger=ledger, ledger_note=note,
-                        reviews=entries)  # fmt: skip
+                        reviews=entries, repeat=repeat)  # fmt: skip
 
 
 def stored_run_map(store: StudyStore, study_id: str) -> dict[str, str] | None:

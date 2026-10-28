@@ -1,11 +1,12 @@
 /**
  * The Report section's requests: the study's report (Methods, MIQE 2.0, reviewer's report), the
  * report files written since qPilot started, and writing one (a job); the Run Review (headline
- * genes, the Evidence Ledger, the sign-offs) and a person's sign-off. Query keys start with
- * `["w", key]` so live events refresh them.
+ * genes, the Evidence Ledger, the sign-offs), what to repeat and why (with the repeat plate and
+ * the Run Gate per plate) and a person's sign-off. Query keys start with `["w", key]` so live
+ * events refresh them.
  */
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, unwrap, type JobView, type Schemas } from "@/api/client";
+import { api, ApiError, unwrap, type JobView, type Schemas } from "@/api/client";
 import { useWrite } from "@/shell/writes";
 
 export type ReportView = Schemas["ReportView"];
@@ -29,6 +30,12 @@ export type SignOff = Schemas["SignOffView"];
 export type SignOffOutcome = SignOff["outcome"];
 export type SignOffDone = Schemas["SignOffDone"];
 export type NotBuilt = Schemas["NotBuiltView"];
+export type RepeatView = Schemas["RepeatView"];
+export type RepeatPlan = RepeatView["plan"];
+export type RepeatItem = RepeatPlan["items"][number];
+export type RepeatReason = RepeatItem["reasons"][number];
+export type GatePlateLine = RepeatPlan["gate_lines"][number];
+export type RepeatInclude = RepeatView["include"];
 
 /** The study's report (built once per state of the study; the first read takes a few seconds). */
 export function useReport(workspaceKey: string, studyId: string | null | undefined) {
@@ -140,5 +147,35 @@ export function useSignOff(
     },
     success: (done) => done.message,
     onSuccess: (done) => onDone?.(done),
+  });
+}
+
+/** The job a 409 `loading` names (Trace or the Run Gate is reading the study first). */
+export function loadingJob(error: unknown): JobView | null {
+  if (!(error instanceof ApiError) || error.code !== "loading") return null;
+  const job = error.details.job as JobView | undefined;
+  return job && typeof job.id === "string" ? job : null;
+}
+
+/**
+ * What to repeat and why, the repeat plate and the Run Gate per plate (read-only). It reads the
+ * Run Gate and Trace, so a first read waits for their job (409 `loading`): asked again meanwhile.
+ */
+export function useRepeat(
+  workspaceKey: string,
+  studyId: string | null | undefined,
+  include: RepeatInclude = "consequential",
+) {
+  return useQuery({
+    queryKey: ["w", workspaceKey, "repeat", studyId, include],
+    enabled: Boolean(studyId),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/studies/{study_id}/review/repeat", {
+          params: { path: { study_id: studyId! }, query: { include } },
+        }),
+      ),
+    refetchInterval: (q) => (loadingJob(q.state.error) ? 1500 : false),
+    retry: (count, error) => Boolean(loadingJob(error)) && count < 120,
   });
 }

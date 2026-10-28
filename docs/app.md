@@ -50,9 +50,9 @@ A workspace is either a Studio
 | Controls | `…/gate` | results visible | `GET /api/studies/{id}/gate` (first run a `gate.run` job: 409 `loading` + the job) → `qpcr.gate_rules.run_gate` (rule pack `packs/research-default.yaml`) + `core.gate` (consequence test); `POST /api/studies/{id}/gate/cards/{card_id}/decide` (session only) → `Studio.decide_gate` (curve exclusions) + the `analyse` job; `POST /api/studies/{id}/gate/run-files` (multipart `plate` + `run`), `POST …/gate/run-files/unlink` → `qpcr.run_links` (G-INSTR's run file for a plate; else the export's own, `qpcr.export_runs`) |
 | Gene | `…/gene/<GENE>` | results visible | `GET /api/studies/{id}/genes/{gene}` (qPilot contrast, robustness, confidence, cards affecting it), `GET …/genes/{gene}/units` (each unit's value and wells) + audit gene views when an audit exists |
 | Audit | `…/audit` | results visible | `GET|POST /api/studies/{id}/audit` (status / run), `/audit/overview|study|how|gene/{g}|analyses/{g}|effects/{g}|lab/{g}`, `POST /audit/whatif|samples` → `integration.simulator` + qsim `Screen`/`LabViews` |
-| Trace | `…/trace`, `…/trace/<GENE>` | results visible | `GET /api/studies/{id}/trace`, `…/trace/{gene}`, `…/trace/plate?run=`, `POST …/trace/{gene}/without` (first load a `trace.load` job: 409 `loading` + the job) → `qpilot.trace`; **Where to look**: `GET …/where-to-look?gene=|sample=|well=`, `POST …/where-to-look/open` (Decide…) → `qpcr.trace` at the analysis in use + `StudyStore.open_card` |
+| Trace | `…/trace`, `…/trace/<GENE>` | results visible | `GET /api/studies/{id}/trace`, `…/trace/{gene}`, `…/trace/plate?run=`, `POST …/trace/{gene}/without` (first load a `trace.load` job: 409 `loading` + the job) → `qpilot.trace`; **Where to look**: `GET …/where-to-look?gene=|sample=|well=`, in a Studio session `POST …/where-to-look/decide` and `…/put-back`, `GET …/where-to-look/set-aside` (Decide… applied: `Studio.decide_trace`, Run Gate's path), outside Studio `POST …/where-to-look/open` → `qpcr.trace` at the analysis in use + `StudyStore.open_card` |
 | Claims | `…/claims` | results visible | `POST /api/studies/{id}/claims` → `qpilot.claims` |
-| Report | `…/report` | results visible | `GET /api/studies/{id}/report`, `POST …/report/export` (`md`, `html`, `passport`, `xlsx`: a `report.export` job), `GET …/report/exports` → `qpilot.report` (+ `report.excel`); **Run Review**: `GET …/review`, `POST …/review/sign-off` → `report.run_review` + `StudyStore.append_review` |
+| Report | `…/report` | results visible | `GET /api/studies/{id}/report`, `POST …/report/export` (`md`, `html`, `passport`, `xlsx`: a `report.export` job), `GET …/report/exports` → `qpilot.report` (+ `report.excel`); **Run Review**: `GET …/review`, `GET …/review/repeat` (+ `.csv`), `POST …/review/sign-off` → `report.run_review`, `qpcr.repeat` + `StudyStore.append_review` |
 | History | `…/history` | results visible | `GET /api/studies/{id}/history`, `/history/diff`, `/history/compare` → `qpilot.history` |
 | Plan next | `…/planner` | results visible | `GET|POST /api/studies/{id}/planner`, `POST …/planner/layout`, `GET …/planner/layout.csv` → `qpcr.plan` + `qpcr.layout` |
 | Prism | `…/prism` | session, results visible | `/prism/preview|routes|bundles`, `POST /prism/draft|send|roundtrip` → `Studio.preview_prism/propose_prism/send_to_prism/launch_prism/round_trip` |
@@ -329,15 +329,34 @@ cross-checked against the section's own numbers): trace a gene, a sample or a we
 (`PLATE:WELL`); the places to look ranked by what each option there does (changes a call > moves
 a fold change beyond its CI > changes nothing), the fingerprint checks each fails (S1–S7) in
 words, what was checked and found nothing, what the data cannot show. **Decide…** on a place
-whose option changes a call opens it as a Decision Card on Results (`StudyStore.open_card`: no
-chain entry; the same card when opened again). Method card: `methods/trace.md`.
+whose option changes a call, in a Studio session (its current analysis), opens the place's
+options and a reason box: a set-aside (the value: the well and its replicates; the sample: every
+well) becomes one `curve.exclude_well` per well, made by Trace and accepted by the person with
+the reason in one write to the session's inbox (`Studio.decide_trace`, Run Gate's path); the
+study is analysed again (Trace waits for it) and the person's Decision Card choices are carried
+to the new analysis. "Keep" puts back what was set aside at the place, or records the keep.
+Reading a well from the sample's other reference wells stays a what-if (shown, not chosen).
+**Set aside from Trace** lists what a person set aside that is out of the analysis now, each
+with **Put the wells back** (a reason; only the wells set aside there come back). For a study
+analysed outside Studio, Decide… opens the place as a Decision Card on Results
+(`StudyStore.open_card`: no chain entry; recorded, the numbers stay as analysed) and the panel
+says to open the file in Studio to leave the wells out. Method card: `methods/trace.md`.
 
 ### Report (`features/report`)
 Methods, MIQE 2.0, a reviewer's report, the study passport, and **exports** (Markdown, printable
 HTML, passport, and the **Excel workbook**: the results with a "Where to look" sheet, at the
 recommended choices like the Analysis Record). **Run Review** (origin/main's Gradio accordion,
-`report/run_review.py`): the headline genes, the Evidence Ledger, every sign-off recorded, the
-parts not built yet (pointing at Controls and Plan next where those exist), and a person's
+`report/run_review.py`): the headline genes, the Evidence Ledger, **what to repeat and why**
+(`qpcr/repeat.py`, at the analysis in use: the Run Gate's warnings and failures, the wells a
+person left out with their reason, samples in no comparison, wells with no amplification where
+the gene amplified in at least 90% of the other compared samples, replicate wells that did not
+amplify, Trace's places to look; per sample × gene, every reason in words and its own
+consequence, ranked: changes a call > beyond the CI > no value > not known > changes nothing),
+the **repeat plate** (every repeated sample with all its reference genes; per assay the inter-run
+calibrator, the no-RT and no-template controls, a positive control where the run had one; the
+planner's CSV; items that change no call only when asked), the **Run Gate lines per plate**
+(with a link to Controls, which also offers the plan), every sign-off recorded, what is not
+built yet (what to change next run, pointing at Plan next), and a person's
 **sign-off**: accept / repeat / discuss, a comment and a name, one `review` entry in the decision
 chain (actor `human`, set by the server; no card replays it, so it never makes a decision stale;
 a decision made since the review was read makes the sign-off stale: 409, shown again). qPilot

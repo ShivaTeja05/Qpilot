@@ -90,20 +90,56 @@ def _report_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("what", choices=["run-review"], help="the report to render")
     _study_arg(parser)
     parser.add_argument("--out", default=None, help="also write the page as HTML to this file")
+    parser.add_argument(
+        "--repeat",
+        action="store_true",
+        help="add what to repeat and why and the Run Gate per plate (reads the Run Gate and "
+        "Trace; about half a minute on the demo)",
+    )
+    parser.add_argument(
+        "--repeat-csv",
+        default=None,
+        metavar="FILE",
+        help="write the repeat plate as the planner's CSV (implies --repeat)",
+    )
+    parser.add_argument(
+        "--all-items",
+        action="store_true",
+        help="put every repeat item on the plate, also those that change no call",
+    )
 
 
 def _report(args: argparse.Namespace) -> int:
     from qpilot.core.store import StudyNotFound
     from qpilot.mcp_server import study_review
-    from qpilot.report.run_review import RunReviewError, render_html, render_text
+    from qpilot.qpcr.repeat import RepeatError
+    from qpilot.qpcr.trace import TraceError
+    from qpilot.report.run_review import (
+        RunReviewError,
+        render_html,
+        render_text,
+        repeat_plan_store,
+    )
 
     store, sid = _resolve_study(args.study)
     try:
-        review = study_review(store, sid)
+        plan = None
+        if args.repeat or args.repeat_csv:
+            include = "all" if args.all_items else "consequential"
+            plan = repeat_plan_store(store, sid, include=include)
+        review = study_review(store, sid, repeat=plan)
         text = render_text(review)
         page = render_html(review) if args.out else None
-    except (StudyNotFound, RunReviewError, ValueError) as err:
+    except (StudyNotFound, RunReviewError, RepeatError, TraceError, ValueError) as err:
         return _refuse("report", err)
+    if args.repeat_csv:
+        if plan is None or not plan.wells:
+            return _refuse("report", "nothing points at a reaction to re-run: no plate written")
+        try:
+            Path(args.repeat_csv).write_text(plan.csv(), encoding="utf-8")
+        except OSError as err:
+            return _refuse("report", f"cannot write {args.repeat_csv}: {err.strerror or err}")
+        print(f"wrote {args.repeat_csv}", file=sys.stderr)
     if page is not None:
         out = Path(args.out)
         if out.suffix.lower() not in (".html", ".htm"):

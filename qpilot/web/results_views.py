@@ -1080,8 +1080,9 @@ def card_view(
 #: What deciding a card opened from Trace does, said on the card.
 TRACE_CARD_NOTE = (
     "Opened from Trace. Deciding it is a person's choice, kept in the decision chain with the "
-    "reason; the study's numbers stay as analysed (to leave a well out of the analysis, leave "
-    "it out in a Studio session's Curves, or from Controls)."
+    "reason; the study's numbers stay as analysed. To leave the wells out of the analysis, "
+    "decide in Trace's Where to look in a Studio session (it analyses the study again); a "
+    "study analysed outside Studio is opened in Studio first."
 )
 
 

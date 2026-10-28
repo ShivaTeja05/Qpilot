@@ -315,7 +315,9 @@ def _absent_lines(panel: _Panel) -> list[str]:
                 f"Its {panel.tok(q + 'target')} {what} well {panel.tok(q + 'well')} on plate "
                 f"{panel.tok(q + 'plate')} has no value"
             )
-            if panel.value(q + "note") == "no_amplification":
+            if panel.has(q + "left_out"):
+                text += ": a person left it out of the analysis"
+            elif panel.value(q + "note") == "no_amplification":
                 text += ": LinRegPCR found no amplification"
             lines.append(text + ".")
         elif reason == "not_measured_for_every_gene":
