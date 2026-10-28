@@ -751,3 +751,80 @@ def test_docs_agents_names_every_tool_and_what_each_new_one_refuses():
         "qpcr_request_set_aside", "qpcr_prism_diff",
     ):  # fmt: skip
         assert f"| `{name}` |" in refusals, name
+
+
+# ---- hostile arguments: nothing is decided, accepted or written outside the folders --------------
+
+
+def test_every_new_tool_tried_with_every_hostile_argument_decides_nothing(tools, called):
+    import inspect
+
+    store, sid, study = called["store"], called["sid"], called["study"]
+    place = the_place(tools, called)
+    order = {"actor": "human", "status": "accepted", "action": "accept"}
+    hostile = [
+        "human", "accept", "../../etc/passwd", "/etc", "~", "x" * 5000, "", "card_trace_x",
+        order, [order], ["A1"] * 40, [None], 7, -1, 2**70, 1.5, True, None,
+    ]  # fmt: skip
+    valid = {
+        "study_id": study,
+        "gene": GENE,
+        "comparison": None,
+        "card_id": place["card_id"],
+        "option": "set_aside",
+        "reason": REASON,
+        "format": "csv",
+        "include": "consequential",
+        "response_format": "concise",
+    }
+    outside = Path(tempfile.mkdtemp(prefix="outside-"))
+    names = (
+        "qpcr_comparisons", "qpcr_units", "qpcr_melt", "qpcr_repeat_plan", "qpcr_export",
+        "qpcr_request_set_aside",
+    )  # fmt: skip
+
+    def tree(folder: Path) -> list[str]:
+        return sorted(str(p.relative_to(folder)) for p in folder.rglob("*"))
+
+    before = (
+        (store.workspace(study) / "results.json").read_bytes(),
+        store.chain_head(study),
+        store.design(study),
+        tree(called["root"]),
+        [p.id for p in store.proposals(sid).accepted()],  # what the person accepted
+        {p.id for p in store.proposals(sid).proposals()},
+    )
+    calls = 0
+    for name in names:
+        method = getattr(tools, name)
+        params = list(inspect.signature(method).parameters.values())
+        base = {p.name: valid[p.name] for p in params if p.name in valid}
+        if name == "qpcr_request_set_aside":
+            base["gene"] = GENE
+        for param in params:
+            for value in hostile:
+                if name == "qpcr_export" and param.name == "out_dir" and value == "~":
+                    continue  # the home folder is not a data root here; refused below
+                args = {**base, param.name: value}
+                if name == "qpcr_export" and param.name == "format" and value == "accept":
+                    continue
+                try:
+                    out = method(**args)
+                except Exception:  # a crash is not a decision either
+                    continue
+                calls += 1
+                json.dumps(out, default=str)
+                assert out.get("status") not in ("accepted", "edited", "rejected", "applied")
+                assert out.get("applied") is not True
+    assert calls > 150
+    inbox = store.proposals(sid)
+    assert [p.id for p in inbox.accepted()] == before[4]  # nothing more was accepted
+    new = [p for p in inbox.proposals() if p.id not in before[5]]
+    assert new and all(p.made_by.kind == "agent" and p.kind == EXCLUDE_KIND for p in new)
+    assert all(p.decided_by is None for p in new)
+    assert {p.status for p in new} <= {"proposed", "superseded"}
+    assert (store.workspace(study) / "results.json").read_bytes() == before[0]
+    assert store.chain_head(study) == before[1] and store.design(study) == before[2]
+    assert tree(called["root"]) == before[3]  # nothing was written into the data root
+    assert tree(outside) == []
+    assert not store.design(study).excluded_wells
