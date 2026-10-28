@@ -377,8 +377,8 @@ def test_lightcycler96_is_finished_on_the_page_with_an_empty_channel_left_out(sc
     propose_design(sclient, sid)
     view = editor(sclient, sid)
     targets = {t["target"]: t for t in view["targets"]}
-    hmuy = next(t for t in targets if "hmuy" in t)
-    rrna = next(t for t in targets if "16s" in t)
+    hmuy = next(t for t in targets if "hmuy" in t.lower())  # LC96 names: dye@target or target
+    rrna = next(t for t in targets if "16s" in t.lower())
     empty = next(t for t in targets if t not in (hmuy, rrna))
     studied = sorted(
         (s for s in view["samples"] if s["role"] == "unkn"), key=lambda s: sorted(s["wells"])[0]
