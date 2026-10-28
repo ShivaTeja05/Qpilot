@@ -479,6 +479,15 @@ PER_UNIT_COLUMNS: tuple[Column, ...] = (
     Column("rq", "Relative quantity (RQ, linear)", "rq"),
     Column("note", "Note"),
 )
+#: A file of Cq values only (``docs/cq-tables.md``): what its per-well columns hold.
+CQ_WELL_NOTE = (
+    "This file holds Cq values only: each Cq is the file's own (set by the instrument "
+    "software, not TD0), N0 is the assay's efficiency raised to the power of minus that Cq (no "
+    "curve was fitted), and no well has an efficiency of its own."
+)
+CQ_EFFICIENCY_WORDS = (
+    "each assay's efficiency from its dilution series, else assumed (Cq values only)"
+)
 PER_WELL_COLUMNS: tuple[Column, ...] = (
     Column("plate", "Plate (run)"),
     Column("well", "Well"),
@@ -987,13 +996,21 @@ def _choice_words(inputs: Any, choices: Sequence[Choice]) -> dict[str, str]:
     eff_words = option_label("efficiency", str(efficiency))
     if eff_words == "linregpcr":
         eff_words = "LinRegPCR's mean efficiency of each assay on each plate"
+    cq_values = inputs.result is not None and "f_cq_only" in inputs.result.facts
+    if cq_values and str(efficiency) == "linregpcr":
+        eff_words = CQ_EFFICIENCY_WORDS
     undetermined = str(inputs.undetermined)
     by_dim = {c.dimension: c for c in choices}
     und = by_dim.get("undetermined")
     und_words = und.option_label if und is not None and und.option == undetermined else undetermined
+    amp_words = rule.label if rule is not None else str(amp)
+    if cq_values and str(amp) == "linregpcr":
+        from qpilot.qpcr.cq_only import CQ_RULE_LABEL
+
+        amp_words = CQ_RULE_LABEL
     return {
         "efficiency": eff_words,
-        "amp_call": rule.label if rule is not None else str(amp),
+        "amp_call": amp_words,
         "undetermined": und_words,
     }
 
@@ -1223,6 +1240,8 @@ def _per_well_table(basis: Basis, inputs: Any, reasons: Mapping[str, str]) -> Ta
         )
     title = "Per well" if basis == AS_DECIDED else "Per well (recommended)"
     name = "per_well" if basis == AS_DECIDED else "per_well_recommended"
+    if inputs.result is not None and "f_cq_only" in inputs.result.facts:
+        return Table(name, title, PER_WELL_COLUMNS, tuple(rows), note=CQ_WELL_NOTE)
     return Table(name, title, PER_WELL_COLUMNS, tuple(rows))
 
 

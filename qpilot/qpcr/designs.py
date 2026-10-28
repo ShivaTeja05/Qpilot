@@ -36,7 +36,7 @@ from pydantic import BaseModel, ValidationError
 
 from qpilot.qpcr.amp_call import STUDIO_AMP_CALLS, AmpCallError, apply_rule, get_rule, well_keys
 from qpilot.qpcr.axes import AxisError, get_axis
-from qpilot.qpcr.curves import DEMO_EXPERIMENT, REFERENCE_TARGETS
+from qpilot.qpcr.curves import DEMO_EXPERIMENT, REFERENCE_TARGETS, without_curves
 from qpilot.qpcr.design import DEMO_GROUP_VAR, DEMO_MARKER
 from qpilot.qpcr.quant import EXCLUDED
 from qpilot.schemas_studio import (
@@ -852,7 +852,10 @@ def design_curves(curves: pd.DataFrame, design: StudyDesign) -> pd.DataFrame:
       them, before anything else: the engine never sees them.
 
     ``well_calls`` are applied with the amplification rule
-    (:func:`qpilot.qpcr.amp_call.apply_rule`), not here.
+    (:func:`qpilot.qpcr.amp_call.apply_rule`), not here. A table of Cq values only (no curves:
+    :func:`qpilot.qpcr.curves.without_curves`) then takes each assay's efficiency from its
+    dilution series where the design has one (:mod:`qpilot.qpcr.cq_only`); a table with
+    curves is left as LinRegPCR measured it.
 
     Raises:
         DesignError: The design would turn a declared control (NTC, no-RT, no-amplification)
@@ -879,4 +882,8 @@ def design_curves(curves: pd.DataFrame, design: StudyDesign) -> pd.DataFrame:
     out["sample_type"] = sample_type.astype(str)
     if design.excluded_wells:
         out[EXCLUDED] = keys.isin(set(design.excluded_wells)).to_numpy()
+    if without_curves(out):
+        from qpilot.qpcr import cq_only
+
+        out = cq_only.with_efficiency(out, cq_only.efficiency_plan(out, design))
     return out

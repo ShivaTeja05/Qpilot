@@ -97,6 +97,11 @@ WORDS = {
         "LinRegPCR's numbers per well (with any call a person accepted); the Curve Judge's call "
         "where it ran on this file."
     ),
+    "curves_shown_cq_only": (
+        "The Cq each well has in the file (with any call a person accepted). This file has Cq "
+        "values only: there is no curve, so no efficiency, R² or baseline per well, and no "
+        "Curve Judge."
+    ),
     "curve_note": (
         "Raw fluorescence as exported by the instrument, by cycle. LinRegPCR's baseline is in "
         "the same units as the fluorescence; the Cq is a cycle."
@@ -285,7 +290,9 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
         rows = designed
     person_calls = dict(design.well_calls) if design is not None else {}
     excluded = set(design.excluded_wells) if design is not None else set()
-    judge = _judge_cache(studio, sid, experiment) if curves_shown and run.in_design else None
+    cq_only = studio.cq_only(sid)
+    judged = curves_shown and run.in_design and not cq_only
+    judge = _judge_cache(studio, sid, experiment) if judged else None
     pending: dict[str, str] = {}
     for p in inbox.proposals:
         if p.kind == "curve.well_call" and p.status == "proposed":
@@ -368,7 +375,11 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
                 )
             )
     n_rows, n_cols = plate_shape((w.row, w.col) for w in wells)
-    if judge is not None:
+    if cq_only:
+        from qpilot.qpcr.cq_only import NOT_APPLICABLE
+
+        judge_words = NOT_APPLICABLE["curve_judge"]
+    elif judge is not None:
         judge_words = "ran on this file (its calls are shown)"
     elif curves_shown and run.in_design:
         judge_words = "not run yet: Check the curves runs it where it is validated"
@@ -382,10 +393,17 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
         n_cols=n_cols,
         targets=sorted({w.target for w in wells}),
         curves_shown=curves_shown,
-        curves_note=WORDS["curves_shown"] if curves_shown else WORDS["curves_hidden"],
+        curves_note=(
+            WORDS["curves_hidden"]
+            if not curves_shown
+            else WORDS["curves_shown_cq_only"]
+            if cq_only
+            else WORDS["curves_shown"]
+        ),
         curve_judge=judge_words,
         results_visible=visible,
         wells=wells,
+        cq_only=cq_only,
     )
 
 

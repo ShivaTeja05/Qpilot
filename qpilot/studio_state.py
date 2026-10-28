@@ -117,9 +117,15 @@ def _short_json(data: Any, limit: int = 300) -> str:
     return text if len(text) <= limit else text[:limit] + "…"
 
 
-def rule_words(rule: Any) -> str:
-    """An amplification-call rule id in words."""
+#: ``linregpcr`` for a file of Cq values only (``docs/cq-tables.md``): the same rule, no curve.
+CQ_RULE_WORDS = "the file's own Cq (a well counts when the file gives it a Cq; Cq values only)"
+
+
+def rule_words(rule: Any, cq_values: bool = False) -> str:
+    """An amplification-call rule id in words (``cq_values``: a file of Cq values only)."""
     rule = str(rule)
+    if rule == "linregpcr" and cq_values:
+        return CQ_RULE_WORDS
     if rule == "linregpcr":
         return "LinRegPCR's call (it found an exponential phase and a quantity)"
     if rule == "learned":
@@ -222,7 +228,7 @@ def _d_series(subject: str, d: Mapping[str, Any]) -> str:
 
 
 def _d_rule(subject: str, d: Mapping[str, Any]) -> str:
-    return f"Count a well as amplified by {rule_words(d['rule'])}"
+    return f"Count a well as amplified by {rule_words(d['rule'], d.get('basis') == 'cq')}"
 
 
 def _d_well(subject: str, d: Mapping[str, Any]) -> str:

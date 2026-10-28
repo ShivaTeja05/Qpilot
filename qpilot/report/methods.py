@@ -178,6 +178,8 @@ def data(c: Ctx, cite: Cites) -> list[Part]:
 
 def curves(c: Ctx, cite: Cites) -> list[Part]:
     """The curve analysis: LinRegPCR, efficiency, amplification calls, wells without a value."""
+    if c.has("f_cq_only"):  # a file of Cq values only: no curve was fitted
+        return _cq_values(c)
     r = c.result
     parts: list[Part] = [
         "Each well's baseline, amplification efficiency and starting quantity (N0) were "
@@ -212,6 +214,44 @@ def curves(c: Ctx, cite: Cites) -> list[Part]:
         parts.append(
             f" Of {tok('f_n_unknown_wells')} sample wells, {tok('f_n_undetermined')} "
             f"({tok('f_pct_undetermined')}) gave no quantity"
+        )
+        card = next((x for x in c.inputs.cards if x.kind == "undetermined"), None)
+        option = (card.decision or card.recommended) if card is not None else None
+        if card is not None and option is not None:
+            verb = "they were left out" if option == "drop" else "they were counted as very low"
+            parts += [f"; {verb} (", Q(c.option_label(card, option) or option), ")"]
+        parts.append(".")
+    design = c.inputs.design
+    excluded = list(design.excluded_wells) if design is not None else []
+    if excluded:
+        n = c.count("n_excluded", len(excluded), "study_design.json:/excluded_wells@len")
+        word = _plural(len(excluded), "well", "wells")
+        parts += [f" A person excluded {n} {word}: ", Q(", ".join(excluded)), "."]
+    return parts
+
+
+def _cq_values(c: Ctx) -> list[Part]:
+    """The curve paragraph of a file of Cq values only (``docs/cq-tables.md``): no curve fitted."""
+    parts: list[Part] = [
+        "The file holds Cq values only (no amplification curves), so no curve was fitted and no "
+        "well's own efficiency, baseline or fit quality exists: each well's Cq is the one in the "
+        "file, as the instrument software set it, and its starting quantity is its assay's "
+        "efficiency raised to the power of minus that Cq. Each assay's efficiency comes from "
+        "its dilution series where the design has one (from the slope of Cq against the "
+        "logarithm of the standards' quantities), and is otherwise assumed to be "
+        f"{tok('f_eff_assumed_value')} (every cycle doubles the product, the ΔΔCq assumption).",
+    ]
+    words = sorted(fid for fid in c.result.facts if fid.startswith("f_eff_words_"))
+    if words:
+        parts.append(" " + " ".join(tok(fid) for fid in words))
+    parts.append(" A well counts as amplified when the file gives it a Cq")
+    if c.has("f_amp_primary"):
+        parts.append(f"; the rule in use is {tok('f_amp_primary')}")
+    parts.append(".")
+    if c.has("f_n_undetermined", "f_n_unknown_wells", "f_pct_undetermined"):
+        parts.append(
+            f" Of {tok('f_n_unknown_wells')} sample wells, {tok('f_n_undetermined')} "
+            f"({tok('f_pct_undetermined')}) had no Cq"
         )
         card = next((x for x in c.inputs.cards if x.kind == "undetermined"), None)
         option = (card.decision or card.recommended) if card is not None else None

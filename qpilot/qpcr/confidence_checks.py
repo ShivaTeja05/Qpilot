@@ -80,7 +80,10 @@ def normalisation_passes(result: StudyResult) -> bool:
 
 
 def checks_for(
-    gene: str, result: StudyResult, grid: Mapping[str, int] | None = None
+    gene: str,
+    result: StudyResult,
+    grid: Mapping[str, int] | None = None,
+    assay_note: str | None = None,
 ) -> list[Check]:
     """The six checks for one gene.
 
@@ -89,6 +92,8 @@ def checks_for(
         result: the study (contrasts, robustness, geNorm, efficiency).
         grid: fragility per gene, i.e. ``core.robustness.fragility(grid_df, space)``; when
             omitted, fragility is reported as unknown.
+        assay_note: the assay check's words when they are not LinRegPCR's (a file of Cq values
+            only: :func:`qpilot.qpcr.cq_only.assay_note`).
     """
     contrast = result.contrasts[gene]
     robust = result.robustness[gene]
@@ -141,7 +146,8 @@ def checks_for(
         Check(
             id="assay",
             passed=True,
-            note="Per-well efficiency from LinRegPCR; undetermined wells reported; "
+            note=assay_note
+            or "Per-well efficiency from LinRegPCR; undetermined wells reported; "
             "LOD/LOQ not determined.",
             fact_ids=[f"f_eff_{s}", "f_pct_undetermined"],
         ),

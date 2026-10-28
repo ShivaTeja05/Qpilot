@@ -93,6 +93,40 @@ _INTERRUN = _Words(
     flips_prefix="irc",
     command="qpilot run --interrun all",
 )
+#: The efficiency panel of a file of Cq values only (``f_cq_only``; ``docs/cq-tables.md``): no
+#: curve, so each assay's efficiency is its dilution series' or an assumed 2.0, never LinRegPCR's.
+_EFFICIENCY_CQ = _Words(
+    status={
+        "off": "This file has Cq values only, so no efficiency was measured from curves: "
+        "{{f_n_eff_series}} of the assays take their efficiency from their dilution series and "
+        "{{f_n_eff_assumed}} assume {{f_eff_assumed_value}}, every cycle doubling the product "
+        "({{f_eff_assumed_genes}}). Testing the efficiency models adds an efficiency of "
+        "{{f_eff_assumed_value}} for every assay as one more choice of the grid; the analysis in "
+        "use stays the same until a person decides otherwise.",
+        "off_assumed": "This file has Cq values only and no assay has a dilution series, so "
+        "every quantity assumes an efficiency of {{f_eff_assumed_value}}: every cycle doubles the "
+        "product (the ΔΔCq assumption), not measured. No other efficiency model applies: a "
+        "dilution series of each assay on the plate would measure it.",
+        "swept": "Tested as one more choice of the grid: an efficiency of "
+        "{{f_eff_assumed_value}} for every assay instead of each assay's dilution series changes "
+        "{{f_n_flipped_efficiency}} of "
+        "{{f_n_genes}} calls. Its Decision Card says what it changes; the analysis in use stays "
+        "each assay's dilution series until a person decides.",
+        "screened_out": "Tried alone first: an efficiency of {{f_eff_assumed_value}} for every "
+        "assay changes no call, and the largest move of a log2 fold change is "
+        "{{f_screen_efficiency_dlog2fc}}, "
+        "under the screening threshold, so the grid keeps each assay's dilution series and "
+        "raises no card.",
+        "not_applicable": "None of the efficiency models asked for applies to this file of Cq "
+        "values only, so the grid keeps each assay's efficiency as it is (its dilution series, "
+        "else {{f_eff_assumed_value}}).",
+        "single_option": "Only the efficiency in use was asked for, so nothing else is tested.",
+    },
+    flips_prefix="eff",
+    command="qpilot run --efficiency all",
+)
+#: The primary efficiency option's label in a file of Cq values only.
+CQ_PRIMARY_LABEL = "Each assay's efficiency from its dilution series, else 2.0 (Cq values only)"
 WORDS: dict[str, _Words] = {
     "efficiency": _EFFICIENCY,
     "normaliser": _NORMALISER,
@@ -156,6 +190,38 @@ def _notes(name: str, facts: Mapping) -> list:
     return notes
 
 
+def _n(facts: Mapping, fid: str) -> int:
+    fact = facts.get(fid)
+    try:
+        return int(fact.value) if fact is not None else 0
+    except (TypeError, ValueError):
+        return 0
+
+
+def _cq_unavailable(facts: Mapping) -> dict[str, str]:
+    """A Cq-only study's efficiency models that do not apply, from its facts (asked or not)."""
+    from qpilot.qpcr.cq_only import NOT_APPLICABLE
+
+    out = {"per_well": NOT_APPLICABLE["per_well"], "amplicon_mean": NOT_APPLICABLE["amplicon_mean"]}
+    if _n(facts, "f_n_eff_series"):
+        out["standard_curve"] = (
+            "the analysis in use already takes each assay's efficiency from its dilution series"
+        )
+    else:
+        out["assumed_2"] = "the analysis in use already assumes an efficiency of 2.0"
+        out["standard_curve"] = "no assay has a dilution series with at least 3 levels"
+    return out
+
+
+def _cq_notes(facts: Mapping) -> list:
+    """Each analysed assay's efficiency in words (facts ``f_eff_words_*``), sorted."""
+    return [
+        fact_text("{{" + fid + "}}", facts)
+        for fid in sorted(facts)
+        if fid.startswith("f_eff_words_")
+    ]
+
+
 def axis_view(
     name: str,
     result: StudyResult,
@@ -168,12 +234,17 @@ def axis_view(
     from qpilot.qpcr.axes import get_axis
 
     axis = get_axis(name)
-    words = WORDS[name]
     facts = result.facts
+    cq_values = name == "efficiency" and "f_cq_only" in facts
+    words = _EFFICIENCY_CQ if cq_values else WORDS[name]
     status_fact = facts.get(f"f_axis_{name}")
     status = str(status_fact.value) if status_fact is not None else "off"
     if status not in words.status:
         status = "off"
+    said = status
+    if cq_values and status == "off" and _n(facts, "f_n_eff_series") == 0:
+        said = "off_assumed"
+    absent = _cq_unavailable(facts) if cq_values else {}
     options = []
     for option in axis.catalogue:
         s = slug(option.id)
@@ -182,24 +253,25 @@ def axis_view(
             f"f_screen_{name}_flips_{s}"
         )
         primary = option.tier == "primary"
-        tested = status != "off" and (primary or option.id in asked) and why is None
+        unavailable = str(why.value) if why is not None else absent.get(option.id)
+        tested = status != "off" and (primary or option.id in asked) and unavailable is None
         options.append(
             AxisOptionView(
                 id=option.id,
-                label=option.label,
+                label=CQ_PRIMARY_LABEL if cq_values and primary else option.label,
                 tier=option.tier,
                 primary=primary,
                 tested=tested,
                 flips=fact_ref(flips) if flips is not None and not primary else None,
-                unavailable=str(why.value) if why is not None else None,
+                unavailable=unavailable,
             )
         )
     try:
-        text = fact_text(words.status[status], facts)
+        text = fact_text(words.status[said], facts)
     except (KeyError, TypeError, ValueError):
         text = plain_text(words.status["off"])
     try:
-        notes = _notes(name, facts)
+        notes = _cq_notes(facts) if cq_values else _notes(name, facts)
     except (KeyError, TypeError, ValueError):
         notes = []
     card = next((c for c in cards if c.kind == axis.card_kind), None)

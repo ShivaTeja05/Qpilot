@@ -39,7 +39,8 @@ from qpilot.core.facts import FactRegistry, slug
 from qpilot.core.store import dump_json
 from qpilot.core.validator import validate
 from qpilot.io.rdml_io import RdmlLoadError, load
-from qpilot.qpcr.curves import analyse_study
+from qpilot.qpcr import cq_only
+from qpilot.qpcr.curves import analyse_study, without_curves
 from qpilot.qpcr.designs import design_curves
 from qpilot.qpcr.gate_rt import g_rt, rt_labels
 from qpilot.qpcr.quant import EXCLUDED
@@ -162,6 +163,28 @@ CONSEQUENCES: dict[str, str] = {
     ),
     "eff_assumed": (
         "No study well has a measured efficiency, so quantities rest on an assumed efficiency."
+    ),
+    # A file of Cq values only (qpilot.qpcr.cq_only): no curve, so no well's own efficiency.
+    "eff_cq_only_assumed": (
+        "This file has Cq values only, so no efficiency was measured from curves, and no assay "
+        "has a dilution series: every assay's efficiency is assumed (every cycle doubles the "
+        "product)."
+    ),
+    "eff_cq_only_series": (
+        "This file has Cq values only, so no well's own efficiency was measured; each of the "
+        "{{f_ev_efficiency_n_assays}} assays takes its efficiency from its dilution series "
+        "({{f_ev_efficiency_min}} to {{f_ev_efficiency_max}})."
+    ),
+    "eff_cq_only_partly": (
+        "This file has Cq values only, so no well's own efficiency was measured; "
+        "{{f_ev_efficiency_n_series}} of {{f_ev_efficiency_n_assays}} assays take their "
+        "efficiency from their dilution series ({{f_ev_efficiency_min}} to "
+        "{{f_ev_efficiency_max}}); the others' is assumed (every cycle doubles the product): "
+        "{{f_ev_efficiency_assumed}}."
+    ),
+    "rawness_cq_only": (
+        "Not applicable: this file has Cq values only, so there are no curves whose processing "
+        "before export could be checked."
     ),
     "rawness_unknown_consistent": (
         "Not judged: qPilot's raw-ness check reads an instrument export when it is opened, and "
@@ -563,9 +586,16 @@ def _reference_genes(genorm: GenormResult, candidates: tuple[str, ...]) -> _Draf
     return draft
 
 
-def _efficiency(table: pd.DataFrame, study: pd.DataFrame) -> _Draft:
+def _efficiency(
+    table: pd.DataFrame,
+    study: pd.DataFrame,
+    analysed: Iterable[str] = (),
+    design: StudyDesign | None = None,
+) -> _Draft:
     if study.empty:
         return _Draft("efficiency", "unknown", "no_study_wells")
+    if without_curves(table):
+        return _cq_only_efficiency(table, analysed, design)
     measured = study["eff_indiv"].notna() if "eff_indiv" in study.columns else None
     n_with = int(measured.sum()) if measured is not None else 0
     if n_with == 0:
@@ -592,6 +622,27 @@ def _efficiency(table: pd.DataFrame, study: pd.DataFrame) -> _Draft:
         draft.put("max", float(per_gene.max()), "{:.2f}")
     draft.put("n_plates", int(table["run_id"].nunique()))
     draft.put("n_plates_with_series", n_series)
+    return draft
+
+
+def _cq_only_efficiency(
+    table: pd.DataFrame, analysed: Iterable[str], design: StudyDesign | None
+) -> _Draft:
+    """The efficiency item of a file of Cq values only: each assay's series, or assumed 2.0."""
+    plan = cq_only.efficiency_plan(table, design)
+    wanted = set(analysed) or set(plan.assays)
+    assays = [plan.assays[t] for t in sorted(wanted) if t in plan.assays]
+    series = [a for a in assays if a.source == "dilution_series"]
+    if not series:
+        return _Draft("efficiency", "absent", "eff_cq_only_assumed", value="assumed")
+    code = "eff_cq_only_series" if len(series) == len(assays) else "eff_cq_only_partly"
+    draft = _Draft("efficiency", "present", code, value="dilution_series")
+    draft.put("n_assays", len(assays), COUNT_FMT)
+    draft.put("n_series", len(series), COUNT_FMT)
+    draft.put("min", min(a.efficiency for a in series), "{:.2f}")
+    draft.put("max", max(a.efficiency for a in series), "{:.2f}")
+    assumed = ", ".join(a.target for a in assays if a.source == "assumed")
+    draft.put("assumed", assumed or "none")
     return draft
 
 
@@ -631,6 +682,8 @@ def _rawness(
 ) -> _Draft:
     if table.empty:
         return _Draft("rawness", "unknown", "no_study_wells", value="unknown")
+    if without_curves(table):  # a Cq table or a Cq-only RDML, imported or not
+        return _Draft("rawness", "not_applicable", "rawness_cq_only", value="cq_only")
     if rawness:
         found = _rawness_import(table, rawness)
         if found is not None:
@@ -861,7 +914,7 @@ def evidence_for(
         _ntc(table, study),
         _no_rt(table, study),
         _reference_genes(model.stability, tuple(model.settings.candidates)),
-        _efficiency(table, study),
+        _efficiency(table, study, (*model.space.items, *model.settings.candidates), design),
         _rawness(table, file, model.settings.experiment_id, rawness),
         _rna_integrity(samples, file),
         _rt_replicates(table, design, samples, file),
