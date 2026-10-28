@@ -37,6 +37,7 @@ from functools import lru_cache
 from statistics import NormalDist
 from typing import Any
 
+from qpilot.explain.words import plural
 from qpilot.schemas import PlanResult
 
 SIGMA_HELP = "SD of log2 normalised expression between biological replicates (not technical Cq SD)"
@@ -561,7 +562,7 @@ def _rules(
 
 
 def _plural(n: int, word: str) -> str:
-    return f"{n} {word}" if n == 1 else f"{n} {word}s"
+    return plural(n, word)
 
 
 def _and(items: list[str]) -> str:
@@ -815,7 +816,7 @@ def _budget(
 
 
 def plan(
-    fc: float = 2.0,
+    fc: float | None = None,
     sd_log2: float | None = None,
     n_per_group: int | None = None,
     alpha: float = 0.05,
@@ -845,7 +846,8 @@ def plan(
     sentence and, with all three costs, the cheapest design (:func:`cheapest_design`).
 
     Args:
-        fc: the smallest fold change worth detecting (e.g. 2.0).
+        fc: the smallest fold change worth detecting; ``None`` (the default) starts from
+            :func:`default_fold` (2.5× for the 2-fold rule), as Plan next and the CLI do.
         sd_log2: SD of log2 normalised expression between biological replicates; ``None``
             gives a message instead of numbers. With ``sd_rt`` or ``sd_well`` it is the SD
             between subjects alone, without RT or well noise.
@@ -875,6 +877,8 @@ def plan(
     Raises:
         ValueError: an input outside what any real design has.
     """
+    if fc is None:
+        fc = default_fold(min_log2fc)
     costs = {"cost_subject": cost_subject, "cost_rt": cost_rt, "cost_well": cost_well}
     _check_inputs(
         fc,

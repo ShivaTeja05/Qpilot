@@ -97,8 +97,7 @@ def test_every_kind_has_plain_words():
         "amplicon on each plate, the analysis in use)"
     )
     assert (
-        words["stage.confirm"]
-        == "Confirm the Design (blind) stage: it covers 2 accepted proposal(s)"
+        words["stage.confirm"] == "Confirm the Design (blind) stage: it covers 2 accepted proposals"
     )
 
 

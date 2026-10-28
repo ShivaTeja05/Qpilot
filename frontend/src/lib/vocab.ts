@@ -5,6 +5,7 @@
  * and the record say the same thing.
  */
 import type { Schemas } from "@/api/client";
+import { count } from "./format";
 
 export type Conclusion = "up" | "down" | "none";
 export type Level = "High" | "Moderate" | "Low" | "Very low";
@@ -188,6 +189,119 @@ export function asVerdict(value: unknown): Verdict | null {
     "no change called": "no call",
   };
   return alias[v] ?? null;
+}
+
+// ---- the two sets of analyses behind every "holds" ------------------------------------------
+// Mirrors qpilot/explain/sets.py word for word (tests/web/test_sets_words.py checks it): the
+// page, the report, the CLI and the MCP tools say the same thing about the two counts.
+
+/** The analyses qPilot itself checks, in a count: "744 analyses qPilot checks". */
+export const GRID_COUNT = "analyses qPilot checks";
+/** qPilot's set, named when both sets are on the page. */
+export const GRID_NAME = "qPilot's choice grid";
+/** What qPilot's choice grid holds. */
+export const GRID_WHAT = "every combination of the options on the Decision Cards";
+/** The audit's set, named when both sets are on the page. */
+export const AUDIT_NAME = "the audit's reasonable set";
+/** What the audit does, without a count of decisions that goes stale (eight or nine). */
+export const AUDIT_DOES =
+  "A wider, independent re-analysis than qPilot's grid: every combination of the audit's analysis decisions, one verdict per gene.";
+
+/** The audit's decisions qPilot's grid varies too (late_cq: its Cq cut-offs; nondetect: its empty-well rule). */
+const SHARED_DECISIONS = new Set(["refs", "cut", "late_cq", "nondetect"]);
+/** The audit's decisions in plain words (qsim.decisions.PLAIN). */
+export const AUDIT_PLAIN: Record<string, string> = {
+  efficiency: "the efficiency model",
+  flagged: "how flagged wells are handled",
+  late_cq: "the late-Cq cut-off",
+  nondetect: "how non-detects are handled",
+  replicates: "how replicate wells are combined",
+  refs: "the reference genes",
+  cut: "the group cut-off",
+  test: "the statistical test",
+  multiplicity: "the multiple-testing correction",
+};
+/** The audit's decisions when nothing more is known (the demo's eight). */
+export const DEFAULT_AUDIT = [
+  "efficiency",
+  "flagged",
+  "late_cq",
+  "nondetect",
+  "refs",
+  "cut",
+  "test",
+  "multiplicity",
+];
+
+/** `a`, `a and b`, `a, b and c`. */
+export function listWords(words: string[]): string {
+  if (words.length <= 1) return words.join("");
+  return `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
+}
+
+function sentence(text: string): string {
+  return text.startsWith("qPilot") ? text : text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** The audit's decisions qPilot's grid does not vary, in words (the correction aside: the verdicts hold it as planned). */
+export function auditOnly(
+  decisions: readonly string[] = DEFAULT_AUDIT,
+  { efficiencyInGrid = false }: { efficiencyInGrid?: boolean } = {},
+): string[] {
+  return decisions
+    .filter(
+      (d) =>
+        !SHARED_DECISIONS.has(d) &&
+        d !== "multiplicity" &&
+        !(efficiencyInGrid && d === "efficiency"),
+    )
+    .map((d) => AUDIT_PLAIN[d] ?? d.replace(/_/g, " "));
+}
+
+/** How the two sets differ, in plain words (the page's "Why two counts?"). */
+export function setsBridge(
+  decisions: readonly string[] = DEFAULT_AUDIT,
+  options: { efficiencyInGrid?: boolean } = {},
+): string {
+  const only = auditOnly(decisions, options);
+  let first = "";
+  if (only.length) {
+    first = `The audit also varies ${listWords(only)}, which qPilot's grid does not`;
+    if (only.includes("the efficiency model"))
+      first += " (it tests the efficiency models only when you ask, under Results)";
+    first += "; ";
+  }
+  return sentence(
+    `${first}its verdicts leave out single and paired control genes and keep the group cut-off as planned, which qPilot's grid varies. So the same gene can hold in a different share of each.`,
+  );
+}
+
+/** Both counts and what each one is for, in two short sentences. */
+export function setsLine({
+  grid,
+  reasonable,
+  full,
+}: {
+  grid?: number | null;
+  reasonable?: number | null;
+  full?: number | null;
+}): string {
+  const parts: string[] = [];
+  if (grid)
+    parts.push(
+      `qPilot's choice grid is the ${count(grid)} ${GRID_COUNT} (${GRID_WHAT}); it sets each gene's confidence level.`,
+    );
+  if (reasonable)
+    parts.push(
+      `The robustness audit is ${full ? `a wider re-analysis of ${count(full)} analyses` : "a wider re-analysis"}; its verdicts count its ${count(reasonable)} reasonable ones.`,
+    );
+  return parts.join(" ");
+}
+
+/** Why a gene that leans on qPilot's grid can still hold in the audit (said after its verdict). */
+export function verdictDiffers(reasonable?: number | null): string {
+  const n = reasonable ? `${count(reasonable)} reasonable analyses` : "reasonable analyses";
+  return `The audit counts only its ${n}, which keep the group cut-off as planned and leave out single and paired control genes, so a call can hold there and not in qPilot's grid.`;
 }
 
 export const STAGE_LABEL: Record<StageName, string> = {
@@ -418,7 +532,7 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
     const sample = d.sample ? str(d.sample) : "an unknown sample";
     return d.action === "restore"
       ? `Keep sample ${sample} in ${str(d.gene)} (restore it in the analysis)`
-      : `Exclude sample ${sample} from ${str(d.gene)}, as it is in the table Prism sent back`;
+      : `Exclude sample ${sample} from ${str(d.gene)}, as it is excluded in Prism`;
   },
   "prism.value_edit": (_s, d) => {
     const sample = d.sample ? str(d.sample) : "an unknown sample";
@@ -507,6 +621,27 @@ export const BLIND_TEXT =
 export function isBlindKind(p: Pick<Proposal, "kind" | "subject">): boolean {
   if (p.kind === "stage.confirm") return p.subject === "design" || p.subject === "curves";
   return p.kind.startsWith("design.") || p.kind.startsWith("curve.");
+}
+
+/**
+ * Who decided a card or a proposal, as the page says it to the person using it ("Decided by
+ * you"): one wording everywhere (Results, Gene, Controls, Curves, Record), the same as
+ * `qpilot/app_state.py` `decider_words`.
+ */
+export const DECIDER_WORDS: Record<string, string> = {
+  human: "you",
+  agent: "an agent",
+  system: "qPilot",
+};
+
+/** "you", "an agent", "qPilot" (or "someone" for an actor qPilot does not know). */
+export function deciderWords(actor: string | null | undefined): string {
+  return DECIDER_WORDS[actor ?? ""] ?? "someone";
+}
+
+/** "Decided by you". */
+export function decidedBy(actor: string | null | undefined): string {
+  return `Decided by ${deciderWords(actor)}`;
 }
 
 /** Actor in words. */

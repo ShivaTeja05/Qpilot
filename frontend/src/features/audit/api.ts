@@ -5,7 +5,8 @@
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect } from "react";
-import { ApiError, type JobView } from "@/api/client";
+import { ApiError, apiFetch, type JobView } from "@/api/client";
+import { jobPollMs } from "@/api/jobs";
 import type {
   AuditHow,
   AuditOverview,
@@ -35,7 +36,7 @@ async function request<T>(
 ): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await apiFetch(url, {
       method,
       signal,
       credentials: "same-origin",
@@ -88,7 +89,7 @@ export function useAuditStatus(t: AuditTarget) {
     queryFn: () => request<AuditStatus>("GET", t.base),
     // While an audit runs, the job's events refresh this; poll slowly as a fallback.
     refetchInterval: (q) =>
-      (q.state.data as AuditStatus | undefined)?.status === "running" ? 5000 : false,
+      (q.state.data as AuditStatus | undefined)?.status === "running" ? jobPollMs() : false,
   });
 }
 

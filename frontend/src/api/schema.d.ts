@@ -3579,6 +3579,11 @@ export type components = {
          * @description Whether the robustness audit ran on this study (details: the Audit section).
          */
         AuditBadge: {
+            /**
+             * Analyses
+             * @description Every analysis the audit ran (90,396 on the demo).
+             */
+            analyses?: number | null;
             /** Chain Head */
             chain_head?: string | null;
             /**
@@ -3587,6 +3592,17 @@ export type components = {
              * @default false
              */
             current: boolean;
+            /**
+             * Decisions
+             * @description The audit's decision ids (efficiency, flagged, late_cq, nondetect, refs, cut, test, multiplicity, replicates): what it varies, to say how it differs from qPilot's grid.
+             * @default []
+             */
+            decisions: string[];
+            /**
+             * Reasonable
+             * @description The audit's reasonable set its verdicts count (144 on the demo); not qPilot's choice grid (GeneRow.n_cells).
+             */
+            reasonable?: number | null;
             /**
              * Status
              * @enum {string}

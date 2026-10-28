@@ -1179,7 +1179,8 @@ def _seen_ungated() -> ModelSeen:
 def fresh_demo(ctx: Ctx) -> FreshDemo:
     """Move the demo's session, studies and audits aside (kept, never deleted)."""
     demo_keys = _demo_keys(ctx.store)
-    if any(job.key in demo_keys for job in ctx.jobs.active()):
+    # Work that only reads (preparing a view, reading the file) never holds the demo back.
+    if any(job.key in demo_keys and job.kind not in READING_JOBS for job in ctx.jobs.active()):
         raise api_error(
             409,
             "busy",
@@ -1206,6 +1207,12 @@ def fresh_demo(ctx: Ctx) -> FreshDemo:
         message=f"Earlier demo work moved to {moved[0].parent} (kept, never deleted). "
         "Open the demo study to start again.",
     )
+
+
+#: Jobs that only read a workspace (they prepare a view in memory): a fresh demo may go ahead.
+READING_JOBS = frozenset(
+    {"warm", "prepare", "gate.run", "trace.load", "audit.load", "audit.check", "proposal.matters"}
+)
 
 
 def _demo_keys(store: StudyStore) -> set[str]:

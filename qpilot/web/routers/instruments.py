@@ -45,6 +45,7 @@ from qpilot.core.instruments import (
     reject_incident,
     suggest_id,
 )
+from qpilot.explain.words import plural
 from qpilot.web import results_views as rv
 from qpilot.web import views
 from qpilot.web.context import AppContext, Ctx, api_error
@@ -518,7 +519,9 @@ def link_run(run_id: str, body: LinkBody, ctx: Ctx) -> Linked:
     except InstrumentError as err:
         raise _refused(err) from err
     ctx.bus.publish({"type": "instruments.changed", "key": instrument_id, "source": "page"})
-    told = f"{len(events)} event(s) the file states were logged" if events else "nothing new"
+    told = (
+        f"{plural(len(events), 'event')} the file states were logged" if events else "nothing new"
+    )
     return Linked(
         instrument_id=instrument_id,
         n_logged=len(events),

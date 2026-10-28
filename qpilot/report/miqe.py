@@ -316,12 +316,13 @@ def raw_data(m: MiqeCtx) -> Outcome:
     sha = tok(
         m.ctx.facts.derive("input_sha256", m.ctx.result.input_sha256, "results.json:/input_sha256")
     )
+    clause = m.ctx.reactions_in_file(meta.n_reactions_with_curves, meta.n_runs)
+    where = f", {clause}" if clause else ""
     return Fill(
         "Yes",
         [
-            f"Raw fluorescence of {curves} reactions in the RDML file (SHA-256 {sha}); the "
-            "Analysis "
-            "Record carries the file byte for byte."
+            f"Raw fluorescence of {curves} reactions in the RDML file (SHA-256 {sha}){where}; "
+            "the Analysis Record carries the file byte for byte."
         ],
         ["input.rdml"],
     )

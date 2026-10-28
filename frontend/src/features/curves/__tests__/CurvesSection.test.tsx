@@ -7,6 +7,7 @@ import { memoryLocation } from "wouter/memory-location";
 import type { Schemas } from "@/api/client";
 import { pathOf } from "@/shell/route";
 import { TooltipProvider } from "@/ui";
+import { refutedGroups, refutedWords } from "@/ui/proposal/groups";
 import plate from "@/charts/plate/__tests__/recorded/plate-CDH5_20080305.json";
 import curveE1 from "@/charts/curves/__tests__/recorded/curve-CDH5_20080305-E1.json";
 import confirmedFrame from "@/test/recorded/shell-session-frame.json";
@@ -133,10 +134,18 @@ describe("Curves section", { timeout: 30_000 }, () => {
     // The disagreements in one sentence, by plate, from the recorded inbox.
     const plates = disagreementsByPlate((waitingInbox as Schemas["ProposalList"]).proposals);
     expect(screen.getByText(disagreementSentence(plates))).toBeTruthy();
+    // The 110 refuted "not amplified" calls on ALUsq fold into one line, with "Show all".
+    const proposals = (waitingInbox as Schemas["ProposalList"]).proposals;
+    const [group] = refutedGroups(proposals);
+    expect(group!.ids).toHaveLength(110);
+    const line = screen.getByText(refutedWords(group!));
+    expect(line.textContent).toContain("The Curve Judge reads 110 wells of ALUsq(Eurogentec)");
+    expect(
+      screen.queryAllByRole("article").filter((a) => /Well call/.test(a.textContent ?? "")),
+    ).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: "Show all 110" }));
     // j focuses the first waiting card (the inbox keeps the server's order: contradicted first).
-    const first = (waitingInbox as Schemas["ProposalList"]).proposals.find(
-      (p) => p.status === "proposed",
-    )!;
+    const first = proposals.find((p) => p.status === "proposed")!;
     expect(first.kind).toBe("curve.well_call");
     fireEvent.keyDown(document.body, { key: "j" });
     const at = first.subject.lastIndexOf("/");

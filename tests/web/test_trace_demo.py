@@ -1,4 +1,4 @@
-"""Trace on the real demo study (Vermeulen 2013: 64 plates, 366 tumours, 58 compared genes).
+"""Trace on the real demo study (Vermeulen 2009: 64 plates, 366 tumours, 58 compared genes).
 
 The numbers ``qPilot-TRACE-PLAN.md`` measured with prototype scripts, re-measured here with the
 engine (``qpilot.trace``) and with an independent brute-force re-run (scipy's Welch test on the

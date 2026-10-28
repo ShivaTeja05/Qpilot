@@ -160,10 +160,11 @@ def test_a_plate_that_cannot_be_laid_out_leaves_the_list(called, monkeypatch):
     assert not any(i["on_plate"] for i in plan["items"])
     assert any("could not be laid out" in w for w in plan["warnings"])
     quiet = sum(i["consequence"] == "changes_nothing" and bool(i["repeat"]) for i in plan["items"])
-    said = [n for n in plan["notes"] if "change no call" in n]
+    said = [n for n in plan["notes"] if "no call: they are listed" in n]
     # only the items that change no call are said to be left off the plate for that reason
     assert len(said) == (1 if quiet else 0)
-    assert not said or said[0].startswith(f"{quiet} item(s) change no call")
+    one = "1 item changes no call"
+    assert not said or said[0].startswith(one if quiet == 1 else f"{quiet} items change no call")
     r = called["client"].get(f"/api/studies/{called['study']}/review/repeat.csv")
     assert r.status_code == 404
 
