@@ -70,14 +70,24 @@ def test_a_two_group_design_is_audited_with_its_one_comparison(
     assert (ours - split.reindex(ours.index)).abs().max() < 1e-12
 
 
-def test_technical_replicates_are_not_applicable(store, legacy, demo_rdml_session):
+def test_samples_of_one_biological_unit_are_audited_as_qpilot_averaged_them(
+    store, legacy, demo_rdml_session
+):
     inputs = study_inputs(store, legacy)
     high = sorted(s for s, g in inputs.groups.items() if g.endswith("-high"))
     units = {s: f"unit{i // 2}" for i, s in enumerate(high[:6])}  # two preparations per unit
     design = _groups_design(store, legacy, units)
     study_id = store.ensure_study(demo_rdml_session, design=design)
-    with pytest.raises(sim.NotApplicable, match="technical replicates"):
-        sim.prepare(sim.load_analysis(store, study_id))
+    prepared = sim.prepare(sim.load_analysis(store, study_id))
+    assert sim.reproduction(prepared, store.get(study_id))["ok"]
+    reps = prepared.scope["technical_replicates"]
+    assert reps["most_wells_per_value"] == 2 and reps["values_with_several_wells"] == 3 * 64
+    # two wells per value: the median is the mean and no well is an outlier, so it is not varied
+    assert not reps["varied"] and "replicates" not in prepared.space.names
+    assert prepared.scope["analyses_in_full_grid"] == 90_396 // 3
+    n_high = sum(1 for s in high) - 3  # six samples became three units
+    assert prepared.scope["n_in_groups"][0] == n_high
+    assert {"unit0", "unit1", "unit2"} <= set(prepared.study.samples)
 
 
 def test_the_persons_card_choice_becomes_the_simulators_option(store, demo_rdml_session):
