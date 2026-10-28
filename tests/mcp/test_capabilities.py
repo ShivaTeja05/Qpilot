@@ -116,6 +116,29 @@ def test_units_refuse_a_control_gene_an_unknown_gene_and_bad_arguments(tools, ca
     refused(tools.qpcr_units(None, GENE), "invalid_argument", "study_id")  # type: ignore[arg-type]
 
 
+def test_units_come_in_pages_and_the_group_numbers_cover_every_unit(tools, called):
+    study = called["study"]
+    everything = tools.qpcr_units(study, GENE)
+    assert everything["n_units"] == 4 and everything["next_offset"] is None
+    assert everything["offset"] == 0 and len(everything["units"]) == 4
+    first = tools.qpcr_units(study, GENE, limit=3)
+    second = tools.qpcr_units(study, GENE, offset=first["next_offset"], limit=3)
+    assert [u["unit"] for u in first["units"] + second["units"]] == [
+        u["unit"] for u in everything["units"]
+    ]
+    assert first["n_units"] == second["n_units"] == 4
+    assert (first["next_offset"], second["next_offset"]) == (3, None)
+    # a page leaves the statistics alone
+    for key in ("groups", "fold_log2", "fold_ci_log2", "p"):
+        assert first[key] == second[key] == everything[key]
+    assert tools.qpcr_units(study, GENE, offset=99)["units"] == []
+    concise = tools.qpcr_units(study, GENE, limit=1, response_format="concise")
+    assert len(concise["units"]) == 1 and concise["next_offset"] == 1
+    for kwargs in ({"limit": 0}, {"limit": 501}, {"limit": True}, {"limit": "5"}, {"offset": -1}):
+        field = next(iter(kwargs))
+        refused(tools.qpcr_units(study, GENE, **kwargs), "invalid_argument", field)
+
+
 # ---- qpcr_comparisons: every comparison of a design with several ---------------------------------
 
 B = "drug_b_vs_control"
@@ -236,6 +259,15 @@ def test_the_repeat_plan_lists_each_reaction_once_and_the_plate(tools, called):
     assert "wells" not in concise and "csv" not in concise
     assert concise["items"][0]["n_reasons"] >= 2 and "reasons" not in concise["items"][0]
     refused(tools.qpcr_repeat_plan(called["study"], include="some"), "invalid_argument", "include")  # type: ignore[arg-type]
+    # the items come in pages; the plate and the counts cover the whole plan
+    page = tools.qpcr_repeat_plan(called["study"], limit=1)
+    assert page["n_items"] == len(out["items"]) and len(page["items"]) == 1
+    assert page["next_offset"] == (1 if page["n_items"] > 1 else None)
+    assert page["counts"] == out["counts"] and page["wells"] == out["wells"]
+    last = tools.qpcr_repeat_plan(called["study"], offset=page["n_items"] - 1, limit=1)
+    assert last["items"] == out["items"][-1:] and last["next_offset"] is None
+    refused(tools.qpcr_repeat_plan(called["study"], limit=0), "invalid_argument", "limit")
+    refused(tools.qpcr_repeat_plan(called["study"], offset=-1), "invalid_argument", "offset")
 
 
 # ---- qpcr_request_set_aside: a request, never a decision -----------------------------------------
@@ -594,6 +626,9 @@ def test_a_saved_prism_project_is_read_without_storing_anything(tools, called):
     assert proposal["kind"] == "prism.exclusion_reason" and proposal["status"] == "proposed"
     assert (inbox_state(called), store.chain_head(study)) == before  # no proposal was filed
     assert sid
+    # sent_back_dir takes the saved project too (the name of the older route), same answer
+    same = tools.qpcr_prism_diff(study, str(folder), sent_back_dir=str(saved))
+    assert same["items"] == out["items"] and same["source"] == "project"
     # the bundle folder itself (holding the project as qPilot wrote it) brings back nothing
     unchanged = tools.qpcr_prism_diff(study, str(folder), project_path=str(folder))
     assert unchanged["items"] == [] and "exactly as qPilot wrote it" in " ".join(unchanged["notes"])
@@ -623,6 +658,11 @@ def test_the_prism_diff_takes_one_return_and_only_inside_the_data_roots(tools, c
     )
     note = folder.parent / "notes.txt"
     note.write_text("not a project", encoding="utf-8")
+    refused(
+        tools.qpcr_prism_diff(study, str(folder), sent_back_dir=str(note)),
+        "unsupported_input",
+        "sent_back_dir",
+    )
     refused(
         tools.qpcr_prism_diff(study, str(folder), project_path=str(note)),
         "unsupported_input",

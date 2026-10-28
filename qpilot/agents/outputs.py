@@ -530,6 +530,13 @@ class UnitsOut(_Open):
     comparison: str | None = None
     groups: list[UnitGroupView]
     units: list[UnitView]
+    n_units: int | None = Field(
+        None, description="Every unit with a value or none; units is a page."
+    )
+    offset: int | None = None
+    next_offset: int | None = Field(
+        None, description="Where the next page starts; null at the end."
+    )
     fold_log2: Num = None
     fold_ci_log2: list[Num] | None = None
     p: Num = None
@@ -573,6 +580,11 @@ class RepeatPlanOut(_Open):
     study_id: str
     include: Literal["consequential", "all"]
     items: list[dict[str, Any]]
+    n_items: int | None = Field(None, description="Every item of the plan; items is a page.")
+    offset: int | None = None
+    next_offset: int | None = Field(
+        None, description="Where the next page starts; null at the end."
+    )
     counts: dict[str, int]
     gate_lines: list[dict[str, Any]]
     calibrator: str | None = None

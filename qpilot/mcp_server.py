@@ -1428,8 +1428,10 @@ class QpilotTools(CapabilityTools):
         ``bundle_dir`` is the folder qPilot wrote (its Prism project, tables and provenance).
         Give what came back from Prism as exactly one of ``project_path`` (the Prism project
         the person saved: a ``.pzfx`` file, or a folder holding it such as the bundle folder
-        itself) or ``sent_back_dir`` (the tables the optional ``send_back.pzc`` script
-        exported). All of them must be inside ``QPILOT_DATA_ROOTS``. Results stay hidden for a
+        itself) or ``sent_back_dir`` (the folder of tables the optional ``send_back.pzc``
+        script exported; a ``.pzfx`` file or a folder holding one is read as a project too).
+        Any other file type is refused (``unsupported_input``). All of them must be inside
+        ``QPILOT_DATA_ROOTS``. Results stay hidden for a
         Studio session until a person confirms the design and the curves.
         """
         from qpilot.prism import diff_report
@@ -1450,10 +1452,10 @@ class QpilotTools(CapabilityTools):
             return err.refusal("bundle_dir")
         returned_field = "project_path" if project_path is not None else "sent_back_dir"
         try:
-            if project_path is not None:
-                returned = check_prism_return(project_path)
-            else:
-                returned = check_dir(sent_back_dir)  # type: ignore[arg-type]
+            # either one may name the saved project (.pzfx) or a folder: the same data-root rules
+            returned = check_prism_return(
+                project_path if project_path is not None else sent_back_dir
+            )  # type: ignore[arg-type]
         except PathRefused as err:
             return err.refusal(returned_field)
         try:
