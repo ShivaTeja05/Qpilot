@@ -42,8 +42,7 @@ export function verifyRows(
         <ul className="flex flex-col gap-0.5">
           {damaged.length ? (
             <li>
-              Altered or damaged after export (its bytes fail the zip’s own check):{" "}
-              {names(damaged)}
+              Altered or damaged after export (its bytes fail the zip’s own check): {names(damaged)}
             </li>
           ) : null}
           {r.changed.length ? <li>Changed since export: {names(r.changed)}</li> : null}

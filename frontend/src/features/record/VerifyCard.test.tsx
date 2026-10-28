@@ -29,9 +29,7 @@ describe("verify a record", () => {
     renderWithProviders(<VerifyResultView result={good} />);
     expect(screen.getByText("This record checks out")).toBeTruthy();
     expect(
-      screen.getByText(
-        new RegExp(`${good.report.n_entries} entr(y|ies), every hash links`),
-      ),
+      screen.getByText(new RegExp(`${good.report.n_entries} entr(y|ies), every hash links`)),
     ).toBeTruthy();
     expect(screen.getByText(good.audit_note)).toBeTruthy();
     expect(screen.getByText(good.note)).toBeTruthy();
