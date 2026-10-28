@@ -8,6 +8,7 @@ text encoding is not UTF-8 (a C locale where the system has one, the ANSI code p
 """
 
 import ast
+import importlib.util
 import io
 import json
 import os
@@ -22,96 +23,81 @@ from qpilot.cli._console import ensure_utf8_output
 from qpilot.core import pseudonym, store
 
 REPO = Path(__file__).resolve().parents[2]
-SHIPPED = [REPO / "qpilot", REPO / "sim" / "src"]
-SKIP_DIRS = {"vendor", "static", "__pycache__"}  # vendored rdmlpython is byte-for-byte upstream
-FIX = (
-    'pass encoding="utf-8" (and newline="\\n" when writing text; lineterminator="\\n" '
-    "to DataFrame.to_csv) so the result does not depend on the system"
-)
+SCRIPT = REPO / "scripts" / "fix_portability.py"
 
 
-def _mode(call: ast.Call, position: int, default: str = "r") -> str:
-    for keyword in call.keywords:
-        if keyword.arg == "mode":
-            value = keyword.value
-            return value.value if isinstance(value, ast.Constant) else "?"
-    if len(call.args) > position:
-        value = call.args[position]
-        return value.value if isinstance(value, ast.Constant) else "?"
-    return default
+def _load_rules():
+    """The rule lives in scripts/fix_portability.py, which also applies it."""
+    spec = importlib.util.spec_from_file_location("fix_portability", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-def _problem(call: ast.Call) -> str | None:
-    """What a call leaves to the system's defaults, or None when it is portable."""
-    func = call.func
-    name = func.attr if isinstance(func, ast.Attribute) else getattr(func, "id", "")
-    base = ast.unparse(func.value) if isinstance(func, ast.Attribute) else ""
-    keywords = {k.arg for k in call.keywords}
-    if name == "to_csv":
-        return None if "lineterminator" in keywords else "to_csv without lineterminator"
-    if name == "read_text" and base:
-        return None if "encoding" in keywords else "read_text without encoding"
-    if name == "write_text" and base:
-        missing = [k for k in ("encoding", "newline") if k not in keywords]
-        return f"write_text without {' and '.join(missing)}" if missing else None
-    if name not in {"open", "fdopen", "NamedTemporaryFile"}:
-        return None
-    position = 0 if name == "NamedTemporaryFile" else 1  # open(file, mode), fdopen(fd, mode)
-    if name == "open" and base and base not in {"io", "builtins"}:
-        # ``something.open(...)`` is a file only when it looks like Path.open: a literal mode
-        # first, or Path's keywords (a zip member, a browser or a Studio is not a text file).
-        first = call.args[0] if call.args else None
-        literal = isinstance(first, ast.Constant) and isinstance(first.value, str)
-        if not (literal or keywords & {"mode", "newline"} or base.startswith("Path(")):
-            return None
-        position = 0
-    mode = _mode(call, position, "w+b" if name == "NamedTemporaryFile" else "r")
-    if mode == "?" or "b" in mode:
-        return None
-    if "encoding" not in keywords:
-        return f"{name}({mode!r}) without encoding"
-    if any(c in mode for c in "wax+") and "newline" not in keywords:
-        return f"{name}({mode!r}) without newline"
-    return None
+needs_checkout = pytest.mark.skipif(not SCRIPT.is_file(), reason="not a source checkout")
 
 
-def _offenders() -> list[str]:
-    found = []
-    for root in SHIPPED:
-        for path in sorted(root.rglob("*.py")):
-            if SKIP_DIRS & set(path.parts):
-                continue
-            tree = ast.parse(path.read_text(encoding="utf-8"))
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Call) and (why := _problem(node)):
-                    found.append(f"{path.relative_to(REPO).as_posix()}:{node.lineno}: {why}")
-    return found
-
-
-@pytest.mark.skipif(not (REPO / "qpilot").is_dir(), reason="not a source checkout")
+@needs_checkout
 def test_no_shipped_code_leaves_encoding_or_line_ends_to_the_system():
-    bad = _offenders()
-    assert not bad, f"{FIX}:\n" + "\n".join(bad)
+    rules = _load_rules()
+    bad = [
+        f"{path.relative_to(REPO).as_posix()}:{call.lineno}: add {', '.join(need)}"
+        for path in rules.source_files()
+        for call, need in rules.offenders(path)
+    ]
+    assert not bad, (
+        "Python on Windows reads and writes text in cp1252 with CR LF: name the arguments. "
+        "`python scripts/fix_portability.py && ruff format qpilot sim/src` adds them.\n"
+        + "\n".join(bad)
+    )
 
 
-def test_the_scan_sees_what_it_should():
-    """The rule itself: a bare call is flagged, an explicit one is not."""
+@needs_checkout
+def test_the_rule_sees_what_it_should():
+    """A bare call is flagged, an explicit one is not."""
+    rules = _load_rules()
 
-    def flagged(code: str) -> bool:
-        return any(_problem(n) for n in ast.walk(ast.parse(code)) if isinstance(n, ast.Call))
+    def need(code: str) -> list[str]:
+        calls = [n for n in ast.walk(ast.parse(code)) if isinstance(n, ast.Call)]
+        return [a for call in calls for a in rules.missing(call)]
 
-    assert flagged("p.read_text()")
-    assert flagged("p.write_text(t, encoding='utf-8')")
-    assert flagged("open(f, 'a', encoding='utf-8')")
-    assert flagged("open(f)")
-    assert flagged("df.to_csv(path, index=False)")
-    assert flagged("Path(x).open('w')")
-    assert not flagged("p.read_text(encoding='utf-8')")
-    assert not flagged("p.write_text(t, encoding='utf-8', newline='\\n')")
-    assert not flagged("open(f, 'a', encoding='utf-8', newline='\\n')")
-    assert not flagged("open(f, 'rb')")
-    assert not flagged("df.to_csv(path, lineterminator='\\n')")
-    assert not flagged("zf.open(member)")
+    assert need("p.read_text()") == ['encoding="utf-8"']
+    assert need("p.write_text(t, encoding='utf-8')") == ['newline="\\n"']
+    assert need("open(f, 'a', encoding='utf-8')") == ['newline="\\n"']
+    assert need("open(f)") == ['encoding="utf-8"']
+    assert need("df.to_csv(path, index=False)") == ['lineterminator="\\n"']
+    assert need("Path(x).open('w')") == ['encoding="utf-8"', 'newline="\\n"']
+    assert need("tempfile.NamedTemporaryFile('w', dir=d)") == ['encoding="utf-8"', 'newline="\\n"']
+    assert not need("p.read_text(encoding='utf-8')")
+    assert not need("p.write_text(t, encoding='utf-8', newline='\\n')")
+    assert not need("open(f, 'a', encoding='utf-8', newline='\\n')")
+    assert not need("open(f, 'rb')")
+    assert not need("tempfile.NamedTemporaryFile(dir=d, delete=False)")  # binary by default
+    assert not need("df.to_csv(path, lineterminator='\\n')")
+    assert not need("zf.open(member)")  # not a text file
+    assert not need("webbrowser.open(url)")
+
+
+@needs_checkout
+def test_the_fixer_adds_the_arguments_and_leaves_a_second_run_nothing_to_do(tmp_path):
+    rules = _load_rules()
+    source = tmp_path / "m.py"
+    source.write_text(
+        "def f(p, df):\n"
+        "    a = p.read_text()\n"
+        "    p.write_text(\n"
+        "        a,\n"
+        "    )\n"
+        "    with open(p, 'a') as fh:\n"
+        "        fh.write('é')\n"
+        "    df.to_csv(p)\n",
+        encoding="utf-8",
+    )
+    assert rules.rewrite(source) == 4
+    fixed = source.read_text(encoding="utf-8")
+    ast.parse(fixed)
+    assert 'p.read_text(encoding="utf-8")' in fixed and 'lineterminator="\\n"' in fixed
+    assert rules.rewrite(source) == 0
 
 
 def test_a_non_utf8_code_page_changes_no_record(tmp_path):
