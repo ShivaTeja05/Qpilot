@@ -117,7 +117,7 @@ function UnitsTable({
   units: UnitQuantity[];
   unit: string;
   groups: boolean;
-  reaction: boolean;
+  reaction: { perUl: boolean; perNg: boolean };
 }) {
   const [which, setWhich] = useState<"all" | "flagged">("all");
   const flagged = units.filter((u) => u.flags.length);
@@ -149,8 +149,8 @@ function UnitsTable({
               <TH numeric>Mean Cq</TH>
               <TH numeric>Quantity</TH>
               <TH numeric>95 % prediction interval</TH>
-              {reaction && <TH numeric>Per µL</TH>}
-              {reaction && <TH numeric>Per ng</TH>}
+              {reaction.perUl && <TH numeric>Per µL of template</TH>}
+              {reaction.perNg && <TH numeric>Per ng of input</TH>}
               <TH>Notes</TH>
             </TR>
           </THead>
@@ -163,8 +163,8 @@ function UnitsTable({
                 <TD numeric>{fixed(u.mean_cq, 2)}</TD>
                 <TD numeric>{fmtQuantity(u.quantity)}</TD>
                 <TD numeric>{fmtQuantityRange(u.low, u.high)}</TD>
-                {reaction && <TD numeric>{fmtQuantity(u.per_ul)}</TD>}
-                {reaction && <TD numeric>{fmtQuantity(u.per_ng)}</TD>}
+                {reaction.perUl && <TD numeric>{fmtQuantity(u.per_ul)}</TD>}
+                {reaction.perNg && <TD numeric>{fmtQuantity(u.per_ng)}</TD>}
                 <TD className="text-[12px] text-muted">{u.flags.map((f) => f.words).join("; ")}</TD>
               </TR>
             ))}
@@ -211,7 +211,12 @@ function ReactionForm({
                 now.input_ng ? `${now.input_ng} ng of input` : null,
               ]
                 .filter(Boolean)
-                .join(" and ")}: quantities per µL and per ng are shown.`
+                .join(" and ")}: the quantities per ${[
+                now.template_ul ? "µL" : null,
+                now.input_ng ? "ng" : null,
+              ]
+                .filter(Boolean)
+                .join(" and ")} are shown.`
             : "Per µL of template or per ng of input: give what one reaction held."}
         </span>
         <Button
@@ -323,7 +328,10 @@ export function QuantitiesPanel({
   const curves = detail?.curves ?? [];
   const curve = curves.find((c) => c.id === curveId) ?? curves.find((c) => c.fitted) ?? curves[0];
   const summary = assays.find((a) => a.target === target);
-  const reaction = Boolean(data.reaction && (data.reaction.template_ul || data.reaction.input_ng));
+  const reaction = {
+    perUl: Boolean(data.reaction?.template_ul),
+    perNg: Boolean(data.reaction?.input_ng),
+  };
 
   return (
     <Card as="section" aria-labelledby="quantities-title">
