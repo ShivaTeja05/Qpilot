@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 
 from qpilot.core.store import StudyStore
 from qpilot.io.datasets import VERMEULEN_SHA256
+from qpilot.io.inputs import input_label
 from qpilot.qpcr.confidence_checks import HOLDS_MIN
 from qpilot.report import methods as methods_mod
 from qpilot.report.context import Ctx
@@ -91,7 +92,7 @@ def _header(c: Ctx) -> ReportHeader:
         study_id=c.inputs.study_id,
         session=c.inputs.session,
         title=design_line(r),
-        source_name=source.name if source is not None else None,
+        source_name=input_label(source),  # the person's own file names, never qPilot's
         demo=r.input_sha256 == VERMEULEN_SHA256,
         input_sha256=r.input_sha256,
         chain_head=c.inputs.head,
