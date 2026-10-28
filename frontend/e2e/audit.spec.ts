@@ -8,7 +8,6 @@ import type { components } from "../src/api/schema";
 import { ci, fold, pValue } from "../src/lib/format";
 import { demoSession, literal, route, type Workspace } from "./support/data";
 import { expect, test } from "./support/fixtures";
-import { LANDED, notLanded } from "./support/sections";
 
 type ResultsView = components["schemas"]["ResultsView"];
 
@@ -34,8 +33,6 @@ const overview = (api: APIRequestContext, w: Workspace) =>
 const TABS = ["Study", "What-if lab", "How it works", "Verify"] as const;
 
 test.describe("Audit", () => {
-  test.beforeEach(() => test.fixme(!LANDED.audit, notLanded("audit")));
-
   test("the seeded audit shows the server's verdict counts", async ({ app, api }) => {
     const demo = await demoSession(api);
     const status = await getJson<{ status: string }>(api, `/api/studies/${demo.study_id}/audit`);
@@ -68,7 +65,6 @@ test.describe("Audit", () => {
   });
 
   test("a gene in the audit's list opens the Gene section", async ({ app, api }) => {
-    test.fixme(!LANDED.gene, notLanded("gene"));
     const demo = await demoSession(api);
     const o = await overview(api, demo);
     const gene = o.genes[0]!.gene;
@@ -85,8 +81,6 @@ test.describe("Audit", () => {
 });
 
 test.describe("Gene", () => {
-  test.beforeEach(() => test.fixme(!LANDED.gene, notLanded("gene")));
-
   test("the header shows the server's call, fold [CI] and p for the gene", async ({ app, api }) => {
     const demo = await demoSession(api);
     const { genes } = await getJson<ResultsView>(api, `/api/studies/${demo.study_id}/results`);

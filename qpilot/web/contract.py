@@ -499,6 +499,11 @@ class PlateWell(BaseModel):
     sample_text_id: str | None = None
     target: str
     target_text_id: str | None = None
+    dye: str | None = Field(
+        default=None,
+        description="The dye this target is read in, as the file names it (several per well on "
+        "a multiplex plate).",
+    )
     declared_type: str = Field(description="What the file declares (unkn, std, ntc, nrt, …).")
     role: str | None = Field(default=None, description="Its role in the design assembled so far.")
     excluded_by_person: bool = False
@@ -536,11 +541,21 @@ class PlateView(BaseModel):
     n_rows: int
     n_cols: int
     targets: list[str]
+    multiplex: bool = Field(
+        default=False,
+        description="Some wells hold more than one dye (one curve per target): one row per curve, "
+        "several rows per well.",
+    )
     curves_shown: bool = Field(description="Cq, efficiency, R² and calls are included.")
     curves_note: str
     curve_judge: str = Field(description="The Curve Judge's status in words.")
     results_visible: bool
     wells: list[PlateWell]
+    cq_only: bool = Field(
+        default=False,
+        description="The file has Cq values only (no curves): the Cq per well is the file's, "
+        "and no efficiency, R² or baseline exists (`docs/cq-tables.md`).",
+    )
 
 
 class CurveSeries(BaseModel):

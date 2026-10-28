@@ -8,6 +8,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/ui";
 import {
   EMPTY_DRAFT,
+  NAME_RE,
+  NAME_WORDS,
   groupsNow,
   parsePasted,
   pastedItems,
@@ -119,14 +121,14 @@ describe("the draft", () => {
   it("reads a list pasted from Excel and names what it cannot use", () => {
     const match = sampleMatcher(view.samples, () => null);
     const rows = parsePasted(
-      "Sample\tGroup\ns1\tcontrol\nS2\tcontrol\tmouse 1\nS9\ttreated\nS5\t<b>\nS2\tagain",
+      "Sample\tGroup\ns1\tcontrol\nS2\tcontrol\tmouse 1\nS9\ttreated\nS5\tKO\u200b2\nS2\tagain",
       match,
     );
     expect(rows.map((r) => [r.sample, r.problem])).toEqual([
       ["S1", null], // a header row is skipped; case is ignored
       ["S2", null],
       [null, "no sample in this file has this name"],
-      ["S5", "a group name uses letters, digits, spaces and _ - . ( ), at most 64 characters"],
+      ["S5", `a group name may use ${NAME_WORDS}`],
       ["S2", "this sample is already on line 3"],
     ]);
     expect(pastedItems(rows)).toEqual([
@@ -134,6 +136,18 @@ describe("the draft", () => {
       { kind: "design.group", subject: "S2", payload: { group: "control" } },
       { kind: "design.bio_unit", subject: "S2", payload: { biological_unit: "mouse 1" } },
     ]);
+  });
+});
+
+describe("a group's name", () => {
+  it("is kept as a lab writes it; only invisible characters, edge spaces and length are refused", () => {
+    for (const name of ["LPS + inhibitor", "IL-6/ctrl", "Day 3 (50 µM)", "KO#2", "α-syn", "对照"]) {
+      expect(NAME_RE.test(name)).toBe(true);
+    }
+    for (const name of ["", " WT", "WT ", "KO\t2", "KO\n2", "KO\u202e2", "x".repeat(65)]) {
+      expect(NAME_RE.test(name)).toBe(false);
+    }
+    expect(NAME_RE.test("\u{1D6C2}".repeat(64))).toBe(true); // 64 characters, not UTF-16 units
   });
 });
 
@@ -233,8 +247,10 @@ describe("the sample table", () => {
         proposed={new Map()}
       />,
     );
-    fireEvent.change(screen.getByLabelText("Group name"), { target: { value: "a/b" } });
-    expect(screen.getByText(/A group name uses letters, digits/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Group name"), { target: { value: "a\u200bb" } });
+    expect(
+      screen.getByText(/A group name may use any letters, digits, spaces and signs/),
+    ).toBeTruthy();
     expect(
       (screen.getByRole("button", { name: "Put in group" }) as HTMLButtonElement).disabled,
     ).toBe(true);

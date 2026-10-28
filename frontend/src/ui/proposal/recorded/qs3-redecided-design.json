@@ -1,0 +1,1492 @@
+{
+ "proposals": [
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T20:55:06Z",
+   "decided_at": "2026-10-28T20:55:06Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231026-DNI-R1"
+    }
+   ],
+   "id": "p_990f4a3c9fa7e76e",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "DNI"
+   },
+   "reason": "plate map and standard series from the lab notebook",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231026-DNI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T20:55:06Z",
+   "decided_at": "2026-10-28T20:55:06Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231026-DSI-R1"
+    }
+   ],
+   "id": "p_4fcf5c2bdd1924a4",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "DSI"
+   },
+   "reason": "plate map and standard series from the lab notebook",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231026-DSI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T20:55:06Z",
+   "decided_at": "2026-10-28T20:55:06Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231031-DNI-R1"
+    }
+   ],
+   "id": "p_c5ece52c7f988bd5",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "DNI"
+   },
+   "reason": "plate map and standard series from the lab notebook",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231031-DNI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T20:55:06Z",
+   "decided_at": "2026-10-28T20:55:06Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231031-DSI-R1"
+    }
+   ],
+   "id": "p_33ce7482e2b09455",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "DSI"
+   },
+   "reason": "plate map and standard series from the lab notebook",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231031-DSI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T20:55:06Z",
+   "decided_at": "2026-10-28T20:55:06Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231101-DNI-R1"
+    }
+   ],
+   "id": "p_42741e5f82c9f89a",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "DNI"
+   },
+   "reason": "plate map and standard series from the lab notebook",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231101-DNI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T20:55:06Z",
+   "decided_at": "2026-10-28T20:55:06Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231101-DSI-R1"
+    }
+   ],
+   "id": "p_55184ec0aad09b19",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "DSI"
+   },
+   "reason": "plate map and standard series from the lab notebook",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231101-DSI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T20:55:06Z",
+   "decided_at": "2026-10-28T20:55:06Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231102-DNI-R1"
+    }
+   ],
+   "id": "p_40f6010e50a6036a",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "DNI"
+   },
+   "reason": "plate map and standard series from the lab notebook",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231102-DNI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T20:55:06Z",
+   "decided_at": "2026-10-28T20:55:06Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231102-DSI-R1"
+    }
+   ],
+   "id": "p_14073140d4b7416e",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "DSI"
+   },
+   "reason": "plate map and standard series from the lab notebook",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231102-DSI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T20:55:06Z",
+   "decided_at": "2026-10-28T20:55:06Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231103-DNI-R1"
+    }
+   ],
+   "id": "p_3dfcdbdcbdd25219",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "DNI"
+   },
+   "reason": "plate map and standard series from the lab notebook",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231103-DNI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T20:55:06Z",
+   "decided_at": "2026-10-28T20:55:06Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231103-DSI-R1"
+    }
+   ],
+   "id": "p_b227711f5c5a27f8",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "DSI"
+   },
+   "reason": "plate map and standard series from the lab notebook",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231103-DSI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231026-DCS-R1"
+    }
+   ],
+   "id": "p_8ab4ce48fcff11f3",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "LPS + inhibitor"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231026-DCS-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231026-DNI-R1"
+    }
+   ],
+   "id": "p_9be6069d315de09b",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "IL-6/ctrl"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231026-DNI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231026-DSI-R1"
+    }
+   ],
+   "id": "p_f41aca1fa85e1e71",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "Day 3 (50 µM)"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231026-DSI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231026-NEG-R1"
+    }
+   ],
+   "id": "p_4adc1f77a9182160",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "KO#2"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231026-NEG-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231031-DCS-R1"
+    }
+   ],
+   "id": "p_58555ad1fa423797",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "α-syn"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231031-DCS-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231031-DNI-R1"
+    }
+   ],
+   "id": "p_2c0c854a8cc63958",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "LPS + inhibitor"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231031-DNI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231031-DSI-R1"
+    }
+   ],
+   "id": "p_580a5af70e248a22",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "IL-6/ctrl"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231031-DSI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231031-NEG-R1"
+    }
+   ],
+   "id": "p_e3c9248c2baac242",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "Day 3 (50 µM)"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231031-NEG-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231101-DCS-R1"
+    }
+   ],
+   "id": "p_b317f234bfbc78c6",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "KO#2"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231101-DCS-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231101-DNI-R1"
+    }
+   ],
+   "id": "p_54d1a79d64cd69d7",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "α-syn"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231101-DNI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231101-DSI-R1"
+    }
+   ],
+   "id": "p_2130f5cc59a9c88f",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "LPS + inhibitor"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231101-DSI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231101-NEG-R1"
+    }
+   ],
+   "id": "p_979f4c5d4fdb65cd",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "IL-6/ctrl"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231101-NEG-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231102-DCS-R1"
+    }
+   ],
+   "id": "p_47bceef1de2d650f",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "Day 3 (50 µM)"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231102-DCS-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231102-DNI-R1"
+    }
+   ],
+   "id": "p_5323f3c1ef16119d",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "KO#2"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231102-DNI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231102-DSI-R1"
+    }
+   ],
+   "id": "p_cb97fa9cbca92944",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "α-syn"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231102-DSI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231102-NEG-R1"
+    }
+   ],
+   "id": "p_28ebee54ae59789f",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "LPS + inhibitor"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231102-NEG-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231103-DCS-R1"
+    }
+   ],
+   "id": "p_8d7799bfc0e998f5",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "IL-6/ctrl"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231103-DCS-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231103-DNI-R1"
+    }
+   ],
+   "id": "p_8766f8edec46107f",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "Day 3 (50 µM)"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231103-DNI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231103-DSI-R1"
+    }
+   ],
+   "id": "p_d0e287977a92a025",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "KO#2"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231103-DSI-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "sample_found": true
+    },
+    "note": "the sample exists; no engine check can test its group or unit",
+    "rule_ids": [
+     "D-COVER"
+    ],
+    "status": "cannot_check"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [
+    {
+     "kind": "sample",
+     "note": "set by a person",
+     "ref": "PR-231103-NEG-R1"
+    }
+   ],
+   "id": "p_a5833e04323011a8",
+   "kind": "design.group",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group": "α-syn"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "PR-231103-NEG-R1",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "min_units": 2,
+     "n_units_a": 5,
+     "n_units_b": 5
+    },
+    "note": "each group has at least two biological units",
+    "rule_ids": [
+     "D-NGUARD"
+    ],
+    "status": "consistent"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T20:55:06Z",
+   "decided_at": "2026-10-28T20:55:06Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [],
+   "id": "p_1f78fc5c3170c432",
+   "kind": "design.comparison",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "group_a": "DNI",
+    "group_b": "DSI"
+   },
+   "reason": "plate map and standard series from the lab notebook",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "comparison",
+   "superseded_by": null
+  },
+  {
+   "alternatives": [],
+   "check": {
+    "details": {
+     "min_units": 2,
+     "n_units_a": 4,
+     "n_units_b": 4
+    },
+    "note": "each group has at least two biological units",
+    "rule_ids": [
+     "D-NGUARD"
+    ],
+    "status": "consistent"
+   },
+   "consequence": null,
+   "created_at": "2026-10-28T21:00:47Z",
+   "decided_at": "2026-10-28T21:00:47Z",
+   "decided_by": "human",
+   "edits": null,
+   "evidence": [],
+   "id": "p_5c700da163a61adb",
+   "kind": "design.comparison",
+   "level": "High",
+   "made_by": {
+    "agent": null,
+    "kind": "person",
+    "model": null,
+    "prompt_sha256": null,
+    "provider": null
+   },
+   "payload": {
+    "comparisons": [
+     {
+      "group_a": "LPS + inhibitor",
+      "group_b": "IL-6/ctrl"
+     },
+     {
+      "group_a": "Day 3 (50 µM)",
+      "group_b": "IL-6/ctrl"
+     },
+     {
+      "group_a": "KO#2",
+      "group_b": "IL-6/ctrl"
+     },
+     {
+      "group_a": "α-syn",
+      "group_b": "IL-6/ctrl"
+     }
+    ],
+    "control": "IL-6/ctrl",
+    "correction": "holm",
+    "group_a": "LPS + inhibitor",
+    "group_b": "IL-6/ctrl",
+    "pattern": "vs_control"
+   },
+   "reason": "plate map",
+   "reasons": [
+    "set by a person on the Design page, with the reason recorded"
+   ],
+   "status": "accepted",
+   "study_id": "e1572115c27f",
+   "subject": "comparison",
+   "superseded_by": null
+  }
+ ],
+ "session": "e1572115c27f"
+}

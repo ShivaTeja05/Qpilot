@@ -12,7 +12,7 @@ import pytest
 
 from qpilot.mcp_server import QpilotTools
 from qpilot.web.routers import trace as trace_router
-from tests.web.conftest import wait_job
+from tests.web.conftest import get_settled, wait_job
 from tests.web.test_studio_flow import no_html
 
 GENE = "1-Mar"
@@ -26,13 +26,12 @@ def fresh_trace_cache():
 
 
 def ready(c, url: str):
-    """GET ``url``, following the ``trace.load`` job the first answer may name."""
-    r = c.get(url)
-    if r.status_code == 409 and r.json()["error"]["code"] == "loading":
-        job = wait_job(c, r.json()["error"]["details"]["job"])
-        assert job["status"] == "done", job
+    """GET ``url``, following every ``trace.load`` job an answer names until it answers."""
+    jobs: list[dict] = []
+    r = get_settled(c, url, jobs=jobs)
+    # a load that failed is answered by the route's own refusal (not_traceable…), returned
+    for job in (j for j in jobs if j["status"] == "done"):
         assert job["result"]["n_genes"] >= 1 and job["result_type"] == "TraceLoaded"
-        r = c.get(url)
     return r
 
 

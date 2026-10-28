@@ -96,6 +96,7 @@
  "available": true,
  "can_set_reaction": true,
  "groups_shown": true,
+ "inbox_head": "8c82d2cf42f8752bf33c577b10c163516cf2e50d39329b5d4714061fe2fa0e27",
  "method_card": "methods/absolute_quantification.md",
  "not_quantified": [],
  "notes": [],

@@ -1,6 +1,5 @@
 """Task 3 gate: LinRegPCR on every plate, parsed by header, names validated, cached by content."""
 
-import time
 import zipfile
 
 import numpy as np
@@ -20,6 +19,7 @@ from qpilot.qpcr.curves import (
     slug,
     well_label,
 )
+from tests.timing import work_time
 
 
 @pytest.fixture
@@ -241,12 +241,10 @@ def demo_table(tmp_path_factory):
     if not path.exists():
         pytest.skip("demo dataset not cached; run `qpilot fetch-demo`")
     cache = tmp_path_factory.mktemp("curves_cache")
-    start = time.perf_counter()
-    table = analyse_study(path, cache_dir=cache)
-    cold = time.perf_counter() - start
-    start = time.perf_counter()
-    again = analyse_study(path, cache_dir=cache)
-    warm = time.perf_counter() - start
+    with work_time() as cold:
+        table = analyse_study(path, cache_dir=cache)
+    with work_time() as warm:
+        again = analyse_study(path, cache_dir=cache)
     return table, again, cold, warm
 
 
@@ -297,5 +295,5 @@ def test_demo_matches_oracle_wells_exactly(demo_table):
 def test_demo_timing_and_cache(demo_table):
     table, again, cold, warm = demo_table
     pd.testing.assert_frame_equal(table, again, check_exact=True)
-    assert cold < 60, f"cold analysis took {cold:.1f} s"
-    assert warm < 2, f"cached analysis took {warm:.1f} s"
+    assert cold.seconds < 60, f"cold analysis took {cold}"
+    assert warm.seconds < 2, f"cached analysis took {warm}"

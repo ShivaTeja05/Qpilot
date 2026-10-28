@@ -38,11 +38,14 @@ export function CurvePanel({
   onClear,
   waitingProposal,
   onShowProposal,
+  gene = null,
 }: {
   sid: string;
   run: string | null;
   wells: readonly string[];
   onClear: () => void;
+  /** The gene picked on the plate: in a multiplex well, its curve is the one shown. */
+  gene?: string | null;
   /** Whether a proposal about this well (`run_id/well`) waits in the inbox. */
   waitingProposal?: (key: string) => boolean;
   /** Show that proposal in the inbox. */
@@ -54,7 +57,7 @@ export function CurvePanel({
     () => (run && joined ? joined.split(",").map((w) => `${run}/${w}`) : []),
     [run, joined],
   );
-  const curves = useCurves(sid, keys);
+  const curves = useCurves(sid, keys, gene);
   const views = curves.data;
   const series = useMemo(() => curvesOf(views), [views]);
   const one = views.length === 1 ? views[0]! : null;

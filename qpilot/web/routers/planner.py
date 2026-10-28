@@ -230,11 +230,17 @@ def _efficiency(result) -> PlanEfficiency:  # noqa: ANN001 (a StudyResult)
     lo, hi = EFFICIENCY_RANGE
     outside = sorted(g for g, e in eff.items() if not lo <= e - 1 <= hi)
     spread = _spread(list(eff.values()))
+    cq_values = "f_cq_only" in (result.facts or {})
+    source = (
+        "its dilution series, else assumed 2.0: this file has Cq values only"
+        if cq_values
+        else "LinRegPCR, the median over its plates"
+    )
     if spread is None:
         text = "This study has no efficiency per gene."
     else:
         text = (
-            f"Efficiency per gene (LinRegPCR, the median over its plates): median "
+            f"Efficiency per gene ({source}): median "
             f"{spread.median:.2f}, from {spread.min:.2f} to {spread.max:.2f} (2.00 is a perfect "
             f"doubling). {len(outside)} of {spread.n} fall outside "
             f"{lo * 100:.0f}–{hi * 100:.0f} %: check those assays with a standard curve before "
@@ -257,10 +263,17 @@ def _headline(ctx: AppContext, study_id: str) -> list[str]:
 
 
 def _slug(label: str) -> str:
-    """A group label as the layout may write it (the label itself when it is already safe)."""
+    """A group label as the layout may write it.
+
+    The label itself when it can be (any letters, digits, spaces and signs, not starting like a
+    formula: ``qpcr.layout.is_layout_name``), else its characters made safe.
+    """
     import re
 
-    text = re.sub(r"[^\w()\-. ]", "_", str(label)).strip().lstrip("-")[:64]
+    text = str(label).strip()
+    if lay.is_layout_name(text):
+        return text
+    text = re.sub(r"[^\w()\-. ]", "_", text).strip().lstrip("-=+@")[:64].strip()
     return text or "group"
 
 

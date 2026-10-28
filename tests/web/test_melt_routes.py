@@ -10,7 +10,6 @@ mini file (no melt curves) says so in words. Every number is compared with the e
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import pytest
@@ -21,7 +20,7 @@ from qpilot.qpcr import melt as M
 from qpilot.web.context import make_context
 from qpilot.web.routers import melt as melt_router
 from qpilot.web.server import create_app
-from tests.web.conftest import BASE, TOKEN, wait_job
+from tests.web.conftest import BASE, TOKEN, get_settled, wait_job
 from tests.web.test_workspaces_capture import drop
 
 CORPUS = Path(__file__).resolve().parents[1] / "fixtures" / "corpus"
@@ -124,7 +123,7 @@ def _names_a_group(value, groups: set[str]) -> bool:
 
 def test_the_plates_assays_and_every_wells_call(lc96):
     view = get(lc96["client"], f"/api/sessions/{lc96['sid']}/melt")
-    assert view["plates"] == [PLATE] and view["pack"] == "research-default 1.2.0"
+    assert view["plates"] == [PLATE] and view["pack"] == "research-default 1.3.0"
     assert view["params"] == {
         "tm_tolerance_c": 1.0,
         "extra_peak_share": 0.05,
@@ -191,11 +190,8 @@ def test_the_study_says_what_the_session_says_and_the_gate_weighs_it(lc96):
     view = get(c, f"/api/studies/{study}/melt")
     assert view["study_id"] == study and view["key"] == study
     assert view["calls"] == session["calls"] and view["assays"] == session["assays"]
-    for _ in range(600):
-        r = c.get(f"/api/studies/{study}/gate")
-        if r.status_code != 409:
-            break
-        time.sleep(0.1)
+    r = get_settled(c, f"/api/studies/{study}/gate")
+    assert r.status_code == 200, r.text
     body = r.json()
     melt = [e for e in body["evaluations"] if e["rule_id"] == "G-MELT"]
     assert {(e["verdict"], e["outcome"]) for e in melt} == {
@@ -203,7 +199,7 @@ def test_the_study_says_what_the_session_says_and_the_gate_weighs_it(lc96):
         ("pass", "ntc_clean"),
     }
     assert len([e for e in melt if e["outcome"] == "one_product"]) == 12  # 6 samples x 2 targets
-    assert body["pack"]["version"] == "1.2.0"
+    assert body["pack"]["version"] == "1.3.0"
     assert "G-MELT" in [r["rule_id"] for r in body["pack"]["rules"]]
 
 

@@ -89,7 +89,14 @@ export function MeltWellsTable({
   caption: string;
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-line">
+    // A table wider than its box scrolls inside it, reachable with the keyboard (axe
+    // scrollable-region-focusable).
+    <div
+      className="overflow-x-auto rounded-lg border border-line"
+      tabIndex={0}
+      role="region"
+      aria-label={caption}
+    >
       <Table caption={caption}>
         <THead>
           <TR>

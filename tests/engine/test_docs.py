@@ -61,3 +61,22 @@ def test_relative_links_point_to_real_files(doc):
         if "://" in target:
             continue
         assert (path.parent / target).exists(), f"{doc} links to a missing file: {target}"
+
+
+def test_conformance_lists_every_corpus_set_as_the_page_opens_it():
+    """docs/conformance.md (scripts/conformance.py) says what the intake tests check, set by set."""
+    from tests.web.test_intake_corpus import OPENS, REFUSED
+
+    rows = {
+        line.split("`")[1]: line
+        for line in (REPO / "docs" / "conformance.md").read_text(encoding="utf-8").splitlines()
+        if line.startswith("| `")
+    }
+    for slug, (plates, wells) in OPENS.items():
+        assert f"| {plates} · {wells} · " in rows[slug], (
+            f"docs/conformance.md is out of date: {slug}"
+        )
+    for slug in REFUSED:
+        assert "| refused: " in rows[slug], f"docs/conformance.md is out of date: {slug}"
+    sets = [slug for slug in rows if slug.count("/") == 1]  # the second table lists files
+    assert sorted(sets) == sorted([*OPENS, *REFUSED])

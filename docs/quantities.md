@@ -34,6 +34,12 @@ card for the study, an assay picker when there are several.
 A study without standards shows no card. Standards without a quantity (QuantStudio's
 `Std 1` … `Std 5` are level numbers, not quantities) are listed with what to do.
 
+> **Check the standard curve's wells.** A standard well counts as detected when it has a Cq and a
+> quantity, even when LinRegPCR calls it "no amplification". On the QuantStudio 7 Pro eDNA curve of
+> the corpus three flat wells enter the fit and give 154 % efficiency, R² 0.41 (87 %, R² 0.996
+> without them). If a curve looks wrong, leave the flat wells out in Curves, with a reason
+> ([science review](science-review-2026-10.md), J1, recommends requiring LinRegPCR's call).
+
 ## Giving the standards their quantities
 
 The file's own quantities are used when it declares them (RDML `<quantity>`; the demo's are in
@@ -59,7 +65,7 @@ the Decision Cards treat it the same way.
 |---|---|
 | `GET /api/studies/{id}/quantities` | every assay with standards: curves, LOD, LOQ, counts |
 | `GET /api/studies/{id}/quantities/{target}` | one assay: points, levels, the prediction band, every unit |
-| `POST /api/studies/{id}/quantities/reaction` | `{template_ul, input_ng, unit, reason, expected_head}` (a person; a Studio session) |
+| `POST /api/studies/{id}/quantities/reaction` | `{template_ul, input_ng, unit, reason, expected_head}` (a person; a Studio session). `expected_head` is required: the quantities view's `inbox_head`; 409 `stale` in words when something was decided since, 422 without it |
 | `GET /api/tools/copies?ng=&length=&kind=&step=&levels=` | ng to copies and a dilution series |
 | `qpilot quantify FILE… [--quantity "Std 1=1e5"] [--csv out.csv]` | any RDML file or instrument export, no study needed (absolute-only plates) |
 | `qpilot copies --ng 1 --length 3000 [--kind dsDNA] [--step 10 --levels 6]` | ng to copies |

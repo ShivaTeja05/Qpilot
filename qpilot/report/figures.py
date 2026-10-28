@@ -967,19 +967,10 @@ def figure_csv(fig: GeneFigure) -> str:
 
 
 def file_stem(gene: str) -> str:
-    """A file-name-safe stem for a gene (``SDHA(1)`` -> ``SDHA_1``)."""
-    import hashlib
+    """A file-name-safe stem for a gene (``SDHA(1)`` stays; ``α-syn`` -> ``syn_<hash>``)."""
+    from qpilot.core.names import file_part
 
-    from qpilot.prism.tables import PrismExportError
-    from qpilot.prism.tables import file_stem as prism_stem
-
-    try:
-        return prism_stem(gene)
-    except PrismExportError:  # not ASCII, or nothing left: a slug and a short hash
-        from qpilot.qpcr.curves import slug
-
-        digest = hashlib.sha256(gene.encode("utf-8")).hexdigest()[:8]
-        return f"{slug(gene)[:40] or 'gene'}_{digest}"
+    return file_part(gene, "gene")
 
 
 __all__ = (

@@ -70,8 +70,11 @@ class DesignSetRequest(BaseModel):
         max_length=2000,
         description="Why (kept with every item in the record); required.",
     )
-    expected_head: str | None = Field(
-        default=None, description="The inbox head the page showed (409 stale when it moved)."
+    expected_head: str = Field(
+        min_length=1,
+        max_length=64,
+        description="The inbox head the page showed (the editor's `head`); 409 stale when "
+        "something was decided since.",
     )
     accept_contradicted: bool = Field(
         default=False,

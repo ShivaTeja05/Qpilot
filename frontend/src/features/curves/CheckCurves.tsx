@@ -91,20 +91,37 @@ export function CheckCurvesJob({
 }
 
 /** Before any proposal: what the check does, and the button. */
-export function CheckCurvesPanel({ state }: { state: CheckCurvesState }) {
+export function CheckCurvesPanel({
+  state,
+  cqOnly = false,
+}: {
+  state: CheckCurvesState;
+  /** A file of Cq values only: nothing to fit or judge (docs/cq-tables.md). */
+  cqOnly?: boolean;
+}) {
   return (
     <Card>
       <CardBody className="flex flex-col gap-3 pt-4">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           <div className="max-w-2xl text-[13px] text-muted">
             <p className="text-sm font-medium text-fg">Check the curves</p>
-            <p className="mt-1">
-              qPilot fits every curve with LinRegPCR and asks the Curve Judge, a local curve
-              classifier that reads only the curve’s shape, for its own call on each study well.
-              Where the two disagree in a way that could change a conclusion, each well is listed
-              here for you to decide; the others change nothing and are not listed. The
-              amplification rule is proposed too.
-            </p>
+            {cqOnly ? (
+              <p className="mt-1">
+                This file has Cq values only, so there is no curve for LinRegPCR to fit or for the
+                Curve Judge to read. The check proposes the amplification rule (a well counts when
+                the file gives it a Cq; the Cq cut-offs stay choices whose consequences are shown
+                later), and the Cq table below is what you confirm: each sample’s Cq per well, the
+                wells without a Cq and the replicates whose spread is wider than expected.
+              </p>
+            ) : (
+              <p className="mt-1">
+                qPilot fits every curve with LinRegPCR and asks the Curve Judge, a local curve
+                classifier that reads only the curve’s shape, for its own call on each study well.
+                Where the two disagree in a way that could change a conclusion, each well is listed
+                here for you to decide; the others change nothing and are not listed. The
+                amplification rule is proposed too.
+              </p>
+            )}
           </div>
           <CheckCurvesButton state={state} primary />
         </div>

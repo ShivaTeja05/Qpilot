@@ -174,10 +174,34 @@ def reference_genes(rv: Review) -> None:
         )  # fmt: skip
 
 
+def _cq_efficiency(rv: Review) -> None:
+    """R2 for a file of Cq values only: measured from each assay's dilution series, or not."""
+    c = rv.c
+    assumed = int(c.result.facts["f_n_eff_assumed"].value) if c.has("f_n_eff_assumed") else 0
+    if not assumed:
+        rv.ok(
+            "efficiency",
+            "Efficiency measured, not assumed",
+            ["The file holds Cq values only; each assay's efficiency is from its dilution "
+             "series, used in every quantity."],
+        )  # fmt: skip
+        return
+    rv.flag(
+        "no_efficiency", "major", "Efficiency assumed",
+        ["The file holds Cq values only (no curves), and these assays have no dilution series, so "
+         f"their efficiency is assumed: {tok('f_eff_assumed_genes')}. A dilution series of each "
+         "assay on the plate would measure it."],
+        rule="R2",
+    )  # fmt: skip
+
+
 def efficiency(rv: Review) -> None:
     """R2: efficiency measured and used."""
     c = rv.c
     eff = c.result.efficiency
+    if c.has("f_cq_only"):  # a file of Cq values only: a dilution series, or assumed
+        _cq_efficiency(rv)
+        return
     if eff:
         lo = c.num("eff_min", min(eff.values()), "results.json:/efficiency@min")
         hi = c.num("eff_max", max(eff.values()), "results.json:/efficiency@max")

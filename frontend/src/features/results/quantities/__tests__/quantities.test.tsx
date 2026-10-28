@@ -126,7 +126,26 @@ describe("the Quantities view on a real QuantStudio 3 plate", () => {
       input_ng: null,
       unit: "copies",
       reason: "5 µL of extract per well",
+      expected_head: overview.inbox_head, // RT-EX-012: the view's inbox head, checked
     });
+  });
+
+  it("cannot record without the inbox head the view showed", async () => {
+    vi.spyOn(api, "GET").mockImplementation(((route: string) =>
+      route === "/api/studies/{study_id}/quantities"
+        ? ok({ ...overview, inbox_head: null })
+        : ok(cov2)) as never);
+    const post = vi.spyOn(api, "POST");
+    wrap(<QuantitiesPanel workspaceKey="ws" studyId={STUDY} />);
+    const card = await screen.findByRole("region", { name: /Quantities/ });
+    fireEvent.click(await within(card).findByRole("button", { name: "Set the reaction input…" }));
+    fireEvent.change(within(card).getByLabelText("Why (kept in the decision record)"), {
+      target: { value: "5 µL of extract per well" },
+    });
+    const record = within(card).getByRole("button", { name: "Record" }) as HTMLButtonElement;
+    expect(record.disabled).toBe(true);
+    fireEvent.click(record);
+    expect(post).not.toHaveBeenCalled();
   });
 
   it("shows nothing for a study without standards", async () => {

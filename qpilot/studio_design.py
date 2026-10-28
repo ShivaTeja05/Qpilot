@@ -43,6 +43,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
+from qpilot.core import names
 from qpilot.schemas_studio import (
     CONTROL_ROLES,
     Evidence,
@@ -94,8 +95,9 @@ TARGET_ROLES = ("ref", "toi", "ignore")
 COMPARISON_EXTRAS = ("comparisons", "pattern", "control", "correction", "pair_by")
 SAMPLE_ROLES = ("unkn", "std", "ntc", "nrt", "nac", "pos", "ntp", "opt")
 MAX_ITEMS = 2_000  # one act: every sample of a 384-well plate several times over
-NAME = re.compile(r"^[\w()\-. ]{1,64}\Z")  # the engine's safe names (qpilot.qpcr.curves)
-NAME_WORDS = "letters, digits, spaces and _ - . ( ), at most 64 characters"
+#: A person's group, unit and series names: any letters, digits, spaces and signs, kept as
+#: written (``LPS + inhibitor``, ``IL-6/ctrl``); see :mod:`qpilot.core.names`.
+NAME_WORDS = names.NAME_WORDS
 PERSON_REASON = "set by a person on the Design page, with the reason recorded"
 Action = Literal["new", "accept", "keep", "unchanged", "refused"]
 
@@ -339,8 +341,10 @@ def _name(value: Any, what: str) -> str | None:
     if not isinstance(value, str) or not value.strip():
         raise DesignEditError(f"a {what} needs a name (or none, to clear it)")
     text = value.strip()
-    if not NAME.match(text):
-        raise DesignEditError(f"a {what} name uses {NAME_WORDS}; “{text[:40]}” does not")
+    problem = names.name_problem(text)
+    if problem is not None:
+        shown = "".join(ch if ch.isprintable() else " " for ch in text[:40])
+        raise DesignEditError(f"a {what} name may use {NAME_WORDS}; “{shown}” cannot: {problem}")
     return text
 
 

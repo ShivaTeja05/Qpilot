@@ -600,7 +600,7 @@ def _calibrator(ctx: TraceContext, avoid: set[str], targets: Sequence[str]) -> s
     middle = float(np.median(level[np.flatnonzero(ctx.used)]))
     best = min(ok, key=lambda i: (abs(float(level[i]) - middle), ctx.units[i]))
     name = ctx.units[best]
-    return name if plates.SAFE_NAME.match(name) else None
+    return name if plates.is_layout_name(name) else None
 
 
 def build_plan(

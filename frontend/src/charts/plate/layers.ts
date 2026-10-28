@@ -15,6 +15,8 @@ export interface PlateWell {
   well: string;
   sample?: string | null;
   target?: string | null;
+  /** The dye the target is read in (a multiplex well has one curve per dye). */
+  dye?: string | null;
   /** RDML sample type (`unkn`, `std`, `ntc`, `nrt`, `nac`, `pos`, `opt`, `ntp`); others shown as text. */
   role?: string | null;
   /** The amplification call in use (null: no call, e.g. no curve). */
@@ -208,7 +210,7 @@ export function rampInk(t: number): string {
 export function wellSummary(w: PlateWell, layer: PlateLayer): string {
   const parts = [w.well];
   if (w.sample) parts.push(`sample ${w.sample}`);
-  if (w.target) parts.push(w.target);
+  if (w.target) parts.push(w.dye ? `${w.target} (${w.dye})` : w.target);
   if (layer === "role") parts.push(roleStyle(w.role).label);
   else if (layer === "call") parts.push(CALL_STYLE[callKey(w.amplified)].words);
   else parts.push(`${PLATE_LAYER_LABEL[layer]} ${numberText(layer, NUMERIC[layer].get(w))}`);

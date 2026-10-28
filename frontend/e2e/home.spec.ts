@@ -4,7 +4,6 @@
  */
 import { literal, workspaces } from "./support/data";
 import { expect, test } from "./support/fixtures";
-import { LANDED, notLanded } from "./support/sections";
 
 interface SystemView {
   version: string;
@@ -17,8 +16,6 @@ interface SystemView {
 }
 
 test.describe("Open", () => {
-  test.beforeEach(() => test.fixme(!LANDED.home, notLanded("home")));
-
   test("Recent lists every workspace in the store, the demo marked", async ({ app, api }) => {
     const all = await workspaces(api);
     await app.open("/");
@@ -76,8 +73,6 @@ test.describe("Open", () => {
 });
 
 test.describe("Settings", () => {
-  test.beforeEach(() => test.fixme(!LANDED.settings, notLanded("settings")));
-
   test("the model's status, the never-does lines and this install, from the server", async ({
     app,
     api,

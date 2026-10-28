@@ -47,9 +47,11 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from qpilot.core.names import is_name
 from qpilot.io.sheets import SheetRead, SheetTable, sheet_table, squash, target_roles
 from qpilot.io.symbols import check_symbol
 from qpilot.qpcr.curves import safe_name
+from qpilot.qpcr.multiplex import is_internal_control_name
 from qpilot.schemas_studio import (
     CONTROL_ROLES,
     DesignField,
@@ -636,6 +638,23 @@ def propose_from_names(
         if stated:
             declared = target.declared_type
             fields.append(_sheet_role_field(target.target, target.text_id, declared, stated))
+        elif is_internal_control_name(target.target):
+            fields.append(
+                DesignField(
+                    kind="design.target_role",
+                    subject=target.target,
+                    value={"role": "ignore"},
+                    cites=[target.text_id],
+                    alternatives=[{"role": "toi"}, {"role": "ref"}],
+                    level="Moderate",
+                    reasons=[
+                        "the name says it is an internal positive control: a control added to "
+                        "every reaction to check it, not a gene to compare between groups",
+                        "left out of the comparison, it is still read by the Run Gate (G-IPC: "
+                        "a much later control suggests inhibition)",
+                    ],
+                )
+            )
         elif target.declared_type == "ref" and every_ref:
             fields.append(
                 DesignField(
@@ -888,6 +907,20 @@ def _series_level(each: Series) -> tuple[str, list[str]]:
     return "Moderate", ["the sample names encode a dilution series and its quantities"]
 
 
+def _sheet_name(value: str, column: str) -> str:
+    """A group or unit name from a person's sheet, kept as written when it can be a name.
+
+    ``LPS + inhibitor`` stays ``LPS + inhibitor`` (:func:`qpilot.core.names.name_problem`); a
+    cell that cannot be a name (a line break, an invisible character, too long) gets the
+    engine's safe name, as before. The apostrophe qPilot's own template puts before a name
+    that starts like a formula (``'-RT``) is not part of the name.
+    """
+    text = value.strip()
+    if text[:1] == "'" and text[1:2] in ("=", "+", "-", "@"):
+        text = text[1:]
+    return text if is_name(text) else safe_name(value, column)
+
+
 def _column_field(
     sample: InspectSample, sheet: _SheetLookup, column: str, kind: str, key: str
 ) -> DesignField | None:
@@ -896,14 +929,14 @@ def _column_field(
         return None
     counts = Counter(value for value, _ in found)
     ordered = sorted(counts, key=lambda v: (-counts[v], v))
-    value = safe_name(ordered[0], column)
+    value = _sheet_name(ordered[0], column)
     reasons = [f"from the sheet column recognised as {column}"]
     level = "Moderate"
     alternatives = []
     if len(ordered) > 1:
         level = "Low"
         reasons.append("the sheet gives this sample more than one value")
-        alternatives = [{key: safe_name(v, column)} for v in ordered[1:]]
+        alternatives = [{key: _sheet_name(v, column)} for v in ordered[1:]]
     return DesignField(
         kind=kind,  # type: ignore[arg-type]
         subject=sample.sample,
@@ -938,7 +971,7 @@ def _unit_field(sample: InspectSample, sheet: _SheetLookup) -> DesignField | Non
     return DesignField(
         kind="design.bio_unit",
         subject=sample.sample,
-        value={"biological_unit": safe_name(label, "unit")},
+        value={"biological_unit": _sheet_name(label, "unit")},
         cites=list(dict.fromkeys(cites)),
         level="Moderate",
         reasons=reasons,

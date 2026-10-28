@@ -159,6 +159,16 @@ def test_the_fewest_plates_are_used():
             assert shape.n_plates <= -(-4 // k) * -(-24 // s)
 
 
+def test_a_labs_own_group_names_are_laid_out_as_written():
+    groups = (("LPS + inhibitor", 3), ("IL-6/ctrl", 3), ("Day 3 (50 µM)", 3), ("KO#2", 3))
+    layout = lay.make_layout(
+        lay.LayoutSpec(groups=groups, genes=("α-syn",), refs=("R1",), replicates=2)
+    )
+    rows = lay.read_layout_csv(lay.layout_csv(layout))
+    assert {g for _, _, _, g, _, _ in rows if g} == {g for g, _ in groups}
+    assert "α-syn" in {t for *_, t, _ in rows}
+
+
 @pytest.mark.parametrize(
     ("change", "words"),
     [

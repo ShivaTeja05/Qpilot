@@ -34,17 +34,19 @@ import csv
 import io
 import math
 import random
-import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 
+from qpilot.core.names import NAME_WORDS, is_name
 from qpilot.explain.words import noun, plural
 
 PLATE_SHAPES: dict[int, tuple[int, int]] = {96: (8, 12), 384: (16, 24)}
 CSV_COLUMNS: tuple[str, ...] = ("plate", "well", "sample", "group", "target", "type")
-#: What a name may be: the engine's safe names (``curves.safe_name``), not starting with ``-``
-#: (a spreadsheet would read ``-A1`` as a formula).
-SAFE_NAME = re.compile(r"^(?!-)[\w()\-. ]{1,64}\Z")
+#: A name never starts like a formula (a spreadsheet or a plate-setup program would read
+#: ``-A1`` or ``=1+1`` as one), so the layout's CSV holds every name exactly as it is.
+FORMULA_START = ("=", "+", "-", "@")
+#: What a layout name may be, in words (the refusal says it).
+LAYOUT_NAME_WORDS = f"{NAME_WORDS}, not starting with -, =, + or @"
 MAX_PLATES = 64
 MAX_SAMPLES_PER_GROUP = 1000
 MAX_GROUPS = 8
@@ -194,12 +196,21 @@ class Layout:
 # ---- checking the spec -------------------------------------------------------------------------
 
 
+def is_layout_name(name: object) -> bool:
+    """``True`` when ``name`` can go into a layout as it is.
+
+    A person's name (any letters, digits, spaces and signs; :func:`qpilot.core.names.name_problem`)
+    that does not start like a formula (:data:`FORMULA_START`).
+    """
+    return is_name(name) and not str(name).startswith(FORMULA_START)
+
+
 def _name(value: str, what: str) -> str:
     text = str(value).strip()
-    if not SAFE_NAME.match(text):
+    if not is_layout_name(text):
+        shown = "".join(ch if ch.isprintable() else " " for ch in str(value)[:40])
         raise LayoutError(
-            f"{what} {value!r} cannot go into a plate layout: use letters, digits, spaces and "
-            "_ - . ( ), at most 64 characters, not starting with -"
+            f"{what} “{shown}” cannot go into a plate layout: use {LAYOUT_NAME_WORDS}"
         )
     return text
 

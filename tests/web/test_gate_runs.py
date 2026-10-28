@@ -29,7 +29,7 @@ from qpilot.web.context import make_context
 from qpilot.web.routers import gate as gate_router
 from qpilot.web.server import create_app
 from tests.engine import instrument_files as F
-from tests.web.conftest import BASE, TOKEN, wait_job
+from tests.web.conftest import BASE, TOKEN, settled, wait_job
 from tests.web.test_gate_routes import check_texts, ready, same_as_report
 
 SECRETS = ("278880001", "BLK-1001", "HC-2001", F.OPERATOR)
@@ -93,13 +93,20 @@ def rt(tmp_path, monkeypatch):
     ctx.close()
 
 
-def link(c: TestClient, study: str, plate: str, path: Path, name: str | None = None):
-    with path.open("rb") as handle:
-        return c.post(
-            f"/api/studies/{study}/gate/run-files",
-            data={"plate": plate},
-            files={"run": (name or path.name, handle, "application/octet-stream")},
-        )
+def link(c: TestClient, study: str, plate: str, path: Path, name: str | None = None, follow=True):
+    """Link ``path`` to ``plate``. A link reads the study's plates from the gate, so the first
+    one waits out the ``gate.run`` job like any read of the gate (409 loading meanwhile);
+    ``follow=False`` returns the first answer as it is."""
+
+    def send():
+        with path.open("rb") as handle:
+            return c.post(
+                f"/api/studies/{study}/gate/run-files",
+                data={"plate": plate},
+                files={"run": (name or path.name, handle, "application/octet-stream")},
+            )
+
+    return settled(c, send) if follow else send()
 
 
 def by_rule(body: dict, rule_id: str) -> list[dict]:
@@ -128,7 +135,7 @@ def test_rt_replicates_are_checked_per_unit_and_target(rt):
     assert sorted(option["excluded"]) == sorted(warn["flagged"])
     rule = next(r for r in body["pack"]["rules"] if r["rule_id"] == "G-RT")
     assert rule["sources"][0]["key"] == "bustin_2015" and not rule["informational"]
-    assert body["pack"]["version"] == "1.2.0"
+    assert body["pack"]["version"] == "1.3.0"
 
 
 # ---- G-INSTR and linked run files ------------------------------------------------------------
@@ -220,8 +227,9 @@ def test_a_second_link_does_not_wait_for_the_gate_to_be_read_again(rt, monkeypat
     c, study = rt["client"], rt["study"]
     ready(c, study)
     monkeypatch.setattr(gate_router, "WAIT_S", 0.0)  # a re-read gate would answer 409 loading
-    assert link(c, study, PLATE, F.aborted(rt["tmp"] / "a.eds")).status_code == 200
-    r = link(c, study, "GAPDH_plate", F.eds2_json(rt["tmp"] / "b.eds"))
+    first = link(c, study, PLATE, F.aborted(rt["tmp"] / "a.eds"), follow=False)
+    assert first.status_code == 200, first.text
+    r = link(c, study, "GAPDH_plate", F.eds2_json(rt["tmp"] / "b.eds"), follow=False)
     assert r.status_code == 200, r.text
     monkeypatch.setattr(gate_router, "WAIT_S", 1.5)
     body = ready(c, study).json()

@@ -9,7 +9,6 @@ import type { components } from "../src/api/schema";
 import { demoSession, route, type Workspace } from "./support/data";
 import { E2E } from "./support/env";
 import { expect, test } from "./support/fixtures";
-import { LANDED, notLanded } from "./support/sections";
 
 type DecisionsView = components["schemas"]["DecisionsView"];
 
@@ -30,8 +29,6 @@ const decisions = (api: APIRequestContext, w: Workspace) =>
   getJson<DecisionsView>(api, `/api/studies/${w.study_id}/decisions`);
 
 test.describe("Record", () => {
-  test.beforeEach(() => test.fixme(!LANDED.record, notLanded("record")));
-
   test("the timeline shows every chain entry, and the chain is intact", async ({ app, api }) => {
     const demo = await demoSession(api);
     const chain = await decisions(api, demo);
@@ -81,8 +78,13 @@ test.describe("Record", () => {
     const changed = test.info().outputPath("changed.zip");
     writeFileSync(changed, bytes);
     await verifyCard.locator('input[type="file"]').setInputFiles(changed);
+    // A flipped byte is called what it is (VerifyCard: "altered or damaged after export").
     await expect(
-      verifyCard.getByText(/This record does not check out|This file could not be checked/),
+      verifyCard
+        .getByText(
+          /This record was altered or damaged after export|This record does not check out|This file could not be checked/,
+        )
+        .first(),
     ).toBeVisible({ timeout: 120_000 });
     await expect(verifyCard.getByText("This record checks out")).toHaveCount(0);
     app.allowConsole(/status of 4\d\d/);
@@ -98,8 +100,6 @@ test.describe("Record", () => {
 });
 
 test.describe("Agents", () => {
-  test.beforeEach(() => test.fixme(!LANDED.agents, notLanded("agents")));
-
   test("shows the connect command, the rules and the tools from /api/agents", async ({
     app,
     api,

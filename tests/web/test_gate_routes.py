@@ -26,7 +26,7 @@ from qpilot.qpcr.gate_rules import OPTION_LABELS, resolve_pack
 from qpilot.web.context import make_context
 from qpilot.web.routers import gate as gate_router
 from qpilot.web.server import create_app
-from tests.web.conftest import BASE, TOKEN, wait_job, walk_mini
+from tests.web.conftest import BASE, TOKEN, get_settled, wait_job, walk_mini
 from tests.web.test_parity_studio import decision_files
 from tests.web.test_studio_flow import no_html
 
@@ -42,14 +42,12 @@ def fresh_gate_cache():
 
 
 def ready(c: TestClient, study: str):
-    """GET the gate, following the ``gate.run`` job the first answer may name."""
-    url = f"/api/studies/{study}/gate"
-    r = c.get(url)
-    if r.status_code == 409 and r.json()["error"]["code"] == "loading":
-        job = wait_job(c, r.json()["error"]["details"]["job"])
-        assert job["status"] == "done", job
+    """GET the gate, following every ``gate.run`` job an answer names until it answers."""
+    jobs: list[dict] = []
+    r = get_settled(c, f"/api/studies/{study}/gate", jobs=jobs)
+    # a run that failed is answered by the route's own refusal, returned as it is
+    for job in (j for j in jobs if j["status"] == "done"):
         assert job["result_type"] == "GateLoaded" and job["result"]["study_id"] == study
-        r = c.get(url)
     return r
 
 

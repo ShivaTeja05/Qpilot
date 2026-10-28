@@ -36,6 +36,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
+from qpilot.core.names import name_digest
 from qpilot.core.store import canonical_json
 from qpilot.prism import pzfx
 from qpilot.prism.tables import (
@@ -107,7 +108,7 @@ class ComparisonInputs:
 
 
 def _slug(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_") or "group"
+    return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_") or f"g_{name_digest(text)}"
 
 
 def comparisons(inputs: ExportInputs) -> list[ComparisonInputs]:

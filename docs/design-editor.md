@@ -85,7 +85,7 @@ proposal, and a symbol proposed for one is never "consistent" (D-SYMBOL: cannot 
 |---|---|
 | `GET /api/sessions/{sid}/design/editor` | samples (names, declared types, wells, the type so far), each sample's group and unit (a separate list: no object holds a group next to a number), targets, groups, comparison, what is still needed and where |
 | `POST /api/sessions/{sid}/design/check` | `{items}` → what recording does, with the engine's check of each; writes nothing |
-| `POST /api/sessions/{sid}/design/set` | `{items, reason, expected_head, accept_contradicted}` → recorded; 409 `studio` (refused, in words), 409 `stale`, 422 (no reason) |
+| `POST /api/sessions/{sid}/design/set` | `{items, reason, expected_head, accept_contradicted}` → recorded; 409 `studio` (refused, in words), 409 `stale` (the head moved), 422 (no reason, or no `expected_head`: the editor's `head` is required) |
 | `GET /api/sessions/{sid}/design/template.csv` | the pre-filled sample sheet |
 | `POST /api/sessions/{sid}/sheet` | attach a sample sheet (multipart `sheet`); the rules propose again (a job) |
 

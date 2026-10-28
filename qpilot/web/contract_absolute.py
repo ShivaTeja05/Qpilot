@@ -188,6 +188,11 @@ class QuantitiesView(BaseModel):
     can_set_reaction: bool = Field(
         default=False, description="A person can record the reaction input (a Studio session)."
     )
+    inbox_head: str | None = Field(
+        default=None,
+        description="The session's inbox head (a Studio session's study only): sent back as "
+        "`expected_head` when the reaction input is recorded.",
+    )
     assays: list[AssaySummary]
     not_quantified: list[NotQuantified]
     groups_shown: bool = Field(
@@ -230,7 +235,12 @@ class ReactionRequest(BaseModel):
     input_ng: float | None = Field(default=None, gt=0, lt=1e9)
     unit: str | None = Field(default=None, max_length=40)
     reason: str = Field(min_length=1, max_length=2000)
-    expected_head: str | None = None
+    expected_head: str = Field(
+        min_length=1,
+        max_length=64,
+        description="The session's inbox head the quantities view showed (its `inbox_head`); "
+        "409 stale when something was decided since.",
+    )
 
 
 class ReactionRecorded(BaseModel):

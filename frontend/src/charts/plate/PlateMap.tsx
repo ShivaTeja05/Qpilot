@@ -111,9 +111,15 @@ export function PlateMap({
       else unplaced.push(w);
     }
     const shape = plateShape(located, { rows, columns });
+    // A multiplex well has one entry per dye: the position shows the first one not filtered
+    // out (a gene filter picks the dye); the others are in its hover card and the table.
     const grid = new Map<string, Located>();
-    for (const w of located)
-      if (w.row < shape.rows && w.column < shape.columns) grid.set(`${w.row}:${w.column}`, w);
+    for (const w of located) {
+      if (w.row >= shape.rows || w.column >= shape.columns) continue;
+      const at = `${w.row}:${w.column}`;
+      const held = grid.get(at);
+      if (!held || (held.dimmed && !w.dimmed)) grid.set(at, w);
+    }
     return { grid, located, unplaced, shape };
   }, [wells, rows, columns]);
 
@@ -634,7 +640,7 @@ function HoverCard({
   const rows: [string, ReactNode][] = [];
   if (well) {
     if (well.sample) rows.push(["Sample", well.sample]);
-    if (well.target) rows.push(["Target", well.target]);
+    if (well.target) rows.push(["Target", well.dye ? `${well.target} (${well.dye})` : well.target]);
     rows.push(["Type", roleStyle(well.role).label]);
     if (well.amplified !== undefined)
       rows.push(["Call", CALL_STYLE[callKey(well.amplified)].label]);

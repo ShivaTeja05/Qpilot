@@ -227,7 +227,7 @@ export function SamplesPanel({
               ))}
             </datalist>
             {group.trim() && !groupOk ? (
-              <p className="text-xs text-danger">A group name uses {NAME_WORDS}.</p>
+              <p className="text-xs text-danger">A group name may use {NAME_WORDS}.</p>
             ) : null}
             <div className="flex flex-wrap gap-1.5">
               <Button
@@ -357,7 +357,7 @@ export function SamplesPanel({
               ))}
             </datalist>
             {unit.trim() && !unitOk ? (
-              <p className="text-xs text-danger">A unit name uses {NAME_WORDS}.</p>
+              <p className="text-xs text-danger">A unit name may use {NAME_WORDS}.</p>
             ) : null}
             <div className="flex flex-wrap gap-1.5">
               <Button

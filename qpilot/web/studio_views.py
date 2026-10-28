@@ -97,6 +97,11 @@ WORDS = {
         "LinRegPCR's numbers per well (with any call a person accepted); the Curve Judge's call "
         "where it ran on this file."
     ),
+    "curves_shown_cq_only": (
+        "The Cq each well has in the file (with any call a person accepted). This file has Cq "
+        "values only: there is no curve, so no efficiency, R² or baseline per well, and no "
+        "Curve Judge."
+    ),
     "curve_note": (
         "Raw fluorescence as exported by the instrument, by cycle. LinRegPCR's baseline is in "
         "the same units as the fluorescence; the Cq is a cycle."
@@ -285,7 +290,9 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
         rows = designed
     person_calls = dict(design.well_calls) if design is not None else {}
     excluded = set(design.excluded_wells) if design is not None else set()
-    judge = _judge_cache(studio, sid, experiment) if curves_shown and run.in_design else None
+    cq_only = studio.cq_only(sid)
+    judged = curves_shown and run.in_design and not cq_only
+    judge = _judge_cache(studio, sid, experiment) if judged else None
     pending: dict[str, str] = {}
     for p in inbox.proposals:
         if p.kind == "curve.well_call" and p.status == "proposed":
@@ -315,6 +322,7 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
             sample_text_id=facts.sample_text_ids.get(sample),
             target=target,
             target_text_id=facts.target_text_ids.get(target),
+            dye=facts.target_dyes.get(target),
             declared_type=_declared(facts, row),
             role=str(row["sample_type"]) if designed is not None else None,
             excluded_by_person=key in excluded or bool(row.get("design_excluded", False)),
@@ -360,6 +368,7 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
                     sample_text_id=facts.sample_text_ids.get(sample),
                     target=target,
                     target_text_id=facts.target_text_ids.get(target),
+                    dye=facts.target_dyes.get(target),
                     declared_type=_declared(facts, row),
                     role=None,
                     excluded_by_person=False,
@@ -368,7 +377,11 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
                 )
             )
     n_rows, n_cols = plate_shape((w.row, w.col) for w in wells)
-    if judge is not None:
+    if cq_only:
+        from qpilot.qpcr.cq_only import NOT_APPLICABLE
+
+        judge_words = NOT_APPLICABLE["curve_judge"]
+    elif judge is not None:
         judge_words = "ran on this file (its calls are shown)"
     elif curves_shown and run.in_design:
         judge_words = "not run yet: Check the curves runs it where it is validated"
@@ -381,11 +394,19 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
         n_rows=n_rows,
         n_cols=n_cols,
         targets=sorted({w.target for w in wells}),
+        multiplex=len({(w.key, w.target) for w in wells}) > len({w.key for w in wells}),
         curves_shown=curves_shown,
-        curves_note=WORDS["curves_shown"] if curves_shown else WORDS["curves_hidden"],
+        curves_note=(
+            WORDS["curves_hidden"]
+            if not curves_shown
+            else WORDS["curves_shown_cq_only"]
+            if cq_only
+            else WORDS["curves_shown"]
+        ),
         curve_judge=judge_words,
         results_visible=visible,
         wells=wells,
+        cq_only=cq_only,
     )
 
 
@@ -430,6 +451,7 @@ def curve_view(studio: Studio, sid: str, key: str, target: str | None = None) ->
     here = [w for (wl, _), w in curves.items() if wl == well]
     if target is not None:
         here = [w for w in here if w.target == target]
+    here = [w for w in here if len(w.cycles)]  # a reaction of Cq values only has no curve
     if not here:
         raise KeyError(f"no curve for well {well} on plate {run_id}")
     raw = here[0]

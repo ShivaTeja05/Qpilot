@@ -4,7 +4,7 @@
  */
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
-import { PlateMap, layerOptions, plateWells, type PlateLayer } from "@/charts/plate";
+import { PlateMap, layerOptions, plateWellsOneDye, type PlateLayer } from "@/charts/plate";
 import { count, plural } from "@/lib/format";
 import { useHotkeys } from "@/lib/hooks";
 import {
@@ -22,6 +22,8 @@ import type { PlateView } from "./api";
 export const ALL_GENES = "__all__";
 
 const LAYERS: PlateLayer[] = ["call", "cq", "efficiency", "r2", "role"];
+/** A file of Cq values only has no efficiency or R² per well (docs/cq-tables.md). */
+const CQ_ONLY_LAYERS: PlateLayer[] = ["call", "cq", "role"];
 
 export interface PlatePanelProps {
   plate: PlateView | undefined;
@@ -65,9 +67,9 @@ export function PlatePanel({
   const current = plate?.run.run_id ?? null;
   const at = shownRuns.findIndex((r) => r.run_id === current);
 
+  // a multiplex plate: one entry per well, the picked gene's curve (else the well's first)
   const wells = useMemo(
-    () =>
-      plate ? plateWells(plate, gene === ALL_GENES ? {} : { keep: (w) => w.target === gene }) : [],
+    () => (plate ? plateWellsOneDye(plate, gene === ALL_GENES ? null : gene) : []),
     [plate, gene],
   );
 
@@ -90,7 +92,7 @@ export function PlatePanel({
         title="The plate"
         hint={
           plate
-            ? `${plate.run.run_id} · ${plate.n_rows * plate.n_cols} positions · ${plural(plate.wells.length, "well")}${
+            ? `${plate.run.run_id} · ${plate.n_rows * plate.n_cols} positions · ${plural(plate.wells.length, plate.multiplex ? "curve" : "well")}${
                 disagreements ? ` · the Curve Judge disagrees on ${count(disagreements)}` : ""
               }${waiting ? ` · ${count(waiting)} with a proposal waiting` : ""}`
             : "Every well of one plate; pick a well to see its curve."
@@ -169,7 +171,7 @@ export function PlatePanel({
               label="Colour the wells by"
               value={layer}
               onValueChange={onLayerChange}
-              options={layerOptions(LAYERS).map((o) => ({
+              options={layerOptions(plate?.cq_only ? CQ_ONLY_LAYERS : LAYERS).map((o) => ({
                 ...o,
                 disabled: o.value !== "role" && plate != null && !plate.curves_shown,
               }))}
@@ -196,14 +198,29 @@ export function PlatePanel({
               onSelectedChange={onSelectedChange}
               onActivate={onActivate}
               caption={
-                <>
-                  {plate.curves_note} The Curve Judge {plate.curve_judge}.{" "}
-                  {!plate.run.in_design
-                    ? "This plate is not in the experiment the design analyses. "
-                    : null}
-                  Click a well for its curve; ⌘/Ctrl-click or Shift-click to compare several; arrow
-                  keys move, Space selects, Enter opens.
-                </>
+                plate.cq_only ? (
+                  <>
+                    {plate.curves_note}{" "}
+                    {!plate.run.in_design
+                      ? "This plate is not in the experiment the design analyses. "
+                      : null}
+                    Each well’s Cq is in the Cq table; arrow keys move, Space selects.
+                  </>
+                ) : (
+                  <>
+                    {plate.curves_note} The Curve Judge {plate.curve_judge}.{" "}
+                    {!plate.run.in_design
+                      ? "This plate is not in the experiment the design analyses. "
+                      : null}
+                    {plate.multiplex
+                      ? gene === ALL_GENES
+                        ? "Each well holds several dyes, one curve per gene: pick a gene to see its curves. "
+                        : `Each well holds several dyes; shown: ${gene}. `
+                      : null}
+                    Click a well for its curve; ⌘/Ctrl-click or Shift-click to compare several;
+                    arrow keys move, Space selects, Enter opens.
+                  </>
+                )
               }
             />
           </div>

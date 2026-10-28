@@ -155,7 +155,12 @@ function UnitsTable({
           ]}
         />
       </div>
-      <div className="max-h-[420px] overflow-auto rounded-lg border border-line">
+      <div
+        className="max-h-[420px] overflow-auto rounded-lg border border-line"
+        tabIndex={0}
+        role="region"
+        aria-label={`Each biological unit, per reaction (${unitWords(unit)})`}
+      >
         <Table>
           <THead>
             <TR>
@@ -246,7 +251,8 @@ function ReactionForm({
   const write = useRecordReaction(workspaceKey, studyId);
   const num = (s: string) => (s.trim() === "" ? null : Number(s));
   const okNumber = (v: number | null) => v == null || (Number.isFinite(v) && v > 0);
-  const valid = okNumber(num(ul)) && okNumber(num(ng)) && reason.trim().length > 0;
+  const head = view.inbox_head ?? null;
+  const valid = okNumber(num(ul)) && okNumber(num(ng)) && reason.trim().length > 0 && head !== null;
   if (!view.can_set_reaction) return null;
   const now = view.reaction;
   return (
@@ -281,13 +287,14 @@ function ReactionForm({
           className="mt-3 grid gap-2 sm:grid-cols-[auto_auto_auto_1fr_auto] sm:items-end"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!valid) return;
+            if (!valid || head === null) return;
             write.mutate(
               {
                 template_ul: num(ul),
                 input_ng: num(ng),
                 unit: unitName.trim() || null,
                 reason: reason.trim(),
+                expected_head: head,
               },
               { onSuccess: () => setOpen(false) },
             );

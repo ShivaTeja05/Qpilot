@@ -216,6 +216,7 @@ def _view(
     pack: str,
     run: str | None,
     wells: list[str],
+    cq_only: bool = False,
 ) -> MeltView:
     base = {
         "key": key,
@@ -229,7 +230,7 @@ def _view(
         return MeltView(
             **base,
             has_melt=False,
-            message=NO_MELT,
+            message=_no_melt_words() if cq_only else NO_MELT,
             plates=[],
             assays=[],
             targets=[],
@@ -252,6 +253,13 @@ def _view(
         calls=[_call_view(w) for w in calls],
         wells=[_well_view(w) for w in calls if w.well in asked],
     )
+
+
+def _no_melt_words() -> str:
+    """A file of Cq values only: no melt curve either (``docs/cq-tables.md``)."""
+    from qpilot.qpcr.cq_only import NOT_APPLICABLE
+
+    return NOT_APPLICABLE["melt"]
 
 
 # ---- a study ---------------------------------------------------------------------------------
@@ -298,7 +306,11 @@ def get_study_melt(
     names = _wells(wells)
     data, assays = study_melt(ctx, study_id)
     params, pack = _pack()
-    return _view(study_id, study_id, data, assays, params, pack, run, names)
+    try:
+        cq_only = "f_cq_only" in ctx.store.get(study_id).facts
+    except Exception:  # an unreadable study: say what any file without melt curves says
+        cq_only = False
+    return _view(study_id, study_id, data, assays, params, pack, run, names, cq_only)
 
 
 # ---- a session -------------------------------------------------------------------------------
@@ -342,4 +354,5 @@ def get_session_melt(
         return data, M.judge(table, data, params)
 
     data, assays = _judged(key, work)
-    return _view(sid, None, data, assays, params, pack, run, names)
+    cq_only = not data.has_melt and call(ctx.studio.cq_only, sid)
+    return _view(sid, None, data, assays, params, pack, run, names, cq_only)

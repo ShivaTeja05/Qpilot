@@ -48,6 +48,12 @@ log = logging.getLogger(__name__)
 
 #: Columns of :attr:`FileFacts.wells`: the curve table plus the experiment it belongs to.
 WELL_COLUMNS = ("experiment_id", *curves.COLUMN_ORDER)
+#: The summary's note for an experiment of Cq values only (``docs/cq-tables.md``).
+CQ_ONLY_NOTE = (
+    "Experiment {experiment} holds Cq values only (no amplification curves), so there is no "
+    "curve to fit: qPilot analyses those Cq values, with each assay's efficiency from its "
+    "dilution series when the design has one, else assumed to be 2.0."
+)
 
 
 @dataclass
@@ -68,6 +74,9 @@ class FileFacts:
         sample_text_ids: Safe sample id -> ``text_id`` of its original id.
         target_text_ids: Engine target name -> ``text_id`` of its original id.
         sheet: The sample sheet as read, or ``None``.
+        target_dyes: Engine target name -> the dye it is read in (RDML ``dyeId``, as a safe
+            identifier; absent when the file names none): the curves of a multiplex well differ
+            by dye.
     """
 
     path: Path
@@ -81,6 +90,7 @@ class FileFacts:
     sample_text_ids: dict[str, str] = field(default_factory=dict)
     target_text_ids: dict[str, str] = field(default_factory=dict)
     sheet: SheetRead | None = None
+    target_dyes: dict[str, str] = field(default_factory=dict)
 
     def quarantined(self, text_id: str) -> str | None:
         """The original text behind a ``text_id`` (for deterministic rules, never for prompts)."""
@@ -222,6 +232,7 @@ def _build(
     target_types: dict[str, str] = {}
     target_text_ids: dict[str, str] = {}
     target_order: list[tuple[str, str]] = []  # (engine name, original id)
+    target_dyes: dict[str, str] = {}
     for target in doc.targets():
         original = str(target["id"])
         safe, text_id = names.name("target", "rdml:target.id", original)
@@ -231,6 +242,9 @@ def _build(
         target_types.setdefault(engine, str(target["type"] or "toi"))
         target_text_ids.setdefault(engine, text_id)
         target_order.append((engine, original))
+        dye = str(target["dyeId"] or "").strip()
+        if dye:
+            target_dyes.setdefault(engine, curves.safe_name(dye, "dye"))
 
     sample_types: dict[str, tuple[tuple[str, str], ...]] = {}
     sample_quantities: dict[str, tuple[tuple[float, str, str], ...]] = {}
@@ -280,18 +294,14 @@ def _build(
             table = curves.analyse_study(path, original, cache_dir=cache_dir)
         except curves.CurveAnalysisError as err:
             log.warning("LinRegPCR failed on an experiment of %s: %s", path.name, err)
-            curveless = not any(_has(run, "adp") for run in runs)
-            if curveless and any(_has(run, "cq") for run in runs):
-                notes.append(  # a Cq table or a Cq-only RDML: nothing to fit, nothing failed
-                    f"Experiment {exp_text_id} holds Cq values only (no amplification curves), "
-                    "so LinRegPCR has nothing to fit; only those Cq values can be analysed."
-                )
-            else:
-                notes.append(
-                    f"LinRegPCR could not analyse experiment {exp_text_id}; its wells are listed "
-                    "without Cq or efficiency."
-                )
+            notes.append(
+                f"LinRegPCR could not analyse experiment {exp_text_id}; its wells are listed "
+                "without Cq or efficiency."
+            )
             table = _wells_without_curves(runs, sample_types, target_names)
+        else:
+            if curves.without_curves(table):  # a Cq table or a Cq-only RDML: nothing failed
+                notes.append(CQ_ONLY_NOTE.format(experiment=exp_text_id))
         table = table.copy()
         table.insert(0, "experiment_id", exp_safe)
         tables.append(table)
@@ -356,12 +366,8 @@ def _build(
         sample_text_ids=sample_text_ids,
         target_text_ids=target_text_ids,
         sheet=sheet,
+        target_dyes=target_dyes,
     )
-
-
-def _has(run, tag: str) -> bool:
-    """Whether any reaction of an RDML run holds a ``tag`` element (``adp``, ``cq``)."""
-    return next(run._node.iter(f"{rdml_io.NS}{tag}"), None) is not None
 
 
 def declared_type_label(types: tuple[tuple[str, str], ...]) -> str:

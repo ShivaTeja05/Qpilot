@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.timing import work_time
 from tests.web.conftest import wait_job
 
 CORPUS = Path(__file__).resolve().parents[1] / "fixtures" / "corpus"
@@ -226,11 +227,12 @@ def test_a_declared_control_is_refused_in_words_and_nothing_is_written(sclient, 
 
 def test_a_reason_is_required_and_a_stale_head_is_refused(sclient, cfx_session):
     items = items_of(("design.target_role", "REF", {"role": "ref"}))
-    r = sclient.post(
-        f"/api/sessions/{cfx_session}/design/set", json={"items": items, "reason": "  "}
-    )
-    assert r.status_code == 422
     view = editor(sclient, cfx_session)
+    r = sclient.post(
+        f"/api/sessions/{cfx_session}/design/set",
+        json={"items": items, "reason": "  ", "expected_head": view["head"]},
+    )
+    assert r.status_code == 422 and "Say why" in r.json()["error"]["message"]
     record(sclient, cfx_session, items_of(("design.group", "S1", {"group": "A"})))
     r = sclient.post(
         f"/api/sessions/{cfx_session}/design/set",
@@ -239,9 +241,22 @@ def test_a_reason_is_required_and_a_stale_head_is_refused(sclient, cfx_session):
     assert r.status_code == 409 and r.json()["error"]["code"] == "stale"
 
 
+# RT-EX-012
+def test_design_set_needs_the_head_the_page_showed(sclient, cfx_session):
+    """Without ``expected_head`` the design is not written (422), never "the later tab wins"."""
+    sid = cfx_session
+    before = editor(sclient, sid)["head"]
+    items = items_of(("design.target_role", "REF", {"role": "ref"}))
+    r = sclient.post(f"/api/sessions/{sid}/design/set", json={"items": items, "reason": REASON})
+    assert r.status_code == 422, r.text
+    where = [p["where"] for p in r.json()["error"]["details"]["problems"]]
+    assert any("expected_head" in w for w in where)
+    assert editor(sclient, sid)["head"] == before  # nothing written
+
+
 def test_bad_names_and_unknown_subjects_are_refused_in_words(sclient, cfx_session):
     items = items_of(
-        ("design.group", "S1", {"group": "<script>"}),
+        ("design.group", "S1", {"group": "A\u202eB"}),  # a right-to-left override
         ("design.group", "nobody", {"group": "A"}),
         ("design.target_role", "REF", {"role": "boss"}),
         ("design.comparison", "comparison", {"group_a": "A", "group_b": "A"}),
@@ -249,7 +264,7 @@ def test_bad_names_and_unknown_subjects_are_refused_in_words(sclient, cfx_sessio
     plan = sclient.post(f"/api/sessions/{cfx_session}/design/check", json={"items": items}).json()
     refusals = [p["refusal"] for p in plan["items"]]
     assert all(r for r in refusals), plan
-    assert any("letters, digits" in r for r in refusals)
+    assert any("invisible character" in r for r in refusals)
     assert any("no sample" in r for r in refusals)
 
 
@@ -430,7 +445,6 @@ def test_ref_is_never_renamed_alyref_and_such_a_rename_is_never_consistent(sclie
 
 def test_a_whole_96_well_plate_is_set_in_one_act_quickly(web_store):
     """CFX Maestro 4-plex (simulator): 96 unnamed samples, one per well; one act, ~190 items."""
-    import time
 
     from qpilot import studio_design as sd
     from qpilot.ai.client import ModelClient, NoneBackend
@@ -451,10 +465,10 @@ def test_a_whole_96_well_plate_is_set_in_one_act_quickly(web_store):
         items.append(
             sd.DesignItem("design.bio_unit", s.sample, {"biological_unit": f"u_{s.sample[-3:]}"})
         )
-    started = time.monotonic()
-    done = sd.set_design(studio, sid, items, "human", "plate halves")
+    with work_time() as spent:
+        done = sd.set_design(studio, sid, items, "human", "plate halves")
     assert done.recorded == len(items)
-    assert time.monotonic() - started < 20  # was quadratic (a copy of the inbox per item)
+    assert spent.seconds < 20, spent  # was quadratic (a copy of the inbox per item)
     entries = web_store.proposals(sid).entries()
     assert {e.actor for e in entries} == {"human"}  # proposed and accepted by the person
 

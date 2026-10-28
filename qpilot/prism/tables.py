@@ -41,6 +41,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from qpilot.core.names import file_part
 from qpilot.core.store import canonical_json
 from qpilot.qpcr.export import ExportError, ExportInputs, check_label
 from qpilot.schemas_studio import PrismBundle, PrismLayout, PrismTable
@@ -58,10 +59,8 @@ NOT_AFFILIATED = (
     "Works with GraphPad Prism. Not affiliated with or endorsed by GraphPad Software or Dotmatics."
 )
 RECORD_REF = re.compile(r"^[A-Za-z0-9_.-]{1,40}\Z")
+FORMULA_FIRST = ("=", "+", "@", "\t", "\r")  # a leading "-" is kept (RT-EX-014)
 CHAIN_HEAD = re.compile(r"^[0-9a-f]{64}\Z")
-_WINDOWS_RESERVED = {"CON", "PRN", "AUX", "NUL"} | {
-    f"{prefix}{i}" for prefix in ("COM", "LPT") for i in range(1, 10)
-}
 
 
 class PrismExportError(ExportError):
@@ -135,13 +134,29 @@ def template_spec(template_id: str) -> TemplateSpec:
 
 
 def file_stem(gene: str) -> str:
-    """A file-safe stem for a gene: letters, digits, ``_ - . ( )``; spaces become ``_``."""
-    stem = re.sub(r"[^\w().-]", "_", gene)
-    if not stem or stem.startswith(".") or not stem.isascii():
-        raise PrismExportError(f"gene name {gene!r} cannot be a file name")
-    if stem.split(".")[0].upper() in _WINDOWS_RESERVED:
-        stem = f"{stem}_gene"
-    return stem
+    """A file-safe stem for a gene (:func:`qpilot.core.names.file_part`).
+
+    A plain ASCII name keeps its letters, digits and ``_ - . ( )`` (spaces become ``_``); any
+    other name (``α-syn``, ``IL-6/ctrl``) is its ASCII slug and a short hash of the name, so the
+    gene keeps its own name in the table and two genes never share a file.
+    """
+    return file_part(gene, "gene")
+
+
+def check_formula_free(names: Sequence[str]) -> None:
+    """Refuse a group or unit name that starts like a formula (``=``, ``+``, ``@``, a tab).
+
+    Prism reads the bundle's CSVs back by name, so they carry names as they are (no defusing
+    apostrophe, THREAT_MODEL row 46); a name a spreadsheet would run (``=HYPERLINK(...)``,
+    ``+/+``) is refused here in words instead. A leading ``-`` (``-RT``) stays, as it always has.
+    """
+    for name in names:
+        if str(name).startswith(FORMULA_FIRST):
+            raise PrismExportError(
+                "a group or unit whose name starts with =, + or @ cannot go into a Prism table "
+                "(a spreadsheet would read it as a formula): give it a name that starts with a "
+                "letter or a digit, such as “WT (+/+)”"
+            )
 
 
 def sequential_pseudonyms(units: Sequence[str]) -> dict[str, str]:
@@ -222,6 +237,7 @@ def render_tables(
     if len({s.lower() for s in stems.values()}) != len(stems):
         raise PrismExportError("two genes would share a file name")
     titles = row_titles(inputs, share, pseudonym)
+    check_formula_free([*inputs.group_order, *titles.values()])
     table = inputs.table(spec.layout, genes)
     if (
         spec.layout == "nested"
