@@ -209,7 +209,23 @@ def build_queue(
     return sorted(issues, key=Issue.sort_key)
 
 
+QUEUE_COLUMNS = (
+    "rank",
+    "id",
+    "kind",
+    "title",
+    "impact",
+    "headline_changed",
+    "calls_changed",
+    "max_abs_d_in_se",
+    "outputs_affected",
+    "action",
+    "status",
+)
+
+
 def queue_frame(issues: list[Issue]) -> pd.DataFrame:
+    """The queue as a table (its columns even when nothing was found)."""
     return pd.DataFrame(
         [
             {
@@ -226,5 +242,6 @@ def queue_frame(issues: list[Issue]) -> pd.DataFrame:
                 "status": x.status,
             }
             for i, x in enumerate(issues)
-        ]
+        ],
+        columns=list(QUEUE_COLUMNS),
     )

@@ -21,8 +21,9 @@ def test_the_key_is_created_once_private_and_random(tmp_path):
     key = hmac_key(tmp_path)
     path = tmp_path / ".keys" / "hmac.key"
     assert len(key) == KEY_BYTES and path.read_bytes() == key
-    assert stat.S_IMODE(path.stat().st_mode) == 0o600
-    assert stat.S_IMODE(path.parent.stat().st_mode) & 0o077 == 0
+    if os.name == "posix":  # Windows has no file modes
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600
+        assert stat.S_IMODE(path.parent.stat().st_mode) & 0o077 == 0
     assert hmac_key(tmp_path) == key
     assert hmac_key(tmp_path / "other") != key
 

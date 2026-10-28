@@ -558,7 +558,7 @@ class Studio:
         )
         if lines:
             with FileLock(str(folder / ".lock"), timeout=30):
-                with open(folder / AI_CALLS_FILE, "a", encoding="utf-8") as fh:
+                with open(folder / AI_CALLS_FILE, "a", encoding="utf-8", newline="\n") as fh:
                     fh.write(lines)
 
     # ---- stage 1: the design ----------------------------------------------------------------

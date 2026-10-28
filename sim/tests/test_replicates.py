@@ -287,3 +287,13 @@ def test_a_value_without_any_well_is_left_out_never_filled_in():
     assert math.isnan(unit_values(engine, nondetect="cap_min")["b1"])
     undetermined = dataclasses.replace(study, cq=cq, log2_n0=log2_n0)  # a well that never rose
     assert not math.isnan(unit_values(engine_of(undetermined), nondetect="cap_min")["b1"])
+
+
+def test_a_two_gene_plate_is_judged_on_its_residuals_not_on_rounding_noise():
+    """A co-expression fit as large as the panel would leave only noise to call outliers."""
+    from qsim.issues import QUEUE_COLUMNS, queue_frame
+    from qsim.troubleshoot import median_polish, residuals
+
+    study = study_of(triplicates(BASE))
+    np.testing.assert_allclose(residuals(study), median_polish(study.log2_n0)[2])
+    assert list(queue_frame([]).columns) == list(QUEUE_COLUMNS)  # a clean study: no issue
