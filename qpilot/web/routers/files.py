@@ -31,6 +31,7 @@ from qpilot.core.record import (
     CHECKSUMS,
     RecordError,
     VerifyReport,
+    member_names,
     unzip_record,
     verify,
     write_record,
@@ -753,19 +754,30 @@ def _verify_upload(ctx: AppContext, upload: Path, target: Path, name: str) -> Re
         raise api_error(
             400,
             "not_zip",
-            f"{name} is not a zip file: verify the record's .zip (or zip its folder).",
+            f"{name} is not a qPilot record: it is not a zip file. Verify the record's .zip (or "
+            "zip its folder).",
         )
     _refuse_bombs(upload, name)
+    damaged: list[str] = []
     try:
-        unpacked = unzip_record(upload, target)
+        unpacked = unzip_record(upload, target, damaged=damaged)
     except RecordError as err:
         raise api_error(400, "bad_record", f"{name}: {_sentence(err)}.") from err
     records = folders.find_marked(target, CHECKSUMS, depth=1)
     if unpacked in records:
         records = [unpacked]
     if not records:
+        if damaged:  # the checksum list itself is what was altered or damaged
+            raise api_error(
+                400,
+                "bad_record",
+                f"{name}: this record was altered or damaged after export: "
+                f"{', '.join(damaged[:3])} fails the zip's own check, so it cannot be verified.",
+            )
         raise api_error(
-            400, "not_record", f"{name} holds no Analysis Record (there is no {CHECKSUMS} in it)."
+            400,
+            "not_record",
+            f"{name} is not a qPilot record: there is no {CHECKSUMS} in it.",
         )
     if len(records) > 1:
         raise api_error(
@@ -778,6 +790,7 @@ def _verify_upload(ctx: AppContext, upload: Path, target: Path, name: str) -> Re
         report = VerifyReport(
             ok=False, inconsistent=[f"the record cannot be read: {_sentence(err)}"]
         )
+    report = report.with_damaged(member_names(damaged, record_dir, target))
     facts = _record_facts(record_dir)
     known = bool(facts.study_id) and _known_study(ctx, facts.study_id or "")
 
@@ -803,6 +816,8 @@ def _verify_upload(ctx: AppContext, upload: Path, target: Path, name: str) -> Re
     return RecordVerified(
         ok=report.ok,
         file_name=name,
+        outcome=report.outcome(),  # type: ignore[arg-type]
+        headline=report.headline(),
         summary=report.summary().splitlines(),
         report=report,
         record=facts,

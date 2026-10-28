@@ -52,6 +52,13 @@ describe("Answer", () => {
     );
   });
 
+  it("names the numbers' table once, by its visible heading", () => {
+    const { container } = render(<Answer answer={read(robustness)} links={links} />);
+    const heading = "The numbers in this answer, from the study's facts";
+    expect(container.textContent!.split(heading)).toHaveLength(2);
+    expect(screen.getByRole("table", { name: heading })).toBeTruthy();
+  });
+
   it("lists the study summary's numbers, and says so when an answer cites none", () => {
     render(<Answer answer={read(study)} links={links} />);
     for (const f of study.result.facts) expect(screen.getByText(f.value, asWritten)).toBeTruthy();

@@ -14,7 +14,7 @@ import system from "@/test/recorded/shell-system.json";
 import { modelChip } from "./ModelChip";
 import { sectionStates } from "./nav";
 import { paletteFilter } from "./Palette";
-import { parseRoute, pathOf } from "./route";
+import { notFoundWords, parseRoute, pathOf } from "./route";
 
 const frame = recorded as unknown as Schemas["WorkspaceView"];
 
@@ -34,6 +34,19 @@ describe("parseRoute", () => {
   it("marks a workspace link without a section as bare", () => {
     expect(parseRoute(`/r/${frame.key}`)).toMatchObject({ kind: "r", bare: true });
     expect(parseRoute(`/s/${frame.key}/nonsense`).bare).toBe(true);
+  });
+  it("marks links that lead nowhere instead of quietly showing Open", () => {
+    expect(parseRoute("/s/not-hex/design")).toMatchObject({ section: "home", notFound: "session" });
+    expect(parseRoute("/s")).toMatchObject({ notFound: "session", key: null });
+    expect(parseRoute("/r/zz/results").notFound).toBe("study");
+    expect(parseRoute("/nonsense").notFound).toBe("page");
+    expect(parseRoute("/").notFound).toBeNull();
+    expect(parseRoute("/home").notFound).toBeNull();
+    expect(parseRoute("/settings").notFound).toBeNull();
+    expect(parseRoute(`/s/${frame.key}/nonsense`).notFound).toBeNull(); // bare: the shell picks
+    expect(notFoundWords("session").title).toBe(
+      "This session was not found (it may have been moved or the link is old)",
+    );
   });
   it("sends unknown paths home and round-trips paths", () => {
     expect(parseRoute("/s/not-hex/design").section).toBe("home");

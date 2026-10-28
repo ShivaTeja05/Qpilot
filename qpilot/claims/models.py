@@ -16,13 +16,21 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-Verdict = Literal["supported", "choices", "overstated", "contradicted", "unchecked"]
-VERDICTS: tuple[Verdict, ...] = ("supported", "choices", "overstated", "contradicted", "unchecked")
+Verdict = Literal["supported", "choices", "overstated", "contradicted", "mismatch", "unchecked"]
+VERDICTS: tuple[Verdict, ...] = (
+    "supported",
+    "choices",
+    "overstated",
+    "contradicted",
+    "mismatch",
+    "unchecked",
+)
 VERDICT_LABEL: dict[str, str] = {
     "supported": "Supported",
     "choices": "Holds only under some choices",
     "overstated": "Overstated",
     "contradicted": "Contradicted",
+    "mismatch": "Not supported: different groups",
     "unchecked": "Cannot check",
 }
 VERDICT_RULE: dict[str, str] = {
@@ -34,12 +42,16 @@ VERDICT_RULE: dict[str, str] = {
     "word the study does not earn.",
     "contradicted": "The study says otherwise: the other direction, no change where there is "
     "one, or a number its data exclude.",
+    "mismatch": "The sentence compares other groups than the study does (for example tumours "
+    "with an amplified gene, where the study compares high against low expression of it), so "
+    "the study's numbers do not test it.",
     "unchecked": "The study cannot answer it: a gene it did not compare, or words too vague "
     "to check.",
 }
 CheckStatus = Literal["ok", "stronger", "weaker", "opposite", "unknown", "note"]
 CheckName = Literal[
     "gene",
+    "groups",
     "direction",
     "fold",
     "p",
@@ -144,6 +156,14 @@ class ClaimReading(BaseModel):
     robust_written: str | None = None
     normaliser: list[str] = Field(description="Control genes named.")
     groups_written: list[str]
+    other_groups: list[str] = Field(
+        default_factory=list,
+        description="Groups the words name that the study does not compare, as written.",
+    )
+    normaliser_scope: Literal["own", "text", "previous", "gene"] | None = Field(
+        default=None, description="Where the normaliser was read: in the claim's own sentence, "
+        "a sentence stating it for all the data, the sentence after the claim referring back, "
+        "or a sentence naming this gene.")  # fmt: skip
     n_written: str | None = None
     efficiency_written: str | None = None
     efficiency_genes: list[str]
@@ -199,7 +219,7 @@ class ClaimView(BaseModel):
         default=None, description="A sentence the record supports, built from facts."
     )
     gene: str | None = Field(default=None, description="The compared gene to open, if any.")
-    severity: int = Field(description="Sort key: contradicted 4 … supported 0.")
+    severity: int = Field(description="Sort key: contradicted 5, different groups 4 … supported 0.")
 
 
 class ClaimsSummary(BaseModel):

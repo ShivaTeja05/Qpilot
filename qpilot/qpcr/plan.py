@@ -33,6 +33,7 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from fractions import Fraction
+from functools import lru_cache
 from statistics import NormalDist
 from typing import Any
 
@@ -55,6 +56,13 @@ MAX_REPLICATES = 10  # RT reactions per subject or wells per RT reaction; beyond
 MAX_COST = 1e9  # per subject, RT reaction or well; beyond this is a typo (and costs stay finite)
 MAX_CQ = 60.0  # no cycling protocol in use runs past this many cycles
 SUBJECT_STEP = 2  # the comparison sentence adds this many subjects to each group
+# Expected Cq -> well noise (see cq_well_noise and methods/replicate_budget.md). The Cq at which a
+# single template copy crosses the threshold: an unsourced, lab-editable default; the intercept
+# of your own standard curve (the Cq at log10 copies = 0) is the value to give.
+CQ_ONE_COPY = 35.0
+# MIQE (Bustin et al. 2009, Clin Chem 55:611-622): with Poisson sampling, 3 copies per reaction
+# is the lowest load that puts at least one copy in 95 % of reactions.
+LOD_COPIES = 3.0
 _WORDS = "zero one two three four five six seven eight nine ten".split()
 _ORDINALS = (
     "zeroth first second third fourth fifth sixth seventh eighth ninth tenth eleventh".split()
@@ -64,6 +72,27 @@ _ORDINALS = (
 def _z_sum(alpha: float, power: float) -> float:
     nd = NormalDist()
     return nd.inv_cdf(1 - alpha / 2) + nd.inv_cdf(power)
+
+
+def default_fold(min_log2fc: float = 1.0) -> float:
+    """The change worth finding a plan starts from: a quarter above the call rule's threshold.
+
+    2.5× for qPilot's 2-fold rule. A true change exactly at the threshold looks smaller than it
+    about half the time, so the rule calls it at most about half the time however many samples
+    are run: a plan has to aim above the line to say how many samples a call needs.
+    """
+    return round(1.25 * 2.0**min_log2fc, 2)
+
+
+def fold_words(min_log2fc: float = 1.0, alpha: float = 0.05) -> str:
+    """The relation between the change worth finding and the call rule, in plain words."""
+    line = f"{2.0**min_log2fc:g}"
+    return (
+        f"qPilot calls a change only when p < {alpha:g} and the measured change is at least "
+        f"{line}-fold. A true {line}-fold change measures below {line}-fold about half the time, "
+        f"so however many samples you run it is called only about half the time. Plan for a "
+        f"change above {line}-fold: the plan starts at {default_fold(min_log2fc):g}×."
+    )
 
 
 def n_needed(fc: float, sd_log2: float, alpha: float = 0.05, power: float = 0.80) -> int:
@@ -105,6 +134,70 @@ def effective_sd(
         return sd_bio
     rt, well = sd_rt or 0.0, sd_well or 0.0
     return math.sqrt(sd_bio**2 + rt**2 / n_rt + well**2 / (n_rt * n_tech))
+
+
+def copies_per_well(cq: float, cq_one_copy: float = CQ_ONE_COPY, efficiency: float = 2.0) -> float:
+    """Template copies a well holds on average when its target crosses at ``cq``.
+
+    ``efficiency ** (cq_one_copy - cq)``: each cycle earlier than the one-copy Cq is one doubling
+    more template (at perfect efficiency).
+    """
+    return float(efficiency ** (cq_one_copy - cq))
+
+
+def poisson_sd_log2(copies: float) -> float:
+    """SD on the log2 scale of a well's starting copies from Poisson sampling alone.
+
+    Pipetting a template that holds on average ``N`` copies per well puts a Poisson number of
+    copies in each well (SD ``sqrt(N)``, coefficient of variation ``1 / sqrt(N)``); on the log2
+    scale (the delta method) that is ``1 / (ln 2 · sqrt(N))``, about one cycle at 2 copies and
+    0.07 at 200. It is a floor: no technical replicate SD can be smaller at that load.
+    Sources: MIQE (Bustin et al. 2009, Clin Chem 55:611-622), and Ståhlberg A, Kubista M (2014),
+    Expert Rev Mol Diagn 14:323-331 (sampling noise at low copy numbers). The approximation
+    under-states the spread below about 3 copies, where many wells hold none.
+    """
+    return 1.0 / (math.log(2) * math.sqrt(copies))
+
+
+def cq_well_noise(
+    expected_cq: float, sd_well: float | None, cq_one_copy: float = CQ_ONE_COPY
+) -> dict[str, Any]:
+    """The well SD a target expected at ``expected_cq`` has at least, and the one the plan uses.
+
+    The plan uses the larger of the well SD given and the Poisson floor at that load: a well SD
+    measured at a lower Cq already holds that pilot's (smaller) sampling noise, so the larger of
+    the two never counts the sampling noise twice.
+    """
+    copies = copies_per_well(expected_cq, cq_one_copy)
+    floor = poisson_sd_log2(copies)
+    used = max(floor, sd_well or 0.0)
+    return {
+        "expected_cq": expected_cq,
+        "cq_one_copy": cq_one_copy,
+        "copies_per_well": copies,
+        "sd_well_poisson": floor,
+        "sd_well_given": sd_well,
+        "sd_well_used": used,
+        "below_lod": copies < LOD_COPIES,
+    }
+
+
+def _cq_sentences(noise: dict[str, Any]) -> list[str]:
+    copies = noise["copies_per_well"]
+    load = f"{copies:.3g} copies" if copies >= 1 else "less than one copy"
+    text = (
+        f"At Cq {noise['expected_cq']:g} a well holds about {load} of template (if one copy "
+        f"crosses at Cq {noise['cq_one_copy']:g}, at perfect doubling), so Poisson sampling "
+        f"alone scatters wells by {noise['sd_well_poisson']:.3g} log2 units"
+    )
+    given = noise["sd_well_given"]
+    if given is None:
+        text += "; the plan uses that as the well SD."
+    elif noise["sd_well_used"] > given:
+        text += f", more than the well SD you gave ({given:.3g}); the plan uses the larger."
+    else:
+        text += f"; the well SD you gave ({given:.3g}) is larger and is used."
+    return [text]
 
 
 def group_mean_se(
@@ -286,32 +379,52 @@ def simulate_calls(
     mean and variance are independent (normal and scaled chi-square), so they are drawn directly:
     the same distribution as drawing every value, in memory that does not grow with
     ``n_per_group``. Seeded, so the same inputs give the same numbers. ``n_other`` gives the
-    second group its own size (``None``: the same size; the draws are then exactly those of a
-    balanced call).
+    second group its own size (``None``: the same size).
+
+    The draws do not depend on ``fc`` or ``sd_log2`` (a study is ``delta + sd * noise``, and the
+    t statistic's denominator and Welch's degrees of freedom scale with ``sd``), so they and each
+    replicate's critical t are computed once per group sizes and level (:func:`_draws`) and every
+    gene planned at those sizes reuses them: "p < alpha" is "|t| above the critical t of that
+    replicate's degrees of freedom".
     """
     import numpy as np
-    from scipy import stats
 
-    rng = np.random.default_rng(0)
-    delta = math.log2(fc)
     n = n_per_group
     m = n if n_other is None else n_other
-    mean_hi = rng.normal(delta, sd_log2 / math.sqrt(n), size=reps)
-    mean_lo = rng.normal(0.0, sd_log2 / math.sqrt(m), size=reps)
-    var_hi = sd_log2**2 * rng.chisquare(n - 1, size=reps) / (n - 1)
-    var_lo = sd_log2**2 * rng.chisquare(m - 1, size=reps) / (m - 1)
-    se2_hi, se2_lo = var_hi / n, var_lo / m
-    diff = mean_hi - mean_lo
-    t = diff / np.sqrt(se2_hi + se2_lo)
-    if m == n:
-        df = (se2_hi + se2_lo) ** 2 / ((se2_hi**2 + se2_lo**2) / (n - 1))
-    else:
-        df = (se2_hi + se2_lo) ** 2 / (se2_hi**2 / (n - 1) + se2_lo**2 / (m - 1))
-    p = 2 * stats.t.sf(np.abs(t), df)
-    significant = p < alpha
+    noise, scale, t_crit = _draws(n, m, reps, alpha)
+    delta = math.log2(fc)
+    diff = delta + sd_log2 * noise
+    t = diff / (sd_log2 * scale)
+    significant = np.abs(t) > t_crit
     same_direction = np.sign(diff) == np.sign(delta)
     called = significant & same_direction & (np.abs(diff) >= min_log2fc)
     return float(significant.mean()), float(called.mean())
+
+
+@lru_cache(maxsize=96)
+def _draws(n: int, m: int, reps: int, alpha: float) -> tuple[Any, Any, Any]:
+    """The seeded draws of :func:`simulate_calls` for groups of ``n`` and ``m`` (at SD 1).
+
+    ``noise`` is the difference of the two group means, ``scale`` the Welch standard error and
+    ``t_crit`` each replicate's two-sided critical t at ``alpha`` (for its Welch degrees of
+    freedom). The draws come in the order the planner always drew them (the first group's mean,
+    the second's, then their variances), from ``default_rng(0)``.
+    """
+    import numpy as np
+    from scipy import special
+
+    rng = np.random.default_rng(0)
+    mean_hi = rng.normal(0.0, 1 / math.sqrt(n), size=reps)
+    mean_lo = rng.normal(0.0, 1 / math.sqrt(m), size=reps)
+    var_hi = rng.chisquare(n - 1, size=reps) / (n - 1)
+    var_lo = rng.chisquare(m - 1, size=reps) / (m - 1)
+    se2_hi, se2_lo = var_hi / n, var_lo / m
+    df = (se2_hi + se2_lo) ** 2 / (se2_hi**2 / (n - 1) + se2_lo**2 / (m - 1))
+    t_crit = special.stdtrit(df, 1 - alpha / 2)
+    out = (mean_hi - mean_lo, np.sqrt(se2_hi + se2_lo), t_crit)
+    for array in out:
+        array.setflags(write=False)
+    return out
 
 
 RARELY_CALLED = 0.05  # below this, the design "cannot detect" the change under qPilot's rule
@@ -613,14 +726,16 @@ def _budget(
     expected_cq: float | None,
     alpha: float,
     power: float,
+    cq_one_copy: float = CQ_ONE_COPY,
 ) -> dict[str, Any]:
-    """The replicate budget: effective SD, the comparison, the cheapest design and notes."""
-    notes = _missing_sd_notes(sd_rt, sd_well)
-    if expected_cq is not None:
-        notes.append(
-            "Expected Cq given, but the claim-floor check (the smallest change a Cq supports) "
-            "needs a floor pack that is not built yet, so no floor is applied."
-        )
+    """The replicate budget: effective SD, the comparison, the cheapest design and notes.
+
+    An expected Cq sets the well SD's floor (:func:`cq_well_noise`); the sentences say so.
+    """
+    noise = None if expected_cq is None else cq_well_noise(expected_cq, sd_well, cq_one_copy)
+    notes = _missing_sd_notes(sd_rt, sd_well if noise is None else noise["sd_well_used"])
+    if noise is not None:
+        sd_well = noise["sd_well_used"]
     budget: dict[str, Any] = {
         "inputs": {
             "sd_bio": sd_bio,
@@ -631,6 +746,7 @@ def _budget(
             "n_tech": n_tech,
             **costs,
             "expected_cq": expected_cq,
+            "cq_one_copy": None if noise is None else cq_one_copy,
         },
         "sd_effective": None,
         "n_bio_needed": None,
@@ -638,8 +754,8 @@ def _budget(
         "compare": None,
         "cheapest": None,
         "searched": None,
-        "claim_floor": None if expected_cq is None else "not_built",
-        "sentences": [],
+        "cq_noise": noise,
+        "sentences": [] if noise is None else _cq_sentences(noise),
         "notes": notes,
     }
     if sd_bio is None:
@@ -718,6 +834,7 @@ def plan(
     cost_rt: float | None = None,
     cost_well: float | None = None,
     expected_cq: float | None = None,
+    cq_one_copy: float | None = None,
 ) -> PlanResult:
     """Check a design before it is run.
 
@@ -748,8 +865,12 @@ def plan(
         cost_subject: cost of one subject, for the cheapest design (needs all three costs).
         cost_rt: cost of one RT reaction.
         cost_well: cost of one qPCR well.
-        expected_cq: expected Cq of the target; accepted, but the claim-floor check it feeds
-            is not built, so the budget says so and applies no floor.
+        expected_cq: expected Cq of the target. It sets the well SD's floor: the Poisson
+            sampling noise of the copies a well holds at that Cq (:func:`cq_well_noise`); the
+            plan uses the larger of that floor and ``sd_well``. Below 3 copies per well
+            (MIQE's detection limit) the target is in ``cannot_detect``.
+        cq_one_copy: the Cq at which one copy crosses the threshold (your standard curve's
+            intercept); default :data:`CQ_ONE_COPY`. Used only with ``expected_cq``.
 
     Raises:
         ValueError: an input outside what any real design has.
@@ -768,6 +889,9 @@ def plan(
         costs=costs,
         expected_cq=expected_cq,
     )
+    if cq_one_copy is not None and not (_number(cq_one_copy) and 0 < cq_one_copy <= MAX_CQ):
+        raise ValueError(f"cq_one_copy must be a cycle number above 0 and at most {MAX_CQ:g}")
+    one_copy = CQ_ONE_COPY if cq_one_copy is None else float(cq_one_copy)
     rules = _rules(n_plates, calibrator_on_every_plate, n_candidate_refs, one_sample_per_subject)
     asked = (sd_rt, sd_well, expected_cq, *costs.values())
     budget = None
@@ -784,7 +908,11 @@ def plan(
             expected_cq=expected_cq,
             alpha=alpha,
             power=power,
+            cq_one_copy=one_copy,
         )
+    noise = None if expected_cq is None else cq_well_noise(expected_cq, sd_well, one_copy)
+    if noise is not None:
+        sd_well = noise["sd_well_used"]
     if sd_log2 is None:
         return PlanResult(
             n_needed=None,
@@ -812,6 +940,13 @@ def plan(
                 f"detected with {power:.0%} power is {mde:.1f}-fold."
             )
     line = _fold(2.0**min_log2fc)
+    if noise is not None and noise["below_lod"]:
+        cannot.append(
+            f"A target at Cq {expected_cq:g}: a well holds about "
+            f"{noise['copies_per_well']:.2g} copies, fewer than the {LOD_COPIES:g} a reaction "
+            "needs to hold one copy 95 % of the time (MIQE), so many wells will not amplify "
+            "and no number of replicates makes it measurable. Load more template."
+        )
     sig, called = simulate_calls(fc, sd, need, alpha, min_log2fc)
     if called < RARELY_CALLED:
         cannot.append(

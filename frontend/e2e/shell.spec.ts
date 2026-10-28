@@ -162,9 +162,11 @@ test.describe("the rail", () => {
     test.fixme(!LANDED.shellFrame, notLanded("shellFrame"));
     app.allowConsole(/status of 404/);
     await app.open("/r/000000000000/results");
-    await expect(app.page.getByText("This study is not in this qPilot's store")).toBeVisible();
+    await expect(
+      app.page.getByText("This study was not found (it may have been moved or the link is old)"),
+    ).toBeVisible();
     await app.axe("unknown study");
-    await app.page.getByRole("button", { name: "Open a study" }).click();
+    await app.page.getByRole("button", { name: "Back to Open" }).click();
     await app.settle();
     expect(new URL(app.page.url()).hash).toMatch(/^#\/?$/);
   });

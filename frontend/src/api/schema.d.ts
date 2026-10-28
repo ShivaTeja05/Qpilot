@@ -5205,7 +5205,7 @@ export type components = {
              * Check
              * @enum {string}
              */
-            check: "gene" | "direction" | "fold" | "p" | "significance" | "robust" | "normaliser" | "efficiency" | "n" | "grid" | "audit" | "choices" | "reading";
+            check: "gene" | "groups" | "direction" | "fold" | "p" | "significance" | "robust" | "normaliser" | "efficiency" | "n" | "grid" | "audit" | "choices" | "reading";
             /**
              * Status
              * @enum {string}
@@ -5256,7 +5256,7 @@ export type components = {
              * Intent
              * @enum {string}
              */
-            intent: "supported" | "choices" | "overstated" | "contradicted" | "unchecked";
+            intent: "supported" | "choices" | "overstated" | "contradicted" | "mismatch" | "unchecked";
             /** Text */
             text: string;
             /**
@@ -5372,6 +5372,16 @@ export type components = {
              * @description Control genes named.
              */
             normaliser: string[];
+            /**
+             * Normaliser Scope
+             * @description Where the normaliser was read: in the claim's own sentence, a sentence stating it for all the data, the sentence after the claim referring back, or a sentence naming this gene.
+             */
+            normaliser_scope?: ("own" | "text" | "previous" | "gene") | null;
+            /**
+             * Other Groups
+             * @description Groups the words name that the study does not compare, as written.
+             */
+            other_groups?: string[];
             /**
              * P Adjusted
              * @default false
@@ -5588,7 +5598,7 @@ export type components = {
             sentence: components["schemas"]["TextRange"];
             /**
              * Severity
-             * @description Sort key: contradicted 4 … supported 0.
+             * @description Sort key: contradicted 5, different groups 4 … supported 0.
              */
             severity: number;
             /** Spans */
@@ -5599,7 +5609,7 @@ export type components = {
              * Verdict
              * @enum {string}
              */
-            verdict: "supported" | "choices" | "overstated" | "contradicted" | "unchecked";
+            verdict: "supported" | "choices" | "overstated" | "contradicted" | "mismatch" | "unchecked";
             /** Verdict Label */
             verdict_label: string;
         };
@@ -8973,10 +8983,9 @@ export type components = {
             controls?: components["schemas"]["PlanControls"];
             /**
              * Fold
-             * @description The smallest fold change worth detecting (e.g. 2, or 0.5).
-             * @default 2
+             * @description The smallest fold change worth detecting (e.g. 2.5, or 0.4); none: a quarter above the call rule's threshold (2.5 for a 2-fold rule; plan.default_fold).
              */
-            fold: number;
+            fold?: number | null;
             /**
              * Genes
              * @description The next experiment's genes (default: the study's headline genes).
@@ -9091,6 +9100,12 @@ export type components = {
             candidates: string[];
             defaults: components["schemas"]["PlannerBody"];
             efficiency: components["schemas"]["PlanEfficiency"];
+            /**
+             * Fold Note
+             * @description How the change worth finding relates to the call rule, in plain words.
+             * @default
+             */
+            fold_note: string;
             /** Genes */
             genes: components["schemas"]["PlannerGene"][];
             /** Groups */
@@ -10479,6 +10494,12 @@ export type components = {
             /** File Name */
             file_name: string;
             /**
+             * Headline
+             * @description The outcome in one plain sentence.
+             * @default
+             */
+            headline: string;
+            /**
              * Known Study
              * @description The record's study is in this qPilot's store.
              */
@@ -10490,6 +10511,13 @@ export type components = {
              * @description The record verifies (and its audit, when one is bound).
              */
             ok: boolean;
+            /**
+             * Outcome
+             * @description verified; altered (a file changed, damaged, missing or added after export); chain_broken (the files match their checksums but a hash chain does not link); inconsistent (the files disagree with the chain).
+             * @default verified
+             * @enum {string}
+             */
+            outcome: "verified" | "altered" | "chain_broken" | "inconsistent";
             record: components["schemas"]["RecordFacts"];
             report: components["schemas"]["VerifyReport"];
             /**
@@ -13114,6 +13142,10 @@ export type components = {
         /**
          * VerifyReport
          * @description Outcome of :func:`verify`; ``ok`` only when nothing failed.
+         *
+         *     ``damaged`` lists the zip members whose bytes fail the zip's own check (a CRC or a deflate
+         *     stream that does not decode): the file was altered or damaged after the zip was written, so
+         *     its contents cannot be trusted (see :meth:`with_damaged`).
          */
         VerifyReport: {
             /** Chain Broken At */
@@ -13123,6 +13155,11 @@ export type components = {
              * @default []
              */
             changed: string[];
+            /**
+             * Damaged
+             * @default []
+             */
+            damaged: string[];
             /**
              * Has Proposals
              * @default false

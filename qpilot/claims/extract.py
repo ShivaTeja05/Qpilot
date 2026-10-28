@@ -129,6 +129,18 @@ INHERIT_LEFT = re.compile(
     re.I,
 )
 RESPECTIVELY = re.compile(r"\brespectively\b", re.I)
+# a relation between genes, not a difference between the groups: qPilot cannot check it
+CORRELATION = re.compile(
+    r"\bcorrelat\w*|\bco-?express\w*|\bco-?regulat\w*|\bassociated\s+with\s+(?:the\s+)?"
+    r"(?:expression|levels?)\b",
+    re.I,
+)
+# words that put a gene inside another gene's claim ("higher in tumours expressing MYCN")
+MODIFIER_LEAD = re.compile(
+    r"\b(?:in|with|of|by|than|for|from|on|expressing|lacking|carrying|harbou?ring|without"
+    r"|versus|vs\.?|against|over)\b",
+    re.I,
+)
 BASELINE_CUE = re.compile(
     r"(?:\bthan(?:\s+in)?|\bcompared\s+(?:with|to)(?:\s+(?:the|those|that)\s+(?:in|of))?"
     r"|\brelative\s+to|\bversus|\bvs\.?|\bover|\bagainst)\s*(?:the\s+)?(?:in\s+)?$",
@@ -316,6 +328,15 @@ class Claim:
     genes: tuple[str, ...] = ()  # for an efficiency claim: the assays it names (empty: all)
     respectively: bool = False
     source: Literal["rules", "model"] = "rules"
+    # groups the words name that the study does not compare: (written, what it groups by)
+    other_groups: tuple[tuple[str, str], ...] = ()
+    names_groups: bool = False  # the words name one of the study's own two groups
+    relation: str | None = None  # the words as written when they relate genes ("correlated")
+    # where the normaliser was read: "own" (this clause or sentence), "text" (a sentence that
+    # states it for all the data), "previous" (``These values were normalised…`` after it) or
+    # "gene" (a sentence that names this gene's normalisation); with that sentence's span
+    normaliser_scope: Literal["own", "text", "previous", "gene"] | None = None
+    normaliser_from: Span | None = None
 
     def mark(self, role: Role) -> Mark | None:
         """The first mark with this role."""
@@ -530,7 +551,11 @@ class _Window:
     robust: Mark | None = None
     marks: list[Mark] = field(default_factory=list)
 
+    relation: bool = False
+
     def empty(self) -> bool:
+        if self.relation:
+            return False
         return not (self.direction or self.folds or self.p or self.significance or self.robust)
 
 
@@ -613,6 +638,8 @@ def _orientation(text: str, clause: Span, groups: list[GroupFound]) -> tuple[boo
     marks = [Mark("group", Span(g.start, g.end), g.written) for g in groups]
     focal = None
     for group in groups:
+        if group.which == "other":
+            continue
         before = text[clause.start : group.start]
         if BASELINE_CUE.search(before[-40:]):
             if focal is None:
@@ -696,12 +723,18 @@ def _clause_claims(text: str, sentence: Span, clause: Span, lexicon: Lexicon) ->
         )
         _fill([orphan], directions, folds, p_values, significance, robust)
         return _ClauseRead([], norm_genes, norm_marks + group_marks, orphan)
+    relation = CORRELATION.search(text, clause.start, clause.end)
+    if relation is not None:  # "ODC1 correlated with MYCN (p < 0.001)": one claim, about ODC1
+        before = [g for g in targets if g.start < relation.start()]
+        targets = before[:1] or targets[:1]
     windows = []
     for i, gene in enumerate(targets):
         start = clause.start if i == 0 else gene.start
         end = targets[i + 1].start if i + 1 < len(targets) else clause.end
         windows.append(_Window(gene, start, end))
     _fill(windows, directions, folds, p_values, significance, robust)
+    if relation is not None:
+        windows[0].relation = True
     respectively = bool(RESPECTIVELY.search(text, clause.start, clause.end))
     all_folds = [f for w in windows for f in w.folds]
     all_ps = [w.p for w in windows if w.p is not None]
@@ -713,6 +746,7 @@ def _clause_claims(text: str, sentence: Span, clause: Span, lexicon: Lexicon) ->
         for w, p in zip(windows, all_ps, strict=True):
             w.p = p
     _share(text, windows)
+    _modifiers(text, windows)
     # a normaliser named in parentheses belongs to its gene; one in the running text, to all
     local = {id(m): _depth(text, sentence.start, m.span.start) > 0 for m in norm_marks}
     claims = []
@@ -726,9 +760,22 @@ def _clause_claims(text: str, sentence: Span, clause: Span, lexicon: Lexicon) ->
             if any(m.span.start <= g.start < m.span.end + 1 for m in mine)
             or any(m.span.start <= g.end <= m.span.end for m in mine)
         ]
-        groups_here = [m for m in group_marks if w.start <= m.span.start < w.end] or group_marks
+        here = [g for g in groups if w.start <= g.start < w.end] or groups
+        groups_here = [Mark("group", Span(g.start, g.end), g.written) for g in here]
+        claim = _gene_claim(sentence, clause, w, inverted, respectively, mine, named, groups_here)
         claims.append(
-            _gene_claim(sentence, clause, w, inverted, respectively, mine, named, groups_here)
+            replace(
+                claim,
+                other_groups=tuple((g.written, g.what) for g in here if g.which == "other"),
+                names_groups=any(g.which != "other" for g in here),
+                relation=relation.group(0) if relation is not None else None,
+                marks=claim.marks
+                + (
+                    (Mark("direction", Span(*relation.span()), relation.group(0)),)
+                    if relation
+                    else ()
+                ),
+            )
         )
     return _ClauseRead(claims, norm_genes, norm_marks + group_marks)
 
@@ -860,6 +907,35 @@ def _share(text: str, windows: list[_Window]) -> None:
             w.folds = list(donor.folds)
 
 
+def _modifiers(text: str, windows: list[_Window]) -> None:
+    """A gene named inside another gene's claim gives its stretch's values to that claim.
+
+    In ``Survivin was 4-fold higher in tumours expressing MYCN (p < 0.001)`` the p-value follows
+    MYCN but belongs to survivin: a gene with no direction word of its own, that is not one of a
+    list sharing words, says nothing of its own; its fold, p-value and significance words go to
+    the claim before it (when that claim lacks them).
+    """
+    for i, w in enumerate(windows):
+        if i == 0 or w.direction is not None:
+            continue
+        before = windows[i - 1]
+        if before.direction is None:
+            continue
+        lead = text[before.gene.end : w.gene.start]
+        if LIST_GLUE.match(lead) or INHERIT_LEFT.search(lead[-30:]):
+            continue  # "ODC1 and BIRC5 …" or "…, as was BIRC5"
+        if not MODIFIER_LEAD.search(re.split(r"[,;]", lead)[-1]):
+            continue  # "ODC1 was higher, BIRC5 4-fold": a claim of its own, if a terse one
+        if not before.folds and w.folds:
+            before.folds, w.folds = w.folds, []
+        if before.p is None and w.p is not None:
+            before.p, w.p = w.p, None
+        if before.significance is None and w.significance is not None:
+            before.significance, w.significance = w.significance, None
+        if before.robust is None and w.robust is not None:
+            before.robust, w.robust = w.robust, None
+
+
 def _strip_marks(rest: str, w: _Window) -> str:
     """A window's text without its fold values (``ODC1 (3.6-fold) and``: list glue)."""
     for fold in w.folds:
@@ -959,6 +1035,9 @@ def extract(text: str, lexicon: Lexicon) -> list[Claim]:
                     else replace(c, normaliser=names, marks=c.marks + tuple(running))
                     for c in gene_claims
                 ]
+            gene_claims = [
+                replace(c, normaliser_scope="own") if c.normaliser else c for c in gene_claims
+            ]
             gene_marks = tuple(Mark("gene", Span(g.start, g.end), g.written) for g in normalisers)
             out.append(
                 Claim(
@@ -974,27 +1053,93 @@ def extract(text: str, lexicon: Lexicon) -> list[Claim]:
         if efficiency is not None:
             out.append(efficiency)
         out += _n_claims(text, sentence)
-    out = _paper_normaliser(out)
+    out = _paper_normaliser(text, out, lexicon)
     out.sort(key=lambda c: (c.sentence.start, c.clause.start, _first(c)))
     return out[:MAX_CLAIMS]
 
 
-def _paper_normaliser(claims: list[Claim]) -> list[Claim]:
-    """A normaliser stated once for the text applies to every gene claim that names none.
+# A sentence that states the normalisation for all the data ("Expression was normalised to …",
+# "All values were …", "We normalised …"), one that refers back ("These values were …", or a
+# bare "Normalised to …" after a claim), and the words between them.
+GLOBAL_SUBJECT = re.compile(
+    r"\b(?:all|every|each|throughout|expression|data|values?|levels?|results|quantit(?:y|ies)"
+    r"|Cq|Ct|measurements?|mRNAs?|transcripts?|we|our)\b",
+    re.I,
+)
+BACK_REFERENCE = re.compile(
+    r"^\W*(?:these|this|those|their|its|it|they|both|the\s+(?:same|above|latter|former))\b", re.I
+)
+Scope = Literal["text", "previous", "gene"]
 
-    Only a normaliser in a sentence of its own (no gene claim in it), and only when the text
-    states one such set.
+
+def _normaliser_scope(
+    text: str, claim: Claim, lexicon: Lexicon
+) -> tuple[Scope | None, tuple[str, ...]]:
+    """What a normaliser stated in a sentence with no gene claim applies to.
+
+    ``gene`` (the sentence names the genes it is about: ``BIRC5 values were normalised to
+    UBC``; the genes are returned), ``previous`` (it refers back: ``These values were…``, or a
+    bare ``Normalised to UBC.``), ``text`` (it states the normalisation for all the data) or
+    None (it does not say which claims it is about).
     """
-    gene_sentences = {c.sentence for c in claims if c.kind == "gene"}
-    stated = {
-        c.normaliser for c in claims if c.kind == "normaliser" and c.sentence not in gene_sentences
-    }
-    if len(stated) != 1:
+    s = claim.sentence
+    first_cue = min((m.span.start for m in claim.marks if m.role == "normaliser"), default=s.start)
+    subject = text[s.start : first_cue]
+    named = tuple(
+        dict.fromkeys(
+            g.gene
+            for g in lexicon.genes(text, s.start, s.end)
+            if g.gene not in claim.normaliser and g.status not in ("absent", "reference")
+        )
+    )
+    if named:
+        return "gene", named
+    if BACK_REFERENCE.search(subject) or not subject.strip(" ,;:(\"'"):
+        return "previous", ()
+    if GLOBAL_SUBJECT.search(subject):
+        return "text", ()
+    return None, ()
+
+
+def _paper_normaliser(text: str, claims: list[Claim], lexicon: Lexicon) -> list[Claim]:
+    """A normaliser stated in a sentence of its own goes to the claims it is about, and says so.
+
+    A sentence that states it for all the data applies to every gene claim that names none
+    (only when the text states one such set); one that refers back applies to the gene claims
+    of the sentence before it; one that names genes applies to those genes' claims. A sentence
+    that does none of these (``GAPDH was used.``) is checked on its own and given to no claim.
+    """
+    gene_sentences = sorted({c.sentence for c in claims if c.kind == "gene"}, key=lambda x: x.start)
+    stated = [c for c in claims if c.kind == "normaliser" and c.sentence not in gene_sentences]
+    if not stated:
         return claims
-    (names,) = stated
-    return [
-        replace(c, normaliser=names) if c.kind == "gene" and not c.normaliser else c for c in claims
-    ]
+    scoped = [(c, *_normaliser_scope(text, c, lexicon)) for c in stated]
+    global_sets = {c.normaliser for c, scope, _ in scoped if scope == "text"}
+    out = list(claims)
+
+    def give(index: int, norm: Claim, scope: Scope) -> None:
+        c = out[index]
+        if c.kind == "gene" and not c.normaliser:
+            out[index] = replace(
+                c, normaliser=norm.normaliser, normaliser_scope=scope, normaliser_from=norm.sentence
+            )
+
+    for norm, scope, genes in scoped:
+        if scope == "gene":
+            for i, c in enumerate(out):
+                if c.gene in genes:
+                    give(i, norm, scope)
+        elif scope == "previous":
+            before = [x for x in gene_sentences if x.end <= norm.sentence.start]
+            if before:
+                for i, c in enumerate(out):
+                    if c.kind == "gene" and c.sentence == before[-1]:
+                        give(i, norm, scope)
+    if len(global_sets) == 1:
+        norm = next(c for c, scope, _ in scoped if scope == "text")
+        for i in range(len(out)):
+            give(i, norm, "text")
+    return out
 
 
 def _attach(claim: Claim, orphan: _Window) -> Claim:

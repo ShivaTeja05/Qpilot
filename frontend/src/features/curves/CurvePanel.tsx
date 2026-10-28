@@ -151,7 +151,11 @@ function OneWell({
     ["Cq", fixed(view.cq, 2)],
     ["Efficiency", fixed(view.efficiency, 2)],
     ["R²", fixed(view.r2, 4)],
-    ["Baseline", fixed(view.baseline, 3)],
+    // LinRegPCR's baseline is in the file's own fluorescence units (RFU on most instruments)
+    [
+      "Baseline",
+      view.baseline == null ? fixed(view.baseline, 3) : `${fixed(view.baseline, 3)} RFU`,
+    ],
   ];
   return (
     <div className="flex flex-col gap-3">
@@ -198,8 +202,10 @@ function OneWell({
               </ul>
             ) : (
               <p className="text-[12px] text-muted">
-                LinRegPCR: {yesNo(view.amplified)} · Curve Judge:{" "}
-                {view.judge == null ? "did not call this well" : yesNo(view.judge)}
+                LinRegPCR: {yesNo(view.amplified)} ·{" "}
+                {view.judge == null
+                  ? "Curve Judge has not looked at this well yet"
+                  : `Curve Judge: ${yesNo(view.judge)}`}
               </p>
             )}
             {view.judge != null && view.amplified != null && view.judge !== view.amplified ? (

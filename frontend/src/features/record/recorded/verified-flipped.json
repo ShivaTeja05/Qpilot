@@ -1,0 +1,46 @@
+{
+ "ok": false,
+ "file_name": "flipped-qpilot-record-e300000d4f9a.zip",
+ "outcome": "altered",
+ "headline": "This record was altered or damaged after export: decisions.jsonl.",
+ "summary": [
+  "altered or damaged after export (fails the zip's own check): decisions.jsonl",
+  "decision chain broken at entry 1",
+  "proposal chain broken at entry 1"
+ ],
+ "report": {
+  "ok": false,
+  "changed": [],
+  "missing": [],
+  "unlisted": [],
+  "damaged": [
+   "decisions.jsonl"
+  ],
+  "chain_broken_at": 1,
+  "inconsistent": [],
+  "n_entries": 0,
+  "has_proposals": true,
+  "proposal_chain_broken_at": 1,
+  "n_proposal_entries": 494
+ },
+ "record": {
+  "study_id": "e300000d4f9a",
+  "input_sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+  "chain_head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+  "written_at": "2026-10-28T15:54:17Z",
+  "input_included": true,
+  "shared": false,
+  "record_id": "e209efc43e4ae6a83bd5b1da1928b5818e7f839a99119fd50863fcb8bbc786c4"
+ },
+ "audit": {
+  "source": "store",
+  "ok": false,
+  "problems": [
+   "the record does not verify: missing: decisions.jsonl\ndecision chain broken at entry 1\nproposal chain broken at entry 1"
+  ],
+  "study_id": "e300000d4f9a"
+ },
+ "audit_note": "This qPilot's audit of the record's study was checked against this record.",
+ "known_study": true,
+ "note": "Tamper-evident, not tamper-proof. Research use only."
+}
