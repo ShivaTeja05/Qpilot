@@ -141,10 +141,14 @@ def _d_role(subject: str, d: Mapping[str, Any]) -> str:
 
 
 def _d_group(subject: str, d: Mapping[str, Any]) -> str:
+    if d["group"] is None:
+        return f"Take sample {subject} out of every group (it is not compared)"
     return f"Put sample {subject} in group “{d['group']}”"
 
 
 def _d_unit(subject: str, d: Mapping[str, Any]) -> str:
+    if d["biological_unit"] is None:
+        return f"Sample {subject} is its own biological unit (its wells are technical replicates)"
     return (
         f"Sample {subject} belongs to biological unit “{d['biological_unit']}”: its wells are "
         "technical replicates of that unit and are never counted as separate n"
@@ -157,6 +161,8 @@ def _d_target_role(subject: str, d: Mapping[str, Any]) -> str:
         return f"Use target {subject} as a reference gene (other genes are normalised to it)"
     if role == "toi":
         return f"Treat target {subject} as a gene of interest"
+    if role == "ignore":
+        return f"Leave target {subject} out of the study (none of its wells is used)"
     return f"Give target {subject} the role {role!r}"
 
 
@@ -679,6 +685,8 @@ def maker_text(made_by: MadeBy) -> str:
         return "Made by a fixed rule in qPilot (no model)."
     if made_by.kind == "agent":
         return f"Proposed by an agent over MCP ({made_by.agent or 'unnamed'})."
+    if made_by.kind == "person":
+        return "Set by a person on the Design page (and accepted in the same act)."
     if made_by.provider == CURVE_JUDGE:
         return (
             f"Made by the Curve Judge, a local curve classifier (model {made_by.model}); it reads "

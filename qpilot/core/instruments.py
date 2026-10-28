@@ -977,7 +977,7 @@ class Logbook:
             size = self.path.stat().st_size if self.path.exists() else 0
             if size + len(text.encode("utf-8")) > MAX_LOGBOOK_BYTES:
                 raise LogbookError(f"the logbook would pass its {MAX_LOGBOOK_BYTES:,}-byte limit")
-            with open(self.path, "a", encoding="utf-8") as fh:
+            with open(self.path, "a", encoding="utf-8", newline="\n") as fh:
                 fh.write(text)
                 fh.flush()
                 os.fsync(fh.fileno())

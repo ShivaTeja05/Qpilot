@@ -304,8 +304,10 @@ def test_demo_export_is_deterministic(demo_study, demo_export, tmp_path):
         tmp_path / "again",
         platform="macos",
         prism_dir="/Users/lab/qpilot_demo_export",
+        scripts=True,
     )
     assert again.bundle == demo_export.bundle
+    assert again.project.read_bytes() == demo_export.project.read_bytes()  # the .pzfx too
     for name in demo_export.bundle.files:
         assert (tmp_path / "again" / name).read_bytes() == (demo_export.out_dir / name).read_bytes()
     assert (tmp_path / "again" / PROVENANCE_FILE).read_bytes() == (

@@ -187,7 +187,7 @@ def write_sheet(path: Path, rows: list[tuple[str, str, str, str]], style: int) -
         target = path.with_suffix(".csv")
         buffer = io.StringIO()
         csv.writer(buffer, lineterminator="\n").writerows(grid)
-        target.write_text(buffer.getvalue(), encoding="utf-8")
+        target.write_text(buffer.getvalue(), encoding="utf-8", newline="\n")
         return target
     target = path.with_suffix(".xlsx")
     book = Workbook()
@@ -742,7 +742,7 @@ def _send_back(export, edit: str, gene: str, tmp: Path) -> tuple[Path, str | Non
             buffer = io.StringIO()
             csv.writer(buffer, lineterminator="\n").writerows(rows)
             text = buffer.getvalue()
-        (sent / table.csv).write_text(text, encoding="utf-8")
+        (sent / table.csv).write_text(text, encoding="utf-8", newline="\n")
     return folder, row_title
 
 

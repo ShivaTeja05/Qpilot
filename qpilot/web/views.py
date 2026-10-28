@@ -77,7 +77,7 @@ def remember_name(kept: Path, name: str) -> None:
         return
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(name, encoding="utf-8")
+        target.write_text(name, encoding="utf-8", newline="\n")
     except OSError:  # the content-named copy is enough to work with
         pass
 

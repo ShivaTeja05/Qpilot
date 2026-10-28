@@ -123,6 +123,10 @@ def residuals(study: Study, rank: int = 8) -> np.ndarray:
     demo residuals from 1.20 to 0.91 log2 units without absorbing single-plate patterns.
     """
     _, _, e = median_polish(study.log2_n0)
+    # on a small panel a fit of rank near the number of genes reproduces the residuals (with
+    # two genes a median-polished row is (a, -a), rank 1); what is left is rounding noise, which
+    # a robust z turns into "outliers". At most n_genes - 2 programmes; the demo keeps 8.
+    rank = min(rank, e.shape[1] - 2)
     if rank <= 0:
         return e
     x = e.copy()

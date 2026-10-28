@@ -511,7 +511,7 @@ def prepare_baseline(curves: pd.DataFrame, settings: StudySettings | None = None
 
 def _table_sha256(curves: pd.DataFrame) -> str:
     """SHA-256 of the table as CSV (the identity of the input in the scorecard)."""
-    return hashlib.sha256(curves.to_csv(index=False).encode()).hexdigest()
+    return hashlib.sha256(curves.to_csv(index=False, lineterminator="\n").encode()).hexdigest()
 
 
 def _flags(ctx: TraceContext) -> dict[tuple[str, str], float]:

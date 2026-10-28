@@ -277,7 +277,11 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
         full = _designed_table(studio, sid, design)
         if full is not None:
             designed = full[full["run_id"] == run.run_id]
+    left_out: Any = None  # wells of targets a person left out (the analysis drops them)
     if designed is not None and not designed.empty:
+        ignored = {t for t, d in design.targets.items() if d.role == "ignore"} if design else set()
+        if ignored:
+            left_out = rows[rows["target"].isin(ignored)]
         rows = designed
     person_calls = dict(design.well_calls) if design is not None else {}
     excluded = set(design.excluded_wells) if design is not None else set()
@@ -342,6 +346,27 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
                 }
             )
         wells.append(item)
+    if left_out is not None:
+        for _, row in left_out.iterrows():
+            well, sample, target = str(row["well"]), str(row["sample"]), str(row["target"])
+            r, c = well_position(well)
+            wells.append(
+                PlateWell(
+                    key=f"{run.run_id}/{well}",
+                    well=well,
+                    row=r,
+                    col=c,
+                    sample=sample,
+                    sample_text_id=facts.sample_text_ids.get(sample),
+                    target=target,
+                    target_text_id=facts.target_text_ids.get(target),
+                    declared_type=_declared(facts, row),
+                    role=None,
+                    excluded_by_person=False,
+                    excluded_note="its target is left out of the study by a person's decision",
+                    group=groups.get(sample),
+                )
+            )
     n_rows, n_cols = plate_shape((w.row, w.col) for w in wells)
     if judge is not None:
         judge_words = "ran on this file (its calls are shown)"

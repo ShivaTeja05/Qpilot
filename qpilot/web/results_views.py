@@ -1447,7 +1447,7 @@ def set_autonomy(store: StudyStore, study_id: str, level: str) -> bool:
         "actor": "human",
     }
     with store._locked(workspace):
-        with open(workspace / "attempts.jsonl", "a", encoding="utf-8") as fh:
+        with open(workspace / "attempts.jsonl", "a", encoding="utf-8", newline="\n") as fh:
             fh.write(canonical_json(line) + "\n")
     return True
 

@@ -234,7 +234,7 @@ def run_demo(
     if vfile.exists():
         import json
 
-        v = json.loads(vfile.read_text())
+        v = json.loads(vfile.read_text(encoding="utf-8"))
         eff = v["by_choice"]["efficiency"]
         print(
             "\n known-answer check on a different lab's dilution series (Untergasser, LightCycler 480):"
