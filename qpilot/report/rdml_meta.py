@@ -21,7 +21,7 @@ from pathlib import Path
 
 from lxml import etree
 
-from qpilot.io.rdml_io import RDML_MEMBER, RdmlLoadError, _check_size
+from qpilot.io.rdml_io import RdmlLoadError, _check_size, rdml_member
 
 SAMPLE_TYPES = {"unkn", "ntc", "nac", "std", "ntp", "nrt", "pos", "opt"}
 DYE_CHEMISTRY = {
@@ -93,7 +93,7 @@ def _stream(path: Path):
     _check_size(path)
     if zipfile.is_zipfile(path):
         archive = zipfile.ZipFile(path)
-        return archive, archive.open(RDML_MEMBER)
+        return archive, archive.open(rdml_member(archive.infolist(), path.name))  # any name
     return None, path.open("rb")
 
 

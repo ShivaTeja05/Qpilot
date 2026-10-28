@@ -312,3 +312,10 @@ def test_the_whole_document_is_still_rdmlpythons(tmp_path):
     doc = load(LC96P)
     buffer = io.BytesIO(etree.tostring(doc._rdmlData))
     assert etree.parse(buffer).getroot().tag == f"{NS}rdml"
+
+
+def test_the_reports_metadata_reader_finds_the_member_by_the_same_rule():
+    from qpilot.report.rdml_meta import read_meta
+
+    assert read_meta(CFX_MEMBER).version == "1.1"
+    assert read_meta(SOYBEAN).version == "1.2"
