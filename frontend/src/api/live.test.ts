@@ -288,6 +288,17 @@ describe("Missed (the stream's hello against the reads' store sequence)", () => 
     m.hello(1, "boot-b");
     expect(missed).toEqual([3000, 4000]);
   });
+
+  it("a read made while the stream was down does not hide a change it missed", () => {
+    const missed: number[] = [];
+    const m = new Missed((t) => missed.push(t), now);
+    m.hello(5, "boot-a");
+    m.down(); // the views are at 5
+    m.read(6, 1500); // one view read again meanwhile, after a change (6)
+    clock = 2000;
+    m.hello(6, "boot-a");
+    expect(missed).toEqual([2000]); // the other views are still at 5
+  });
 });
 
 describe("Refresher and slow reads", () => {

@@ -287,9 +287,10 @@ class Missed {
   private boot: string | null = null;
   private helloAt: number | null = null;
   private helloSeq: number | null = null;
-  private oldestBefore = Infinity; // the oldest sequence read before the stream came up
+  // The oldest store sequence a shown view may be at while the stream is not up: the oldest
+  // read before the first hello, or what the stream had told when it went down.
+  private oldestBefore = Infinity;
   private fired = false; // the views were re-read for this hello already
-  private greeted = false; // a hello came before (this is a reconnect)
 
   constructor(
     private readonly onMissed: (before: number) => void,
@@ -315,15 +316,11 @@ class Missed {
 
   hello(seq: number | undefined, boot: string | undefined): void {
     const at = this.now();
-    const again = this.greeted;
-    this.greeted = true;
     const restarted = Boolean(boot && this.boot && boot !== this.boot);
     if (boot) this.boot = boot;
     const s = typeof seq === "number" ? seq : null;
     const missed =
-      s === null ||
-      restarted ||
-      (again ? s > this.known : this.oldestBefore !== Infinity && s > this.oldestBefore);
+      s === null || restarted || (this.oldestBefore !== Infinity && s > this.oldestBefore);
     this.helloAt = at;
     this.helloSeq = s;
     this.oldestBefore = Infinity;
@@ -333,7 +330,11 @@ class Missed {
   }
 
   down(): void {
-    // Reads from now on started while the stream was down: compared at the next hello.
+    // What is shown was current up to what the stream told; reads from now on start while it
+    // is down. Both are compared with the next hello.
+    if (this.helloAt !== null && this.known > -Infinity) {
+      this.oldestBefore = Math.min(this.oldestBefore, this.known);
+    }
     this.helloAt = null;
     this.helloSeq = null;
   }
