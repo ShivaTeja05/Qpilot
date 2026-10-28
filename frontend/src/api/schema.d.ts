@@ -8860,10 +8860,9 @@ export type components = {
             controls?: components["schemas"]["PlanControls"];
             /**
              * Fold
-             * @description The smallest fold change worth detecting (e.g. 2, or 0.5).
-             * @default 2
+             * @description The smallest fold change worth detecting (e.g. 2.5, or 0.4); none: a quarter above the call rule's threshold (2.5 for a 2-fold rule; plan.default_fold).
              */
-            fold: number;
+            fold?: number | null;
             /**
              * Genes
              * @description The next experiment's genes (default: the study's headline genes).
@@ -8978,6 +8977,12 @@ export type components = {
             candidates: string[];
             defaults: components["schemas"]["PlannerBody"];
             efficiency: components["schemas"]["PlanEfficiency"];
+            /**
+             * Fold Note
+             * @description How the change worth finding relates to the call rule, in plain words.
+             * @default
+             */
+            fold_note: string;
             /** Genes */
             genes: components["schemas"]["PlannerGene"][];
             /** Groups */

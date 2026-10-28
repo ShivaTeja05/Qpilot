@@ -156,7 +156,13 @@ def _rerun(args: argparse.Namespace) -> int:
 def _plan_arguments(parser: argparse.ArgumentParser) -> None:
     from qpilot.qpcr.plan import SD_RT_HELP, SD_WELL_HELP, SIGMA_HELP
 
-    parser.add_argument("--fc", type=float, default=2.0, help="fold change to detect (default 2)")
+    parser.add_argument(
+        "--fc",
+        type=float,
+        default=2.5,
+        help="fold change to detect (default 2.5: above qPilot's 2-fold call threshold, which a "
+        "true 2-fold change reaches only about half the time)",
+    )
     parser.add_argument("--sd", type=float, default=None, help=SIGMA_HELP)
     parser.add_argument("--n", type=int, default=None, help="planned samples (subjects) per group")
     parser.add_argument("--alpha", type=float, default=0.05)
@@ -181,9 +187,19 @@ def _plan_arguments(parser: argparse.ArgumentParser) -> None:
     budget.add_argument("--cost-well", type=float, default=None, help="cost of one qPCR well")
     budget.add_argument(
         "--cq",
+        "--expected-cq",
+        dest="cq",
         type=float,
         default=None,
-        help="expected Cq of the target (accepted; the claim-floor check is not built yet)",
+        help="expected Cq of the target: sets the well SD's floor from Poisson sampling of the "
+        "copies a well holds at that Cq (the plan uses the larger of that and --sd-well)",
+    )
+    budget.add_argument(
+        "--cq-one-copy",
+        type=float,
+        default=None,
+        help="the Cq at which one copy crosses the threshold, i.e. your standard curve's "
+        "intercept (default 35, a lab-editable assumption); used with --cq",
     )
     parser.add_argument("--json", action="store_true", help="print JSON")
 
@@ -209,6 +225,7 @@ def _plan(args: argparse.Namespace) -> int:
             cost_rt=args.cost_rt,
             cost_well=args.cost_well,
             expected_cq=args.cq,
+            cq_one_copy=args.cq_one_copy,
         )
     except ValueError as err:
         print(f"qpilot plan: {err}", file=sys.stderr)
