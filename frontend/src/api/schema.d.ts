@@ -2513,6 +2513,30 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/where-to-look/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Decide Place
+         * @description A person's Decide… in a Studio session: the option leaves wells out or puts them back.
+         *
+         *     The place is traced again at the analysis in use and must still be the one shown (``stale``
+         *     when the chain head moved); only an option that changes the analysis (keep or a set-aside)
+         *     is applied. The study is analysed again (the ``analyse`` job) when the design changed.
+         */
+        post: operations["post_decide_place"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/where-to-look/open": {
         parameters: {
             query?: never;
@@ -2527,6 +2551,46 @@ export type paths = {
          * @description A person's Decide…: the place at ``rank`` becomes a Decision Card on Results.
          */
         post: operations["post_open_place"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/where-to-look/put-back": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Put Back
+         * @description A person puts back the wells they set aside at a place (a Studio session only).
+         */
+        post: operations["post_put_back"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/where-to-look/set-aside": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Set Aside
+         * @description What a person set aside from Trace in this session that is out of the analysis now.
+         */
+        get: operations["get_set_aside"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -11851,6 +11915,63 @@ export type components = {
             undetermined: string;
         };
         /**
+         * TraceDecideBody
+         * @description ``POST …/where-to-look/decide``: a person's option at the place at ``rank`` of a trace.
+         */
+        TraceDecideBody: {
+            /**
+             * Expected Head
+             * @description The chain head the trace was read at (409 stale when it moved).
+             */
+            expected_head: string;
+            /**
+             * Expected Inbox
+             * @description The session's inbox head the trace showed.
+             */
+            expected_inbox?: string | null;
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Option */
+            option: string;
+            /** Rank */
+            rank: number;
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
+        };
+        /**
+         * TraceDecided
+         * @description What a Trace decision did: wells left out or put back (the study is analysed again).
+         */
+        TraceDecided: {
+            /** Card Id */
+            card_id: string;
+            /** Inbox Head */
+            inbox_head: string;
+            /** @description The analysis of the changed design, when it changed. */
+            job?: components["schemas"]["JobView"] | null;
+            /** Left Out */
+            left_out: string[];
+            /** Message */
+            message: string;
+            /** Put Back */
+            put_back: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "left_out" | "put_back" | "kept";
+            /**
+             * Study Id
+             * @description The analysis the choice was made at.
+             */
+            study_id: string;
+        };
+        /**
          * TraceFlipSet
          * @description The fewest samples found whose removal together changes the call.
          */
@@ -12152,6 +12273,24 @@ export type components = {
             study_id: string;
         };
         /**
+         * TracePutBackBody
+         * @description ``POST …/where-to-look/put-back``: a person puts back the wells set aside at a place.
+         */
+        TracePutBackBody: {
+            /** Card Id */
+            card_id: string;
+            /**
+             * Expected Inbox
+             * @description The session's inbox head the trace showed.
+             */
+            expected_inbox?: string | null;
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
+        };
+        /**
          * TraceReference
          * @description What one control gene does to this result.
          */
@@ -12246,6 +12385,27 @@ export type components = {
              * @description Robust z of that value within its group.
              */
             z_in_group?: number | null;
+        };
+        /**
+         * TraceSetAsideView
+         * @description ``GET …/where-to-look/set-aside``: what a person set aside from Trace, to put back.
+         *
+         *     Independent of any trace: a gene whose comparison a set-aside removed cannot be traced, and
+         *     its wells can still be put back here.
+         */
+        TraceSetAsideView: {
+            /** Apply Note */
+            apply_note: string;
+            /** Can Apply */
+            can_apply: boolean;
+            /** Inbox Head */
+            inbox_head?: string | null;
+            /** Session */
+            session: string | null;
+            /** Set Aside */
+            set_aside: components["schemas"]["WhereSetAside"][];
+            /** Study Id */
+            study_id: string;
         };
         /**
          * TraceStudy
@@ -12834,6 +12994,12 @@ export type components = {
          */
         WhereOption: {
             /**
+             * Applies
+             * @description In a Studio session, deciding it changes the analysis: keep (puts back what a person left out here) or a set-aside (leaves wells out). Reading a well from other wells is a what-if only.
+             * @default false
+             */
+            applies: boolean;
+            /**
              * Changed Calls
              * @description Genes whose call this option changes.
              */
@@ -12849,6 +13015,12 @@ export type components = {
             id: string;
             /** Label */
             label: string;
+            /**
+             * N Wells
+             * @description Wells a set-aside leaves out of the analysis.
+             * @default 0
+             */
+            n_wells: number;
         };
         /**
          * WherePlace
@@ -12892,6 +13064,46 @@ export type components = {
             well?: string | null;
         };
         /**
+         * WhereSetAside
+         * @description Wells a person set aside from Trace in this session that are out of the analysis now.
+         */
+        WhereSetAside: {
+            /**
+             * Card Id
+             * @description The place they were set aside at (send it to put back).
+             */
+            card_id: string;
+            /** Decided At */
+            decided_at: string;
+            /**
+             * Matters
+             * @description When decided, the option changed a call.
+             */
+            matters: boolean;
+            /** Option */
+            option: string;
+            /** Option Label */
+            option_label: string;
+            /** Plate */
+            plate?: string | null;
+            /**
+             * Reason
+             * @description The person's reason, as they wrote it.
+             */
+            reason: string;
+            /** Sample */
+            sample: string;
+            /** Target */
+            target?: string | null;
+            /** Well */
+            well?: string | null;
+            /**
+             * Wells
+             * @description The wells left out (RUN/WELL).
+             */
+            wells: string[];
+        };
+        /**
          * WhereView
          * @description ``GET /studies/{id}/where-to-look``: from a gene, a sample or a well to the places to look.
          *
@@ -12906,6 +13118,18 @@ export type components = {
              * @description place_to_look, choice_to_look_at, nothing_to_look_at or absent.
              */
             answer: string;
+            /**
+             * Apply Note
+             * @description What Decide… does here, in words.
+             * @default
+             */
+            apply_note: string;
+            /**
+             * Can Apply
+             * @description A Studio session's current analysis: Decide… leaves wells out of the analysis (or puts them back) and analyses the study again.
+             * @default false
+             */
+            can_apply: boolean;
             /** Cannot Show */
             cannot_show: string[];
             /** Checked Nothing Found */
@@ -12917,6 +13141,11 @@ export type components = {
              * @description The chain head it was read at; send it to open a card.
              */
             head: string;
+            /**
+             * Inbox Head
+             * @description The session's inbox head it was read at (send it to decide).
+             */
+            inbox_head?: string | null;
             /**
              * Method Card
              * @default methods/trace.md
@@ -12945,6 +13174,11 @@ export type components = {
             };
             /** Session */
             session: string | null;
+            /**
+             * Set Aside
+             * @description Wells a person set aside from Trace that are out of the analysis now.
+             */
+            set_aside?: components["schemas"]["WhereSetAside"][];
             /** Study Id */
             study_id: string;
             /** Text */
@@ -17297,6 +17531,41 @@ export interface operations {
             };
         };
     };
+    post_decide_place: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TraceDecideBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceDecided"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     post_open_place: {
         parameters: {
             query?: never;
@@ -17319,6 +17588,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlaceOpened"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_put_back: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TracePutBackBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceDecided"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_set_aside: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceSetAsideView"];
                 };
             };
             /** @description Validation Error */

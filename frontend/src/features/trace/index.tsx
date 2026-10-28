@@ -7,7 +7,7 @@
 import { Route } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 import type { SectionProps } from "@/shell/sections";
-import { EmptyState } from "@/ui";
+import { EmptyState, JobCard } from "@/ui";
 import { scopeOf } from "./api";
 import { GeneTracePage } from "./GeneTrace";
 import { OverviewPage } from "./Overview";
@@ -30,6 +30,23 @@ export default function TraceSection({ workspace, rest }: SectionProps) {
   const scope = useMemo(() => (workspace ? scopeOf(workspace) : null), [workspace]);
   if (!workspace || !scope) return null;
   const gene = decoded(rest[0]);
+  if (!scope.studyId && workspace.results_visible) {
+    // A person's decision (in Trace, Controls or Curves) changed the design: the study is
+    // analysed again before it can be traced.
+    const job = workspace.active_jobs.find((j) => j.kind === "analyse");
+    return (
+      <Page>
+        <div className="flex flex-col gap-2" role="status">
+          <h1 className="text-lg font-semibold tracking-tight text-fg">Trace</h1>
+          <p className="text-[13px] text-muted">
+            The study is being analysed again with the decision you made; it is traced at the new
+            analysis as soon as that is done.
+          </p>
+          {job ? <JobCard id={job.id} job={null} /> : null}
+        </div>
+      </Page>
+    );
+  }
   if (!scope.studyId) {
     return (
       <Page>

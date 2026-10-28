@@ -1015,6 +1015,12 @@ def _absent(
 def _reason(ctx: TraceContext, unit: str, target: str, reason: str) -> dict[str, Any]:
     key, n = ctx.cells.get((unit, target), (None, 0))
     entry: dict[str, Any] = {"reason": reason, "target": target, "plate": None, "well": None}
+    if key is None:  # no well carries it: say so when a person left its wells out
+        w = ctx.wells
+        out = w[(w["unit"] == unit) & (w["target"] == target) & w["person_excluded"]]
+        if len(out):
+            first = out.sort_values(["run_id", "well"], kind="mergesort").iloc[0]
+            entry.update(plate=str(first["run_id"]), well=str(first["well"]), left_out=True)
     if key is not None:
         row = _row(ctx, key)
         entry.update(
@@ -2339,6 +2345,8 @@ def _facts(result: TraceResult) -> dict[str, Fact]:
             book.add(f"{rb}_well", reason.get("well"), path=f"absent.{n}.{m}")
             codes = [c for c in reason.get("note_codes") or [] if c == "no_amplification"]
             book.add(f"{rb}_note", " ".join(codes), path=f"absent.{n}.{m}.note_codes")
+            if reason.get("left_out"):  # a person left the well out of the analysis
+                book.add(f"{rb}_left_out", "left out", path=f"absent.{n}.{m}.left_out")
         restore = entry.get("restore") or {}
         book.add(f"{base}_restore_class", restore.get("class"), path=f"absent.{n}.restore")
         book.add(f"{base}_restore_group", restore.get("group"), path=f"absent.{n}.restore")
@@ -2486,6 +2494,63 @@ def _card(ctx: TraceContext, place: PlaceToLook) -> DecisionCard:
         "status": "open",
     }
     return DecisionCard(**data)  # CARD_KIND is registered in core/card_kinds.py
+
+
+# ---- a person's decision applied: the wells an option leaves out of the analysis ------------
+
+#: The options of a place that leave wells out of the analysis (a Studio session applies them as
+#: ``curve.exclude_well``). ``read_from_other_refs`` is a what-if only: the analysis never reads
+#: one well from other wells, it keeps a well or leaves it out.
+SET_ASIDE_OPTIONS: tuple[str, ...] = ("set_aside_value", "set_aside")
+#: The options a person can apply from Trace: keep (put back) and the set-asides.
+APPLIED_OPTIONS: tuple[str, ...] = ("keep", *SET_ASIDE_OPTIONS)
+
+
+def _study_wells_of(ctx: TraceContext, unit: str, target: str | None = None) -> list[str]:
+    """Every study well (``RUN/WELL``) of a unit, or of one unit x target, left out or not."""
+    w = ctx.wells
+    mask = (w["sample_type"] == "unkn") & (w["unit"] == unit)
+    if target is not None:
+        mask &= w["target"] == target
+    return sorted(str(k) for k in w.index[mask.to_numpy()])
+
+
+def option_wells(ctx: TraceContext, place: PlaceToLook, option: str) -> tuple[str, ...] | None:
+    """The wells (``RUN/WELL`` keys) an option at a place leaves out of the analysis.
+
+    ``keep`` leaves none out; ``set_aside_value`` (a target well) leaves out every well behind
+    that value (the well and its technical replicates, on every plate); ``set_aside`` leaves out
+    every study well of the sample (every gene, every plate), so it is in no comparison. Wells
+    already left out are listed too (the caller compares with the design). ``None`` for an
+    option that is not a set-aside (``read_from_other_refs``) or that the place does not have.
+
+    Leaving out every well of a reference gene of a sample takes the sample out of every
+    comparison (its normaliser needs every reference); that is ``set_aside``.
+    """
+    if option == "keep":
+        return ()
+    if option not in SET_ASIDE_OPTIONS or option not in place.options:
+        return None
+    if option == "set_aside_value":
+        if place.target is None:
+            return None
+        return tuple(_study_wells_of(ctx, place.sample, place.target))
+    return tuple(_study_wells_of(ctx, place.sample))
+
+
+def place_wells(ctx: TraceContext, place: PlaceToLook) -> tuple[str, ...]:
+    """The wells the place itself is: its well and replicates (a tube place: every well)."""
+    if place.role == "sample" or place.target is None:
+        return tuple(_study_wells_of(ctx, place.sample))
+    return tuple(_study_wells_of(ctx, place.sample, place.target))
+
+
+def place_universe(ctx: TraceContext, place: PlaceToLook) -> tuple[str, ...]:
+    """Every well any set-aside option of the place leaves out (what "keep" can put back)."""
+    found: set[str] = set()
+    for option in SET_ASIDE_OPTIONS:
+        found.update(option_wells(ctx, place, option) or ())
+    return tuple(sorted(found))
 
 
 def _intrinsic_checks(ctx: TraceContext, place: PlaceToLook) -> list[str]:

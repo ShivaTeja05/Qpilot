@@ -1,8 +1,11 @@
 /**
  * Where to look on the API's own answers for the seeded demo study (recorded/record_where.py):
  * a gene with a place whose options change its call, a gene no place changes, a sample, a well,
- * a sample in no comparison, the same gene after a person's Decide…, and a refused (stale)
- * Decide…. No number, gene, sample or well is typed in: every expectation is read from them.
+ * a sample in no comparison, and a refused (stale) Decide…, all at a Studio session's current
+ * analysis (Decide… applies the option: wells left out, the study analysed again); a person's
+ * applied Decide… and what is set aside after it; and the demo analysed outside Studio, where
+ * Decide… opens the place as a Decision Card (and the gene after it). No number, gene, sample or
+ * well is typed in: every expectation is read from them.
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -11,14 +14,18 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { api } from "@/api/client";
 import { count } from "@/lib/format";
 import { toast } from "@/ui";
-import type { PlaceOpened, WhereRoot, WhereView } from "../api";
+import type { PlaceOpened, SetAsideView, TraceDecided, WhereRoot, WhereView } from "../api";
+import { appliedWords } from "../SetAside";
 import { WhereResult, WhereToLook, analysisLine } from "../WhereToLook";
 import { cannotWords, checkedWords, placeWords } from "../words";
 import absentJson from "./recorded/where-absent.json";
 import calmJson from "./recorded/where-calm.json";
 import geneJson from "./recorded/where-gene.json";
 import openedViewJson from "./recorded/where-gene-opened.json";
+import outsideJson from "./recorded/where-gene-outside.json";
 import openedJson from "./recorded/place-opened.json";
+import decidedJson from "./recorded/place-decided.json";
+import setAsideJson from "./recorded/set-aside.json";
 import staleJson from "./recorded/place-stale.json";
 import sampleJson from "./recorded/where-sample.json";
 import wellJson from "./recorded/where-well.json";
@@ -30,6 +37,9 @@ const WELL = wellJson as unknown as WhereView;
 const ABSENT = absentJson as unknown as WhereView;
 const OPENED_VIEW = openedViewJson as unknown as WhereView;
 const OPENED = openedJson as PlaceOpened;
+const OUTSIDE = outsideJson as unknown as WhereView;
+const DECIDED = decidedJson as unknown as TraceDecided;
+const SET_ASIDE = setAsideJson as unknown as SetAsideView;
 const STALE = staleJson as { status: number; body: { error: { code: string; message: string } } };
 const WS = { key: "bc1d233e3866", kind: "session" as const };
 const noop = () => undefined;
@@ -81,14 +91,15 @@ describe("where to look, read", { timeout: 30_000 }, () => {
   });
 
   it("lists each place with what it fails, what each option does, and Decide… where it can", () => {
-    const decidable = GENE.places.filter((p) => p.can_decide && !p.card_status);
+    expect(OUTSIDE.can_apply).toBe(false);
+    const decidable = OUTSIDE.places.filter((p) => p.can_decide && !p.card_status);
     expect(decidable.length).toBeGreaterThan(0);
     const onDecide = vi.fn();
-    result(GENE, { onDecide });
+    result(OUTSIDE, { onDecide });
     const rows = places();
-    expect(rows).toHaveLength(GENE.places.length);
+    expect(rows).toHaveLength(OUTSIDE.places.length);
     for (const [i, row] of rows.entries()) {
-      const p = GENE.places[i]!;
+      const p = OUTSIDE.places[i]!;
       expect(row.textContent).toContain(placeWords(p));
       for (const c of p.checks) {
         expect(row.textContent).toContain(c.looks_like);
@@ -108,8 +119,44 @@ describe("where to look, read", { timeout: 30_000 }, () => {
     expect(decideButtons()).toHaveLength(decidable.length);
     fireEvent.click(decideButtons()[0]!);
     expect(onDecide).toHaveBeenCalledWith(decidable[0]);
+    expect(screen.getByText(OUTSIDE.decide_note)).toBeTruthy();
+    // outside Studio the panel says how to leave the wells out: open the file in Studio
+    expect(screen.getByText(OUTSIDE.apply_note)).toBeTruthy();
+    expect(OUTSIDE.apply_note).toMatch(/open the study's file in Studio/);
+    expect(screen.getByText(new RegExp(`^${OUTSIDE.n_more} more places found`))).toBeTruthy();
+  });
+
+  it("in a Studio session, Decide… opens the options and a reason, and applies the choice", () => {
+    expect(GENE.can_apply).toBe(true);
+    const place = GENE.places.find((p) => p.can_decide)!;
+    const onApply = vi.fn();
+    const onDecide = vi.fn();
+    result(GENE, { onApply, onDecide });
     expect(screen.getByText(GENE.decide_note)).toBeTruthy();
-    expect(screen.getByText(new RegExp(`^${GENE.n_more} more places found`))).toBeTruthy();
+    expect(screen.queryByText(GENE.apply_note, { selector: "p.mt-1" })).toBeNull();
+    const row = places()[GENE.places.indexOf(place)]!;
+    fireEvent.click(within(row).getByRole("button", { name: /^Decide…/ }));
+    const group = within(row).getByRole("radiogroup", { name: "What to do at this place" });
+    const radios = within(group).getAllByRole("radio") as HTMLInputElement[];
+    expect(radios).toHaveLength(place.options.length);
+    for (const [i, o] of place.options.entries()) {
+      expect(radios[i]!.disabled).toBe(!o.applies);
+      expect(group.textContent).toContain(appliedWords(o));
+    }
+    // reading a well from the other wells is a what-if: it cannot be chosen
+    const whatIf = place.options.find((o) => !o.applies);
+    if (whatIf) expect(appliedWords(whatIf)).toMatch(/what-if only/);
+    const aside = place.options.find((o) => o.id === "set_aside")!;
+    expect(aside.applies && aside.n_wells > 0).toBe(true);
+    fireEvent.click(radios[place.options.indexOf(aside)]!);
+    const decide = within(row).getByRole("button", { name: `Decide: ${aside.label}` });
+    expect((decide as HTMLButtonElement).disabled).toBe(true); // a reason first
+    fireEvent.change(within(row).getByRole("textbox"), {
+      target: { value: "  The well never rose. " },
+    });
+    fireEvent.click(decide);
+    expect(onApply).toHaveBeenCalledWith(place, "set_aside", "The well never rose.");
+    expect(onDecide).not.toHaveBeenCalled();
   });
 
   it("offers no Decide… where no option changes the call", () => {
@@ -175,14 +222,32 @@ describe("where to look, read", { timeout: 30_000 }, () => {
 
 describe("Decide…", { timeout: 30_000 }, () => {
   const scope = { key: WS.key, studyId: GENE.study_id, kind: WS.kind };
+  const outside = { key: OUTSIDE.study_id, studyId: OUTSIDE.study_id, kind: "study" as const };
   const ok = (data: unknown) =>
     Promise.resolve({ data, response: new Response(null, { status: 200 }) });
+  /** GET answers by route: the trace, and what is set aside (nothing unless given). */
+  const answers =
+    (view: WhereView, aside: SetAsideView = { ...SET_ASIDE, set_aside: [] }) =>
+    (route: string) =>
+      ok(route.endsWith("/set-aside") ? aside : view);
+  const whereCalls = (get: { mock: { calls: unknown[][] } }) =>
+    get.mock.calls.filter((c) => String(c[0]).endsWith("/where-to-look"));
 
-  it("opens the place as a Decision Card, sending the head the view was read at", async () => {
-    const get = vi.spyOn(api, "GET").mockImplementation((() => ok(GENE)) as never);
+  it("outside Studio, opens the place as a Decision Card, sending the head the view was read at", async () => {
+    const get = vi.spyOn(api, "GET").mockImplementation((() => ok(OUTSIDE)) as never);
     const post = vi.spyOn(api, "POST").mockImplementation((() => ok(OPENED)) as never);
     const success = vi.spyOn(toast, "success");
-    render(wrap(<WhereToLook workspace={WS} scope={scope} genes={[]} initial={rootOf(GENE)} />));
+    const GENE = OUTSIDE;
+    render(
+      wrap(
+        <WhereToLook
+          workspace={{ key: outside.key, kind: "study" }}
+          scope={outside}
+          genes={[]}
+          initial={rootOf(GENE)}
+        />,
+      ),
+    );
     const decide = (await screen.findAllByRole("button", { name: /^Decide…/ }))[0]!;
     const [route, init] = get.mock.calls[0] as unknown as [
       string,
@@ -219,8 +284,46 @@ describe("Decide…", { timeout: 30_000 }, () => {
     await waitFor(() => expect(get.mock.calls.length).toBeGreaterThan(1));
   });
 
+  it("applies a person's choice in a Studio session, sending both heads", async () => {
+    const get = vi.spyOn(api, "GET").mockImplementation(answers(GENE) as never);
+    const post = vi.spyOn(api, "POST").mockImplementation((() => ok(DECIDED)) as never);
+    const success = vi.spyOn(toast, "success");
+    render(wrap(<WhereToLook workspace={WS} scope={scope} genes={[]} initial={rootOf(GENE)} />));
+    fireEvent.click((await screen.findAllByRole("button", { name: /^Decide…/ }))[0]!);
+    const place = GENE.places.find((p) => p.can_decide)!;
+    const aside = place.options.find((o) => o.id === "set_aside")!;
+    const group = screen.getByRole("radiogroup", { name: "What to do at this place" });
+    fireEvent.click(within(group).getAllByRole("radio")[place.options.indexOf(aside)]!);
+    fireEvent.change(screen.getByRole("textbox", { name: /^Why this option/ }), {
+      target: { value: "The well never rose." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: `Decide: ${aside.label}` }));
+    await waitFor(() => expect(post).toHaveBeenCalled());
+    const [path, sent] = post.mock.calls[0] as unknown as [
+      string,
+      { body: Record<string, unknown> },
+    ];
+    expect(path).toBe("/api/studies/{study_id}/where-to-look/decide");
+    expect(sent.body).toEqual({
+      kind: GENE.root.kind,
+      id: GENE.root.id,
+      rank: place.rank,
+      option: "set_aside",
+      reason: "The well never rose.",
+      expected_head: GENE.head,
+      expected_inbox: GENE.inbox_head,
+    });
+    await waitFor(() => expect(success).toHaveBeenCalled());
+    const [, options] = success.mock.calls[0] as unknown as [string, { description: string }];
+    expect(options.description).toBe(DECIDED.message);
+    expect(DECIDED.status).toBe("left_out");
+    expect(DECIDED.left_out.length).toBe(aside.n_wells);
+    expect(DECIDED.job?.kind).toBe("analyse");
+    await waitFor(() => expect(whereCalls(get).length).toBeGreaterThan(1));
+  });
+
   it("reads the trace again and says so when something was decided since", async () => {
-    const get = vi.spyOn(api, "GET").mockImplementation((() => ok(GENE)) as never);
+    const get = vi.spyOn(api, "GET").mockImplementation(answers(GENE) as never);
     vi.spyOn(api, "POST").mockImplementation((() =>
       Promise.resolve({
         error: STALE.body,
@@ -228,26 +331,64 @@ describe("Decide…", { timeout: 30_000 }, () => {
       })) as never);
     render(wrap(<WhereToLook workspace={WS} scope={scope} genes={[]} initial={rootOf(GENE)} />));
     fireEvent.click((await screen.findAllByRole("button", { name: /^Decide…/ }))[0]!);
+    fireEvent.change(screen.getByRole("textbox", { name: /^Why this option/ }), {
+      target: { value: "Looked at the curve." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Decide: / }));
     expect(await screen.findByText(STALE.body.error.message)).toBeTruthy();
     expect(STALE.body.error.code).toBe("stale");
-    await waitFor(() => expect(get.mock.calls.length).toBeGreaterThan(1));
+    await waitFor(() => expect(whereCalls(get).length).toBeGreaterThan(1));
+  });
+
+  it("lists what a person set aside, and puts the wells back with a reason", async () => {
+    expect(SET_ASIDE.set_aside.length).toBeGreaterThan(0);
+    const entry = SET_ASIDE.set_aside[0]!;
+    vi.spyOn(api, "GET").mockImplementation(answers(GENE, SET_ASIDE) as never);
+    const post = vi
+      .spyOn(api, "POST")
+      .mockImplementation((() =>
+        ok({ ...DECIDED, status: "put_back", left_out: [], put_back: entry.wells })) as never);
+    const scoped = { ...scope, studyId: SET_ASIDE.study_id };
+    render(wrap(<WhereToLook workspace={WS} scope={scoped} genes={[]} />));
+    const list = await screen.findByRole("region", { name: "Set aside from Trace" });
+    expect(list.textContent).toContain(`Sample ${entry.sample}`);
+    expect(list.textContent).toContain(entry.reason);
+    expect(list.textContent).toContain(entry.option_label);
+    fireEvent.click(within(list).getByRole("button", { name: /^Put the wells back/ }));
+    const put = within(list).getByRole("button", { name: "Put the wells back" });
+    expect((put as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(within(list).getByRole("textbox"), {
+      target: { value: "The repeat agrees." },
+    });
+    fireEvent.click(put);
+    await waitFor(() => expect(post).toHaveBeenCalled());
+    const [path, sent] = post.mock.calls[0] as unknown as [
+      string,
+      { body: Record<string, unknown> },
+    ];
+    expect(path).toBe("/api/studies/{study_id}/where-to-look/put-back");
+    expect(sent.body).toEqual({
+      card_id: entry.card_id,
+      reason: "The repeat agrees.",
+      expected_inbox: SET_ASIDE.inbox_head,
+    });
   });
 
   it("traces exactly one thing: a well typed as PLATE:WELL", async () => {
-    const get = vi.spyOn(api, "GET").mockImplementation((() => ok(WELL)) as never);
+    const get = vi.spyOn(api, "GET").mockImplementation(answers(WELL) as never);
     render(wrap(<WhereToLook workspace={WS} scope={scope} genes={[]} />));
-    expect(get).not.toHaveBeenCalled();
+    expect(whereCalls(get)).toHaveLength(0);
     fireEvent.click(screen.getByRole("radio", { name: "A well" }));
     const place = WELL.places[0]!;
     const box = screen.getByRole("textbox", { name: "Well" });
     fireEvent.change(box, { target: { value: `${place.plate}` } });
     fireEvent.click(screen.getByRole("button", { name: "Trace" }));
     expect(await screen.findByRole("alert")).toBeTruthy();
-    expect(get).not.toHaveBeenCalled();
+    expect(whereCalls(get)).toHaveLength(0);
     fireEvent.change(box, { target: { value: `${place.plate}:${place.well}` } });
     fireEvent.click(screen.getByRole("button", { name: "Trace" }));
-    await waitFor(() => expect(get).toHaveBeenCalled());
-    const [, init] = get.mock.calls[0] as unknown as [
+    await waitFor(() => expect(whereCalls(get).length).toBeGreaterThan(0));
+    const [, init] = whereCalls(get)[0] as unknown as [
       string,
       { params: { query: Record<string, unknown> } },
     ];

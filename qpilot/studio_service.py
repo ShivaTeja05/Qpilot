@@ -45,7 +45,7 @@ import subprocess
 import threading
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -236,6 +236,51 @@ class _GatePlan:
     new: list[tuple[str, bool]]  # the changes no waiting proposal already asks for
     settle: list[tuple[str, str]]  # waiting proposals (id, accept | reject)
     elsewhere: list[str]  # left out another way (a Prism round trip): "keep" leaves them
+
+
+# ---- Trace: a person sets wells aside from Where to look (the decide_trace block) -------------
+
+TRACE_MAKER = "qpilot-trace"  # the rule that proposes the exclusions of a Trace decision
+TRACE_MODEL = "trace-v1"
+
+
+@dataclass(frozen=True)
+class TraceChoice:
+    """One option at one place Trace pointed at (built by the server from the trace, never sent).
+
+    The shape :func:`_gate_plan` reads (``card_id``, ``option``, ``wells``, ``universe``):
+    ``wells`` are what the option leaves out (none for ``keep``), ``universe`` every well any
+    set-aside of the place leaves out (what "keep" can put back), ``place_wells`` the place's
+    own wells (recorded when a keep changes nothing). ``matters``: the option (for ``keep``,
+    any option) changes a call at the analysis in use. ``study_id`` is the analysis traced.
+    """
+
+    study_id: str
+    card_id: str
+    option: str
+    label: str
+    where: str
+    sample: str
+    well: str | None
+    checks: tuple[str, ...]
+    wells: tuple[str, ...]
+    universe: tuple[str, ...]
+    place_wells: tuple[str, ...]
+    matters: bool
+
+
+@dataclass
+class TraceSetAside:
+    """Wells a person set aside from one Trace place that are out of the analysis now."""
+
+    card_id: str
+    option: str
+    sample: str
+    well: str | None
+    reason: str
+    decided_at: str
+    matters: bool
+    wells: list[str]
 
 
 @dataclass
@@ -1685,6 +1730,160 @@ class Studio:
                 out.setdefault(card, []).append(proposal)
         return out
 
+    # ---- Trace: a person sets wells aside from Where to look ---------------------------------
+
+    def decide_trace(
+        self,
+        session_id: str,
+        choice: TraceChoice,
+        actor: Actor,
+        reason: str,
+        expected_head: str | None = None,
+    ) -> GateDecision:
+        """A person chooses an option at a place Trace pointed at: the wells become exclusions.
+
+        Run Gate's path (:meth:`decide_gate`), with Trace as the proposer: a set-aside makes one
+        ``curve.exclude_well`` per well it leaves out (made by Trace, accepted by the person with
+        the reason) and puts back the place's other wells a person left out; "keep" puts back
+        the wells a person left out at this place, or, when nothing has to change, records the
+        keep (the place's own wells, Trace's exclusions rejected with the reason). One write to
+        the inbox (all or nothing); a changed design is analysed again (:meth:`study`), and the
+        person's Decision Card choices are carried to it (:meth:`_switch`).
+
+        Only a person; refused while the results are hidden, and ``stale`` when the session's
+        analysis is no longer the one traced (``choice.study_id``) or a person decided anything
+        in the inbox since ``expected_head``.
+        """
+        from qpilot.core.proposals import clean_reason
+
+        _require_human(actor, "decide what Trace's place to look means for the analysis")
+        reason = clean_reason(reason, required=True)
+        assembly, view = self._gate_view(session_id, choice)  # type: ignore[arg-type]
+        if isinstance(assembly, GateDecision):
+            return assembly
+        # What the option can put back: only the wells a person left out from this place (a
+        # well of the sample left out in Curves or from Controls stays as it is).
+        mine = {
+            w
+            for w, p in _latest_exclusions(view).items()
+            if trace_card_of(p) == choice.card_id and leaves_out(p)
+        }
+        choice = replace(choice, universe=tuple(sorted(set(choice.wells) | mine)))
+        # Run Gate's plan: a waiting request from no card (or from Trace) on these wells is
+        # settled by the same click; one tied to a Run Gate card is left for that card.
+        plan = _gate_plan(assembly, view, choice)  # type: ignore[arg-type]
+        new = [(self._trace_proposal(session_id, choice, w, x), "accept") for w, x in plan.new]
+        settle = list(plan.settle)
+        if not new and not settle:
+            if choice.option != GATE_KEEP:
+                raise StudioError("these wells are already left out of the analysis")
+            excluded = set(assembly.design.excluded_wells)  # type: ignore[union-attr]
+            keep = [w for w in choice.place_wells if w not in excluded]
+            if not keep:
+                raise StudioError("nothing to decide: none of these wells is in the analysis")
+            new = [(self._trace_proposal(session_id, choice, w, True), "reject") for w in keep]
+        since = expected_head if expected_head is not None else view.head
+        outcomes = self.store.proposals(session_id).decide_together(
+            new, settle, actor, reason, proposer="system", expected_head=since
+        )
+        first = outcomes[0]
+        if first.status in ("stale", "refused"):
+            return GateDecision(status=first.status, head=first.head, reason=first.reason)
+        decided = [o.proposal for o in outcomes if o.proposal is not None]
+        out = [p.subject for p in decided if p.status != "rejected" and leaves_out(p)]
+        back = [p.subject for p in decided if p.status != "rejected" and not leaves_out(p)]
+        status = "left_out" if out else "put_back" if back else "kept"
+        return GateDecision(
+            status=status,
+            head=outcomes[-1].head,
+            left_out=sorted(set(out)),
+            put_back=sorted(set(back)),
+            not_put_back=list(plan.elsewhere),
+            proposals=decided,
+        )
+
+    def _trace_proposal(
+        self, session_id: str, choice: TraceChoice, well: str, excluded: bool
+    ) -> Proposal:
+        """One well of a Trace choice as a ``curve.exclude_well`` proposal made by Trace.
+
+        Blind-safe like Run Gate's: the consequence says only whether the option changes a
+        call at the analysis in use and which place and option it came from (the sample and
+        its well, never a gene, a direction or a number).
+        """
+        words = "leave it out" if excluded else "put it back"
+        checks = f" ({', '.join(choice.checks)})" if choice.checks else ""
+        return Proposal(
+            study_id=session_id,
+            kind=EXCLUDE_KIND,
+            subject=well,
+            payload={"excluded": excluded},
+            evidence=[
+                Evidence(kind="rule", ref=TRACE_MAKER, note=f"Trace: {choice.where}"),
+                Evidence(kind="well", ref=well, note=f"a well of the place in Trace: {words}"),
+            ],
+            alternatives=[{"excluded": not excluded}],
+            consequence={
+                "matters": choice.matters,
+                "trace": {
+                    "card_id": choice.card_id,
+                    "option": choice.option,
+                    "study_id": choice.study_id,
+                    "sample": choice.sample,
+                    "well": choice.well,
+                },
+            },
+            level="Moderate",
+            reasons=[f"Trace{checks}, {choice.where}: {choice.label}"],
+            made_by=MadeBy(kind="rule", provider=TRACE_MAKER, model=TRACE_MODEL),
+        )
+
+    def trace_record(self, session_id: str) -> dict[str, list[Proposal]]:
+        """Every ``curve.exclude_well`` proposal tied to a place Trace pointed at, by card."""
+        out: dict[str, list[Proposal]] = {}
+        for proposal in self.store.proposals(session_id).proposals(kind_prefix=EXCLUDE_KIND):
+            card = trace_card_of(proposal)
+            if card is not None:
+                out.setdefault(card, []).append(proposal)
+        return out
+
+    def trace_left_out(self, session_id: str) -> dict[str, TraceSetAside]:
+        """The wells a person set aside from Trace that are out of the analysis now, by card.
+
+        A well counts for the card whose acceptance is the person's latest decision on it (a
+        well put back in Curves, or left out again from another place, belongs there now) and
+        only while the confirmed design leaves it out.
+        """
+        assembly, view = self._confirmed_view(session_id)
+        if assembly is None or assembly.design is None:
+            return {}
+        excluded = set(assembly.design.excluded_wells)
+        out: dict[str, TraceSetAside] = {}
+        for well, p in _latest_exclusions(view).items():
+            card = trace_card_of(p)
+            if card is None or not leaves_out(p) or well not in excluded:
+                continue
+            info = (p.consequence or {}).get("trace") or {}
+            found = out.get(card)
+            if found is None:
+                found = out[card] = TraceSetAside(
+                    card_id=card,
+                    option=str(info.get("option") or ""),
+                    sample=str(info.get("sample") or ""),
+                    well=info.get("well") if isinstance(info.get("well"), str) else None,
+                    reason=p.reason or "",
+                    decided_at=p.decided_at or "",
+                    matters=bool((p.consequence or {}).get("matters")),
+                    wells=[],
+                )
+            found.wells.append(well)
+            if (p.decided_at or "") >= found.decided_at:
+                found.reason, found.decided_at = p.reason or "", p.decided_at or ""
+                found.option = str(info.get("option") or found.option)
+        for entry in out.values():
+            entry.wells.sort()
+        return out
+
     # ---- the Import Trust card: what curves processed before export mean --------------------
 
     def decide_import_trust(
@@ -2357,6 +2556,22 @@ def gate_card_of(proposal: Proposal) -> str | None:
     """The Run Gate card a ``curve.exclude_well`` proposal came from, if it did."""
     gate = (proposal.consequence or {}).get("gate") if proposal.kind == EXCLUDE_KIND else None
     card = gate.get("card_id") if isinstance(gate, dict) else None
+    return card if isinstance(card, str) else None
+
+
+def _latest_exclusions(view: InboxView) -> dict[str, Proposal]:
+    """Per well, the ``curve.exclude_well`` a person accepted last (decision order)."""
+    latest: dict[str, Proposal] = {}
+    for p in view.accepted:
+        if p.kind == EXCLUDE_KIND:
+            latest[p.subject] = p
+    return latest
+
+
+def trace_card_of(proposal: Proposal) -> str | None:
+    """The Trace place (its card id) a ``curve.exclude_well`` proposal came from, if it did."""
+    found = (proposal.consequence or {}).get("trace") if proposal.kind == EXCLUDE_KIND else None
+    card = found.get("card_id") if isinstance(found, dict) else None
     return card if isinstance(card, str) else None
 
 
