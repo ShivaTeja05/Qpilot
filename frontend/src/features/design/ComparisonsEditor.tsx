@@ -104,9 +104,10 @@ export function ComparisonsEditor({
                 <IconButton
                   size="sm"
                   label={`Remove ${a} vs ${b}`}
-                  icon={<X />}
                   onClick={() => update({ pairs: choice.pairs.filter((_, j) => j !== i) })}
-                />
+                >
+                  <X />
+                </IconButton>
               </li>
             ))}
           </ul>

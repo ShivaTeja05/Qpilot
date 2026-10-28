@@ -57,7 +57,6 @@ export function OverviewPage({ workspace, scope }: { workspace: Workspace; scope
     return (
       <>
         <Header />
-        <TraceComparisons scope={scope} rule={view.trace.rule} />
         <TraceComparisons scope={scope} />
         {q.error ? (
           <TraceWaiting error={q.error} onRetry={() => void q.refetch()} what="the study" />
@@ -74,6 +73,7 @@ export function OverviewPage({ workspace, scope }: { workspace: Workspace; scope
   return (
     <>
       <Header />
+      <TraceComparisons scope={scope} rule={view.trace.rule} />
       <p className="mb-5 max-w-4xl text-[14px] leading-relaxed text-fg">
         <FactText text={view.texts.summary} />
       </p>
