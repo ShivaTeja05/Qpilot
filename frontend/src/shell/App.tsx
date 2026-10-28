@@ -244,11 +244,19 @@ function Shell() {
     [qc],
   );
 
-  // The window title names the section and the study.
+  // The window title names the section and the study; a link that leads nowhere says so (not
+  // "Open", the page it falls back to).
+  const gone =
+    route.notFound != null ||
+    (route.key != null && frameQuery.error instanceof ApiError && frameQuery.error.status === 404);
   useEffect(() => {
     const label = SECTION[route.section].label;
-    document.title = frame ? `${label} · ${frame.title} — qPilot` : `${label} — qPilot`;
-  }, [route.section, frame]);
+    document.title = gone
+      ? "Not found — qPilot"
+      : frame
+        ? `${label} · ${frame.title} — qPilot`
+        : `${label} — qPilot`;
+  }, [route.section, frame, gone]);
 
   // After moving to another section, start reading at its top (focus follows for screen readers).
   // Keyed on the section, not its `rest`: a section that keeps state in the path (the Audit's
