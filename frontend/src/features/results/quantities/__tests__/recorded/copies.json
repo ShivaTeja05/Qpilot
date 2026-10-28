@@ -1,0 +1,17 @@
+{
+ "copies": 324833521.58709407,
+ "copies_per_ng": 324833521.58709407,
+ "formula": "copies = ng × 10⁻⁹ g/ng × 6.02214076 × 10²³ /mol ÷ molar mass (g/mol); molar mass: dsDNA bp × 617.96 + 36.04, ssDNA nt × 308.97 + 18.02, ssRNA nt × 320.5 + 159.0",
+ "kind": "dsDNA",
+ "kind_words": "double-stranded DNA (a plasmid, PCR product or gBlock)",
+ "length": 3000.0,
+ "molar_mass": 1853916.04,
+ "ng": 1.0,
+ "reference": "Thermo Fisher Scientific, DNA and RNA molecular weights and conversions",
+ "series": [
+  324833521.58709407,
+  32483352.158709407,
+  3248335.2158709406,
+  324833.52158709406
+ ]
+}

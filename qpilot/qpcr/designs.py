@@ -678,9 +678,40 @@ def _apply(
         else:  # the primary alone: the axis is not tested, and the design is as before
             axes.pop(subject, None)
         data["axes"] = axes or None
+    elif kind == "choice.reaction_input":
+        data["reaction_input"] = reaction_input(payload)
     elif kind == "prism.exclusion_reason":
         _exclusion(data, payload, curves)
     return data  # prism.project and prism.value_edit do not change the design
+
+
+def reaction_input(payload: Mapping[str, Any]) -> dict[str, Any] | None:
+    """The :class:`ReactionInput` (plain data) a ``choice.reaction_input`` payload sets.
+
+    ``None`` when every field is empty (nothing is set: the design is as before).
+    """
+    from qpilot.schemas_studio import ReactionInput
+
+    values: dict[str, Any] = {}
+    for name in ("template_ul", "input_ng"):
+        value = payload.get(name)
+        if value is None or value == "":
+            continue
+        if isinstance(value, bool):
+            raise DesignError(f"{name} is a number, not {value!r}")
+        try:
+            values[name] = float(value)
+        except (TypeError, ValueError):
+            raise DesignError(f"{name} is a number, not {value!r}") from None
+    unit = payload.get("unit")
+    if unit is not None and str(unit).strip():
+        values["unit"] = str(unit).strip()
+    if not values:
+        return None
+    try:
+        return ReactionInput(**values).model_dump()
+    except ValueError as err:
+        raise DesignError(str(err).splitlines()[-1]) from None
 
 
 def comparison_plan(payload: Mapping[str, Any]) -> dict[str, Any] | None:

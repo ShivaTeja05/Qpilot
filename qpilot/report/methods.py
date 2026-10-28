@@ -9,6 +9,7 @@ study leaves something open (a choice not yet decided) the paragraph says so.
 from __future__ import annotations
 
 from collections import Counter
+from typing import Any
 
 from qpilot.explain.words import noun
 from qpilot.io.datasets import VERMEULEN_SHA256
@@ -81,6 +82,15 @@ REFERENCES: dict[str, str] = {
     "bh1995": (
         "Benjamini Y, Hochberg Y. Controlling the false discovery rate: a practical and powerful "
         "approach to multiple testing. J R Stat Soc B. 1995;57(1):289–300."
+    ),
+    "forootan2017": (
+        "Forootan A, Sjöback R, Björkman J, Sjögreen B, Linz L, Kubista M. Methods to determine "
+        "limit of detection and limit of quantification in quantitative real-time PCR (qPCR). "
+        "Biomol Detect Quantif. 2017;12:1–6. doi:10.1016/j.bdq.2017.04.001"
+    ),
+    "miller2010": (
+        "Miller JN, Miller JC. Statistics and Chemometrics for Analytical Chemistry. 6th ed. "
+        "Harlow: Pearson; 2010 (section 5.6, inverse prediction from a calibration line)."
     ),
     "miqe2": (
         "Bustin SA, Ruijter JM, van den Hoff MJB, et al. MIQE 2.0: revision of the Minimum "
@@ -705,9 +715,79 @@ def software(c: Ctx, cite: Cites) -> list[Part]:
     return parts
 
 
+def study_quantities(c: Ctx) -> Any:
+    """The study's absolute quantification (:mod:`qpilot.qpcr.absolute_study`), or None."""
+    from qpilot.qpcr.absolute_study import QuantitiesUnavailable, for_study
+
+    source = c.inputs.source
+    if source is None:
+        return None
+    try:
+        found = for_study(c.inputs.study_id, c.result.input_sha256, source, c.inputs.design)
+    except (QuantitiesUnavailable, OSError, ValueError):
+        return None
+    return found.result if found.result.curves else None
+
+
+def quantities(c: Ctx, cite: Cites) -> list[Part]:
+    """Absolute quantification: the standard curves, LOD/LOQ and the unknowns' intervals."""
+    result = study_quantities(c)
+    if result is None:
+        return []
+    fitted = [x for x in result.curves if x.fit is not None and x.scope == "plate"]
+    if not fitted:
+        return []
+    path = "quantities:/curves"
+    n = c.count("abs_n_curves", len(fitted), f"{path}@fitted")
+    n_assays = c.count("abs_n_assays", len({x.target for x in fitted}), f"{path}@assays")
+    effs = [x.fit.efficiency for x in fitted]
+    r2s = [x.fit.r2 for x in fitted]
+    lo = c.num("abs_eff_min", min(effs), f"{path}/efficiency@min", "{:.1%}")
+    hi = c.num("abs_eff_max", max(effs), f"{path}/efficiency@max", "{:.1%}")
+    r2 = c.num("abs_r2_min", min(r2s), f"{path}/r2@min", "{:.3f}")
+    sources = {x.quantity_source for x in fitted}
+    where = {
+        "design": "as a person set them on the Design page",
+        "file": "as the input file declares them",
+        "name": "from the standards' names",
+    }
+    told = "; ".join(where.get(s, s.replace("+", " and ")) for s in sorted(sources))
+    rate = c.num(
+        "abs_lod_rate", result.settings.lod_rate, "quantities:/settings/lod_rate", "{:.0%}"
+    )
+    cv = c.num("abs_loq_cv", result.settings.loq_cv, "quantities:/settings/loq_cv", "{:.0%}")
+    parts: list[Part] = [
+        f"Absolute quantities were read from {n} standard curves ({n_assays} assays, one per "
+        f"assay and plate; the standards' quantities {told}): Cq regressed on log10 quantity "
+        "over the detected standard wells by ordinary least squares, efficiency "
+        f"10^(−1/slope) − 1 from {lo} to {hi}, R² at least {r2}. Each unit's quantity is the "
+        "inverse prediction from the mean Cq of its detected wells, with a 95 % prediction "
+        "interval ",
+        cite("miller2010"),
+        f". The limit of detection is the lowest standard detected in at least {rate} of its "
+        "wells, and the limit of quantification the lowest whose read-back quantities have a "
+        f"log-normal coefficient of variation of at most {cv} ",
+        cite("forootan2017"),
+    ]
+    units = result.unknowns
+    if units:
+        out = sum(1 for u in units if {"above_top", "below_lowest"} & set(u.flags))
+        low = sum(1 for u in units if {"below_loq", "below_lod"} & set(u.flags))
+        n_units = c.count("abs_n_units", len(units), "quantities:/unknowns@len", "{:,}")
+        n_out = c.count("abs_n_extrapolated", out, "quantities:/unknowns@extrapolated", "{:,}")
+        n_low = c.count("abs_n_below_limit", low, "quantities:/unknowns@below_limits", "{:,}")
+        parts.append(
+            f"; of {n_units} unit estimates, {n_out} lie outside the standards (extrapolated) and "
+            f"{n_low} below the limit of quantification or detection, and are flagged as such"
+        )
+    parts.append(".")
+    return parts
+
+
 PARAGRAPHS = (
     ("data", "Data", data),
     ("curves", "Curve analysis", curves),
+    ("quantities", "Absolute quantification", quantities),
     ("normalisation", "Reference genes and normalisation", normalisation),
     ("comparison", "Groups and comparison", comparison),
     ("robustness", "Robustness to analysis choices", robustness),

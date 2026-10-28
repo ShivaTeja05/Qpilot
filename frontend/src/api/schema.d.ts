@@ -2468,6 +2468,66 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/quantities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Quantities
+         * @description The study's standard curves and how many units each assay quantified.
+         */
+        get: operations["get_quantities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/quantities/{target}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Assay Quantities
+         * @description One assay: every curve with its points and prediction band, every unit's quantity.
+         */
+        get: operations["get_assay_quantities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/quantities/reaction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Reaction
+         * @description A person records the template volume and input amount of one reaction (with a reason).
+         */
+        post: operations["post_reaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/record": {
         parameters: {
             query?: never;
@@ -2932,6 +2992,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/tools/copies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Copies
+         * @description How many copies ``ng`` of a ``length``-long molecule hold, and its dilution series.
+         */
+        get: operations["get_copies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/workspaces": {
         parameters: {
             query?: never;
@@ -3352,6 +3432,40 @@ export type components = {
              * @description Why it is asked again, in words.
              */
             why: string;
+        };
+        /**
+         * AssayQuantities
+         * @description One assay: every curve in full and every unit's quantity.
+         */
+        AssayQuantities: {
+            /** Curves */
+            curves: components["schemas"]["CurveDetail"][];
+            reaction?: components["schemas"]["ReactionView"] | null;
+            settings: components["schemas"]["QuantitiesSettings"];
+            /** Study Id */
+            study_id: string;
+            /** Target */
+            target: string;
+            /** Unit */
+            unit: string;
+            /** Units */
+            units: components["schemas"]["UnitQuantity"][];
+        };
+        /**
+         * AssaySummary
+         * @description One assay: its curves and how many units were quantified or flagged.
+         */
+        AssaySummary: {
+            /** Curves */
+            curves: components["schemas"]["CurveSummary"][];
+            /** N Flagged */
+            n_flagged: number;
+            /** N Quantified */
+            n_quantified: number;
+            /** N Units */
+            n_units: number;
+            /** Target */
+            target: string;
         };
         /**
          * AtChoices
@@ -4924,6 +5038,20 @@ export type components = {
             /** Title */
             title: string;
         };
+        /**
+         * BandPoint
+         * @description The fitted line and its 95 % prediction band for one new well, at one log10 quantity.
+         */
+        BandPoint: {
+            /** Cq */
+            cq: number;
+            /** High */
+            high: number;
+            /** Log10 Quantity */
+            log10_quantity: number;
+            /** Low */
+            low: number;
+        };
         /** Body_attach_sheet */
         Body_attach_sheet: {
             /**
@@ -6292,6 +6420,45 @@ export type components = {
             target: string;
         };
         /**
+         * CopiesAnswer
+         * @description ng to copies for a standard: the numbers and the formula, in words.
+         */
+        CopiesAnswer: {
+            /**
+             * Copies
+             * @description Copies in that many ng.
+             */
+            copies: number;
+            /** Copies Per Ng */
+            copies_per_ng: number;
+            /** Formula */
+            formula: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "dsDNA" | "ssDNA" | "RNA";
+            /** Kind Words */
+            kind_words: string;
+            /** Length */
+            length: number;
+            /**
+             * Molar Mass
+             * @description g/mol of one molecule.
+             */
+            molar_mass: number;
+            /** Ng */
+            ng: number;
+            /** Reference */
+            reference: string;
+            /**
+             * Series
+             * @description A serial dilution from `copies` (when a step was given).
+             * @default []
+             */
+            series: number[];
+        };
+        /**
          * CurveCallsView
          * @description Each well of one target called under every rule (facts about curves, no conclusion).
          */
@@ -6312,6 +6479,89 @@ export type components = {
             wells: components["schemas"]["WellCall"][];
         };
         /**
+         * CurveDetail
+         * @description A curve with every point, level and the prediction band (for the chart).
+         */
+        CurveDetail: {
+            /** Band */
+            band: components["schemas"]["BandPoint"][];
+            /**
+             * Efficiency
+             * @description 10^(-1/slope) - 1 (1.0 = 100 %).
+             */
+            efficiency?: number | null;
+            /** Efficiency High */
+            efficiency_high?: number | null;
+            /** Efficiency Low */
+            efficiency_low?: number | null;
+            /** Fitted */
+            fitted: boolean;
+            /** Id */
+            id: string;
+            /** Intercept */
+            intercept?: number | null;
+            /** Levels */
+            levels: components["schemas"]["LevelView"][];
+            lod: components["schemas"]["LimitView"];
+            lod_model?: components["schemas"]["LimitView"] | null;
+            loq: components["schemas"]["LimitView"];
+            /** Lowest */
+            lowest?: number | null;
+            /**
+             * N Levels
+             * @default 0
+             */
+            n_levels: number;
+            /**
+             * N Unknowns
+             * @description Units read from this curve.
+             * @default 0
+             */
+            n_unknowns: number;
+            /**
+             * N Wells
+             * @default 0
+             */
+            n_wells: number;
+            /** Points */
+            points: components["schemas"]["StandardPointView"][];
+            /**
+             * Problem
+             * @default
+             */
+            problem: string;
+            /**
+             * Quantity Source
+             * @description design, file, name, or a mix joined with '+'.
+             */
+            quantity_source: string;
+            /** R2 */
+            r2?: number | null;
+            /** Runs */
+            runs: string[];
+            /**
+             * S Yx
+             * @description Residual SD of Cq about the line.
+             */
+            s_yx?: number | null;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "plate" | "pooled";
+            /** Slope */
+            slope?: number | null;
+            /** Target */
+            target: string;
+            /** Top */
+            top?: number | null;
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
+        };
+        /**
          * CurveSeries
          * @description One well's raw curve.
          */
@@ -6328,6 +6578,83 @@ export type components = {
             target: string;
             /** Well */
             well: string;
+        };
+        /**
+         * CurveSummary
+         * @description One standard curve's numbers (per assay and plate, or pooled over plates).
+         */
+        CurveSummary: {
+            /**
+             * Efficiency
+             * @description 10^(-1/slope) - 1 (1.0 = 100 %).
+             */
+            efficiency?: number | null;
+            /** Efficiency High */
+            efficiency_high?: number | null;
+            /** Efficiency Low */
+            efficiency_low?: number | null;
+            /** Fitted */
+            fitted: boolean;
+            /** Id */
+            id: string;
+            /** Intercept */
+            intercept?: number | null;
+            lod: components["schemas"]["LimitView"];
+            lod_model?: components["schemas"]["LimitView"] | null;
+            loq: components["schemas"]["LimitView"];
+            /** Lowest */
+            lowest?: number | null;
+            /**
+             * N Levels
+             * @default 0
+             */
+            n_levels: number;
+            /**
+             * N Unknowns
+             * @description Units read from this curve.
+             * @default 0
+             */
+            n_unknowns: number;
+            /**
+             * N Wells
+             * @default 0
+             */
+            n_wells: number;
+            /**
+             * Problem
+             * @default
+             */
+            problem: string;
+            /**
+             * Quantity Source
+             * @description design, file, name, or a mix joined with '+'.
+             */
+            quantity_source: string;
+            /** R2 */
+            r2?: number | null;
+            /** Runs */
+            runs: string[];
+            /**
+             * S Yx
+             * @description Residual SD of Cq about the line.
+             */
+            s_yx?: number | null;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "plate" | "pooled";
+            /** Slope */
+            slope?: number | null;
+            /** Target */
+            target: string;
+            /** Top */
+            top?: number | null;
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
         };
         /**
          * CurveView
@@ -6863,6 +7190,38 @@ export type components = {
             unchanged: number;
         };
         /**
+         * DetectedOnlyView
+         * @description A withheld gene measured in both groups but detected in one only (or in neither).
+         *
+         *     No fold change exists for it (a ratio to nothing); the detected group's ΔCq (the gene's Cq
+         *     minus the mean Cq of the control genes, per biological unit, then the mean) says how much.
+         */
+        DetectedOnlyView: {
+            /**
+             * Absent
+             * @description The group (or groups) it was detected in no unit of.
+             */
+            absent: string;
+            /**
+             * Dcq
+             * @description Mean ΔCq of the detected group.
+             */
+            dcq?: number | null;
+            /** Dcq Sd */
+            dcq_sd?: number | null;
+            /**
+             * Group
+             * @description The group it was detected in; null: in neither.
+             */
+            group: string | null;
+            /** N Absent */
+            n_absent: number;
+            /** N Detected */
+            n_detected: number;
+            /** N Group */
+            n_group: number;
+        };
+        /**
          * DownloadLink
          * @description A file qPilot wrote into its export folder (beside the store), offered for download.
          */
@@ -7305,6 +7664,16 @@ export type components = {
             note: string;
             /** Seq */
             seq: number | null;
+        };
+        /**
+         * FlagView
+         * @description One flag on an unknown, with its words.
+         */
+        FlagView: {
+            /** Id */
+            id: string;
+            /** Words */
+            words: string;
         };
         /**
          * FlipOption
@@ -9056,6 +9425,34 @@ export type components = {
             word: string;
         };
         /**
+         * LevelView
+         * @description One standard level: how often it was detected and how well its quantity reads back.
+         */
+        LevelView: {
+            /**
+             * Back Quantity
+             * @description Geometric mean of the read-back quantities.
+             */
+            back_quantity: number | null;
+            /**
+             * Cv
+             * @description Log-normal CV of the read-back quantities (0.35 = 35 %).
+             */
+            cv: number | null;
+            /** Mean Cq */
+            mean_cq: number | null;
+            /** N Detected */
+            n_detected: number;
+            /** N Wells */
+            n_wells: number;
+            /** Quantity */
+            quantity: number;
+            /** Rate */
+            rate: number | null;
+            /** Sd Cq */
+            sd_cq: number | null;
+        };
+        /**
          * Limitation
          * @description One limitation, in plain words.
          */
@@ -9063,6 +9460,27 @@ export type components = {
             /** Id */
             id: string;
             text: components["schemas"]["ReportText"];
+        };
+        /**
+         * LimitView
+         * @description A limit of detection or of quantification: the quantity, how it was found, in words.
+         */
+        LimitView: {
+            /**
+             * At Most
+             * @description Every level passed: the true limit is at or below this.
+             * @default false
+             */
+            at_most: boolean;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "empirical" | "logistic" | "lowest_standard" | "not_determined";
+            /** Quantity */
+            quantity: number | null;
+            /** Words */
+            words: string;
         };
         /**
          * LinkBody
@@ -9832,6 +10250,16 @@ export type components = {
             reason: string;
             /** Samples */
             samples: string[];
+        };
+        /**
+         * NotQuantified
+         * @description An assay with standards but no curve, and why.
+         */
+        NotQuantified: {
+            /** Reason */
+            reason: string;
+            /** Target */
+            target: string;
         };
         /**
          * OpenDone
@@ -11512,7 +11940,7 @@ export type components = {
              * Kind
              * @enum {string}
              */
-            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.pair" | "design.dilution_series" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "curve.import_trust" | "choice.axis" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
+            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.pair" | "design.dilution_series" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "curve.import_trust" | "choice.axis" | "choice.reaction_input" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
             /**
              * Level
              * @default Low
@@ -11861,6 +12289,70 @@ export type components = {
             summary?: components["schemas"]["FactText"] | null;
         };
         /**
+         * QuantitiesSettings
+         * @description The thresholds in use, shown wherever they apply.
+         */
+        QuantitiesSettings: {
+            /** Lod Rate */
+            lod_rate: number;
+            /** Loq Cv */
+            loq_cv: number;
+            /** Min Levels */
+            min_levels: number;
+            /** Prediction Level */
+            prediction_level: number;
+        };
+        /**
+         * QuantitiesView
+         * @description The study's absolute quantification: every assay with standards.
+         */
+        QuantitiesView: {
+            /** Assays */
+            assays: components["schemas"]["AssaySummary"][];
+            /**
+             * Available
+             * @description False: no standard has a quantity (see `why`).
+             */
+            available: boolean;
+            /**
+             * Can Set Reaction
+             * @description A person can record the reaction input (a Studio session).
+             * @default false
+             */
+            can_set_reaction: boolean;
+            /**
+             * Groups Shown
+             * @description Units carry their design group (a groups design).
+             * @default false
+             */
+            groups_shown: boolean;
+            /** Method Card */
+            method_card: string;
+            /** Not Quantified */
+            not_quantified: components["schemas"]["NotQuantified"][];
+            /**
+             * Notes
+             * @default []
+             */
+            notes: string[];
+            reaction?: components["schemas"]["ReactionView"] | null;
+            /** References */
+            references: string[];
+            settings: components["schemas"]["QuantitiesSettings"];
+            /** Study Id */
+            study_id: string;
+            /**
+             * Unit
+             * @description What one unit of the quantities is ('' when not declared).
+             */
+            unit: string;
+            /**
+             * Why
+             * @default
+             */
+            why: string;
+        };
+        /**
          * QuarantineEntry
          * @description One piece of free text from a file, stored once and cited by ``text_id`` everywhere else.
          *
@@ -11896,6 +12388,46 @@ export type components = {
             sheet_cells: {
                 [key: string]: string;
             };
+        };
+        /**
+         * ReactionRecorded
+         * @description What recording the reaction input did.
+         */
+        ReactionRecorded: {
+            /** Head */
+            head: string;
+            /** Message */
+            message: string;
+            /** Status */
+            status: string;
+        };
+        /**
+         * ReactionRequest
+         * @description A person records what one reaction held (all empty: per reaction only).
+         */
+        ReactionRequest: {
+            /** Expected Head */
+            expected_head?: string | null;
+            /** Input Ng */
+            input_ng?: number | null;
+            /** Reason */
+            reason: string;
+            /** Template Ul */
+            template_ul?: number | null;
+            /** Unit */
+            unit?: string | null;
+        };
+        /**
+         * ReactionView
+         * @description What one reaction held (the design's ``reaction_input``).
+         */
+        ReactionView: {
+            /** Input Ng */
+            input_ng?: number | null;
+            /** Template Ul */
+            template_ul?: number | null;
+            /** Unit */
+            unit?: string | null;
         };
         /**
          * RecordCommands
@@ -13598,6 +14130,28 @@ export type components = {
             reason: string;
         };
         /**
+         * StandardPointView
+         * @description One standard well (detected or not) on its curve.
+         */
+        StandardPointView: {
+            /** Back Quantity */
+            back_quantity: number | null;
+            /** Cq */
+            cq: number | null;
+            /** Detected */
+            detected: boolean;
+            /** Quantity */
+            quantity: number;
+            /** Residual */
+            residual: number | null;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Well */
+            well: string;
+        };
+        /**
          * StepConclusions
          * @description The calls at one step, and what changed from the step before.
          */
@@ -14893,6 +15447,43 @@ export type components = {
             x: number;
         };
         /**
+         * UnitQuantity
+         * @description One biological unit's quantity of one assay with its 95 % prediction interval.
+         */
+        UnitQuantity: {
+            /** Curves */
+            curves: string[];
+            /** Flags */
+            flags: components["schemas"]["FlagView"][];
+            /**
+             * Group
+             * @description Its group in the confirmed design.
+             */
+            group?: string | null;
+            /** High */
+            high: number | null;
+            /** Low */
+            low: number | null;
+            /** Mean Cq */
+            mean_cq: number | null;
+            /** N Detected */
+            n_detected: number;
+            /** N Wells */
+            n_wells: number;
+            /** Per Ng */
+            per_ng?: number | null;
+            /** Per Ul */
+            per_ul?: number | null;
+            /** Quantity */
+            quantity: number | null;
+            /** Samples */
+            samples: string[];
+            /** Unit */
+            unit: string;
+            /** Wells */
+            wells: components["schemas"]["UnknownWellView"][];
+        };
+        /**
          * UnitValue
          * @description One biological unit's value in a Prism table (log2 relative quantity).
          */
@@ -15027,6 +15618,26 @@ export type components = {
              * @description The well's relative amount (log2, the unit's control-gene mean removed), relative to the second group's mean; null when the well has no value.
              */
             x: number | null;
+        };
+        /**
+         * UnknownWellView
+         * @description One well of an unknown.
+         */
+        UnknownWellView: {
+            /** Cq */
+            cq: number | null;
+            /** Curve */
+            curve: string | null;
+            /** Detected */
+            detected: boolean;
+            /** Quantity */
+            quantity: number | null;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Well */
+            well: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -15399,6 +16010,7 @@ export type components = {
          * @description A gene the engine compared no fold change for, and why (it is not in ``genes``).
          */
         WithheldGene: {
+            detected_only?: components["schemas"]["DetectedOnlyView"] | null;
             /** Gene */
             gene: string;
             /** Reason */
@@ -19654,6 +20266,104 @@ export interface operations {
             };
         };
     };
+    get_quantities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuantitiesView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_assay_quantities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                target: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssayQuantities"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_reaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReactionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReactionRecorded"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_record: {
         parameters: {
             query?: never;
@@ -20410,6 +21120,45 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SystemView"];
+                };
+            };
+        };
+    };
+    get_copies: {
+        parameters: {
+            query: {
+                kind?: "dsDNA" | "ssDNA" | "RNA";
+                /** @description Bases (dsDNA: base pairs). */
+                length: number;
+                /** @description Levels of the series. */
+                levels?: number;
+                /** @description ng of the standard (or ng per µL). */
+                ng: number;
+                /** @description Dilution step. */
+                step?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CopiesAnswer"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

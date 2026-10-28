@@ -42,6 +42,7 @@ from qpilot.web.contract import (
     ComparisonTab,
     DecisionEntryView,
     DecisionsView,
+    DetectedOnlyView,
     FactRef,
     FactText,
     FlipOption,
@@ -633,12 +634,43 @@ def _rebuild_not_compared(
 
 
 def withheld(result: StudyResult) -> list[WithheldGene]:
-    """Genes the engine withheld (``f_withheld_*`` facts), with the reason in words."""
+    """Genes the engine withheld (``f_withheld_*`` facts), with the reason in words.
+
+    A gene detected in one group only carries its ``detected_only`` facts (the group, the
+    counts and that group's ΔCq): never a fold change.
+    """
+    only: dict[str, dict[str, Any]] = {}
+    for fact in result.facts.values():
+        if fact.path.startswith("detected_only."):
+            gene, _, key = fact.path[len("detected_only.") :].rpartition(".")
+            only.setdefault(gene, {})[key] = fact.value
     out = []
     for fid, fact in result.facts.items():
         if fid.startswith("f_withheld_") and fact.path.startswith("withheld."):
-            out.append(WithheldGene(gene=fact.path[len("withheld.") :], reason=str(fact.value)))
+            gene = fact.path[len("withheld.") :]
+            found = only.get(gene)
+            view = None
+            if found is not None:
+                group = found.get("group")
+                view = DetectedOnlyView(
+                    group=None if group == "neither group" else str(group),
+                    absent=str(found.get("absent", "")),
+                    n_detected=int(found.get("n_detected", 0)),
+                    n_group=int(found.get("n_group", 0)),
+                    n_absent=int(found.get("n_absent", 0)),
+                    dcq=_finite(found.get("dcq")),
+                    dcq_sd=_finite(found.get("dcq_sd")),
+                )
+            out.append(WithheldGene(gene=gene, reason=str(fact.value), detected_only=view))
     return sorted(out, key=lambda w: w.gene)
+
+
+def _finite(value: Any) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
 
 
 def headline_genes(

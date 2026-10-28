@@ -19,6 +19,7 @@ import { FurtherChoices } from "./FurtherChoices";
 import { GenesPanel, NO_FILTER, isFiltered, matches, type GeneFilter } from "./GenesPanel";
 import { ImportTrustCard } from "./ImportTrust";
 import { MapPanel } from "./MapPanel";
+import { DetectedOnlyLine, QuantitiesPanel } from "./quantities";
 import { FlipPanel, ReferencesPanel } from "./StudyPanels";
 import { Summary } from "./Summary";
 
@@ -34,7 +35,8 @@ function Withheld({ view }: { view: ResultsView }) {
       <ul className="mt-2 space-y-1 text-muted">
         {list.map((w) => (
           <li key={w.gene}>
-            <span className="font-medium text-fg">{w.gene}</span>: {w.reason}
+            <span className="font-medium text-fg">{w.gene}</span>:{" "}
+            {w.detected_only ? <DetectedOnlyLine gene={w} /> : w.reason}
           </li>
         ))}
       </ul>
@@ -181,6 +183,7 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
         <FlipPanel flips={flips.data} onOpen={openGene} />
       )}
       <ReferencesPanel view={view} workspaceKey={key} />
+      <QuantitiesPanel workspaceKey={key} studyId={studyId} />
       <EvidencePanel workspaceKey={key} studyId={studyId} />
     </>
   );

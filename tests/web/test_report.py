@@ -231,6 +231,40 @@ def matches(row: dict, conditions: str) -> bool:
     return True
 
 
+def quantities_value(rest: str, store: StudyStore, study: str) -> Any:
+    """A number of the study's absolute quantification, computed here from the engine's curves."""
+    from qpilot.qpcr.absolute import quantify
+    from qpilot.qpcr.absolute_study import declared_quantities
+    from qpilot.qpcr.curves import analyse_study
+    from qpilot.qpcr.study import StudySettings
+
+    settings = StudySettings()  # the demo
+    source = store.source(study)
+    table = analyse_study(source, settings.experiment_id, settings.candidates, settings.curves)
+    result = quantify(table, declared=declared_quantities(source))
+    plates = [c for c in result.curves if c.fit is not None and c.scope == "plate"]
+    units = result.unknowns
+    return {
+        "/curves@fitted": len(plates),
+        "/curves@assays": len({c.target for c in plates}),
+        "/curves/efficiency@min": min(c.fit.efficiency for c in plates),
+        "/curves/efficiency@max": max(c.fit.efficiency for c in plates),
+        "/curves/r2@min": min(c.fit.r2 for c in plates),
+        "/curves/lowest@min": min(c.lowest for c in plates),
+        "/curves/top@max": max(c.top for c in plates),
+        "/curves@lod_located": sum(1 for c in plates if c.lod.quantity and not c.lod.at_most),
+        "/settings/lod_rate": result.settings.lod_rate,
+        "/settings/loq_cv": result.settings.loq_cv,
+        "/unknowns@len": len(units),
+        "/unknowns@extrapolated": sum(
+            1 for u in units if {"above_top", "below_lowest"} & set(u.flags)
+        ),
+        "/unknowns@below_limits": sum(
+            1 for u in units if {"below_loq", "below_lod"} & set(u.flags)
+        ),
+    }[rest]
+
+
 def resolve(path: str, store: StudyStore, study: str, audit_dir: Path, view: dict) -> Any:
     """The value a derived fact's path names, read here without the report's code."""
     from qpilot.core.record import versions
@@ -241,6 +275,8 @@ def resolve(path: str, store: StudyStore, study: str, audit_dir: Path, view: dic
     source, _, rest = path.partition(":")
     if source.startswith("qpilot."):
         return getattr(importlib.import_module(source), rest.strip("/"))
+    if source == "quantities":
+        return quantities_value(rest, store, study)
     if source == "audit":
         name, _, rest = rest.partition(":")
         data: Any = json.loads((audit_dir / name).read_text())

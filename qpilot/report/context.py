@@ -38,6 +38,8 @@ KIND_DIMENSION = {
 }
 #: Method names with digits that prose may quote (they name a method, not a result).
 METHOD_NAMES = {"MIQE 2.0", "SHA-256", "log2", "N0", "TD0", "RFC 6901"}
+#: How absolute quantities are computed (``report/methods.py`` quantities): method, not data.
+METHOD_NAMES |= {"log10", "10^(−1/slope) − 1", "95 % prediction interval", "R²"}
 
 
 def dim_label(dim: str) -> str:

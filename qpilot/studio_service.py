@@ -744,7 +744,8 @@ class Studio:
             return Assembly(None, [*blockers, str(err)])
         if blockers:
             return Assembly(None, blockers, design_hash)
-        curves_hash = full.model_copy(update={"excluded_wells": (), "axes": None}).design_hash()
+        unhashed = {"excluded_wells": (), "axes": None, "reaction_input": None}
+        curves_hash = full.model_copy(update=unhashed).design_hash()
         verdict = self.import_verdict(session_id)
         if verdict is not None:
             option = trust_option(accepted) or trust.IN_USE

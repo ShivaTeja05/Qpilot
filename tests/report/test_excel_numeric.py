@@ -30,6 +30,8 @@ def test_numbers_are_number_cells_with_formats_and_units(walked):
         "Results",
         "Per unit",
         "Per well",
+        "Standard curves",  # the mini plates carry a ten-fold series (STD_100...)
+        "Quantities",
         "Where to look",
         "Decisions",
         "Settings",
