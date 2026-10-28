@@ -101,7 +101,7 @@ describe("a carried choice in History", () => {
     fireEvent.click(within(panel).getByRole("button", { name: /Open its history/ }));
     expect(open).toHaveBeenCalledWith(EARLIER);
     expect(pointTitle(point(carriedStep))).toContain(
-      `(carried from the earlier analysis ${EARLIER})`,
+      "(carried over from the earlier analysis of these data)",
     );
   });
 

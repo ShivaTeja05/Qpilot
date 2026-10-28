@@ -29,7 +29,7 @@ import { cn } from "@/lib/cn";
 import { count, fold } from "@/lib/format";
 import { MOD, useHotkeys } from "@/lib/hooks";
 import { sectionPath } from "@/shell/sections";
-import { Badge, Button, Card, Kbd, Textarea, toast } from "@/ui";
+import { Badge, Button, Card, Kbd, KeyHint, Textarea, toast } from "@/ui";
 import {
   useCardWrite,
   useExplain,
@@ -122,7 +122,7 @@ export function DecisionCards({
               : ""}
           </p>
         </div>
-        <p className="hidden text-[12px] text-faint xl:block">
+        <p className="hidden text-[12px] text-faint xl:block pointer-coarse:hidden">
           <Kbd>j</Kbd> <Kbd>k</Kbd> move · <Kbd>{MOD}</Kbd>
           <Kbd>Enter</Kbd> decide
         </p>
@@ -428,9 +428,10 @@ function DecisionCardItem({
                 <p className="flex items-start gap-2 rounded-lg border border-line bg-sunken p-3 text-[13px] text-fg">
                   <History className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden />
                   <span>
-                    In the earlier analysis{" "}
-                    <span className="font-mono text-[12px]">{view.asked_again.study_id}</span> a
-                    person chose{" "}
+                    <span title={`Earlier analysis ${view.asked_again.study_id}`}>
+                      In the earlier analysis of these data
+                    </span>{" "}
+                    you chose{" "}
                     <strong>{view.asked_again.option_label ?? view.asked_again.option}</strong>. It
                     was not carried here: {view.asked_again.why}. Decide it again.
                   </span>
@@ -635,10 +636,7 @@ function DecisionCardItem({
                         )}
                       </>
                     )}
-                    <span className="text-[12px] text-faint">
-                      <Kbd>{MOD}</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </span>
+                    <KeyHint keys={[MOD, "Enter"]} />
                   </div>
                 </div>
               )}

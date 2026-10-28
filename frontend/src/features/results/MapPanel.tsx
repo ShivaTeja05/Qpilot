@@ -14,7 +14,8 @@ import {
   type MapEncoding,
 } from "@/charts";
 import { count } from "@/lib/format";
-import { Card, CardBody, CardHeader, SegmentedControl } from "@/ui";
+import { GRID_NAME, GRID_WHAT } from "@/lib/vocab";
+import { Card, CardBody, CardHeader, SegmentedControl, SetsNote } from "@/ui";
 import type { GeneRow, ResultsView } from "./api";
 
 /** The size of qPilot's choice grid, when every gene was checked over the same one. */
@@ -92,7 +93,7 @@ export function MapPanel({
       <CardHeader
         id="map-title"
         title="Robustness map"
-        hint={`Every gene: how large the change is, and in what share ${setWords} it keeps its call (qPilot's choice grid: every control-gene set, cut-off, empty-well rule and amplification-call rule). Genes low on the map lean on the choices made.`}
+        hint={`Every gene: how large the change is, and in what share ${setWords} it keeps its call (${GRID_NAME}: ${GRID_WHAT}). Genes low on the map lean on the choices made.`}
         actions={
           <SegmentedControl<MapEncoding>
             label="Colour the genes by"
@@ -113,6 +114,18 @@ export function MapPanel({
         }
       />
       <CardBody>
+        {view.audit?.status === "ready" ? (
+          <SetsNote
+            grid={cells}
+            reasonable={view.audit.reasonable}
+            full={view.audit.analyses}
+            decisions={view.audit.decisions?.length ? view.audit.decisions : undefined}
+            efficiencyInGrid={view.axes?.some(
+              (a) => a.name === "efficiency" && a.status === "swept",
+            )}
+            className="mb-3"
+          />
+        ) : null}
         <RobustnessMap
           points={points}
           line={line}

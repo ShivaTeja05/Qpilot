@@ -232,13 +232,20 @@ function FragileGenes({ workspace, trace }: { workspace: Workspace; trace: Overv
         id: "single",
         header: "Alone",
         accessorKey: "n_flip_single",
-        meta: { numeric: true, width: "4.5rem" },
+        meta: {
+          numeric: true,
+          width: "4.5rem",
+          help: "How many samples change this call when set aside one at a time (each on its own, the others kept).",
+        },
       },
       {
         id: "top",
         header: "Moves it most",
         accessorKey: "top_unit",
-        meta: { width: "8rem" },
+        meta: {
+          width: "8rem",
+          help: "The sample whose setting aside moves this gene's fold change the most, and by how much (+5.3 %: the fold change becomes 5.3 % larger without it). It need not change the call.",
+        },
         cell: ({ row }) =>
           row.original.top_unit ? (
             <span className="text-muted">
@@ -259,7 +266,7 @@ function FragileGenes({ workspace, trace }: { workspace: Workspace; trace: Overv
       <CardHeader
         id="trace-o-genes"
         title="Calls that hang on few samples"
-        hint="The fewest samples whose removal together changes each call (one and two checked exhaustively). Click a gene to trace it."
+        hint="The fewest samples whose removal together changes each call (one and two checked exhaustively). Alone: samples that change it one at a time; Moves it most: the sample that shifts the fold change most. Click a gene to trace it."
       />
       <CardBody>
         <DataTable
