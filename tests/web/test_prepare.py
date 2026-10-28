@@ -168,6 +168,7 @@ def test_the_curve_check_is_prepared_once_the_design_is_confirmed(web_ctx, monke
     from types import SimpleNamespace
 
     from qpilot.qpcr import curve_judge
+    from qpilot.qpcr.study import StudySettings
 
     read: list[tuple] = []
     confirmed = {"design": SimpleNamespace(design=object()), "curves": None}
@@ -176,7 +177,8 @@ def test_the_curve_check_is_prepared_once_the_design_is_confirmed(web_ctx, monke
     )
     monkeypatch.setattr(web_ctx.studio, "source", lambda sid: "file.rdml")
     monkeypatch.setattr(
-        "qpilot.qpcr.study.StudySettings.from_design",
+        StudySettings,
+        "from_design",
         staticmethod(lambda design: SimpleNamespace(experiment_id="exp")),
     )
     monkeypatch.setattr(curve_judge, "validated", lambda path: True)
