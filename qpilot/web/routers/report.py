@@ -110,6 +110,10 @@ OPEN_CARDS = (
     "Some Decision Cards are still open: the file counts them at their recommended option and "
     "says so."
 )
+NO_EXPORT_NAME = (
+    "No figure: a group, sample or gene of this study has a name the exports cannot write "
+    "(use letters, digits, spaces and _ - . ( ) in names)."
+)
 FIGURE_MEDIA = {"svg": "image/svg+xml", "png": "image/png", "csv": "text/csv; charset=utf-8"}
 
 
@@ -361,15 +365,21 @@ def _write_tables(
 def _figure(
     ctx: AppContext, study_id: str, gene: str, basis: Basis, comparison: str | None
 ) -> tuple[Any, Any]:
+    from qpilot.qpcr.export import ExportError
     from qpilot.report.figures import FigureError, gene_figure
 
     sid = _study(ctx, study_id)
     try:
         tables = _tables(ctx, study_id, sid)
+        found = ctx.store.get(study_id).comparisons
+        for outcome in found.comparisons if found is not None and comparison else ():
+            if outcome.id == comparison:  # a comparison's id (the page's picker) names it too
+                comparison = outcome.label
+        return tables, gene_figure(tables, gene, basis, comparison)
     except StudyNotFound as err:
         raise api_error(404, "not_found", "There is no analysed study with this id.") from err
-    try:
-        return tables, gene_figure(tables, gene, basis, comparison)
+    except ExportError as err:  # its message quotes the name: said in qPilot's words instead
+        raise api_error(409, "no_figure", NO_EXPORT_NAME) from err
     except FigureError as err:
         if "is not a gene" in str(err) or "no comparison" in str(err):
             raise api_error(404, "not_found", f"No figure: {err}.") from err
@@ -409,6 +419,7 @@ def figure_info(
         ci95_low=fig.ci_lo,
         ci95_high=fig.ci_hi,
         p=fig.p,
+        p_adjusted=fig.p_adjusted,
         n_a=fig.n_a,
         n_b=fig.n_b,
         groups=[

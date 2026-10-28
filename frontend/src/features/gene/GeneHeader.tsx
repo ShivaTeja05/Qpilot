@@ -179,6 +179,8 @@ export function GeneHeader({
   const yours = gene.at_your_choices;
   const yoursMoved =
     yours && (yours.differs || Math.abs(yours.log2fc - (gene.log2fc ?? Math.log2(gene.fc))) > 1e-9);
+  // several comparisons with a correction: the call uses the corrected p (the rule says so)
+  const corrected = Boolean(ruleText?.includes("corrected p"));
   const ruleWords =
     ruleText ??
     (alpha != null && minLog2fc != null
@@ -227,9 +229,25 @@ export function GeneHeader({
         >
           <span className="font-mono text-2xl font-semibold tabular">{fold(gene.fc)}</span>
         </Fact>
-        <Fact label="p-value">
-          <span className="font-mono text-2xl font-semibold tabular">{pValue(gene.p)}</span>
-        </Fact>
+        {corrected && gene.p_adjusted != null ? (
+          <Fact
+            label="Corrected p"
+            hint={
+              <>
+                {gene.q != null ? <>q {pValue(gene.q)} · </> : null}p before correction{" "}
+                <span className="tabular">{pValue(gene.p)}</span>
+              </>
+            }
+          >
+            <span className="font-mono text-2xl font-semibold tabular">
+              {pValue(gene.p_adjusted)}
+            </span>
+          </Fact>
+        ) : (
+          <Fact label="p-value">
+            <span className="font-mono text-2xl font-semibold tabular">{pValue(gene.p)}</span>
+          </Fact>
+        )}
         <Fact
           label="Samples"
           hint={

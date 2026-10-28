@@ -53,7 +53,7 @@ import pandas as pd
 
 from qpilot.core import robustness
 from qpilot.core.confidence import Cap, grade
-from qpilot.core.decisions import CardSpec, OptionSpec, build_cards, card_impact
+from qpilot.core.decisions import CardSpec, OptionSpec, View, build_cards, card_impact
 from qpilot.core.facts import FactRegistry, slug
 from qpilot.core.store import atomic_write, dump_json
 from qpilot.io.trust import cap_for, not_measured
@@ -107,6 +107,7 @@ from qpilot.qpcr.designs import (
     study_key,
     unit_groups,
 )
+from qpilot.qpcr.multiplicity import CORRECTIONS_POOLED
 from qpilot.qpcr.quant import EXCLUDED, Undetermined, left_out_cells, log2_matrix
 from qpilot.qpcr.quant import not_measured as units_not_measured
 from qpilot.qpcr.refgenes import RefGroupEffect, genorm, group_effect
@@ -609,7 +610,8 @@ def build_model(
         group_labels=labels,
     )
     if specs:
-        options.update(comparisons=specs, correction=settings.design.comparisons.correction)
+        plan = settings.design.comparisons
+        options.update(comparisons=specs, correction=plan.correction, control=plan.control)
     efficiency, eff_notes, tables = _efficiency_axis(inputs, settings)
     between, irc_notes = _interrun_axis(inputs, settings, tables)
     if between:
@@ -637,16 +639,18 @@ def build_model(
     if inputs.alternatives:
         dims = space.dimensions["amp_call"]
         screen = screen_amp_call(space.evaluate, space.primary, dims, space.items)
+        if not screen.admitted and _admitted_elsewhere(space, "amp_call"):
+            screen = replace(screen, admitted=True)  # it matters in another comparison
         if not screen.admitted:  # the choice changes nothing that matters: no axis in the grid
             space.hold("amp_call", "screened_out", SCREENED_REASON)
     screens = {}
     for name in ("efficiency", "normaliser"):
         if name in space.dimensions:
-            screens[name] = robustness.screen_axis(space, name)
+            screens[name] = _screen_every(space, name)
             if not screens[name].admitted:
                 space.hold(name, "screened_out", SCREENED_REASON)
     if "interrun" in space.dimensions:  # a card only when a correction flips a call
-        screen = robustness.screen_axis(space, "interrun")
+        screen = _screen_every(space, "interrun")
         screens["interrun"] = replace(screen, admitted=any(screen.flipped.values()))
         if not screens["interrun"].admitted:
             space.hold("interrun", "screened_out", INTERRUN_SCREENED_REASON)
@@ -782,6 +786,36 @@ def _normaliser_axis(
     return keywords, notes
 
 
+def _screen_every(space: QpcrSpace, name: str) -> robustness.AxisScreen:
+    """:func:`robustness.screen_axis` over every comparison of the study (the first alone else).
+
+    An axis enters the grid when an option alone flips a call or moves a fold change in any
+    comparison, not only in the first: the choice applies to every comparison. The flipped
+    genes and the largest shift are those of every comparison together.
+    """
+    found = robustness.screen_axis(space, name)
+    if len(space.comparisons) < 2:
+        return found
+    flipped = {k: set(v) for k, v in found.flipped.items()}
+    largest = found.max_delta_log2fc
+    for spec in space.comparisons[1:]:
+        other = robustness.screen_axis(space.comparison_view(spec.id), name)
+        for option, genes in other.flipped.items():
+            flipped.setdefault(option, set()).update(genes)
+        largest = max(largest, other.max_delta_log2fc)
+    merged = {k: tuple(sorted(v)) for k, v in flipped.items()}
+    admitted = any(merged.values()) or largest > found.min_log2fc
+    return replace(found, flipped=merged, max_delta_log2fc=float(largest), admitted=admitted)
+
+
+def _admitted_elsewhere(space: QpcrSpace, name: str) -> bool:
+    """True when an option of ``name`` alone matters in a comparison other than the first."""
+    return any(
+        robustness.screen_axis(space.comparison_view(spec.id), name).admitted
+        for spec in space.comparisons[1:]
+    )
+
+
 def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> tuple[dict, dict, CellTables]:
     """``QpcrSpace`` keywords and notes for the efficiency axis, and the study's cell tables.
 
@@ -870,7 +904,9 @@ def study_from_curves(
         primary = (base.contrasts, summary, confidence)
         outcomes = _comparison_outcomes(space, every, base, primary, settings, cap, assay)
     headline = [gene for gene in settings.headline if gene in space.items]
-    specs = _card_specs(space, stability, summary, settings, headline, counts)
+    views = _card_views(space, outcomes, grid)
+    others = [view.summary for view in views.values()]
+    specs = _card_specs(space, stability, summary, settings, headline, counts, others)
     if "amp_call" in space.dimensions:
         specs.append(
             _amp_call_spec(
@@ -883,7 +919,16 @@ def study_from_curves(
         specs.append(_normaliser_spec(space, grid, summary, headline, model.axis_notes))
     if "interrun" in space.dimensions:
         specs.append(_interrun_spec(space, grid, summary, headline, model.axis_notes))
-    cards = build_cards(space, summary, specs, headline, settings.autonomy, grid=grid)
+    cards = build_cards(
+        space,
+        summary,
+        specs,
+        headline,
+        settings.autonomy,
+        grid=grid,
+        views=views,
+        primary_view=space.comparisons[0].id if space.comparisons else "primary",
+    )
     ref_flips = refset_flip_counts(grid, space, summary)
     ref_effect = group_effect(matrix, settings.candidates, high, rest)
     cards = [_refset_extras(card, ref_flips, ref_effect) for card in cards]
@@ -914,6 +959,7 @@ def study_from_curves(
         screens=model.screens,
         not_measured=_not_measured_words(inputs.not_measured, settings.candidates),
         comparisons=outcomes,
+        dimensions=tuple(space.dimensions),
         cq_only=model.cq_only,
         analysed=analysed_genes(model),
     )
@@ -923,6 +969,27 @@ def study_from_curves(
         update["comparisons"] = outcomes
     result = base.model_copy(update=update)
     return result, cards, grid
+
+
+def _card_views(
+    space: QpcrSpace, outcomes: ComparisonsResult | None, grid: pd.DataFrame
+) -> dict[str, View]:
+    """The study's other comparisons as views of the cards (none without several).
+
+    A card's choice applies to the whole study, so it is a person's whenever it changes a call
+    in any comparison, not only in the first.
+    """
+    if outcomes is None or len(outcomes.comparisons) < 2:
+        return {}
+    every = grid.attrs[COMPARISON_GRID_ATTR]
+    return {
+        o.id: View(
+            summary=dict(o.robustness),
+            grid=every[every["comparison"] == o.id],
+            space=space.comparison_view(o.id),
+        )
+        for o in outcomes.comparisons[1:]
+    }
 
 
 def _comparison_outcomes(
@@ -985,7 +1052,7 @@ def _comparison_outcomes(
         )
     groups, omnibus = _omnibus(space, plan.pair_by is None)
     return ComparisonsResult(
-        test="paired_t" if plan.pair_by is not None else "welch",
+        test=test_of(plan.pair_by, space.correction),
         correction=space.correction,  # type: ignore[arg-type]
         pattern=plan.pattern,
         control=plan.control,
@@ -994,6 +1061,13 @@ def _comparison_outcomes(
         omnibus_groups=groups,
         omnibus=omnibus,
     )
+
+
+def test_of(pair_by: str | None, correction: str) -> str:
+    """The test each comparison uses: paired, pooled-variance (Dunnett, Tukey) or Welch's."""
+    if pair_by is not None:
+        return "paired_t"
+    return "pooled_t" if correction in CORRECTIONS_POOLED else "welch"
 
 
 def _omnibus(space: QpcrSpace, unpaired: bool) -> tuple[list[str], dict[str, Omnibus]]:
@@ -1305,10 +1379,12 @@ def _card_specs(
     settings: StudySettings,
     headline: Sequence[str],
     counts: dict[str, int],
+    others: Sequence[dict[str, GeneRobustness]] = (),
 ) -> list[CardSpec]:
     """The cards the qPCR plugin asks the core to build (the core adds impact and rank).
 
-    The cut-off card exists only when the groups are defined from the data.
+    The cut-off card exists only when the groups are defined from the data. ``others`` are
+    the robustness summaries of the study's other comparisons (a flip there counts too).
     """
 
     def option_facts(contexts: list[str]) -> list[str]:
@@ -1326,7 +1402,9 @@ def _card_specs(
     refset_facts += option_facts([ctx for _, ctx in ref_options])
 
     cut_ids = [f"cut_{_pct(cut)}" for cut in settings.cuts]
-    undetermined_flips = card_impact(summary, "undetermined")["flips"]
+    undetermined_flips = any(
+        card_impact(s, "undetermined")["flips"] for s in (summary, *others) if s
+    )
     specs = [
         CardSpec(
             card_id="card_refset",
@@ -1627,8 +1705,13 @@ class _Extras:
     screens: Mapping[str, robustness.AxisScreen] = field(default_factory=dict)
     not_measured: Mapping[str, str] = field(default_factory=dict)
     comparisons: ComparisonsResult | None = None
+    dimensions: tuple[str, ...] = ()
     cq_only: EfficiencyPlan | None = None
     analysed: tuple[str, ...] = ()  # the study's genes and its control genes
+
+
+#: A grid dimension's name in the flip-count fact ids (``f_n_flipped_refset``, ...).
+FLIP_SUFFIX = {"refs": "refset", "cut": "cutoff"}
 
 
 def _facts(
@@ -1772,6 +1855,11 @@ def _comparison_facts(add: Callable[..., None], extras: _Extras) -> None:
         calls = [c.conclusion for c in outcome.contrasts.values()]
         add(f"f_cmp{i}_n_up", calls.count("up"), path=f"{root}.contrasts")
         add(f"f_cmp{i}_n_down", calls.count("down"), path=f"{root}.contrasts")
+        add(f"f_cmp{i}_n_tested", len(outcome.contrasts), path=f"{root}.contrasts")
+        for dim in extras.dimensions:
+            flipped = robustness.flipped_by(outcome.robustness, dim)
+            fid = f"f_cmp{i}_n_flipped_{FLIP_SUFFIX.get(dim, slug(dim))}"
+            add(fid, len(flipped), path=f"{root}.robustness")
         for gene, contrast in outcome.contrasts.items():
             s, path = slug(gene), f"{root}.contrasts.{gene}"
             add(f"f_cmp{i}_fc_{s}", contrast.fc, FC_FMT, TIMES, f"{path}.fc")

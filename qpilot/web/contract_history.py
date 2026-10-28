@@ -205,6 +205,16 @@ class AuditMark(BaseModel):
     current: bool = Field(description="The audit is of the chain head of now.")
 
 
+class HistoryComparisonTab(BaseModel):
+    """One comparison of a study with several (the History's picker)."""
+
+    id: str
+    label: str
+    primary: bool
+    n_up: int
+    n_down: int
+
+
 class HistoryView(BaseModel):
     """A study's decision chain replayed: every step, the analysis in force and its calls."""
 
@@ -236,6 +246,13 @@ class HistoryView(BaseModel):
         description="A person's decisions from the session's analysis before this one.",
     )
     audit: AuditMark | None = None
+    comparison: str | None = Field(
+        default=None, description="A study with several comparisons: the one replayed (its id)."
+    )
+    comparisons: list[HistoryComparisonTab] = Field(
+        default=[], description="A study with several comparisons: every one (the picker)."
+    )
+    comparison_note: str | None = None
 
 
 # ---- diff two steps ----------------------------------------------------------------------------

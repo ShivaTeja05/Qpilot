@@ -211,6 +211,14 @@ def _resolve(raw: Any, missing: str) -> Path:
     try:
         path = Path(raw).expanduser().resolve(strict=True)
     except (OSError, RuntimeError, ValueError) as err:
+        # Missing: "not found" only inside a root, so the answer never says whether a path
+        # elsewhere exists (RT-EX-011).
+        try:
+            loose = Path(raw).expanduser().resolve(strict=False)
+        except (OSError, RuntimeError, ValueError):
+            loose = None
+        if loose is None or not _inside_roots(loose):
+            raise PathRefused("path outside QPILOT_DATA_ROOTS") from err
         raise PathRefused(missing) from err
     if not _inside_roots(path):
         raise PathRefused("path outside QPILOT_DATA_ROOTS")
@@ -1791,6 +1799,7 @@ class QpilotTools(CapabilityTools):
         sample: str | None = None,
         well: str | None = None,
         top: int = 3,
+        comparison: str | None = None,
     ) -> dict[str, Any]:
         """Trace one gene's result, a sample or a well back to the places to look (read-only).
 
@@ -1801,7 +1810,9 @@ class QpilotTools(CapabilityTools):
         and every option's consequence; ``summary`` counts every place found. ``text`` is the
         "Where to look" panel and ``facts`` hold every number it shows. Opens no card and
         writes nothing; a Studio session stays blind until a person confirms the design and
-        the curves. Setting a place aside is a person's decision in qPilot.
+        the curves. Setting a place aside is a person's decision in qPilot. ``comparison``: a
+        study with several comparisons, the one traced (its id, as ``qpcr_study`` lists them;
+        the first by default); every comparison is recomputed and the call is corrected.
         """
         given = [v for v in (gene, sample, well) if v is not None]
         if len(given) != 1 or not isinstance(given[0], str) or not given[0].strip():
@@ -1818,7 +1829,9 @@ class QpilotTools(CapabilityTools):
 
         try:
             sid = self._study_id(study_id)
-            result = trace_store(self.store, sid, gene=gene, sample=sample, well=well, top=top)
+            result = trace_store(
+                self.store, sid, gene=gene, sample=sample, well=well, top=top, comparison=comparison
+            )
             rendered = render_trace(result)
         except StudyNotFound:
             return refuse(Code.UNKNOWN_STUDY, UNKNOWN_STUDY)

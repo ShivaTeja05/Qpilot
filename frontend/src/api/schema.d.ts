@@ -3736,6 +3736,28 @@ export type components = {
             spread: number;
         };
         /**
+         * AuditComparisons
+         * @description A study with several comparisons: the one the audit audits, and that it is only that one.
+         */
+        AuditComparisons: {
+            /**
+             * Audited
+             * @description The comparison audited (its id): the study's first.
+             */
+            audited: string;
+            /** Audited Label */
+            audited_label: string;
+            /** Correction */
+            correction: string;
+            /** N Comparisons */
+            n_comparisons: number;
+            /**
+             * Note
+             * @description What the audit audits, in plain words.
+             */
+            note: string;
+        };
+        /**
          * AuditDecision
          * @description One analysis choice the audit varies (the what-if lab's selects).
          */
@@ -4561,6 +4583,8 @@ export type components = {
             amplification_rule: string;
             /** Analyses In Full Grid */
             analyses_in_full_grid: number;
+            /** @description Set for a study with several comparisons: the audit audits the first. */
+            comparisons?: components["schemas"]["AuditComparisons"] | null;
             /** Control Gene Candidates */
             control_gene_candidates: string[];
             /**
@@ -5393,6 +5417,38 @@ export type components = {
             warnings: components["schemas"]["CaptureNote"][];
         };
         /**
+         * CardComparison
+         * @description What one Decision Card's choice does in one comparison of a study with several.
+         */
+        CardComparison: {
+            /**
+             * Flips
+             * @description A call of this comparison changes with this choice alone.
+             */
+            flips: boolean;
+            /**
+             * Flips Elsewhere
+             * @description It changes no call here at the planned settings, but does at other ones.
+             */
+            flips_elsewhere: boolean;
+            /**
+             * Genes
+             * @description The genes whose call changes (this choice alone).
+             */
+            genes: string[];
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * N Flipped
+             * @description How many of its calls change with this choice alone.
+             */
+            n_flipped: number;
+            /** Primary */
+            primary: boolean;
+        };
+        /**
          * CardOption
          * @description One option on a Decision Card and its consequence for each headline gene.
          */
@@ -5411,6 +5467,12 @@ export type components = {
          * @description One option of a Decision Card.
          */
         CardOptionView: {
+            /**
+             * By Comparison
+             * @description A study with several comparisons: this option's consequences in each other comparison (the first comparison's are `effects`).
+             * @default []
+             */
+            by_comparison: components["schemas"]["OptionComparisonEffects"][];
             /** Chosen */
             chosen: boolean;
             /** Effects */
@@ -5481,6 +5543,12 @@ export type components = {
             card: components["schemas"]["DecisionCard"];
             /** @description The decision in force was carried from an earlier analysis. */
             carried?: components["schemas"]["CarriedFrom"] | null;
+            /**
+             * Comparisons
+             * @description A study with several comparisons: what this choice does in each one.
+             * @default []
+             */
+            comparisons: components["schemas"]["CardComparison"][];
             explanation: components["schemas"]["FactText"];
             /**
              * Genes
@@ -5501,6 +5569,11 @@ export type components = {
             place?: components["schemas"]["CardPlace"] | null;
             /** Status Line */
             status_line: string;
+            /**
+             * Study Wide
+             * @description A study with several comparisons: that deciding applies to every one.
+             */
+            study_wide?: string | null;
             /** Title */
             title: string;
             /** Undo Label */
@@ -6264,7 +6337,7 @@ export type components = {
             };
             /**
              * Primary
-             * @description The first comparison: the one the Decision Cards describe.
+             * @description The first comparison: listed first everywhere, and the one the audit audits.
              */
             primary: boolean;
         };
@@ -6294,7 +6367,7 @@ export type components = {
              * Correction
              * @enum {string}
              */
-            correction: "holm" | "none";
+            correction: "holm" | "none" | "dunnett" | "tukey";
             /** Correction Words */
             correction_words: string;
             /** Genes */
@@ -6338,7 +6411,7 @@ export type components = {
              * Test
              * @enum {string}
              */
-            test: "welch" | "paired_t";
+            test: "welch" | "paired_t" | "pooled_t";
             /** Test Words */
             test_words: string;
         };
@@ -7226,7 +7299,10 @@ export type components = {
          *     ``design.dilution_series`` ``{"experiment_id": str, "samples": {sample: quantity}}``
          *     (subject: the series' name; its samples become standards with these quantities);
          *     ``design.comparison`` ``{"group_a": str, "group_b": str}`` (subject ``comparison``;
-         *     fold change = group_a relative to group_b, the reference group).
+         *     fold change = group_a relative to group_b, the reference group); several comparisons add
+         *     ``comparisons`` (``[{group_a, group_b}, ...]``, the first is ``group_a``/``group_b``),
+         *     ``pattern`` (``vs_control``, ``all_pairs`` or ``chosen``), ``control``, ``correction``
+         *     (``holm``, ``dunnett``, ``tukey`` or ``none``) and ``pair_by`` (the accepted pairing's name).
          */
         DesignEditItem: {
             /**
@@ -7249,6 +7325,13 @@ export type components = {
             /** Comparison */
             comparison?: {
                 [key: string]: string;
+            } | null;
+            /**
+             * Comparison Plan
+             * @description Several comparisons a person set: comparisons, pattern, control, correction and pair_by of the accepted comparison (None: one comparison).
+             */
+            comparison_plan?: {
+                [key: string]: unknown;
             } | null;
             /**
              * Confirmed
@@ -7276,8 +7359,19 @@ export type components = {
              * @description Each sample's group and unit (one entry per sample, in the same order).
              */
             membership: components["schemas"]["EditorMembership"][];
+            /**
+             * N Paired
+             * @description Study samples with a pairing.
+             * @default 0
+             */
+            n_paired: number;
             /** Needs */
             needs: components["schemas"]["DesignNeed"][];
+            /**
+             * Pair By
+             * @description The pairing a person accepted (donor, animal...), if any.
+             */
+            pair_by?: string | null;
             /**
              * Preset
              * @description A built-in design a person accepted (the demo's).
@@ -7833,6 +7927,11 @@ export type components = {
             note: string;
             /** P */
             p: number | null;
+            /**
+             * P Adjusted
+             * @description Several comparisons with a correction: the corrected p the call used.
+             */
+            p_adjusted?: number | null;
             /** Study Id */
             study_id: string;
         };
@@ -8983,6 +9082,22 @@ export type components = {
             summary: string;
         };
         /**
+         * HistoryComparisonTab
+         * @description One comparison of a study with several (the History's picker).
+         */
+        HistoryComparisonTab: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** N Down */
+            n_down: number;
+            /** N Up */
+            n_up: number;
+            /** Primary */
+            primary: boolean;
+        };
+        /**
          * HistoryDiff
          * @description What changed between two steps of the chain (or two analyses of the same file).
          */
@@ -9164,6 +9279,19 @@ export type components = {
             carry?: components["schemas"]["CarryNote"] | null;
             /** Chain Intact */
             chain_intact: boolean;
+            /**
+             * Comparison
+             * @description A study with several comparisons: the one replayed (its id).
+             */
+            comparison?: string | null;
+            /** Comparison Note */
+            comparison_note?: string | null;
+            /**
+             * Comparisons
+             * @description A study with several comparisons: every one (the picker).
+             * @default []
+             */
+            comparisons: components["schemas"]["HistoryComparisonTab"][];
             /**
              * Created At
              * @description When this analysis was made.
@@ -10498,6 +10626,11 @@ export type components = {
          */
         OpenPlaceBody: {
             /**
+             * Comparison
+             * @description A study with several comparisons: the one the trace was read for.
+             */
+            comparison?: string | null;
+            /**
              * Expected Head
              * @description The chain head the trace was read at (409 stale when it moved).
              */
@@ -10526,6 +10659,18 @@ export type components = {
             platform: "windows" | "macos";
             /** Steps */
             steps: string[];
+        };
+        /**
+         * OptionComparisonEffects
+         * @description One option's consequences in another comparison of a study with several.
+         */
+        OptionComparisonEffects: {
+            /** Comparison */
+            comparison: string;
+            /** Effects */
+            effects: components["schemas"]["OptionEffect"][];
+            /** Label */
+            label: string;
         };
         /**
          * OptionEffect
@@ -13838,6 +13983,12 @@ export type components = {
              * @description False for an analysis a Studio session has moved on from (sign off the current one); why_not says so.
              */
             can_sign_off: boolean;
+            /**
+             * Comparisons
+             * @description A study with several comparisons: each one and its headline genes' calls, with the p each call used (corrected when the study corrects), one line each.
+             * @default []
+             */
+            comparisons: components["schemas"]["FactText"][];
             evidence: components["schemas"]["qpilot__web__contract_evidence__EvidenceView"];
             /**
              * Head
@@ -14549,6 +14700,11 @@ export type components = {
              * @enum {string}
              */
             conclusion: "up" | "down" | "none";
+            /**
+             * Correction
+             * @description The correction's short name.
+             */
+            correction?: string | null;
             /** Fc */
             fc: number;
             /**
@@ -14574,8 +14730,21 @@ export type components = {
             n_a: number;
             /** N B */
             n_b: number;
-            /** P */
+            /**
+             * P
+             * @description The p-value before any correction for comparisons.
+             */
             p: number | null;
+            /**
+             * P Adjusted
+             * @description Several comparisons: the corrected p the call uses (Holm, Dunnett or Tukey).
+             */
+            p_adjusted?: number | null;
+            /**
+             * Q
+             * @description Several comparisons: Benjamini-Hochberg q over this comparison's genes (shown, never used for the call).
+             */
+            q?: number | null;
             /**
              * Se
              * @description Standard error of the log2 fold change.
@@ -14649,6 +14818,11 @@ export type components = {
          * @description ``POST …/where-to-look/decide``: a person's option at the place at ``rank`` of a trace.
          */
         TraceDecideBody: {
+            /**
+             * Comparison
+             * @description A study with several comparisons: the one the trace was read for.
+             */
+            comparison?: string | null;
             /**
              * Expected Head
              * @description The chain head the trace was read at (409 stale when it moved).
@@ -14738,6 +14912,13 @@ export type components = {
             cell: components["schemas"]["TraceCell"];
             /** Checked */
             checked: string[];
+            /**
+             * Comparison
+             * @description Several comparisons: the id of the one traced.
+             */
+            comparison?: string | null;
+            /** Comparison Label */
+            comparison_label?: string | null;
             flip: components["schemas"]["TraceFlipSet"];
             /** Gene */
             gene: string;
@@ -14812,6 +14993,11 @@ export type components = {
             n_flip_single: number;
             /** P */
             p: number | null;
+            /**
+             * P Adjusted
+             * @description Several comparisons: the corrected p the call uses.
+             */
+            p_adjusted?: number | null;
             /** Rank */
             rank: number;
             /** Top D Log2Fc */
@@ -15147,6 +15333,13 @@ export type components = {
             cell: components["schemas"]["TraceCell"];
             /** Checked */
             checked: string[];
+            /**
+             * Comparison
+             * @description Several comparisons: the id of the one traced.
+             */
+            comparison?: string | null;
+            /** Comparison Label */
+            comparison_label?: string | null;
             /** Genes */
             genes: components["schemas"]["TraceGeneRow"][];
             /** Labels */
@@ -15727,6 +15920,18 @@ export type components = {
              */
             at_plan: boolean;
             /**
+             * Comparison
+             * @description A study with several comparisons: the one shown (its id).
+             */
+            comparison?: string | null;
+            /** Comparison Label */
+            comparison_label?: string | null;
+            /**
+             * Correction
+             * @description The correction's short name.
+             */
+            correction?: string | null;
+            /**
              * Fold
              * @description The fold change between the group means, in words.
              */
@@ -15767,8 +15972,24 @@ export type components = {
             most_wells: number;
             /** P */
             p: number | null;
+            /**
+             * P Adjusted
+             * @description Several comparisons: the corrected p the call used.
+             */
+            p_adjusted?: number | null;
+            /**
+             * Paired
+             * @description The comparison is paired: its fold change is within pairs.
+             * @default false
+             */
+            paired: boolean;
             /** Points */
             points: components["schemas"]["UnitPoint"][];
+            /**
+             * Q
+             * @description Benjamini-Hochberg q over this comparison's genes.
+             */
+            q?: number | null;
             /**
              * Refs
              * @description The control genes each unit is divided by.
@@ -16178,6 +16399,16 @@ export type components = {
             cannot_show: string[];
             /** Checked Nothing Found */
             checked_nothing_found: string[];
+            /**
+             * Comparison
+             * @description A study with several comparisons: the one traced.
+             */
+            comparison?: string | null;
+            /**
+             * Comparison Note
+             * @description A study with several comparisons: which one the consequences are for.
+             */
+            comparison_note?: string | null;
             /** Decide Note */
             decide_note: string;
             /**
@@ -20109,7 +20340,10 @@ export interface operations {
     };
     get_gene_units: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A study with several comparisons: the one shown (its id; the first). */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 gene: string;
@@ -20141,7 +20375,10 @@ export interface operations {
     };
     get_history: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A study with several comparisons: the one replayed (its id; the first). */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 study_id: string;
@@ -20207,6 +20444,8 @@ export interface operations {
     get_history_diff: {
         parameters: {
             query?: {
+                /** @description A study with several comparisons: the one replayed (its id; the first). */
+                comparison?: string | null;
                 /** @description The earlier step (0: as analysed). */
                 from?: number | null;
                 /** @description The later step. */
@@ -21054,7 +21293,10 @@ export interface operations {
     };
     get_trace_study: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A study with several comparisons: the one to trace (its id; the first). */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 study_id: string;
@@ -21085,7 +21327,10 @@ export interface operations {
     };
     get_trace_gene: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A study with several comparisons: the one to trace (its id; the first). */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 gene: string;
@@ -21117,7 +21362,10 @@ export interface operations {
     };
     post_trace_without: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A study with several comparisons: the one to trace (its id; the first). */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 gene: string;
@@ -21188,6 +21436,8 @@ export interface operations {
     get_where: {
         parameters: {
             query?: {
+                /** @description A study with several comparisons: the one to trace (its id; the first). */
+                comparison?: string | null;
                 gene?: string | null;
                 sample?: string | null;
                 top?: number;

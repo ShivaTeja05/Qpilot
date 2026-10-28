@@ -85,3 +85,33 @@ def test_a_symlink_out_of_the_root_is_refused(
     monkeypatch.setenv("QPILOT_DATA_ROOTS", str(lab))
     with pytest.raises(PermissionError):
         check_path(str(lab / "link.rdml"))
+
+
+# RT-EX-011: a refusal never tells an agent whether a path outside the roots exists.
+@pytest.mark.parametrize("check", ["check_path", "check_sheet", "check_dir"])
+def test_a_path_outside_the_roots_gets_one_answer_whether_it_exists_or_not(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, check: str
+) -> None:
+    import qpilot.mcp_server as srv
+
+    root = tmp_path / "data"
+    root.mkdir()
+    monkeypatch.setenv("QPILOT_DATA_ROOTS", str(root))
+    outside = tmp_path / "private"
+    outside.mkdir()
+    name = {"check_path": "x.rdml", "check_sheet": "x.csv", "check_dir": "folder"}[check]
+    there = outside / name
+    if check == "check_dir":
+        there.mkdir()
+    else:
+        there.write_text("x", encoding="utf-8")
+    answers = []
+    for path in (there, outside / f"missing-{name}", Path("/nonexistent") / name):
+        with pytest.raises(srv.PathRefused) as err:
+            getattr(srv, check)(str(path))
+        answers.append((str(err.value), err.value.code))
+    assert len(set(answers)) == 1, answers
+    assert answers[0][0] == "path outside QPILOT_DATA_ROOTS"
+    with pytest.raises(srv.PathRefused) as err:  # inside a root, a missing file is still named
+        getattr(srv, check)(str(root / f"missing-{name}"))
+    assert "not found" in str(err.value)

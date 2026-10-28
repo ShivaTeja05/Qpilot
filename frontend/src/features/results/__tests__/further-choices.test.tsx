@@ -72,7 +72,8 @@ describe("the efficiency models, not tested yet", () => {
     wrap(<AxisPanel axis={offAxis} workspace={workspace} />);
     const panel = screen.getByRole("region", { name: "Also test efficiency models" });
     // the badge, and every model but LinRegPCR's
-    expect(within(panel).getAllByText(AXIS_STATUS.off.word)).toHaveLength(offAxis.options.length);
+    expect(within(panel).getAllByText(AXIS_STATUS.off.word)).toHaveLength(1);
+    expect(within(panel).getAllByText("Not in the grid")).toHaveLength(offAxis.options.length - 1);
     expect(panel.textContent).toContain(offAxis.text.plain);
     for (const o of offAxis.options) expect(panel.textContent).toContain(o.label);
     expect(within(panel).getByText("In use")).toBeTruthy();

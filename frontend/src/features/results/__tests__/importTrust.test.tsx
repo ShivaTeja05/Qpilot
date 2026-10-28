@@ -184,7 +184,7 @@ describe("the card after a person chose Cq only", () => {
     );
     const box = article();
     expect(CQ_ONLY.decision?.option).toBe("cq_only");
-    expect(within(box).getByText("Decided by a person")).toBeTruthy();
+    expect(within(box).getByText("Decided by you")).toBeTruthy();
     expect(box.textContent).toContain(CQ_ONLY.decision!.reason);
     expect(box.textContent).toContain(`${CQ_ONLY.cap} confidence`);
     expect(CQ_ONLY.cap).toBe("Low");

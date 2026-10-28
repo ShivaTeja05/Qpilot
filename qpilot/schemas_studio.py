@@ -57,6 +57,7 @@ kind                        subject            payload
 from __future__ import annotations
 
 import hashlib
+import itertools
 import json
 import re
 from typing import Any, Literal
@@ -331,7 +332,7 @@ def _slug(name: str) -> str:
 
 
 ComparisonPattern = Literal["vs_control", "all_pairs", "chosen"]
-Correction = Literal["holm", "none"]
+Correction = Literal["holm", "dunnett", "tukey", "none"]
 
 
 class ComparisonPlan(BaseModel):
@@ -343,8 +344,12 @@ class ComparisonPlan(BaseModel):
     (``vs_control``), every pair of groups (``all_pairs``) or a person's own list (``chosen``).
 
     ``correction`` is the multiple-comparison correction a person chose: ``holm`` (Holm's
-    step-down correction across one gene's comparisons; a call needs the corrected p below the
-    threshold) or ``none``. ``pair_by`` names the pairing (``"donor"``): when set, each
+    step-down correction across one gene's comparisons, each a Welch test; a call needs the
+    corrected p below the threshold), ``dunnett`` (each group against the control: Dunnett's
+    test, only for ``vs_control``), ``tukey`` (every pair: Tukey-Kramer, only for
+    ``all_pairs`` listing every pair) or ``none``. Dunnett and Tukey pool one variance per gene
+    over the compared groups (:mod:`qpilot.qpcr.multiplicity`) and need an unpaired plan.
+    ``pair_by`` names the pairing (``"donor"``): when set, each
     comparison is a paired t-test on the log2 relative quantities within each pair, with the
     pairs taken from :attr:`SampleDesign.pair`.
 
@@ -384,6 +389,18 @@ class ComparisonPlan(BaseModel):
                 raise ValueError(f"comparisons not against the control {self.control}: {others}")
         if self.pair_by is not None and not self.pair_by.strip():
             raise ValueError("pair_by names the pairing, e.g. 'donor'")
+        if self.correction in ("dunnett", "tukey") and self.pair_by is not None:
+            raise ValueError(
+                f"{self.correction.title()}'s correction pools unpaired groups; a paired plan "
+                "uses Holm's correction or none"
+            )
+        if self.correction == "dunnett" and self.pattern != "vs_control":
+            raise ValueError("Dunnett's correction is for each group against one control")
+        if self.correction == "tukey":
+            groups = self.groups()
+            every = {frozenset(p) for p in itertools.combinations(groups, 2)}
+            if self.pattern != "all_pairs" or seen != every:
+                raise ValueError("Tukey's correction is for every pair of the groups")
         return self
 
     def groups(self) -> tuple[str, ...]:

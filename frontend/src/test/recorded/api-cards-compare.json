@@ -1,0 +1,1420 @@
+{
+ "study_id": "7ade8b21e05c",
+ "head": "78dd8c13f19464ece5d045db7342f447474dee0e123f1e4d80a71f885ce103c7",
+ "cards": [
+  {
+   "card": {
+    "id": "card_refset",
+    "kind": "reference_set",
+    "rank": 1,
+    "impact": {
+     "flips": true,
+     "flips_anywhere": true,
+     "max_delta_log2fc": 1.1308472577609399,
+     "n_calls_flipped": 1,
+     "n_calls_flipped_anywhere": 1,
+     "n_genes_flipped": 0,
+     "n_genes_flipped_anywhere": 0,
+     "n_genes_flipped_min3": 0,
+     "n_genes_flipped_single_only": 0,
+     "views": [
+      {
+       "flips": false,
+       "flips_anywhere": false,
+       "genes": [],
+       "id": "drug_a_vs_control",
+       "max_delta_log2fc": 0.0020950531814007967,
+       "n_genes_flipped": 0,
+       "n_genes_flipped_anywhere": 0
+      },
+      {
+       "flips": true,
+       "flips_anywhere": true,
+       "genes": [
+        "TP53"
+       ],
+       "id": "drug_b_vs_control",
+       "max_delta_log2fc": 1.1308472577609399,
+       "n_genes_flipped": 1,
+       "n_genes_flipped_anywhere": 1,
+       "per_option": {
+        "actb_alone": {
+         "IL6": {
+          "ci": [
+           13.83989750886157,
+           78.44435903995213
+          ],
+          "conclusion": "up",
+          "fc": 32.949383746305124,
+          "log2fc": 5.0421795775876515,
+          "n_hi": 4,
+          "n_lo": 4,
+          "p": 7.616181305447702e-05,
+          "t": 9.959641549367882,
+          "target": "IL6"
+         },
+         "MYC": {
+          "ci": [
+           6.678924183032515,
+           37.753305537914926
+          ],
+          "conclusion": "up",
+          "fc": 15.879277859732644,
+          "log2fc": 3.989073399567746,
+          "n_hi": 4,
+          "n_lo": 4,
+          "p": 0.0002644571673834628,
+          "t": 7.883328179046991,
+          "target": "MYC"
+         },
+         "TP53": {
+          "ci": [
+           1.9574798641258722,
+           11.124705691638244
+          ],
+          "conclusion": "up",
+          "fc": 4.666517693709984,
+          "log2fc": 2.2223463657700835,
+          "n_hi": 4,
+          "n_lo": 4,
+          "p": 0.005097713638816162,
+          "t": 4.3778919892019355,
+          "target": "TP53"
+         }
+        },
+        "gapdh_alone": {
+         "IL6": {
+          "ci": [
+           2.9267188318220985,
+           16.130127873947934
+          ],
+          "conclusion": "up",
+          "fc": 6.8708332106362455,
+          "log2fc": 2.7804850620657735,
+          "n_hi": 4,
+          "n_lo": 4,
+          "p": 0.0015946655823014162,
+          "t": 5.576759329945567,
+          "target": "IL6"
+         },
+         "MYC": {
+          "ci": [
+           1.4120389076896862,
+           7.7649569521804835
+          ],
+          "conclusion": "up",
+          "fc": 3.311256760357669,
+          "log2fc": 1.7273788840458684,
+          "n_hi": 4,
+          "n_lo": 4,
+          "p": 0.014099959130919567,
+          "t": 3.465511137532082,
+          "target": "MYC"
+         },
+         "TP53": {
+          "ci": [
+           0.41387682273521903,
+           2.287910054570444
+          ],
+          "conclusion": "none",
+          "fc": 0.9730945196072049,
+          "log2fc": -0.039348149751794015,
+          "n_hi": 4,
+          "n_lo": 4,
+          "p": 0.9399168480651141,
+          "t": -0.07869430978278602,
+          "target": "TP53"
+         }
+        },
+        "recommended": {
+         "IL6": {
+          "ci": [
+           6.364581367630866,
+           35.57024524275692
+          ],
+          "conclusion": "up",
+          "fc": 15.046252693415429,
+          "log2fc": 3.9113323198267116,
+          "n_hi": 4,
+          "n_lo": 4,
+          "p": 0.0002858911421134023,
+          "t": 7.7851481999073835,
+          "target": "IL6"
+         },
+         "MYC": {
+          "ci": [
+           3.0710709437686736,
+           17.121182520815815
+          ],
+          "conclusion": "up",
+          "fc": 7.251232044462345,
+          "log2fc": 2.858226141806807,
+          "n_hi": 4,
+          "n_lo": 4,
+          "p": 0.0014298841227623575,
+          "t": 5.691211859391887,
+          "target": "MYC"
+         },
+         "TP53": {
+          "ci": [
+           0.9001134330086784,
+           5.044878375185248
+          ],
+          "conclusion": "none",
+          "fc": 2.1309534939550505,
+          "log2fc": 1.0914991080091445,
+          "n_hi": 4,
+          "n_lo": 4,
+          "p": 0.07500462648282098,
+          "t": 2.166500232249418,
+          "target": "TP53"
+         }
+        }
+       }
+      }
+     ]
+    },
+    "evidence": {
+     "cutoff_M": 1.5,
+     "cutoff_V": 0.15,
+     "genorm_M": {
+      "ACTB": 1.1126096197750188,
+      "GAPDH": 1.1126096197750188
+     },
+     "genorm_V": {},
+     "genorm_note": "geNorm M ranks stability across all samples; it cannot show whether a control gene differs between the groups. The pairwise ratios below check that.",
+     "genorm_order": [
+      "ACTB",
+      "GAPDH"
+     ],
+     "genorm_validated": false,
+     "not_recommended": [
+      "actb_alone",
+      "gapdh_alone"
+     ],
+     "not_recommended_note": "MIQE recommends normalising to more than one validated reference gene; a single gene is what a ΔΔCt spreadsheet does",
+     "ref_group_effect": {
+      "flag_fold": 1.4142135623730951,
+      "flag_log2": 0.5,
+      "flagged": [],
+      "note": "1 pairs, no multiple-testing correction",
+      "pairs": [
+       {
+        "diff": -0.004190106362798929,
+        "fold": 0.9970998531628465,
+        "genes": [
+         "ACTB",
+         "GAPDH"
+        ],
+        "label": "ACTB:GAPDH",
+        "n_hi": 4,
+        "n_lo": 4,
+        "p": 0.4376229880794552
+       }
+      ],
+      "raw": {
+       "ACTB": {
+        "diff": -0.00017712212903475688,
+        "fold": 0.9998772358317821,
+        "genes": [
+         "ACTB"
+        ],
+        "label": "ACTB",
+        "n_hi": 4,
+        "n_lo": 4,
+        "p": 0.9998312286958542
+       },
+       "GAPDH": {
+        "diff": 0.004012984233764172,
+        "fold": 1.002785460914597,
+        "genes": [
+         "GAPDH"
+        ],
+        "label": "GAPDH",
+        "n_hi": 4,
+        "n_lo": 4,
+        "p": 0.9961970279696227
+       }
+      }
+     }
+    },
+    "options": [
+     {
+      "id": "recommended",
+      "label": "Recommended set (all two)",
+      "per_gene": {
+       "IL6": {
+        "target": "IL6",
+        "log2fc": 2.6122476739189993,
+        "fc": 6.114555706124383,
+        "ci": [
+         2.865556118265201,
+         13.047307377784913
+        ],
+        "p": 0.0011056668347653273,
+        "t": 5.845974344019159,
+        "n_hi": 4,
+        "n_lo": 4,
+        "conclusion": "up"
+       },
+       "MYC": {
+        "target": "MYC",
+        "log2fc": 0.11481008070250054,
+        "fc": 1.082832489880625,
+        "ci": [
+         0.5034331963372145,
+         2.32906016065671
+        ],
+        "p": 0.8077910348757356,
+        "t": 0.2542509430939969,
+        "n_hi": 4,
+        "n_lo": 4,
+        "conclusion": "none"
+       }
+      }
+     },
+     {
+      "id": "actb_alone",
+      "label": "ACTB alone",
+      "per_gene": {
+       "IL6": {
+        "target": "IL6",
+        "log2fc": 2.6143427271004,
+        "fc": 6.1234415932813,
+        "ci": [
+         2.862371098075375,
+         13.099816781807105
+        ],
+        "p": 0.0011207511314148427,
+        "t": 5.831015163349529,
+        "n_hi": 4,
+        "n_lo": 4,
+        "conclusion": "up"
+       },
+       "MYC": {
+        "target": "MYC",
+        "log2fc": 0.11690513388390089,
+        "fc": 1.0844061000949015,
+        "ci": [
+         0.502881752061938,
+         2.338395825860466
+        ],
+        "p": 0.8050040238848006,
+        "t": 0.2580333940158944,
+        "n_hi": 4,
+        "n_lo": 4,
+        "conclusion": "none"
+       }
+      }
+     },
+     {
+      "id": "gapdh_alone",
+      "label": "GAPDH alone",
+      "per_gene": {
+       "IL6": {
+        "target": "IL6",
+        "log2fc": 2.610152620737601,
+        "fc": 6.105682713512051,
+        "ci": [
+         2.8686972103067467,
+         12.995223498716213
+        ],
+        "p": 0.00109085990919682,
+        "t": 5.860919483245226,
+        "n_hi": 4,
+        "n_lo": 4,
+        "conclusion": "up"
+       },
+       "MYC": {
+        "target": "MYC",
+        "log2fc": 0.1127150275211024,
+        "fc": 1.0812611631735216,
+        "ci": [
+         0.5039770373920222,
+         2.3197995468947212
+        ],
+        "p": 0.8106033951530144,
+        "t": 0.25043843925052345,
+        "n_hi": 4,
+        "n_lo": 4,
+        "conclusion": "none"
+       }
+      }
+     }
+    ],
+    "recommended": "recommended",
+    "rationale_template": "refset_v1",
+    "facts": [
+     "f_order_1",
+     "f_m_1",
+     "f_worst_ref",
+     "f_fc_il6_recommended",
+     "f_fc_il6_worst",
+     "f_n_flipped_refset",
+     "f_n_genes",
+     "f_fc_myc_recommended",
+     "f_fc_il6_actb",
+     "f_fc_myc_actb",
+     "f_fc_il6_gapdh",
+     "f_fc_myc_gapdh",
+     "f_n_flipped_refset_min3",
+     "f_n_flipped_refset_single_only",
+     "f_ref_pair_top",
+     "f_ref_ratio_top",
+     "f_ref_ratio_top_p",
+     "f_n_ref_pairs_flagged",
+     "f_n_ref_pairs",
+     "f_ref_flag_fold"
+    ],
+    "autonomy": "suggest",
+    "effective_autonomy": "suggest",
+    "status": "open",
+    "decision": null,
+    "reason": null,
+    "decided_by": null,
+    "decided_at": null
+   },
+   "title": "Which control genes to normalise to",
+   "status_line": "Your decision: this choice can change a conclusion.",
+   "impact": {
+    "plain": "Calls that change with this choice: 1 in Drug B vs Control",
+    "segments": [
+     {
+      "text": "Calls that change with this choice: ",
+      "fact": null
+     },
+     {
+      "text": "1",
+      "fact": "f_cmp2_n_flipped_refset"
+     },
+     {
+      "text": " in ",
+      "fact": null
+     },
+     {
+      "text": "Drug B vs Control",
+      "fact": "f_cmp2_label"
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_cmp2_n_flipped_refset",
+      "text": "1",
+      "value": 1,
+      "unit": "",
+      "path": "comparisons.drug_b_vs_control.robustness"
+     },
+     {
+      "id": "f_cmp2_label",
+      "text": "Drug B vs Control",
+      "value": "Drug B vs Control",
+      "unit": "",
+      "path": "comparisons.drug_b_vs_control.label"
+     }
+    ],
+    "source": "template"
+   },
+   "explanation": {
+    "plain": "geNorm's stepwise ranking keeps ACTB and GAPDH as the most stable and drops GAPDH first. With the recommended set versus GAPDH alone: IL6 6.1× vs 6.1× and MYC 1.1× vs 1.1×. No gene changes its conclusion with this choice, so it was decided automatically and logged; you can reopen it. Even between sets of three or more control genes, 0 of 3 change. The control genes are not neutral here: the ratio ACTB:GAPDH itself differs 1× between the groups (p = 0.44), and 0 of 1 pairs differ by at least 1.4×.",
+    "segments": [
+     {
+      "text": "geNorm's stepwise ranking keeps ",
+      "fact": null
+     },
+     {
+      "text": "ACTB",
+      "fact": "f_order_1"
+     },
+     {
+      "text": " and ",
+      "fact": null
+     },
+     {
+      "text": "GAPDH",
+      "fact": "f_order_2"
+     },
+     {
+      "text": " as the most stable and drops ",
+      "fact": null
+     },
+     {
+      "text": "GAPDH",
+      "fact": "f_worst_ref"
+     },
+     {
+      "text": " first. With the recommended set versus ",
+      "fact": null
+     },
+     {
+      "text": "GAPDH",
+      "fact": "f_worst_ref"
+     },
+     {
+      "text": " alone: IL6 ",
+      "fact": null
+     },
+     {
+      "text": "6.1×",
+      "fact": "f_fc_il6_recommended"
+     },
+     {
+      "text": " vs ",
+      "fact": null
+     },
+     {
+      "text": "6.1×",
+      "fact": "f_fc_il6_worst"
+     },
+     {
+      "text": " and MYC ",
+      "fact": null
+     },
+     {
+      "text": "1.1×",
+      "fact": "f_fc_myc_recommended"
+     },
+     {
+      "text": " vs ",
+      "fact": null
+     },
+     {
+      "text": "1.1×",
+      "fact": "f_fc_myc_worst"
+     },
+     {
+      "text": ". No gene changes its conclusion with this choice, so it was decided automatically and logged; you can reopen it. Even between sets of three or more control genes, ",
+      "fact": null
+     },
+     {
+      "text": "0",
+      "fact": "f_n_flipped_refset_min3"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "3",
+      "fact": "f_n_genes"
+     },
+     {
+      "text": " change. The control genes are not neutral here: the ratio ",
+      "fact": null
+     },
+     {
+      "text": "ACTB:GAPDH",
+      "fact": "f_ref_pair_top"
+     },
+     {
+      "text": " itself differs ",
+      "fact": null
+     },
+     {
+      "text": "1×",
+      "fact": "f_ref_ratio_top"
+     },
+     {
+      "text": " between the groups (p = ",
+      "fact": null
+     },
+     {
+      "text": "0.44",
+      "fact": "f_ref_ratio_top_p"
+     },
+     {
+      "text": "), and ",
+      "fact": null
+     },
+     {
+      "text": "0",
+      "fact": "f_n_ref_pairs_flagged"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "1",
+      "fact": "f_n_ref_pairs"
+     },
+     {
+      "text": " pairs differ by at least ",
+      "fact": null
+     },
+     {
+      "text": "1.4×",
+      "fact": "f_ref_flag_fold"
+     },
+     {
+      "text": ".",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_order_1",
+      "text": "ACTB",
+      "value": "ACTB",
+      "unit": "",
+      "path": "genorm.order[0]"
+     },
+     {
+      "id": "f_order_2",
+      "text": "GAPDH",
+      "value": "GAPDH",
+      "unit": "",
+      "path": "genorm.order[1]"
+     },
+     {
+      "id": "f_worst_ref",
+      "text": "GAPDH",
+      "value": "GAPDH",
+      "unit": "",
+      "path": "genorm.order[-1]"
+     },
+     {
+      "id": "f_fc_il6_recommended",
+      "text": "6.1×",
+      "value": 6.114555706124383,
+      "unit": "×",
+      "path": "contrasts.IL6.fc"
+     },
+     {
+      "id": "f_fc_il6_worst",
+      "text": "6.1×",
+      "value": 6.105682713512051,
+      "unit": "×",
+      "path": "cards.card_refset.gapdh_alone.IL6.fc"
+     },
+     {
+      "id": "f_fc_myc_recommended",
+      "text": "1.1×",
+      "value": 1.082832489880625,
+      "unit": "×",
+      "path": "contrasts.MYC.fc"
+     },
+     {
+      "id": "f_fc_myc_worst",
+      "text": "1.1×",
+      "value": 1.0812611631735216,
+      "unit": "×",
+      "path": "cards.card_refset.gapdh_alone.MYC.fc"
+     },
+     {
+      "id": "f_n_flipped_refset_min3",
+      "text": "0",
+      "value": 0,
+      "unit": "",
+      "path": "cards.card_refset.impact.n_genes_flipped_min3"
+     },
+     {
+      "id": "f_n_genes",
+      "text": "3",
+      "value": 3,
+      "unit": "",
+      "path": "study"
+     },
+     {
+      "id": "f_ref_pair_top",
+      "text": "ACTB:GAPDH",
+      "value": "ACTB:GAPDH",
+      "unit": "",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.ACTB:GAPDH.label"
+     },
+     {
+      "id": "f_ref_ratio_top",
+      "text": "1×",
+      "value": 0.9970998531628465,
+      "unit": "×",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.ACTB:GAPDH.fold"
+     },
+     {
+      "id": "f_ref_ratio_top_p",
+      "text": "0.44",
+      "value": 0.4376229880794552,
+      "unit": "",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.ACTB:GAPDH.p"
+     },
+     {
+      "id": "f_n_ref_pairs_flagged",
+      "text": "0",
+      "value": 0,
+      "unit": "",
+      "path": "cards.card_refset.evidence.ref_group_effect.flagged"
+     },
+     {
+      "id": "f_n_ref_pairs",
+      "text": "1",
+      "value": 1,
+      "unit": "",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs"
+     },
+     {
+      "id": "f_ref_flag_fold",
+      "text": "1.4×",
+      "value": 1.4142135623730951,
+      "unit": "×",
+      "path": "cards.card_refset.evidence.ref_group_effect.flag_fold"
+     }
+    ],
+    "source": "template"
+   },
+   "needs_human": true,
+   "genes": [
+    "IL6",
+    "MYC"
+   ],
+   "options": [
+    {
+     "id": "recommended",
+     "label": "Recommended set (all two)",
+     "recommended": true,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "IL6",
+       "fc": 6.114555706124383,
+       "log2fc": 2.6122476739189993,
+       "ci": [
+        2.865556118265201,
+        13.047307377784913
+       ],
+       "p": 0.0011056668347653273,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "MYC",
+       "fc": 1.082832489880625,
+       "log2fc": 0.11481008070250054,
+       "ci": [
+        0.5034331963372145,
+        2.32906016065671
+       ],
+       "p": 0.8077910348757356,
+       "conclusion": "none",
+       "changes_call": false
+      }
+     ],
+     "by_comparison": [
+      {
+       "comparison": "drug_b_vs_control",
+       "label": "Drug B vs Control",
+       "effects": [
+        {
+         "gene": "IL6",
+         "fc": 15.046252693415429,
+         "log2fc": 3.9113323198267116,
+         "ci": [
+          6.364581367630866,
+          35.57024524275692
+         ],
+         "p": 0.0002858911421134023,
+         "conclusion": "up",
+         "changes_call": false
+        },
+        {
+         "gene": "MYC",
+         "fc": 7.251232044462345,
+         "log2fc": 2.858226141806807,
+         "ci": [
+          3.0710709437686736,
+          17.121182520815815
+         ],
+         "p": 0.0014298841227623575,
+         "conclusion": "up",
+         "changes_call": false
+        },
+        {
+         "gene": "TP53",
+         "fc": 2.1309534939550505,
+         "log2fc": 1.0914991080091445,
+         "ci": [
+          0.9001134330086784,
+          5.044878375185248
+         ],
+         "p": 0.07500462648282098,
+         "conclusion": "none",
+         "changes_call": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "actb_alone",
+     "label": "ACTB alone",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": true,
+     "effects": [
+      {
+       "gene": "IL6",
+       "fc": 6.1234415932813,
+       "log2fc": 2.6143427271004,
+       "ci": [
+        2.862371098075375,
+        13.099816781807105
+       ],
+       "p": 0.0011207511314148427,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "MYC",
+       "fc": 1.0844061000949015,
+       "log2fc": 0.11690513388390089,
+       "ci": [
+        0.502881752061938,
+        2.338395825860466
+       ],
+       "p": 0.8050040238848006,
+       "conclusion": "none",
+       "changes_call": false
+      }
+     ],
+     "by_comparison": [
+      {
+       "comparison": "drug_b_vs_control",
+       "label": "Drug B vs Control",
+       "effects": [
+        {
+         "gene": "IL6",
+         "fc": 32.949383746305124,
+         "log2fc": 5.0421795775876515,
+         "ci": [
+          13.83989750886157,
+          78.44435903995213
+         ],
+         "p": 7.616181305447702e-05,
+         "conclusion": "up",
+         "changes_call": false
+        },
+        {
+         "gene": "MYC",
+         "fc": 15.879277859732644,
+         "log2fc": 3.989073399567746,
+         "ci": [
+          6.678924183032515,
+          37.753305537914926
+         ],
+         "p": 0.0002644571673834628,
+         "conclusion": "up",
+         "changes_call": false
+        },
+        {
+         "gene": "TP53",
+         "fc": 4.666517693709984,
+         "log2fc": 2.2223463657700835,
+         "ci": [
+          1.9574798641258722,
+          11.124705691638244
+         ],
+         "p": 0.005097713638816162,
+         "conclusion": "up",
+         "changes_call": true
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "gapdh_alone",
+     "label": "GAPDH alone",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": true,
+     "effects": [
+      {
+       "gene": "IL6",
+       "fc": 6.105682713512051,
+       "log2fc": 2.610152620737601,
+       "ci": [
+        2.8686972103067467,
+        12.995223498716213
+       ],
+       "p": 0.00109085990919682,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "MYC",
+       "fc": 1.0812611631735216,
+       "log2fc": 0.1127150275211024,
+       "ci": [
+        0.5039770373920222,
+        2.3197995468947212
+       ],
+       "p": 0.8106033951530144,
+       "conclusion": "none",
+       "changes_call": false
+      }
+     ],
+     "by_comparison": [
+      {
+       "comparison": "drug_b_vs_control",
+       "label": "Drug B vs Control",
+       "effects": [
+        {
+         "gene": "IL6",
+         "fc": 6.8708332106362455,
+         "log2fc": 2.7804850620657735,
+         "ci": [
+          2.9267188318220985,
+          16.130127873947934
+         ],
+         "p": 0.0015946655823014162,
+         "conclusion": "up",
+         "changes_call": false
+        },
+        {
+         "gene": "MYC",
+         "fc": 3.311256760357669,
+         "log2fc": 1.7273788840458684,
+         "ci": [
+          1.4120389076896862,
+          7.7649569521804835
+         ],
+         "p": 0.014099959130919567,
+         "conclusion": "up",
+         "changes_call": false
+        },
+        {
+         "gene": "TP53",
+         "fc": 0.9730945196072049,
+         "log2fc": -0.039348149751794015,
+         "ci": [
+          0.41387682273521903,
+          2.287910054570444
+         ],
+         "p": 0.9399168480651141,
+         "conclusion": "none",
+         "changes_call": false
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "pending": [],
+   "undo_option": null,
+   "undo_label": null,
+   "carried": null,
+   "asked_again": null,
+   "place": null,
+   "comparisons": [
+    {
+     "id": "drug_a_vs_control",
+     "label": "Drug A vs Control",
+     "primary": true,
+     "flips": false,
+     "n_flipped": 0,
+     "genes": [],
+     "flips_elsewhere": false
+    },
+    {
+     "id": "drug_b_vs_control",
+     "label": "Drug B vs Control",
+     "primary": false,
+     "flips": true,
+     "n_flipped": 1,
+     "genes": [
+      "TP53"
+     ],
+     "flips_elsewhere": false
+    }
+   ],
+   "study_wide": "A choice on this card applies to the whole study: every comparison is analysed with the option you pick."
+  },
+  {
+   "card": {
+    "id": "card_undetermined",
+    "kind": "undetermined",
+    "rank": 2,
+    "impact": {
+     "flips": false,
+     "flips_anywhere": false,
+     "max_delta_log2fc": 0.0,
+     "n_calls_flipped": 0,
+     "n_calls_flipped_anywhere": 0,
+     "n_genes_flipped": 0,
+     "n_genes_flipped_anywhere": 0,
+     "views": [
+      {
+       "flips": false,
+       "flips_anywhere": false,
+       "genes": [],
+       "id": "drug_a_vs_control",
+       "max_delta_log2fc": 0.0,
+       "n_genes_flipped": 0,
+       "n_genes_flipped_anywhere": 0
+      },
+      {
+       "flips": false,
+       "flips_anywhere": false,
+       "genes": [],
+       "id": "drug_b_vs_control",
+       "max_delta_log2fc": 0.0,
+       "n_genes_flipped": 0,
+       "n_genes_flipped_anywhere": 0,
+       "per_option": {
+        "cap": {
+         "IL6": {
+          "ci": [
+           6.364581367630866,
+           35.57024524275692
+          ],
+          "conclusion": "up",
+          "fc": 15.046252693415429,
+          "log2fc": 3.9113323198267116,
+          "n_hi": 4,
+          "n_lo": 4,
+          "p": 0.0002858911421134023,
+          "t": 7.7851481999073835,
+          "target": "IL6"
+         },
+         "MYC": {
+          "ci": [
+           3.0710709437686736,
+           17.121182520815815
+          ],
+          "conclusion": "up",
+          "fc": 7.251232044462345,
+          "log2fc": 2.858226141806807,
+          "n_hi": 4,
+          "n_lo": 4,
+          "p": 0.0014298841227623575,
+          "t": 5.691211859391887,
+          "target": "MYC"
+         }
+        },
+        "drop": {
+         "IL6": {
+          "ci": [
+           6.364581367630866,
+           35.57024524275692
+          ],
+          "conclusion": "up",
+          "fc": 15.046252693415429,
+          "log2fc": 3.9113323198267116,
+          "n_hi": 4,
+          "n_lo": 4,
+          "p": 0.0002858911421134023,
+          "t": 7.7851481999073835,
+          "target": "IL6"
+         },
+         "MYC": {
+          "ci": [
+           3.0710709437686736,
+           17.121182520815815
+          ],
+          "conclusion": "up",
+          "fc": 7.251232044462345,
+          "log2fc": 2.858226141806807,
+          "n_hi": 4,
+          "n_lo": 4,
+          "p": 0.0014298841227623575,
+          "t": 5.691211859391887,
+          "target": "MYC"
+         }
+        }
+       }
+      }
+     ]
+    },
+    "evidence": {
+     "n_undetermined": 0,
+     "n_unknown_wells": 180
+    },
+    "options": [
+     {
+      "id": "drop",
+      "label": "Drop empty wells",
+      "per_gene": {
+       "IL6": {
+        "target": "IL6",
+        "log2fc": 2.6122476739189993,
+        "fc": 6.114555706124383,
+        "ci": [
+         2.865556118265201,
+         13.047307377784913
+        ],
+        "p": 0.0011056668347653273,
+        "t": 5.845974344019159,
+        "n_hi": 4,
+        "n_lo": 4,
+        "conclusion": "up"
+       },
+       "MYC": {
+        "target": "MYC",
+        "log2fc": 0.11481008070250054,
+        "fc": 1.082832489880625,
+        "ci": [
+         0.5034331963372145,
+         2.32906016065671
+        ],
+        "p": 0.8077910348757356,
+        "t": 0.2542509430939969,
+        "n_hi": 4,
+        "n_lo": 4,
+        "conclusion": "none"
+       }
+      }
+     },
+     {
+      "id": "cap",
+      "label": "Count empty wells as very low (cap)",
+      "per_gene": {
+       "IL6": {
+        "target": "IL6",
+        "log2fc": 2.6122476739189993,
+        "fc": 6.114555706124383,
+        "ci": [
+         2.865556118265201,
+         13.047307377784913
+        ],
+        "p": 0.0011056668347653273,
+        "t": 5.845974344019159,
+        "n_hi": 4,
+        "n_lo": 4,
+        "conclusion": "up"
+       },
+       "MYC": {
+        "target": "MYC",
+        "log2fc": 0.11481008070250054,
+        "fc": 1.082832489880625,
+        "ci": [
+         0.5034331963372145,
+         2.32906016065671
+        ],
+        "p": 0.8077910348757356,
+        "t": 0.2542509430939969,
+        "n_hi": 4,
+        "n_lo": 4,
+        "conclusion": "none"
+       }
+      }
+     }
+    ],
+    "recommended": "drop",
+    "rationale_template": "undetermined_auto_v1",
+    "facts": [
+     "f_n_flipped_undetermined",
+     "f_n_undetermined",
+     "f_n_unknown_wells",
+     "f_pct_undetermined",
+     "f_fc_il6_drop",
+     "f_fc_myc_drop",
+     "f_fc_il6_cap",
+     "f_fc_myc_cap"
+    ],
+    "autonomy": "suggest",
+    "effective_autonomy": "suggest",
+    "status": "auto_decided",
+    "decision": "drop",
+    "reason": "Decided automatically: no option on this card changes any conclusion.",
+    "decided_by": "system",
+    "decided_at": "2026-10-28T18:51:11Z"
+   },
+   "title": "What to do with wells that never amplified",
+   "status_line": "Decided automatically: no option on this card changes any conclusion.",
+   "impact": {
+    "plain": "Changes no conclusion",
+    "segments": [
+     {
+      "text": "Changes no conclusion",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "explanation": {
+    "plain": "0 of 180 sample wells (0.0%) never amplified. They can be dropped or counted as very low. Dropped versus counted: IL6 6.1× vs 6.1× and MYC 1.1× vs 1.1×. No gene changes its conclusion with this choice, so it was decided automatically and logged; you can reopen it.",
+    "segments": [
+     {
+      "text": "0",
+      "fact": "f_n_undetermined"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "180",
+      "fact": "f_n_unknown_wells"
+     },
+     {
+      "text": " sample wells (",
+      "fact": null
+     },
+     {
+      "text": "0.0%",
+      "fact": "f_pct_undetermined"
+     },
+     {
+      "text": ") never amplified. They can be dropped or counted as very low. Dropped versus counted: IL6 ",
+      "fact": null
+     },
+     {
+      "text": "6.1×",
+      "fact": "f_fc_il6_drop"
+     },
+     {
+      "text": " vs ",
+      "fact": null
+     },
+     {
+      "text": "6.1×",
+      "fact": "f_fc_il6_cap"
+     },
+     {
+      "text": " and MYC ",
+      "fact": null
+     },
+     {
+      "text": "1.1×",
+      "fact": "f_fc_myc_drop"
+     },
+     {
+      "text": " vs ",
+      "fact": null
+     },
+     {
+      "text": "1.1×",
+      "fact": "f_fc_myc_cap"
+     },
+     {
+      "text": ". No gene changes its conclusion with this choice, so it was decided automatically and logged; you can reopen it.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_n_undetermined",
+      "text": "0",
+      "value": 0,
+      "unit": "",
+      "path": "study"
+     },
+     {
+      "id": "f_n_unknown_wells",
+      "text": "180",
+      "value": 180,
+      "unit": "",
+      "path": "study"
+     },
+     {
+      "id": "f_pct_undetermined",
+      "text": "0.0%",
+      "value": 0.0,
+      "unit": "%",
+      "path": "study"
+     },
+     {
+      "id": "f_fc_il6_drop",
+      "text": "6.1×",
+      "value": 6.114555706124383,
+      "unit": "×",
+      "path": "cards.card_undetermined.drop.IL6.fc"
+     },
+     {
+      "id": "f_fc_il6_cap",
+      "text": "6.1×",
+      "value": 6.114555706124383,
+      "unit": "×",
+      "path": "cards.card_undetermined.cap.IL6.fc"
+     },
+     {
+      "id": "f_fc_myc_drop",
+      "text": "1.1×",
+      "value": 1.082832489880625,
+      "unit": "×",
+      "path": "cards.card_undetermined.drop.MYC.fc"
+     },
+     {
+      "id": "f_fc_myc_cap",
+      "text": "1.1×",
+      "value": 1.082832489880625,
+      "unit": "×",
+      "path": "cards.card_undetermined.cap.MYC.fc"
+     }
+    ],
+    "source": "template"
+   },
+   "needs_human": false,
+   "genes": [
+    "IL6",
+    "MYC"
+   ],
+   "options": [
+    {
+     "id": "drop",
+     "label": "Drop empty wells",
+     "recommended": true,
+     "chosen": true,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "IL6",
+       "fc": 6.114555706124383,
+       "log2fc": 2.6122476739189993,
+       "ci": [
+        2.865556118265201,
+        13.047307377784913
+       ],
+       "p": 0.0011056668347653273,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "MYC",
+       "fc": 1.082832489880625,
+       "log2fc": 0.11481008070250054,
+       "ci": [
+        0.5034331963372145,
+        2.32906016065671
+       ],
+       "p": 0.8077910348757356,
+       "conclusion": "none",
+       "changes_call": false
+      }
+     ],
+     "by_comparison": [
+      {
+       "comparison": "drug_b_vs_control",
+       "label": "Drug B vs Control",
+       "effects": [
+        {
+         "gene": "IL6",
+         "fc": 15.046252693415429,
+         "log2fc": 3.9113323198267116,
+         "ci": [
+          6.364581367630866,
+          35.57024524275692
+         ],
+         "p": 0.0002858911421134023,
+         "conclusion": "up",
+         "changes_call": false
+        },
+        {
+         "gene": "MYC",
+         "fc": 7.251232044462345,
+         "log2fc": 2.858226141806807,
+         "ci": [
+          3.0710709437686736,
+          17.121182520815815
+         ],
+         "p": 0.0014298841227623575,
+         "conclusion": "up",
+         "changes_call": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "cap",
+     "label": "Count empty wells as very low (cap)",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "IL6",
+       "fc": 6.114555706124383,
+       "log2fc": 2.6122476739189993,
+       "ci": [
+        2.865556118265201,
+        13.047307377784913
+       ],
+       "p": 0.0011056668347653273,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "MYC",
+       "fc": 1.082832489880625,
+       "log2fc": 0.11481008070250054,
+       "ci": [
+        0.5034331963372145,
+        2.32906016065671
+       ],
+       "p": 0.8077910348757356,
+       "conclusion": "none",
+       "changes_call": false
+      }
+     ],
+     "by_comparison": [
+      {
+       "comparison": "drug_b_vs_control",
+       "label": "Drug B vs Control",
+       "effects": [
+        {
+         "gene": "IL6",
+         "fc": 15.046252693415429,
+         "log2fc": 3.9113323198267116,
+         "ci": [
+          6.364581367630866,
+          35.57024524275692
+         ],
+         "p": 0.0002858911421134023,
+         "conclusion": "up",
+         "changes_call": false
+        },
+        {
+         "gene": "MYC",
+         "fc": 7.251232044462345,
+         "log2fc": 2.858226141806807,
+         "ci": [
+          3.0710709437686736,
+          17.121182520815815
+         ],
+         "p": 0.0014298841227623575,
+         "conclusion": "up",
+         "changes_call": false
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "pending": [],
+   "undo_option": null,
+   "undo_label": null,
+   "carried": null,
+   "asked_again": null,
+   "place": null,
+   "comparisons": [
+    {
+     "id": "drug_a_vs_control",
+     "label": "Drug A vs Control",
+     "primary": true,
+     "flips": false,
+     "n_flipped": 0,
+     "genes": [],
+     "flips_elsewhere": false
+    },
+    {
+     "id": "drug_b_vs_control",
+     "label": "Drug B vs Control",
+     "primary": false,
+     "flips": false,
+     "n_flipped": 0,
+     "genes": [],
+     "flips_elsewhere": false
+    }
+   ],
+   "study_wide": "A choice on this card applies to the whole study: every comparison is analysed with the option you pick."
+  }
+ ],
+ "next_card": "card_refset",
+ "counter": "1 decision could change a conclusion · 1 made automatically",
+ "pending_requests": 0
+}

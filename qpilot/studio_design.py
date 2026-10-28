@@ -219,6 +219,11 @@ class DesignSoFar:
     target_roles: dict[str, str] = field(default_factory=dict)
     comparison: dict[str, str] | None = None
     preset: str | None = None
+    #: A person's several comparisons (the accepted comparison's plan keys), when it has them.
+    plan: dict[str, Any] | None = None
+    #: Accepted pairings (``design.pair``): sample -> pair key, and the pairing's name.
+    pairs: dict[str, str] = field(default_factory=dict)
+    pair_by: str | None = None
 
 
 def so_far(accepted: Iterable[Proposal]) -> DesignSoFar:
@@ -247,6 +252,14 @@ def so_far(accepted: Iterable[Proposal]) -> DesignSoFar:
             out.target_roles[p.subject] = str(d.get("role"))
         elif p.kind == COMPARISON_KIND:
             out.comparison = {"group_a": str(d.get("group_a")), "group_b": str(d.get("group_b"))}
+            extras = {k: d[k] for k in COMPARISON_EXTRAS if d.get(k) is not None}
+            out.plan = extras or None
+        elif p.kind == "design.pair":
+            if d.get("pair"):
+                out.pairs[p.subject] = str(d.get("pair"))
+                out.pair_by = str(d.get("by") or out.pair_by or "pair")
+            else:
+                out.pairs.pop(p.subject, None)
         elif p.kind == "design.preset":
             out.preset = str(d.get("preset"))
     return out
@@ -716,6 +729,9 @@ class EditorState:
     experiments: list[str]
     needs: list[Need]
     waiting: int
+    plan: dict[str, Any] | None = None
+    pair_by: str | None = None
+    n_paired: int = 0
 
 
 def state(studio: Studio, sid: str) -> EditorState:
@@ -805,6 +821,9 @@ def state(studio: Studio, sid: str) -> EditorState:
         experiments=sorted({r.experiment_id for r in summary.runs}),
         needs=needs,
         waiting=n_waiting,
+        plan=design.plan,
+        pair_by=design.pair_by if design.pairs else None,
+        n_paired=sum(1 for s in design.pairs if s in studied),
     )
 
 

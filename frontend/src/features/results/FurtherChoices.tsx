@@ -34,11 +34,11 @@ type Workspace = Schemas["WorkspaceView"];
 
 /** The axis's state as a badge: what the grid does with it now. */
 export const AXIS_STATUS: Record<AxisView["status"], { word: string; tone: Tone }> = {
-  off: { word: "Not tested", tone: "neutral" },
+  off: { word: "Not in qPilot's grid", tone: "neutral" },
   swept: { word: "Tested in the grid", tone: "accent" },
   screened_out: { word: "Tried; changes nothing", tone: "ok" },
   not_applicable: { word: "Does not apply here", tone: "neutral" },
-  single_option: { word: "Not tested", tone: "neutral" },
+  single_option: { word: "Not in qPilot's grid", tone: "neutral" },
 };
 
 /** How each further choice is named on the page (the efficiency models came first). */
@@ -168,7 +168,7 @@ function OptionRow({ option }: { option: AxisView["options"][number] }) {
       ? "Does not apply"
       : option.tested
         ? "Tested"
-        : "Not tested";
+        : "Not in the grid";
   return (
     <li className="flex flex-col gap-0.5 border-t border-line py-2 first:border-t-0 first:pt-0">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">

@@ -37,6 +37,8 @@ import {
   YourSamples,
   type Source,
 } from "./AuditParts";
+import { useShownComparison } from "@/features/results/comparison";
+import { GeneComparisons } from "./Comparisons";
 import { GeneFigure } from "./GeneFigure";
 import { GeneHeader, GeneNav } from "./GeneHeader";
 import { neighbours, resolveGene } from "./nav";
@@ -76,7 +78,10 @@ function GenePage({
   workspace: Schemas["WorkspaceView"];
   wanted: string | undefined;
 }) {
-  const scope = useMemo(() => scopeOf(workspace), [workspace]);
+  const studyKey = workspace.study_id ?? (workspace.kind === "study" ? workspace.key : null);
+  // A study with several comparisons shows one at a time (shared with Results and Trace).
+  const [comparison, setComparison] = useShownComparison(studyKey);
+  const scope = useMemo(() => scopeOf(workspace, comparison), [workspace, comparison]);
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const reducedMotion = useReducedMotion();
@@ -114,7 +119,10 @@ function GenePage({
   // ---- the audit
   const status = useAuditStatus(scope);
   const statusMissing = isNotFound(status.error);
-  const audited = status.data?.status === "ready";
+  // The robustness audit audits the first comparison: another one shown has no audit views.
+  const tabs = results.data?.comparisons ?? [];
+  const firstShown = !comparison || tabs.length < 2 || tabs[0]?.id === comparison;
+  const audited = status.data?.status === "ready" && firstShown;
   // The first read of an audit loads its live views (~15 s); the views wait for that job.
   const warming =
     audited && status.data && !status.data.views_ready ? (status.data.loading ?? null) : null;
@@ -270,6 +278,14 @@ function GenePage({
         className={cn("transition-opacity duration-150", gene.isPlaceholderData && "opacity-60")}
         aria-busy={gene.isPlaceholderData}
       >
+        {tabs.length > 1 ? (
+          <GeneComparisons
+            tabs={tabs}
+            value={comparison ?? tabs[0]!.id}
+            onChange={setComparison}
+            audited={status.data?.status === "ready"}
+          />
+        ) : null}
         <GeneHeader
           view={view}
           labels={labels}
@@ -377,7 +393,12 @@ function GenePage({
             <GeneCards workspace={workspace} gene={g.gene} cards={geneCards} />
             <AssayWells efficiency={g.efficiency} lab={covered ? lab.data : null} />
             <ReferenceStability gene={g.gene} genorm={references} lab={covered ? lab.data : null} />
-            <GeneFigure workspace={workspace} studyId={scope.studyId} gene={g.gene} />
+            <GeneFigure
+              workspace={workspace}
+              studyId={scope.studyId}
+              gene={g.gene}
+              comparison={tabs.length > 1 ? (comparison ?? tabs[0]?.id ?? null) : undefined}
+            />
             {workspace.kind === "session" ? (
               <PrismCard workspace={workspace} gene={g.gene} />
             ) : null}

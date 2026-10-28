@@ -133,7 +133,8 @@ class ComparisonOutcome(BaseModel):
     """One comparison of a study with several (or a paired one): every tested gene's result.
 
     ``contrasts`` carry the uncorrected p-value; their ``conclusion`` was made from
-    ``p_adjusted`` (Holm across the gene's comparisons; equal to ``p`` without a correction).
+    ``p_adjusted`` (Holm across the gene's comparisons, or Dunnett's or Tukey's adjusted p of a
+    pooled-variance test; equal to ``p`` without a correction).
     ``q_value`` is Benjamini-Hochberg across the genes of this comparison (shown, never used for
     a call). A gene this comparison cannot test (fewer than two values or pairs) is in
     ``not_tested`` with the reason, and in no other field.
@@ -172,8 +173,8 @@ class ComparisonsResult(BaseModel):
     ``omnibus_groups`` (three or more groups, unpaired designs only), at the planned analysis.
     """
 
-    test: Literal["welch", "paired_t"]
-    correction: Literal["holm", "none"]
+    test: Literal["welch", "paired_t", "pooled_t"]
+    correction: Literal["holm", "none", "dunnett", "tukey"]
     pattern: str = "chosen"
     control: str | None = None
     pair_by: str | None = None
