@@ -145,6 +145,11 @@ the blind is lifted. Blind-safe: counts and names only, no sample name, no Cq va
   covers; **Yes, confirm** confirms.
 * Empty: "Ask for proposals on the design" → **Propose the design** (job; the one sentence from
   Open is used).
+* **What is this study for?** (`StudyDesign.purpose`, a `design.purpose` item): *Compare groups*
+  (default, absent from the hash) or *Quantify samples* (standards with quantities instead of a
+  comparison and reference genes; Results shows Quantities as the result; Gene, Audit, Trace,
+  Claims, Prism and Plan next are locked and answer `409 quantify`). Spec:
+  [`quantities.md`](quantities.md).
 * **Set the design on this page** (`features/design/DesignEditor`, `qpilot/studio_design.py`,
   `routers/design.py`; spec in [`design-editor.md`](design-editor.md)): tabs Targets (reference
   gene / gene of interest / leave out), Samples (select by click, range, name pattern or plate
@@ -164,7 +169,8 @@ the blind is lifted. Blind-safe: counts and names only, no sample name, no Cq va
 amplification call (shape + colour), Cq, efficiency or R² (switch), disagreements outlined; a
 gene filter. Click a well → **curve viewer** (uPlot): raw fluorescence by cycle, linear/log
 switch, the Cq marker and baseline when known; neighbouring wells of the same sample overlaid.
-No group labels here. A file without curves shows **Your Cq table** instead
+No group labels here. A multiplex plate (`PlateView.multiplex`, `PlateWell.dye`) shows a **Target**
+picker: each dye is analysed as its own plate. A file without curves shows **Your Cq table** instead
 (`CqTablePanel.tsx`, `GET /api/sessions/{sid}/cq-table`, [`cq-tables.md`](cq-tables.md)). **Melt curve** (`features/curves/melt`, `GET /api/sessions/{sid}/melt` once
 the design is confirmed): the picked wells' −dF/dT with their peaks, per assay the product's Tm
 (declared, else the median of its study wells) and the wells G-MELT points at (**Show them**),
@@ -288,8 +294,8 @@ consistent"; it is outside both blind confirmations (they never re-open for it).
 
 ### Controls (`features/gate`) — Run Gate
 What the controls on each plate say, and whether any of it changes a call. The shipped rule pack
-(`research-default` 1.2.0: G-TYPED, G-NTC-1, G-NAC, G-NRT, G-POS, G-STD, G-REP, G-RT, G-INSTR,
-G-MELT;
+(`research-default` 1.3.0: G-TYPED, G-NTC-1, G-NAC, G-NRT, G-POS, G-STD, G-REP, G-RT, G-INSTR,
+G-MELT, G-IPC;
 thresholds and sources in `packs/research-default.yaml`, science in
 `agent-bus/contracts/scientist-spec-gate.md`) is evaluated on the study's wells; every rule that
 warns or fails and points at wells gets the consequence test: the whole analysis grid is re-run
@@ -365,12 +371,17 @@ one elsewhere).
   check whose wells change no conclusion, and for **a study analysed outside Studio**, which has
   no inbox: its cards are read-only, and the page says plainly that wells are left out by opening
   its file in Studio (Trace follows its calls down to their wells).
-* **G-MELT** (pack 1.2.0, `qpcr/melt.py`, `GET /api/studies/{id}/melt`): for dye assays with melt
+* **G-MELT** (since pack 1.2.0, `qpcr/melt.py`, `GET /api/studies/{id}/melt`): for dye assays with melt
   curves, each amplified study well's call (one product within the tolerance of the assay's Tm,
   extra peak, Tm off, no peak) and each NTC's (nothing, the product, a primer-dimer, another
   product; G-NTC-1 grades a dimer as a warning). A G-MELT row opens its wells' melt curves
   (`gate/Melt.tsx`, the shaded band = expected Tm ± tolerance) with **Open these wells in
   Curves**. Method card: `methods/melt_curve.md`.
+* **G-IPC** (pack 1.3.0, `qpcr/multiplex.py`, [`multiplex.md`](multiplex.md)): a study well whose
+  internal positive control (a target named IPC or IAC) comes up `delay_cycles` (3) or more later
+  than in the no-template wells, or where nothing amplified, warns (possible inhibition); G-NTC-1
+  does not judge an IPC. In a *quantify samples* study the consequence test asks whether leaving
+  the wells out changes what is reported for a sample.
 * **What to repeat** (card): the repeat plan's counts, the repeat plate with **Download the repeat
   plate (CSV)** and a link to the Run Review.
 * **The rules and where their thresholds come from**: each rule's statement and its sources.

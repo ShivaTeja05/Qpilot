@@ -9,15 +9,16 @@ research use only, not for clinical decisions.
 
 ## [0.2.0] — 2026-10-28
 
-From the demo study to a lab's own files: qPilot now opens the files labs actually publish, lets a
-person finish the design on the page without a model, compares several groups, quantifies
-against standards, reads melt curves, plans the repeat, and writes the numbers, figures and a
-Prism project a paper needs. The rule is unchanged: the software never makes a choice that can
+From the demo study to a lab's own files: qPilot now opens the files labs actually publish
+(multiplex plates and Cq tables included), lets a person finish the design on the page without a
+model, compares several groups, quantifies against standards (or only quantifies, with no groups
+at all), reads melt curves, plans the repeat, and writes the numbers, figures and a Prism project
+a paper needs. The rule is unchanged: the software never makes a choice that can
 change a conclusion; a person does, with a reason, in the hash-chained record.
 
 On the demo study every design hash, study id and the locked demo output are unchanged, except
-where a feature adds to them on purpose: the Run Gate pack is now `research-default` 1.2.0 (one
-G-MELT "not applicable" line), MIQE 5.19 reads the melt rule's sentence, MIQE 5.14 is answered
+where a feature adds to them on purpose: the Run Gate pack is now `research-default` 1.3.0 (one
+G-MELT and one G-IPC "not applicable" line), MIQE 5.19 reads the melt rule's sentence, MIQE 5.14 is answered
 from the standard curves, and the exports gain the Standard curves and Quantities tables and a
 Methods paragraph on them.
 
@@ -41,6 +42,14 @@ Methods paragraph on them.
   (LinRegPCR's fit, the Curve Judge, Import Trust, melt, two efficiency models) is said not to
   apply; confidence is capped at Low while an efficiency is assumed, Moderate when every assay's
   comes from its series.
+- **Multiplex plates** (`qpilot/qpcr/multiplex.py`, [`docs/multiplex.md`](docs/multiplex.md)): every
+  dye of a well gets its own baseline, efficiency, Cq and N0. Before, the vendored LinRegPCR gave
+  the reaction volume to the first curve of a well only, so every other dye's N0 was 0 and a
+  duplex lost its reference gene to "undetermined" (on the corpus: LightCycler 96 X/Y/IPC 0 → 12,
+  12, 14 curves with an N0; QuantStudio 7 Pro IPC 0 → 95; CFX 4-plex 0 → 96 per dye; 7500 nCoV
+  0 → 21). A gene's relative quantity uses the reference measured in the same well, and leaving a
+  multiplex well out leaves out all its curves. Plate maps show the dyes per well, with a target
+  picker. Singleplex plates (the demo) are analysed exactly as before.
 - **Instrument exports on Open** (`qpilot/io/connectors/`, `qpilot/web/intake.py`): drop a Bio-Rad
   CFX export set, a QuantStudio / StepOne / 7500 export, a LightCycler 480 raw-data text or Cp
   table, an RDES or a tidy table; qPilot sorts the files by content, reads them once into
@@ -75,6 +84,16 @@ Methods paragraph on them.
   checked by the engine and recorded with the person's reason (`made_by.kind = "person"`, only a
   person can make one). Sample sheets may carry a target-role column (Gene Type, Reference,
   Housekeeping, …). A whole 96-well plate records in about a second.
+- **What the study is for: compare groups or quantify samples** (`StudyDesign.purpose`,
+  `design.purpose`, `qpilot/qpcr/quantify_study.py`): a run that compares nothing (a viral load,
+  wastewater, a construct's copy number, a library) chooses **Quantify samples** on the Design
+  page. It needs standards with quantities, not a comparison or a reference gene, and reaches
+  Results with each sample's quantity and what is reported for it (quantified, below the LOQ or
+  LOD, not detected, extrapolated). Two Decision Cards (which wells count as detected; how precise
+  a quantity must be to be reported) wait for a person only when another option changes what is
+  reported for a sample. Controls, the report, the exports, the record and MCP `qpcr_quantities`
+  follow; Gene, Audit, Trace, Claims, Prism and Plan next, which compare groups, say why they are
+  locked. Absent by default: every existing design hash is unchanged.
 - **Several comparisons proposed by Studio**: with three or more groups the rules propose each
   group against a control (when a group's name says control) or every pair, Holm-corrected; a
   donor, animal or passage column proposes pairings (`design.pair`) for paired tests. A person
@@ -159,12 +178,18 @@ Methods paragraph on them.
 #### Run Gate & melt
 - **Melt curves** (`qpilot/qpcr/melt.py`, `GET /api/studies/{id}/melt`,
   `GET /api/sessions/{sid}/melt`): each well's −dF/dT, its peaks and Tm for SYBR Green / EvaGreen
-  assays, judged in the Run Gate by **G-MELT** (pack `research-default` 1.2.0): one product within
+  assays, judged in the Run Gate by **G-MELT** (added in pack `research-default` 1.2.0): one product within
   1 °C of the assay's Tm, extra peaks, and what melted in no-template controls; G-NTC-1 treats a
   primer-dimer in an NTC as a warning. A melt panel in Curves, the wells' melt curves on a G-MELT
   check in Controls, MIQE 5.19 from the melt, StepOne "Melt Region" section files read, and
   `qpilot melt FILE… [--json]` (reads only). On a CFX96 SYBR plate of the corpus (Hsieh et al.
   2016), 96 of 96 wells within 0.5 °C of CFX Manager's own Tm. Method card [`methods/melt_curve.md`](methods/melt_curve.md).
+- **G-IPC, inhibition from the internal positive control** (pack `research-default` 1.3.0): a
+  study well whose IPC (a target named IPC or IAC) comes up 3 or more cycles later than in the
+  no-template wells, or where nothing amplified, is a warning with its consequence test; the
+  3-cycle threshold is a lab-editable default. G-NTC-1 no longer judges an internal control (it
+  is meant to amplify in the no-template wells). On the QuantStudio 7 Pro eDNA plate, sample
+  M22's wells come up 3.5 to 4.2 cycles late.
 - **Run Gate, the Controls section** (`qpilot/core/rules.py`, `qpilot/core/gate.py`,
   `qpilot/qpcr/gate_rules.py`, `packs/research-default.yaml`, `GET /api/studies/{id}/gate`): every
   plate's controls checked against a rule pack (G-TYPED, G-NTC-1, G-NAC, G-NRT, G-POS, G-STD,
@@ -231,10 +256,10 @@ Methods paragraph on them.
   project; `--scripts` adds the optional Prism scripts, `--scripts-only` writes the older bundle.
 
 #### Agents/MCP
-- **Six new MCP tools** (32 in all: 27 `qpcr_*` and 5 `sim_*`): `qpcr_comparisons`, `qpcr_units`
-  (paged), `qpcr_melt`, `qpcr_repeat_plan` (items paged, the plate as CSV), `qpcr_export` (writes
-  new files only; decides nothing) and `qpcr_request_set_aside` (a request that always waits for a
-  person). `qpcr_prism_diff` reads a project saved in Prism (`project_path`). Trace shows an
+- **Seven new MCP tools** (33 in all: 28 `qpcr_*` and 5 `sim_*`): `qpcr_comparisons`, `qpcr_units`
+  (paged), `qpcr_melt`, `qpcr_quantities`, `qpcr_repeat_plan` (items paged, the plate as CSV),
+  `qpcr_export` (writes new files only; decides nothing) and `qpcr_request_set_aside` (a request
+  that always waits for a person). `qpcr_prism_diff` reads a project saved in Prism (`project_path`). Trace shows an
   agent's request at its place: **Approve**, or **Turn down the request**; the Agents section
   groups the tools as Read, Open, Propose, Request a decision and **Write a file**. See
   [`docs/agents.md`](docs/agents.md).
@@ -272,6 +297,10 @@ Methods paragraph on them.
   Publishing is skipped until the repository variable `PYPI_PUBLISH` is `true`.
 - **CI on Ubuntu, macOS and Windows** with a smoke test of the installed wheel
   (`scripts/smoke_installed.py`).
+- **End-to-end tests on real lab files with no model** (`frontend/e2e/`): a LightCycler 96 plate,
+  QuantStudio quantities, the K. phaffii study's several comparisons, Trace's set-aside and put
+  back, and phone width. The test suite holds on a loaded machine (jobs followed, CPU-time
+  budgets, a private test cache).
 - `scripts/gate.sh` (the merge gate in one command) and `scripts/demo_regression.py` +
   `scripts/demo_fingerprint.json` (the locked demo numbers, checked end to end).
 
@@ -301,12 +330,27 @@ Methods paragraph on them.
   the audit's reasonable set, with "Why two counts?"), one name per group, plate and study,
   "Decided by you", plurals without "(s)", folded refuted Curve Judge calls and Decision Cards
   that fit a phone's width.
-- Run Gate pack `research-default` 1.2.0 (G-MELT; G-NTC-1 reads the melt of a no-template
-  control). The seven rules of 1.0.0 give the same verdicts on the demo.
+- Run Gate pack `research-default` 1.3.0 (1.2.0: G-MELT, and G-NTC-1 reads the melt of a
+  no-template control; 1.3.0: G-IPC, and G-NTC-1 leaves internal controls alone). The seven
+  rules of 1.0.0 give the same verdicts on the demo.
+- **Names are the lab's own**: groups, units, samples and genes keep any letters, digits, spaces
+  and signs (`LPS + inhibitor`, `IL-6/ctrl`, `Day 3 (50 µM)`, `KO#2`, `α-syn`; at most 64
+  characters) on the Design page and in every export; file names are derived safely (an ASCII
+  slug and a short hash, `qpilot/core/names.py`). For Prism a group or unit cannot start with
+  `=`, `+` or `@`.
+- Accessibility: the comparison picker is a radio group; scrollable tables are reachable with the
+  keyboard.
+- A multiplex study analysed before this release no longer reproduces on re-analysis (its other
+  dyes now have an N0): Trace and the exports say so until it is analysed again.
 - `openpyxl` is a required dependency (Excel files work without extras); the sdist is an
   allow-list; the version is read from `qpilot/__init__.py`.
 
 ### Fixed
+- A standard curve no longer includes wells LinRegPCR calls "no amplification" (they carried a
+  quantity): on the QuantStudio 7 Pro eDNA curve three flat wells gave 154 % efficiency, R² 0.41;
+  now 87.1 %, R² 0.9962 (science review J1).
+- A study with three or more groups gets its report again; "The confirmed design" on the Design
+  page shows the latest decisions.
 - Trace's what-ifs on a paired or Holm-corrected study are the engine's own evaluation (they were
   an unpaired Welch update), so Trace's call is the engine's corrected call.
 - The Claim Auditor checks a claim about another of the study's comparisons against that
@@ -333,6 +377,9 @@ Methods paragraph on them.
   sandbox (`QPILOT_HOSTED=1`) the Prism round trip reads only qPilot's export folder, a write is
   refused (507) before the disk fills (`QPILOT_MIN_FREE_MB`), and unpacked XML is capped
   (`QPILOT_MAX_UNPACKED_MB`).
+- Setting the design and recording the reaction input require the decision-record head the page
+  showed (`expected_head`), so a stale page cannot overwrite a newer decision (RT-EX-012);
+  GitHub Actions are pinned by commit SHA (RT-EX-013).
 - RT-UI-025: every refusal of an RDML file says its own reason, never a traceback.
 - A hostile Prism project (a DOCTYPE, external links, an oversized file) is refused.
 - The new MCP tools obey the blind rule (`results_hidden` until a person confirms the design and

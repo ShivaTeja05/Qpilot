@@ -13,6 +13,7 @@ connecting an AI agent. The repository's [README](../README.md) is the overview.
 | [conformance.md](conformance.md) | which instrument files qPilot reads, set by set, from a corpus of real lab files |
 | [design-editor.md](design-editor.md) | setting the design on the page with no model: targets, samples, a pasted list, the comparison, the sample sheet |
 | [quantities.md](quantities.md) | absolute quantification: standard curves, LOD, LOQ and copies |
+| [multiplex.md](multiplex.md) | multiplex wells: every dye analysed on its own, the same-well reference, the internal positive control (G-IPC) |
 | [cq-tables.md](cq-tables.md) | analysing a table of Cq values without curves: what works, what does not, why curves are better |
 | [exports.md](exports.md) | what the workbook, the CSV tables, the figures and the journal supplement hold |
 | [prism.md](prism.md) | the Prism project (`.pzfx`) and its round trip |
@@ -33,7 +34,7 @@ connecting an AI agent. The repository's [README](../README.md) is the overview.
 
 | Page | Read it for |
 |---|---|
-| [agents.md](agents.md) | the 32 MCP tools, what each refuses, models inside qPilot, the harness |
+| [agents.md](agents.md) | the 33 MCP tools, what each refuses, models inside qPilot, the harness |
 | [app.md](app.md) | the page's build spec: principles, sections, design system, API conventions |
 | [release.md](release.md) | how a release is made |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | how to contribute |
