@@ -15,13 +15,15 @@ import type { Schemas } from "@/api/client";
 import { count } from "@/lib/format";
 import { SECTION, sectionPath, type SectionId } from "@/shell/sections";
 import { TooltipProvider, toast } from "@/ui";
-import type { RunReviewView, SignOffDone } from "./api";
+import type { RepeatView, RunReviewView, SignOffDone } from "./api";
 import { ExportPanel, FORMATS } from "./ExportPanel";
 import afterJson from "./recorded/review-after.json";
 import signedJson from "./recorded/review-signed.json";
 import staleJson from "./recorded/review-stale.json";
+import repeatJson from "./recorded/repeat.json";
 import reviewJson from "./recorded/review.json";
 import sessionJson from "./recorded/session.json";
+import { itemWords, plateWords, RepeatOffer, summaryWords } from "./RepeatPlan";
 import { RunReview, RunReviewBody } from "./RunReview";
 import { EVIDENCE } from "./words";
 
@@ -67,12 +69,15 @@ const session = sessionJson as unknown as Schemas["WorkspaceView"];
 const study = session.study_id!;
 const route = `/api/studies/${study}/review`;
 const mine = signed.sign_off;
+const repeat = repeatJson as unknown as RepeatView;
+const repeatRoute = `${route}/repeat`;
 
 /** The recorded server: the review before the sign-off, the sign-off, the review after it. */
 function recorded(): (method: string, path: string) => [number, unknown] {
   let done = false;
   return (method, path) => {
     if (path === route && method === "GET") return [200, done ? after : before];
+    if (path === repeatRoute && method === "GET") return [200, repeat];
     if (path === `${route}/sign-off` && method === "POST") {
       done = true;
       return [200, signed];
@@ -205,6 +210,7 @@ describe("Run Review", () => {
   it("re-reads the review on a stale answer and says something was decided since", async () => {
     net.answer = (method, path) => {
       if (path === route && method === "GET") return [200, before];
+      if (path === repeatRoute && method === "GET") return [200, repeat];
       if (path === `${route}/sign-off`) return [stale.status, stale.body];
       return [404, null];
     };
@@ -213,8 +219,8 @@ describe("Run Review", () => {
     await screen.findByText(before.purpose);
     fill();
     fireEvent.click(signButton());
-    const status = await screen.findByRole("status");
-    expect(status.textContent).toBe(stale.body.error.message);
+    const status = await screen.findByText(stale.body.error.message);
+    expect(status.closest("[role=status]")).toBeTruthy();
     await waitFor(() =>
       expect(net.sent.filter((s) => s.method === "GET" && s.path === route).length).toBe(2),
     );
@@ -222,6 +228,69 @@ describe("Run Review", () => {
     // the person's words stay, to sign off again once they have read it
     expect(comment().value).toBe(mine.comment);
     expect(name().value).toBe(mine.reviewer);
+  });
+
+  it("says what to repeat and why, most consequential first, with the plate to download", async () => {
+    const plan = repeat.plan;
+    expect(plan.items.length).toBeGreaterThan(0);
+    const { container } = showReview();
+    const list = await screen.findByRole("list", {
+      name: "What to repeat, most consequential first",
+    });
+    expect(container.textContent).toContain(summaryWords(plan));
+    expect(container.textContent).toContain(plateWords(plan));
+    expect(container.textContent).toContain(repeat.note);
+    const rows = within(list)
+      .getAllByRole("listitem")
+      .filter((li) => li.dataset.rank);
+    expect(rows).toHaveLength(Math.min(plan.items.length, 8));
+    for (const [i, row] of rows.entries()) {
+      const item = plan.items[i]!;
+      expect(row.textContent).toContain(itemWords(item));
+      for (const r of item.reasons) expect(row.textContent).toContain(r.words);
+      for (const g of item.changed_calls) expect(row.textContent).toContain(g);
+    }
+    const download = screen.getAllByRole("link", { name: "Download the repeat plate (CSV)" })[0]!;
+    expect(download.getAttribute("href")).toBe(repeat.csv_url);
+    expect(download.getAttribute("download")).toBe(repeat.csv_name);
+    // nothing on the page says the repeat plan or the Run Gate lines are not built
+    expect(container.textContent).not.toMatch(/not built|repeat plan is not/i);
+    for (const n of before.not_built) expect(n.id).not.toBe("repeat");
+    // putting every item on the plate asks again with include=all
+    fireEvent.click(screen.getByRole("checkbox", { name: /Put every item on the plate/ }));
+    await waitFor(() =>
+      expect(net.sent.some((s) => s.path === repeatRoute && s.method === "GET")).toBe(true),
+    );
+  });
+
+  it("shows the Run Gate lines per plate and links to Controls", async () => {
+    const flagged = repeat.plan.gate_lines.filter((l) => l.worst === "fail" || l.worst === "warn");
+    expect(flagged.length).toBeGreaterThan(0);
+    showReview();
+    const plates = await screen.findByRole("list", {
+      name: "Plates with a rule that warns or fails",
+    });
+    expect(
+      within(plates)
+        .getAllByRole("listitem")
+        .filter((li) => li.textContent?.startsWith("Plate")),
+    ).toHaveLength(flagged.length);
+    for (const line of flagged) {
+      expect(plates.textContent).toContain(`Plate ${line.plate}`);
+      for (const f of line.findings) expect(plates.textContent).toContain(f.words);
+    }
+    const link = screen.getByRole("link", { name: /^Open Controls/ });
+    expect(link.getAttribute("href")).toBe(sectionPath(session, "gate"));
+  });
+
+  it("offers the repeat plate from Controls, and the way to the Run Review", async () => {
+    show(<RepeatOffer workspace={session} studyId={study} />);
+    expect(await screen.findByText(summaryWords(repeat.plan))).toBeTruthy();
+    const link = screen.getByRole("link", { name: /See what to repeat and why/ });
+    expect(link.getAttribute("href")).toBe(sectionPath(session, "report", "run-review"));
+    expect(
+      screen.getByRole("link", { name: "Download the repeat plate (CSV)" }).getAttribute("href"),
+    ).toBe(repeat.csv_url);
   });
 
   it("shows a recorded comment and name as text, never as markup", () => {

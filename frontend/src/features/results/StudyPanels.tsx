@@ -1,9 +1,10 @@
 /** The flip matrix and the reference genes' stability, below the table. */
 import { useCallback, useMemo } from "react";
 import { FlipMatrix, GenormBars } from "@/charts";
-import { count } from "@/lib/format";
+import { count, plural } from "@/lib/format";
 import { Card, CardBody, CardHeader, Skeleton } from "@/ui";
 import type { FlipsView, ResultsView } from "./api";
+import { ReferenceComparison } from "./ReferenceComparison";
 
 export function FlipPanel({
   flips,
@@ -42,7 +43,11 @@ export function FlipPanel({
       <CardHeader
         id="flips-title"
         title="What one choice alone can flip"
-        hint={`${count(flipping)} of ${count(flips.genes.length)} genes change their call when a single decision changes and everything else stays as it is.`}
+        hint={
+          flipping === 0
+            ? "No gene changes its call when a single decision changes and everything else stays as it is."
+            : `${count(flipping)} of ${plural(flips.genes.length, "gene")} ${flipping === 1 ? "changes its" : "change their"} call when a single decision changes and everything else stays as it is.`
+        }
       />
       <CardBody>
         <FlipMatrix
@@ -59,16 +64,23 @@ export function FlipPanel({
   );
 }
 
-export function ReferencesPanel({ view }: { view: ResultsView }) {
+export function ReferencesPanel({
+  view,
+  workspaceKey,
+}: {
+  view: ResultsView;
+  /** With it, NormFinder's ranking is shown next to geNorm's (GET …/references). */
+  workspaceKey?: string;
+}) {
   const g = view.references;
   return (
     <Card as="section" aria-labelledby="refs-title">
       <CardHeader
         id="refs-title"
         title="Reference genes"
-        hint={`The analysis normalises to ${g.used.join(", ")}. geNorm ranks the candidates by how steady they are across samples.`}
+        hint={`The analysis normalises to ${g.used.join(", ")}. geNorm ranks the candidates by how steady they are across samples; NormFinder also looks at how each differs between the groups.`}
       />
-      <CardBody>
+      <CardBody className="space-y-5">
         <GenormBars
           m={g.m}
           order={g.order}
@@ -77,6 +89,9 @@ export function ReferencesPanel({ view }: { view: ResultsView }) {
           cutoffV={g.cutoff_v}
           used={g.used}
         />
+        {workspaceKey && g.candidates.length >= 2 ? (
+          <ReferenceComparison workspaceKey={workspaceKey} studyId={view.study_id} />
+        ) : null}
       </CardBody>
     </Card>
   );

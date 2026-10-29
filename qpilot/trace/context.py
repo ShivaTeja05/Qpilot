@@ -36,7 +36,7 @@ from qpilot.qpcr.contrast import ConclusionRule
 from qpilot.qpcr.design import GroupSpec, marker_groups
 from qpilot.qpcr.quant import EXCLUDED
 from qpilot.qpcr.study import StudyModel
-from qpilot.trace.welch import Comparison, Effect, WelchArrays, robust_z
+from qpilot.trace.welch import CALL_NAMES, Comparison, Effect, Family, WelchArrays, robust_z
 
 THRESHOLDS: dict[str, float] = {
     "robust_z": 3.5,  # Iglewicz & Hoaglin 1993: modified z-score beyond 3.5 = potential outlier
@@ -105,6 +105,18 @@ class TraceContext:
     eff_z: np.ndarray
     replicates: bool
     cache: dict[Any, Any] = field(default_factory=dict, repr=False)
+    #: A study with several comparisons: the traced one (its id and words) and the correction
+    #: its call uses ("none" without one; "holm", "dunnett" or "tukey").
+    comparison_id: str | None = None
+    comparison_label: str | None = None
+    correction: str = "none"
+
+    @cached_property
+    def q(self) -> np.ndarray:
+        """Each gene's Benjamini-Hochberg q-value over the compared genes (this comparison)."""
+        from qpilot.qpcr.contrast import bh
+
+        return bh(np.asarray(self.base.p, dtype=float))
 
     @property
     def base(self) -> WelchArrays:
@@ -226,7 +238,12 @@ def cell_of(model: StudyModel, choice: Mapping[str, str] | None) -> dict[str, An
         if match is None:
             raise TraceError(f"The analysis option {text!r} for {dim} is not one qPilot checks.")
         cell[dim] = match
-    return cell
+    from qpilot.qpcr.axes.normaliser import NotTraceable, as_refs_cell
+
+    try:  # a best pair is traced as the control genes it is
+        return as_refs_cell(cell, model.axis_notes.get("normaliser"))
+    except NotTraceable as err:
+        raise TraceError(f"Trace cannot follow this analysis: {err}.") from None
 
 
 def _option_text(option: Any) -> str:
@@ -235,12 +252,20 @@ def _option_text(option: Any) -> str:
     return str(option)
 
 
+def _rebuilt(model: StudyModel, cell: Mapping[str, Any]) -> bool:
+    """True when the cell's quantities are rebuilt (an efficiency model or a plate correction)."""
+    efficiency = cell.get("efficiency")
+    between = cell.get("interrun")
+    return (efficiency is not None and efficiency != model.settings.efficiency[0]) or (
+        between is not None and between != model.settings.interrun[0]
+    )
+
+
 def _cell_matrix(model: StudyModel, cell: Mapping[str, Any]) -> pd.DataFrame:
-    """Units x genes log2(N0) under the cell's amplification rule and efficiency model."""
+    """Units x genes log2(N0) under the cell's rule, efficiency model and plate correction."""
     primary = model.space.primary.get("amp_call")
     amp = cell.get("amp_call", primary)
-    efficiency = cell.get("efficiency")
-    if efficiency is not None and efficiency != model.settings.efficiency[0]:
+    if _rebuilt(model, cell):
         stage = model.cell_stage(cell)
         return stage.values.reindex(index=model.matrix.index, columns=model.matrix.columns)
     if amp is None or amp == primary:
@@ -257,8 +282,7 @@ def _cell_table(model: StudyModel, cell: Mapping[str, Any]) -> pd.DataFrame:
     The rule clears n0 where a well is not called amplified; a model other than the primary
     rebuilds n0 and marks the wells it leaves out as excluded.
     """
-    efficiency = cell.get("efficiency")
-    if efficiency is not None and efficiency != model.settings.efficiency[0]:
+    if _rebuilt(model, cell):
         return model.cell_table(cell)
     primary = model.space.primary.get("amp_call")
     amp = cell.get("amp_call", primary)
@@ -277,8 +301,7 @@ def _cell_excluded(model: StudyModel, cell: Mapping[str, Any]) -> pd.DataFrame |
     A person's exclusions, and the wells an efficiency model leaves out (each well's own
     efficiency outside the valid range).
     """
-    efficiency = cell.get("efficiency")
-    if efficiency is not None and efficiency != model.settings.efficiency[0]:
+    if _rebuilt(model, cell):
         return model.cell_stage(cell).excluded
     return model.inputs.excluded
 
@@ -316,17 +339,71 @@ def _quiet() -> Iterator[None]:
         yield
 
 
+PAIRED = (
+    "{label} is a paired comparison (by {pair_by}): a sample counts only with its pair, so "
+    "Trace, which sets samples aside one at a time, does not follow it. Its numbers are on the "
+    "Results and the gene's page."
+)
+
+
+def family_of(model: StudyModel, index: pd.Index, comparison: str | None) -> Family | None:
+    """The study's comparisons as groups over the matrix rows, the traced one ``comparison``.
+
+    ``None`` for a study with one comparison (and no plan).
+
+    Raises:
+        TraceError: An id the study does not have, or a paired comparison.
+    """
+    space = model.space
+    specs = space.comparisons
+    if not specs:
+        if comparison:
+            raise TraceError("This study has one comparison; there is nothing to choose.")
+        return None
+    ids = [s.id for s in specs]
+    if comparison and comparison not in ids:
+        known = ", ".join(ids)
+        raise TraceError(f"This study has no comparison {comparison!r} (it has: {known}).")
+    chosen = ids.index(comparison) if comparison else 0
+    spec = specs[chosen]
+    plan = model.settings.design.comparisons if model.settings.design is not None else None
+    if spec.paired:
+        label = f"{spec.labels[0]} vs {spec.labels[1]}"
+        raise TraceError(PAIRED.format(label=label, pair_by=plan.pair_by if plan else "pair"))
+    names = list(dict.fromkeys(label for s in specs for label in s.labels))
+    units: dict[str, frozenset[str]] = {}
+    for s in specs:
+        units.setdefault(s.labels[0], s.group_a)
+        units.setdefault(s.labels[1], s.group_b)
+    groups = np.array([index.isin(units[name]) for name in names], dtype=bool)
+    pairs = tuple((names.index(s.labels[0]), names.index(s.labels[1])) for s in specs)
+    control = plan.control if plan is not None else None
+    return Family(
+        groups=groups,
+        pairs=pairs,
+        chosen=chosen,
+        correction=space.correction,
+        control=names.index(control) if control in names else None,
+    )
+
+
 def build_context(
     model: StudyModel,
     study_id: str | None = None,
     choice: Mapping[str, str] | None = None,
     labels: tuple[str, str] | None = None,
+    comparison: str | None = None,
 ) -> TraceContext:
     """Everything a trace needs, for the analysis ``choice`` (the planned one by default).
 
+    In a study with several comparisons ``comparison`` names the one traced (the first by
+    default); every comparison is recomputed after each change and its call uses the study's
+    correction, exactly as the engine calls it.
+
     Raises:
-        TraceError: The choice is not an option of the study, or the values computed here do
-            not reproduce the engine's own comparison (then nothing is traced).
+        TraceError: The choice is not an option of the study, the comparison is not one of it
+            or is paired, or the values computed here do not reproduce the engine's own
+            comparison (then nothing is traced).
     """
     space = model.space
     cell = cell_of(model, choice)
@@ -335,12 +412,27 @@ def build_context(
     refs = tuple(cell["refs"])
     units = [str(u) for u in matrix.index]
     marker = space.design.marker if space.design is not None else None
-    high, rest = space.groups(cell.get("cut"))
-    in_a = matrix.index.isin(high)
-    in_b = matrix.index.isin(rest)
+    family = family_of(model, matrix.index, comparison)
+    if family is None:
+        high, rest = space.groups(cell.get("cut"))
+        in_a = matrix.index.isin(high)
+        in_b = matrix.index.isin(rest)
+        engine = space.evaluate(cell)
+    else:
+        in_a, in_b = family.masks()
+        traced = space.comparisons[family.chosen]
+        engine = space.focus(traced.id).evaluate(cell)
+        labels = labels or traced.labels
     values, relative, valid = relative_values(model, cell, matrix, items)
-    comparison = Comparison(relative, valid, in_a, in_b, space.rule)
-    _check_against_engine(space.evaluate(cell), comparison.base, items)
+    # the values the cell's non-detect rule filled in: a group none of whose values was
+    # detected is not compared, as the decision space does ("detected only in" a group)
+    capped = space.cell_capped(cell)
+    if capped is not None and capped.shape != relative.shape:
+        raise TraceError(
+            "Trace could not line up the study's undetected values; nothing is traced."
+        )
+    comparison_ = Comparison(relative, valid, in_a, in_b, space.rule, family, capped)
+    _check_against_engine(engine, comparison_.base, items)
     names = (
         labels
         or model.labels
@@ -372,8 +464,8 @@ def build_context(
         valid=valid,
         in_a=in_a,
         in_b=in_b,
-        comparison=comparison,
-        loo=comparison.leave_one_out(),
+        comparison=comparison_,
+        loo=comparison_.leave_one_out(),
         wells=wells,
         ref=ref,
         input_shift=input_shift,
@@ -381,6 +473,9 @@ def build_context(
         eff_shift=eff_shift,
         eff_z=eff_z,
         replicates=bool(unknown.duplicated(["unit", "gene"]).any()),
+        comparison_id=space.comparisons[family.chosen].id if family is not None else None,
+        comparison_label=f"{names[0]} vs {names[1]}" if family is not None else None,
+        correction=family.correction if family is not None else "none",
     )
 
 
@@ -393,7 +488,8 @@ def _check_against_engine(engine: Mapping[str, Any], base: WelchArrays, items: l
         same_p = (math.isnan(result.p) and math.isnan(p)) or math.isclose(
             result.p, p, rel_tol=1e-6, abs_tol=1e-300
         )
-        if not (same_fc and same_p):
+        same_call = result.conclusion == CALL_NAMES[int(base.call[j])]
+        if not (same_fc and same_p and same_call):
             raise TraceError(
                 f"Trace could not reproduce the engine's result for {gene}; nothing is traced."
             )

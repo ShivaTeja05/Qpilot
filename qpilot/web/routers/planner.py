@@ -31,6 +31,7 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Query
 from fastapi.responses import Response
 
+from qpilot.explain.words import plural
 from qpilot.qpcr import layout as lay
 from qpilot.qpcr import plan as qplan
 from qpilot.web.context import AppContext, Ctx, api_error
@@ -208,9 +209,10 @@ def _study_plates(data) -> PlanStudyPlates | None:  # noqa: ANN001 (a pandas fra
 
 def _study(ctx: AppContext, study_id: str) -> None:
     """The id, the study and the blind rule, exactly as Results checks them."""
-    from qpilot.web.routers.results import study
+    from qpilot.web.routers.results import compares_groups, study
 
     study(ctx, study_id)
+    compares_groups(ctx, study_id, "the next-experiment planner")
 
 
 def _spread(values: Sequence[float]) -> PlanSpread | None:
@@ -228,11 +230,17 @@ def _efficiency(result) -> PlanEfficiency:  # noqa: ANN001 (a StudyResult)
     lo, hi = EFFICIENCY_RANGE
     outside = sorted(g for g, e in eff.items() if not lo <= e - 1 <= hi)
     spread = _spread(list(eff.values()))
+    cq_values = "f_cq_only" in (result.facts or {})
+    source = (
+        "its dilution series, else assumed 2.0: this file has Cq values only"
+        if cq_values
+        else "LinRegPCR, the median over its plates"
+    )
     if spread is None:
         text = "This study has no efficiency per gene."
     else:
         text = (
-            f"Efficiency per gene (LinRegPCR, the median over its plates): median "
+            f"Efficiency per gene ({source}): median "
             f"{spread.median:.2f}, from {spread.min:.2f} to {spread.max:.2f} (2.00 is a perfect "
             f"doubling). {len(outside)} of {spread.n} fall outside "
             f"{lo * 100:.0f}–{hi * 100:.0f} %: check those assays with a standard curve before "
@@ -255,10 +263,17 @@ def _headline(ctx: AppContext, study_id: str) -> list[str]:
 
 
 def _slug(label: str) -> str:
-    """A group label as the layout may write it (the label itself when it is already safe)."""
+    """A group label as the layout may write it.
+
+    The label itself when it can be (any letters, digits, spaces and signs, not starting like a
+    formula: ``qpcr.layout.is_layout_name``), else its characters made safe.
+    """
     import re
 
-    text = re.sub(r"[^\w()\-. ]", "_", str(label)).strip().lstrip("-")[:64]
+    text = str(label).strip()
+    if lay.is_layout_name(text):
+        return text
+    text = re.sub(r"[^\w()\-. ]", "_", text).strip().lstrip("-=+@")[:64].strip()
     return text or "group"
 
 
@@ -340,7 +355,9 @@ def get_planner(study_id: str, ctx: Ctx) -> PlannerView:
         headline=headline,
         efficiency=eff,
         plates=m.plates,
+        fold_note=qplan.fold_words(rule.min_log2fc, rule.alpha),
         defaults=PlannerBody(
+            fold=qplan.default_fold(rule.min_log2fc),
             alpha=rule.alpha,
             genes=focus,
             refs=list(m.refs),
@@ -424,7 +441,9 @@ def post_planner(study_id: str, body: PlannerBody, ctx: Ctx) -> PlanView:
     m = measured(ctx, study_id)
     rule = _rule(ctx, study_id)
     alpha = body.alpha if body.alpha is not None else rule.alpha
-    fold, power, k = float(body.fold), float(body.power), rule.min_log2fc
+    k = rule.min_log2fc
+    fold = float(body.fold) if body.fold is not None else qplan.default_fold(k)
+    power = float(body.power)
     try:
         qplan.plan(fold, 1.0, None, alpha, power)  # the same input checks as `qpilot plan`
     except ValueError as err:
@@ -613,13 +632,14 @@ def _budget(m: Measured, body: PlannerBody, focus: list[str], refs: list[str]) -
     where = f"{plates} plate{'s' * (plates != 1)} of {body.wells_per_plate} wells"
     if n_fit is None:
         text = (
-            f"{where} cannot hold two samples per group of these {len(focus)} gene(s), "
-            f"{len(refs)} reference gene(s) and controls."
+            f"{where} cannot hold two samples per group of these "
+            f"{plural(len(focus), 'gene')}, {plural(len(refs), 'reference gene')} and controls."
         )
     else:
         text = (
-            f"{where} hold up to {n_fit} samples per group of these {len(focus)} gene(s) with "
-            f"{len(refs)} reference gene(s), {body.replicates} replicate(s) and the controls."
+            f"{where} hold up to {n_fit} samples per group of these {plural(len(focus), 'gene')} "
+            f"with {plural(len(refs), 'reference gene')}, "
+            f"{plural(body.replicates, 'replicate')} and the controls."
         )
     return PlanBudget(plates=plates, n_fit=n_fit, text=text)
 

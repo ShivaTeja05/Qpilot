@@ -85,8 +85,8 @@ def test_the_choice_is_carried_to_the_new_analysis(capped):
         "decided_at": made.at,
     }
     assert card["status_line"] == (
-        "Decided by human: Count empty wells as very low (cap), carried from the earlier "
-        f"analysis {study}. Reason: {CAP_REASON}"
+        "Decided by you: Count empty wells as very low (cap), carried over from your decision "
+        f"on the earlier analysis of these data. Reason: {CAP_REASON}"
     )
     assert card["asked_again"] is None and cards["card_refset"]["carried"] is None
 

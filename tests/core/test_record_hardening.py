@@ -8,6 +8,7 @@ import pytest
 
 from qpilot.core.decisions import apply_decision, reject_request
 from qpilot.core.record import (
+    RecordDamaged,
     RecordError,
     _write_checksums,
     unzip_record,
@@ -161,8 +162,49 @@ def test_a_damaged_zip_is_a_clear_error(store, study, tmp_path):
     start = info.header_offset + 30 + len(info.filename) + len(info.extra) + 5
     data[start] ^= 0xFF  # corrupt the compressed bytes of one member
     archive.write_bytes(bytes(data))
-    with pytest.raises(RecordError, match="damaged record zip"):
+    with pytest.raises(RecordDamaged, match="altered or damaged after export: results.json"):
         unzip_record(archive, tmp_path / "out")
+    # told to go on, it names the member, leaves it out and unpacks the rest
+    damaged: list[str] = []
+    out = unzip_record(archive, tmp_path / "out2", damaged=damaged)
+    assert damaged == ["results.json"] and not (out / "results.json").exists()
+    report = verify(out).with_damaged(damaged)
+    assert not report.ok and report.outcome() == "altered"
+    assert report.damaged == ["results.json"] and "results.json" not in report.missing
+    assert report.headline() == "This record was altered or damaged after export: results.json."
+    assert report.summary().splitlines()[0].startswith("altered or damaged after export")
+
+
+def _flip_one_byte(archive: Path, member: str) -> None:
+    """Flip one byte of a member's compressed data (what a careless edit or a bad disk does)."""
+    data = bytearray(archive.read_bytes())
+    with zipfile.ZipFile(archive) as zf:
+        info = zf.getinfo(member)
+    data[info.header_offset + 30 + len(info.filename) + len(info.extra) + 7] ^= 0x01
+    archive.write_bytes(bytes(data))
+
+
+def test_verify_says_which_way_a_record_fails(store, study, tmp_path, capsys):
+    """Verified, altered (which file), chain broken (resealed), each in its own plain words."""
+    from qpilot.cli import main
+
+    rec = _record(store, study, tmp_path)
+    report = verify(rec)
+    assert report.outcome() == "verified" and report.headline().startswith("This record checks")
+    archive = Path(zip_record(rec, tmp_path / "flipped.zip"))
+    _flip_one_byte(archive, "decisions.jsonl")
+    assert main(["verify", str(archive)]) == 1
+    out = capsys.readouterr().out
+    assert out.startswith("This record was altered or damaged after export: decisions.jsonl.")
+    # an edited line with the checksums rewritten: the files match, the chain does not
+    log = rec / "decisions.jsonl"
+    text = log.read_text()
+    assert '"reason":"' in text
+    log.write_text(text.replace('"reason":"', '"reason":"(edited) ', 1))
+    _reseal(rec)
+    forged = verify(rec)
+    assert forged.outcome() == "chain_broken" and forged.changed == []
+    assert forged.headline().startswith("This record's decision chain is broken at entry ")
 
 
 def test_a_zip_with_an_upper_case_or_no_extension_is_read_as_a_zip(store, study, tmp_path):

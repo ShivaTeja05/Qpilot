@@ -1,0 +1,591 @@
+{
+ "study_id": "035292c88520",
+ "head": "bdbbafcb03be9961b3688a1cebc414f750fc5df301860d0b81c226372ed391d6",
+ "cards": [
+  {
+   "card": {
+    "id": "card_quantity_amp_call",
+    "kind": "quantity.amp_call",
+    "rank": 1,
+    "impact": {
+     "flips": true,
+     "flips_anywhere": true,
+     "items": "samples",
+     "max_delta_log2fc": 1.3409996776851854,
+     "n_genes_flipped": 9,
+     "n_genes_flipped_anywhere": 9
+    },
+    "evidence": {
+     "dimension": "amp_call",
+     "fold": 2.0,
+     "not_recommended": [
+      "cq_le_35"
+     ],
+     "per_option": {
+      "cq_le_35": {
+       "changed": [
+        {
+         "class_from": "quantified",
+         "class_to": "below_lod",
+         "item": "Cov2 · D-231018-SS-A",
+         "quantity_from": 56.768174699573954,
+         "quantity_to": 75.39411131675736,
+         "target": "Cov2",
+         "unit": "D-231018-SS-A"
+        },
+        {
+         "class_from": "quantified",
+         "class_to": "below_lod",
+         "item": "Cov2 · D-231018-SS-B",
+         "quantity_from": 58.406077850858914,
+         "quantity_to": 77.44844858369238,
+         "target": "Cov2",
+         "unit": "D-231018-SS-B"
+        },
+        {
+         "class_from": "quantified",
+         "class_to": "below_lod",
+         "item": "Cov2 · PR-231026-DCS-R1",
+         "quantity_from": 50.26968267751618,
+         "quantity_to": 67.21028157322412,
+         "target": "Cov2",
+         "unit": "PR-231026-DCS-R1"
+        },
+        {
+         "class_from": "quantified",
+         "class_to": "below_lod",
+         "item": "Cov2 · PR-231031-DCS-R1",
+         "quantity_from": 66.84789546463614,
+         "quantity_to": 87.98839609679207,
+         "target": "Cov2",
+         "unit": "PR-231031-DCS-R1"
+        },
+        {
+         "class_from": "quantified",
+         "class_to": "below_lod",
+         "item": "Cov2 · PR-231031-DNI-R1",
+         "quantity_from": 73.36743851659314,
+         "quantity_to": 96.07787957390744,
+         "target": "Cov2",
+         "unit": "PR-231031-DNI-R1"
+        },
+        {
+         "class_from": "quantified",
+         "class_to": "below_lod",
+         "item": "Cov2 · PR-231102-DCS-R1",
+         "quantity_from": 52.42763863326388,
+         "quantity_to": 69.9339825884404,
+         "target": "Cov2",
+         "unit": "PR-231102-DCS-R1"
+        },
+        {
+         "class_from": "quantified",
+         "class_to": "quantified",
+         "item": "Cov2 · PR-231103-DCS-R1",
+         "quantity_from": 48.473745997431955,
+         "quantity_to": 122.79698673897711,
+         "target": "Cov2",
+         "unit": "PR-231103-DCS-R1"
+        },
+        {
+         "class_from": "below_loq",
+         "class_to": "not_detected",
+         "item": "PMMoV · PR-231101-NEG-R1",
+         "quantity_from": 0.39120305487981877,
+         "quantity_to": null,
+         "target": "PMMoV",
+         "unit": "PR-231101-NEG-R1"
+        },
+        {
+         "class_from": "below_loq",
+         "class_to": "not_detected",
+         "item": "PMMoV · PR-231103-NEG-R1",
+         "quantity_from": 0.426049938340809,
+         "quantity_to": null,
+         "target": "PMMoV",
+         "unit": "PR-231103-NEG-R1"
+        }
+       ],
+       "n_changed": 9
+      },
+      "cq_le_38": {
+       "changed": [],
+       "n_changed": 0
+      },
+      "cq_le_40": {
+       "changed": [],
+       "n_changed": 0
+      },
+      "linregpcr": {
+       "changed": [],
+       "n_changed": 0
+      }
+     }
+    },
+    "options": [
+     {
+      "id": "linregpcr",
+      "label": "LinRegPCR's own call (a starting quantity was found)",
+      "per_gene": {}
+     },
+     {
+      "id": "cq_le_40",
+      "label": "Cq ≤ 40 (a later Cq counts as not detected)",
+      "per_gene": {}
+     },
+     {
+      "id": "cq_le_38",
+      "label": "Cq ≤ 38 (a later Cq counts as not detected)",
+      "per_gene": {}
+     },
+     {
+      "id": "cq_le_35",
+      "label": "Cq ≤ 35 (common, not recommended)",
+      "per_gene": {}
+     }
+    ],
+    "recommended": "linregpcr",
+    "rationale_template": "quantity_amp_v1",
+    "facts": [
+     "f_qn_changed_amp_call",
+     "f_qn_items",
+     "f_qn_fold"
+    ],
+    "autonomy": "suggest",
+    "effective_autonomy": "suggest",
+    "status": "open",
+    "decision": null,
+    "reason": null,
+    "decided_by": null,
+    "decided_at": null
+   },
+   "title": "Which wells count as detected, for the quantities",
+   "status_line": "Your decision: this choice changes what is reported for at least one sample.",
+   "impact": {
+    "plain": "9 of 54 sample results change with this choice",
+    "segments": [
+     {
+      "text": "9",
+      "fact": "f_qn_changed_amp_call"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "54",
+      "fact": "f_qn_items"
+     },
+     {
+      "text": " sample results change with this choice",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_qn_changed_amp_call",
+      "text": "9",
+      "value": 9,
+      "unit": "",
+      "path": "cards/card_quantity_amp_call"
+     },
+     {
+      "id": "f_qn_items",
+      "text": "54",
+      "value": 54,
+      "unit": "",
+      "path": "quantities:/unknowns"
+     }
+    ],
+    "source": "template"
+   },
+   "explanation": {
+    "plain": "Which wells count as detected decides which standards are on the curve, the limit of detection, and how many wells of each sample are detected. This analysis counts a well by LinRegPCR's own call (a starting quantity was found); the other options are Cq cut-offs, which call a late well not detected. Another option reports 9 of the 54 sample results differently (another class, or a number that moves by more than 2-fold), so a person decides, with a reason.",
+    "segments": [
+     {
+      "text": "Which wells count as detected decides which standards are on the curve, the limit of detection, and how many wells of each sample are detected. This analysis counts a well by ",
+      "fact": null
+     },
+     {
+      "text": "LinRegPCR's own call (a starting quantity was found)",
+      "fact": "f_amp_primary"
+     },
+     {
+      "text": "; the other options are Cq cut-offs, which call a late well not detected. Another option reports ",
+      "fact": null
+     },
+     {
+      "text": "9",
+      "fact": "f_qn_changed_amp_call"
+     },
+     {
+      "text": " of the ",
+      "fact": null
+     },
+     {
+      "text": "54",
+      "fact": "f_qn_items"
+     },
+     {
+      "text": " sample results differently (another class, or a number that moves by more than ",
+      "fact": null
+     },
+     {
+      "text": "2-fold",
+      "fact": "f_qn_fold"
+     },
+     {
+      "text": "), so a person decides, with a reason.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_amp_primary",
+      "text": "LinRegPCR's own call (a starting quantity was found)",
+      "value": "LinRegPCR's own call (a starting quantity was found)",
+      "unit": "",
+      "path": ""
+     },
+     {
+      "id": "f_qn_changed_amp_call",
+      "text": "9",
+      "value": 9,
+      "unit": "",
+      "path": "cards/card_quantity_amp_call"
+     },
+     {
+      "id": "f_qn_items",
+      "text": "54",
+      "value": 54,
+      "unit": "",
+      "path": "quantities:/unknowns"
+     },
+     {
+      "id": "f_qn_fold",
+      "text": "2-fold",
+      "value": 2.0,
+      "unit": "",
+      "path": ""
+     }
+    ],
+    "source": "template"
+   },
+   "needs_human": true,
+   "genes": [],
+   "options": [
+    {
+     "id": "linregpcr",
+     "label": "LinRegPCR's own call (a starting quantity was found)",
+     "recommended": true,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [],
+     "by_comparison": [],
+     "quantities": [],
+     "n_quantities_changed": 0
+    },
+    {
+     "id": "cq_le_40",
+     "label": "Cq ≤ 40 (a later Cq counts as not detected)",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [],
+     "by_comparison": [],
+     "quantities": [],
+     "n_quantities_changed": 0
+    },
+    {
+     "id": "cq_le_38",
+     "label": "Cq ≤ 38 (a later Cq counts as not detected)",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [],
+     "by_comparison": [],
+     "quantities": [],
+     "n_quantities_changed": 0
+    },
+    {
+     "id": "cq_le_35",
+     "label": "Cq ≤ 35 (common, not recommended)",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": true,
+     "effects": [],
+     "by_comparison": [],
+     "quantities": [
+      {
+       "target": "Cov2",
+       "unit": "D-231018-SS-A",
+       "class_from": "quantified",
+       "class_to": "below_lod",
+       "words_from": "quantified",
+       "words_to": "below the limit of detection",
+       "quantity_from": 56.768174699573954,
+       "quantity_to": 75.39411131675736
+      },
+      {
+       "target": "Cov2",
+       "unit": "D-231018-SS-B",
+       "class_from": "quantified",
+       "class_to": "below_lod",
+       "words_from": "quantified",
+       "words_to": "below the limit of detection",
+       "quantity_from": 58.406077850858914,
+       "quantity_to": 77.44844858369238
+      },
+      {
+       "target": "Cov2",
+       "unit": "PR-231026-DCS-R1",
+       "class_from": "quantified",
+       "class_to": "below_lod",
+       "words_from": "quantified",
+       "words_to": "below the limit of detection",
+       "quantity_from": 50.26968267751618,
+       "quantity_to": 67.21028157322412
+      },
+      {
+       "target": "Cov2",
+       "unit": "PR-231031-DCS-R1",
+       "class_from": "quantified",
+       "class_to": "below_lod",
+       "words_from": "quantified",
+       "words_to": "below the limit of detection",
+       "quantity_from": 66.84789546463614,
+       "quantity_to": 87.98839609679207
+      },
+      {
+       "target": "Cov2",
+       "unit": "PR-231031-DNI-R1",
+       "class_from": "quantified",
+       "class_to": "below_lod",
+       "words_from": "quantified",
+       "words_to": "below the limit of detection",
+       "quantity_from": 73.36743851659314,
+       "quantity_to": 96.07787957390744
+      },
+      {
+       "target": "Cov2",
+       "unit": "PR-231102-DCS-R1",
+       "class_from": "quantified",
+       "class_to": "below_lod",
+       "words_from": "quantified",
+       "words_to": "below the limit of detection",
+       "quantity_from": 52.42763863326388,
+       "quantity_to": 69.9339825884404
+      },
+      {
+       "target": "Cov2",
+       "unit": "PR-231103-DCS-R1",
+       "class_from": "quantified",
+       "class_to": "quantified",
+       "words_from": "quantified",
+       "words_to": "quantified",
+       "quantity_from": 48.473745997431955,
+       "quantity_to": 122.79698673897711
+      },
+      {
+       "target": "PMMoV",
+       "unit": "PR-231101-NEG-R1",
+       "class_from": "below_loq",
+       "class_to": "not_detected",
+       "words_from": "detected, below the limit of quantification",
+       "words_to": "not detected",
+       "quantity_from": 0.39120305487981877,
+       "quantity_to": null
+      },
+      {
+       "target": "PMMoV",
+       "unit": "PR-231103-NEG-R1",
+       "class_from": "below_loq",
+       "class_to": "not_detected",
+       "words_from": "detected, below the limit of quantification",
+       "words_to": "not detected",
+       "quantity_from": 0.426049938340809,
+       "quantity_to": null
+      }
+     ],
+     "n_quantities_changed": 9
+    }
+   ],
+   "pending": [],
+   "undo_option": null,
+   "undo_label": null,
+   "carried": null,
+   "asked_again": null,
+   "place": null,
+   "comparisons": [],
+   "study_wide": null
+  },
+  {
+   "card": {
+    "id": "card_quantity_loq_cv",
+    "kind": "quantity.loq_cv",
+    "rank": 2,
+    "impact": {
+     "flips": false,
+     "flips_anywhere": false,
+     "items": "samples",
+     "max_delta_log2fc": 0.0,
+     "n_genes_flipped": 0,
+     "n_genes_flipped_anywhere": 0
+    },
+    "evidence": {
+     "dimension": "loq_cv",
+     "fold": 2.0,
+     "per_option": {
+      "loq_cv_25": {
+       "changed": [],
+       "n_changed": 0
+      },
+      "loq_cv_35": {
+       "changed": [],
+       "n_changed": 0
+      }
+     }
+    },
+    "options": [
+     {
+      "id": "loq_cv_35",
+      "label": "CV at most 35 % (Forootan et al. 2017; the default)",
+      "per_gene": {}
+     },
+     {
+      "id": "loq_cv_25",
+      "label": "CV at most 25 % (stricter)",
+      "per_gene": {}
+     }
+    ],
+    "recommended": "loq_cv_35",
+    "rationale_template": "quantity_loq_v1",
+    "facts": [
+     "f_qn_changed_loq_cv",
+     "f_qn_items",
+     "f_qn_fold"
+    ],
+    "autonomy": "suggest",
+    "effective_autonomy": "suggest",
+    "status": "auto_decided",
+    "decision": "loq_cv_35",
+    "reason": "Decided automatically: no option on this card changes what is reported for any sample (its class, or its number by more than 2-fold).",
+    "decided_by": "system",
+    "decided_at": "2026-10-29T13:24:56Z"
+   },
+   "title": "How precise a quantity must be to be reported",
+   "status_line": "Decided automatically: no option on this card changes what is reported for any sample (its class, or its number by more than 2-fold).",
+   "impact": {
+    "plain": "No sample's reported result changes with this choice",
+    "segments": [
+     {
+      "text": "No sample's reported result changes with this choice",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "explanation": {
+    "plain": "The limit of quantification is the lowest standard whose read-back quantities agree closely enough; below it a sample is detected but its number is not precise. This analysis asks for a coefficient of variation of at most 35 % (Forootan et al.); a stricter line can move the limit up. No option changes what is reported for any of the 54 sample results (its class, or its number by more than 2-fold).",
+    "segments": [
+     {
+      "text": "The limit of quantification is the lowest standard whose read-back quantities agree closely enough; below it a sample is detected but its number is not precise. This analysis asks for a coefficient of variation of at most ",
+      "fact": null
+     },
+     {
+      "text": "35 %",
+      "fact": "f_qn_loq_cv"
+     },
+     {
+      "text": " (Forootan et al.); a stricter line can move the limit up. No option changes what is reported for any of the ",
+      "fact": null
+     },
+     {
+      "text": "54",
+      "fact": "f_qn_items"
+     },
+     {
+      "text": " sample results (its class, or its number by more than ",
+      "fact": null
+     },
+     {
+      "text": "2-fold",
+      "fact": "f_qn_fold"
+     },
+     {
+      "text": ").",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_qn_loq_cv",
+      "text": "35 %",
+      "value": 35.0,
+      "unit": "",
+      "path": ""
+     },
+     {
+      "id": "f_qn_items",
+      "text": "54",
+      "value": 54,
+      "unit": "",
+      "path": "quantities:/unknowns"
+     },
+     {
+      "id": "f_qn_fold",
+      "text": "2-fold",
+      "value": 2.0,
+      "unit": "",
+      "path": ""
+     }
+    ],
+    "source": "template"
+   },
+   "needs_human": false,
+   "genes": [],
+   "options": [
+    {
+     "id": "loq_cv_35",
+     "label": "CV at most 35 % (Forootan et al. 2017; the default)",
+     "recommended": true,
+     "chosen": true,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [],
+     "by_comparison": [],
+     "quantities": [],
+     "n_quantities_changed": 0
+    },
+    {
+     "id": "loq_cv_25",
+     "label": "CV at most 25 % (stricter)",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [],
+     "by_comparison": [],
+     "quantities": [],
+     "n_quantities_changed": 0
+    }
+   ],
+   "pending": [],
+   "undo_option": null,
+   "undo_label": null,
+   "carried": null,
+   "asked_again": null,
+   "place": null,
+   "comparisons": [],
+   "study_wide": null
+  }
+ ],
+ "next_card": "card_quantity_amp_call",
+ "counter": "1 decision could change what is reported for a sample · 1 made automatically",
+ "pending_requests": 0
+}

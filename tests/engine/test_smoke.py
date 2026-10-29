@@ -1,11 +1,18 @@
 """Dev 1 smoke tests: the package imports, the contract fixtures load, the CLI starts."""
 
+import re
+from pathlib import Path
+
 import qpilot
 from qpilot.cli import main
 
 
 def test_version():
-    assert qpilot.__version__ == "0.1.0"
+    """One version string, in qpilot/__init__.py; CITATION.cff and the wheel must say the same."""
+    assert re.fullmatch(r"\d+\.\d+\.\d+", qpilot.__version__)
+    cff = Path(__file__).resolve().parents[2] / "CITATION.cff"
+    if cff.is_file():  # not in an sdist
+        assert f'version: "{qpilot.__version__}"' in cff.read_text(encoding="utf-8")
 
 
 def test_results_fixture_matches_locked_numbers(fixture_result):

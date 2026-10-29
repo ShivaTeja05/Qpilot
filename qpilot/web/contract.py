@@ -32,6 +32,7 @@ from qpilot.schemas_studio import (
     WellCall,
 )
 from qpilot.web.contract_capture import CaptureSummary
+from qpilot.web.contract_compare import CardComparison
 
 # ---- errors and jobs -----------------------------------------------------------------------
 
@@ -253,6 +254,11 @@ class WorkspaceView(BaseModel):
         description="What qPilot read from the instrument export this session was opened from "
         "(None: opened from an RDML file).",
     )
+    purpose: Literal["compare", "quantify"] = Field(
+        default="compare",
+        description="What the study is for: compare groups (the default), or quantify samples "
+        "from a standard curve (no groups compared; Results shows the quantities).",
+    )
 
 
 class Opened(BaseModel):
@@ -327,9 +333,11 @@ class ProposeAxis(BaseModel):
     Nothing changes until a person accepts the proposal it adds to the choices stage.
     """
 
-    axis: Literal["efficiency"] = Field(
+    axis: Literal["efficiency", "normaliser", "interrun"] = Field(
         default="efficiency",
-        description="The further choice: which efficiency turns Cq into quantity.",
+        description="The further choice: which efficiency turns Cq into quantity (efficiency), "
+        "what to normalise each gene to (normaliser: NormFinder's and geNorm's best pairs, the "
+        "global mean) or how to correct differences between plates (interrun).",
     )
     on: bool = Field(default=True, description="True: test it; false: stop testing it.")
 
@@ -491,6 +499,11 @@ class PlateWell(BaseModel):
     sample_text_id: str | None = None
     target: str
     target_text_id: str | None = None
+    dye: str | None = Field(
+        default=None,
+        description="The dye this target is read in, as the file names it (several per well on "
+        "a multiplex plate).",
+    )
     declared_type: str = Field(description="What the file declares (unkn, std, ntc, nrt, …).")
     role: str | None = Field(default=None, description="Its role in the design assembled so far.")
     excluded_by_person: bool = False
@@ -528,11 +541,21 @@ class PlateView(BaseModel):
     n_rows: int
     n_cols: int
     targets: list[str]
+    multiplex: bool = Field(
+        default=False,
+        description="Some wells hold more than one dye (one curve per target): one row per curve, "
+        "several rows per well.",
+    )
     curves_shown: bool = Field(description="Cq, efficiency, R² and calls are included.")
     curves_note: str
     curve_judge: str = Field(description="The Curve Judge's status in words.")
     results_visible: bool
     wells: list[PlateWell]
+    cq_only: bool = Field(
+        default=False,
+        description="The file has Cq values only (no curves): the Cq per well is the file's, "
+        "and no efficiency, R² or baseline exists (`docs/cq-tables.md`).",
+    )
 
 
 class CurveSeries(BaseModel):
@@ -746,6 +769,16 @@ class GeneRow(BaseModel):
     at_your_choices: AtChoices | None = None
     verdict: str | None = Field(default=None, description="The robustness audit's verdict.")
     verdict_label: str | None = None
+    p_adjusted: float | None = Field(
+        default=None,
+        description="The corrected p-value the call uses (Holm across the gene's comparisons); "
+        "None when the study has one comparison (the call uses p).",
+    )
+    q: float | None = Field(
+        default=None,
+        description="Benjamini-Hochberg q-value across the genes of this comparison (shown, "
+        "never used for a call).",
+    )
 
 
 class AuditBadge(BaseModel):
@@ -755,6 +788,41 @@ class AuditBadge(BaseModel):
     verdict_counts: dict[str, int] = {}
     chain_head: str | None = None
     current: bool = Field(default=False, description="Audited at the decision chain head of now.")
+    analyses: int | None = Field(
+        default=None, description="Every analysis the audit ran (90,396 on the demo)."
+    )
+    reasonable: int | None = Field(
+        default=None,
+        description="The audit's reasonable set its verdicts count (144 on the demo); not "
+        "qPilot's choice grid (GeneRow.n_cells).",
+    )
+    decisions: list[str] = Field(
+        default=[],
+        description="The audit's decision ids (efficiency, flagged, late_cq, nondetect, refs, "
+        "cut, test, multiplicity, replicates): what it varies, to say how it differs from "
+        "qPilot's grid.",
+    )
+
+
+class DetectedOnlyView(BaseModel):
+    """A withheld gene measured in both groups but detected in one only (or in neither).
+
+    No fold change exists for it (a ratio to nothing); the detected group's ΔCq (the gene's Cq
+    minus the mean Cq of the control genes, per biological unit, then the mean) says how much.
+    """
+
+    group: str | None = Field(description="The group it was detected in; null: in neither.")
+    absent: str = Field(description="The group (or groups) it was detected in no unit of.")
+    n_detected: int
+    n_group: int
+    n_absent: int
+    dcq: float | None = Field(default=None, description="Mean ΔCq of the detected group.")
+    dcq_sd: float | None = None
+    fisher_p: float | None = Field(
+        default=None,
+        description="Fisher's exact test (two-sided) on detected / not detected by group: "
+        "orientation on the presence/absence difference, never a call.",
+    )
 
 
 class WithheldGene(BaseModel):
@@ -762,6 +830,7 @@ class WithheldGene(BaseModel):
 
     gene: str
     reason: str
+    detected_only: DetectedOnlyView | None = None
 
 
 AxisStatus = Literal["off", "swept", "screened_out", "not_applicable", "single_option"]
@@ -782,7 +851,7 @@ class AxisOptionView(BaseModel):
 
 
 class AxisView(BaseModel):
-    """A further choice the grid can test on request (the efficiency models)."""
+    """A further choice the grid can test on request (efficiency, normaliser, between plates)."""
 
     name: str
     title: str
@@ -801,6 +870,16 @@ class AxisView(BaseModel):
     command: str | None = Field(
         default=None, description="For a study outside Studio: the CLI command that tests it."
     )
+
+
+class ComparisonTab(BaseModel):
+    """One comparison of a study with several, for the page's comparison picker."""
+
+    id: str
+    label: str
+    primary: bool
+    n_up: int
+    n_down: int
 
 
 class ResultsView(BaseModel):
@@ -827,6 +906,13 @@ class ResultsView(BaseModel):
     axes: list[AxisView] = Field(
         default=[], description="Further choices the grid can test on request (opt-in)."
     )
+    comparison: str | None = Field(
+        default=None,
+        description="The comparison shown (its id) in a study with several; None otherwise.",
+    )
+    comparisons: list[ComparisonTab] = Field(
+        default=[], description="Every comparison of a study with several (the primary first)."
+    )
 
 
 class OptionEffect(BaseModel):
@@ -841,6 +927,27 @@ class OptionEffect(BaseModel):
     changes_call: bool = Field(description="A different call than the recommended option's.")
 
 
+class OptionComparisonEffects(BaseModel):
+    """One option's consequences in another comparison of a study with several."""
+
+    comparison: str
+    label: str
+    effects: list[OptionEffect]
+
+
+class QuantityChange(BaseModel):
+    """One sample result an option of a quantification study's card reports differently."""
+
+    target: str
+    unit: str = Field(description="The biological unit (the sample when it has none).")
+    class_from: str = Field(description="What the recommended option reports (a class id).")
+    class_to: str = Field(description="What this option reports.")
+    words_from: str
+    words_to: str
+    quantity_from: float | None = None
+    quantity_to: float | None = None
+
+
 class CardOptionView(BaseModel):
     """One option of a Decision Card."""
 
@@ -851,6 +958,19 @@ class CardOptionView(BaseModel):
     requested: bool = Field(description="An agent asked for this option; it waits for a person.")
     not_recommended: bool = Field(description="E.g. a single control gene (MIQE).")
     effects: list[OptionEffect]
+    by_comparison: list[OptionComparisonEffects] = Field(
+        default=[],
+        description="A study with several comparisons: this option's consequences in each other "
+        "comparison (the first comparison's are `effects`).",
+    )
+    quantities: list[QuantityChange] = Field(
+        default=[],
+        description="A quantification study's card: the sample results this option reports "
+        "differently from the recommended one (at most 60 listed).",
+    )
+    n_quantities_changed: int = Field(
+        default=0, description="How many sample results this option reports differently."
+    )
 
 
 class PendingRequest(BaseModel):
@@ -898,6 +1018,14 @@ class CardView(BaseModel):
     )
     place: CardPlace | None = Field(
         default=None, description="A card opened from Trace: the place it is about."
+    )
+    comparisons: list[CardComparison] = Field(
+        default=[],
+        description="A study with several comparisons: what this choice does in each one.",
+    )
+    study_wide: str | None = Field(
+        default=None,
+        description="A study with several comparisons: that deciding applies to every one.",
     )
 
 
@@ -1069,6 +1197,9 @@ class FlipsView(BaseModel):
     genes: list[str]
     planned: list[Conclusion]
     rows: list[FlipRow]
+    comparison: str | None = Field(
+        default=None, description="The comparison shown, in a study with several."
+    )
 
 
 class GeneGrid(BaseModel):
@@ -1102,6 +1233,9 @@ class GeneView(BaseModel):
     next_gene: str | None = None
     audit_verdict: str | None = None
     audit_verdict_label: str | None = None
+    comparison: str | None = Field(
+        default=None, description="The comparison shown, in a study with several."
+    )
 
 
 # ---- job results (registered: their models reach the page's types) ---------------------------

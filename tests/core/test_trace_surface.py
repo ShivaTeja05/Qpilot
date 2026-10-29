@@ -1,7 +1,6 @@
 """Trace and the Spreadsheet Check on every surface: CLI, MCP tools and Ask your data."""
 
 import json
-import time
 
 import anyio
 import pytest
@@ -25,6 +24,7 @@ from qpilot.mcp_server import (
 from qpilot.qpcr.sheetcheck import MAPPING_CONFIRMED, MAPPING_GUESSED
 from tests.conftest import DEMO_RDML
 from tests.engine.test_sheetcheck import clean_sheet
+from tests.timing import work_time
 
 NEW_TOOLS = ("qpcr_trace", "qpcr_check_sheet")
 
@@ -177,20 +177,20 @@ def test_trace_and_sheet_tools_are_registered_read_only(tmp_studies_dir):
 def test_qpcr_trace_answers_errors_fast_on_the_fixture_study(tools, demo):
     _, study_id = demo
     before = _state(tools.store, study_id)
-    start = time.perf_counter()
-    out = tools.qpcr_trace(study_id, gene="CAMTA2")
-    assert "input file" in out["error"]
-    for kwargs in ({}, {"gene": "CAMTA2", "sample": "2016"}, {"gene": ""}, {"gene": {"a": 1}},
-                   {"well": ["HMBS_20080318:K22"]}, {"sample": True}):  # fmt: skip
-        assert _err(tools.qpcr_trace(study_id, **kwargs)) == TRACE_ROOT, kwargs
-    for top in (0, MAX_TRACE_TOP + 1, True, "3", 2.5, None):
-        assert "top must be" in tools.qpcr_trace(study_id, gene="CAMTA2", top=top)["error"]
-    for sid in ("abcdef123456", "../../etc", None, {"actor": "human"}):
-        assert _err(tools.qpcr_trace(sid, gene="CAMTA2")) == UNKNOWN_STUDY
-    out = tools.qpcr_trace(study_id, well="HMBS_20080318:K22", top=MAX_TRACE_TOP)
-    json.dumps(out)
-    assert set(out) == {"error", "code", "fix"}
-    assert time.perf_counter() - start < 5  # no curve analysis on a fake input file
+    with work_time() as spent:
+        out = tools.qpcr_trace(study_id, gene="CAMTA2")
+        assert "input file" in out["error"]
+        for kwargs in ({}, {"gene": "CAMTA2", "sample": "2016"}, {"gene": ""}, {"gene": {"a": 1}},
+                       {"well": ["HMBS_20080318:K22"]}, {"sample": True}):  # fmt: skip
+            assert _err(tools.qpcr_trace(study_id, **kwargs)) == TRACE_ROOT, kwargs
+        for top in (0, MAX_TRACE_TOP + 1, True, "3", 2.5, None):
+            assert "top must be" in tools.qpcr_trace(study_id, gene="CAMTA2", top=top)["error"]
+        for sid in ("abcdef123456", "../../etc", None, {"actor": "human"}):
+            assert _err(tools.qpcr_trace(sid, gene="CAMTA2")) == UNKNOWN_STUDY
+        out = tools.qpcr_trace(study_id, well="HMBS_20080318:K22", top=MAX_TRACE_TOP)
+        json.dumps(out)
+        assert set(out) == {"error", "code", "fix"}
+    assert spent.seconds < 5, spent  # no curve analysis on a fake input file
     assert _state(tools.store, study_id) == before
 
 

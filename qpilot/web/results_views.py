@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import threading
 from collections import OrderedDict
 from collections.abc import Iterable, Mapping, Sequence
@@ -25,22 +26,23 @@ from typing import Any
 import pandas as pd
 
 from qpilot.core.store import StudyNotFound, StudyStore
-from qpilot.schemas import DecisionCard, DecisionEntry, Fact, StudyResult
+from qpilot.schemas import ContrastResult, DecisionCard, DecisionEntry, Fact, StudyResult
 from qpilot.web.contract import (
     AskedAgain,
     AtChoices,
     AuditBadge,
     AutonomyChange,
     AutonomyView,
-    AxisOptionView,
     AxisView,
     CardOptionView,
     CardPlace,
     CardsView,
     CardView,
     CarriedFrom,
+    ComparisonTab,
     DecisionEntryView,
     DecisionsView,
+    DetectedOnlyView,
     FactRef,
     FactText,
     FlipOption,
@@ -53,8 +55,10 @@ from qpilot.web.contract import (
     GroupCount,
     NotCompared,
     NotComparedReason,
+    OptionComparisonEffects,
     OptionEffect,
     PendingRequest,
+    QuantityChange,
     ResultsSummary,
     ResultsView,
     RuleView,
@@ -62,6 +66,7 @@ from qpilot.web.contract import (
     TextSegment,
     WithheldGene,
 )
+from qpilot.web.contract_compare import CardComparison
 
 KIND_DIMENSION = {
     "reference_set": "refs",
@@ -69,6 +74,8 @@ KIND_DIMENSION = {
     "undetermined": "undetermined",
     "amp_call": "amp_call",
     "numbers.efficiency_model": "efficiency",
+    "numbers.normaliser": "normaliser",
+    "numbers.interrun": "interrun",
 }
 DIMENSION_TITLE = {
     "refs": "Which control genes to normalise to",
@@ -76,6 +83,8 @@ DIMENSION_TITLE = {
     "undetermined": "What to do with wells that never amplified",
     "amp_call": "Which curves count as amplified",
     "efficiency": "Which efficiency turns Cq into quantity",
+    "normaliser": "What to normalise each gene to",
+    "interrun": "How to correct differences between plates",
 }
 UNDO_PREFIX = "Undo:"
 TOLERANCE = 1e-9
@@ -150,12 +159,20 @@ OLD_WORDS = (
 )
 
 
+#: A marker split's design variable in a stored note ("derived from the data (MYCN_high)").
+_DERIVED_GROUPS = re.compile(r"(Groups are derived from the data \()([^()\s]+?)_high\)")
+
+
 def reworded(text: str, n_cells: int | None) -> str:
-    """A confidence reason stored before the wording named qPilot's grid, in today's words."""
+    """A confidence reason stored before the wording named qPilot's grid, in today's words.
+
+    A stored note that names the groups by the design's variable (``MYCN_high``) names them as
+    every page does (``MYCN-high vs rest``); the engine's stored bytes are unchanged.
+    """
     for old, new in OLD_WORDS:
         if old in text and (n_cells or "{n}" not in new):
             text = text.replace(old, new.format(n=n_cells))
-    return text
+    return _DERIVED_GROUPS.sub(lambda m: f"{m[1]}{m[2]}-high vs rest)", text)
 
 
 def grade_now(grade: Any, n_cells: int | None) -> Any:
@@ -348,6 +365,10 @@ def _expected_values(result: StudyResult) -> dict[str, str]:
         from qpilot.qpcr.axes.efficiency import PRIMARY
 
         out["efficiency"] = PRIMARY
+    if "f_axis_normaliser" in result.facts:  # the other normalisers are tested
+        out["normaliser"] = "planned"
+    if "f_axis_interrun" in result.facts:  # the corrections between plates are tested
+        out["interrun"] = "none"
     amp = result.facts.get("f_amp_primary")
     if amp is not None:  # the fact holds the rule's label; the grid holds its id
         from qpilot.qpcr.amp_call import RULES
@@ -459,7 +480,7 @@ def _text(value: Any) -> str | None:
 
 def option_label(dimension: str, value: str) -> str:
     """Words for a grid option no card names."""
-    if dimension == "efficiency":
+    if dimension in ("efficiency", "normaliser", "interrun"):
         from qpilot.qpcr.axes import AxisError, get_axis
 
         try:
@@ -512,11 +533,24 @@ def audit_badge(store: StudyStore, study_id: str) -> AuditBadge:
     except (OSError, ValueError):
         return AuditBadge(status="none")
     head = manifest.get("chain_head")
+    try:
+        summary = json.loads((folder / "summary.json").read_text(encoding="utf-8"))
+        reasonable = ((summary.get("multiverse") or {}).get("defensible") or {}).get("cells")
+    except (OSError, ValueError, AttributeError):
+        reasonable = None
+    scope = manifest.get("scope") or {}
+    varied = list((scope.get("decisions") or {}).keys())
+    if scope.get("reference_sets") and "refs" not in varied:
+        varied.insert(varied.index("cut") if "cut" in varied else len(varied), "refs")
+    analyses = manifest.get("analyses")
     return AuditBadge(
         status="ready",
         verdict_counts={str(k): int(v) for k, v in (manifest.get("verdict_counts") or {}).items()},
         chain_head=head,
         current=bool(head) and head == store.chain_head(study_id),
+        analyses=analyses if isinstance(analyses, int) else None,
+        reasonable=reasonable if isinstance(reasonable, int) else None,
+        decisions=[str(d) for d in varied],
     )
 
 
@@ -524,21 +558,24 @@ _nc_lock = threading.Lock()
 _not_compared: OrderedDict[tuple[str, int], NotCompared | None] = OrderedDict()
 
 
-def not_compared(store: StudyStore, result: StudyResult) -> NotCompared | None:
+def not_compared(
+    store: StudyStore, result: StudyResult, comparison: str | None = None
+) -> NotCompared | None:
     """The study's samples in neither group, by reason, from the engine's model of the study.
 
     The model is rebuilt from the cached curve analysis (about a second on the demo) once per
-    study and kept; None when the input file is not there to rebuild it.
+    study and kept; None when the input file is not there to rebuild it. ``comparison`` is the
+    comparison shown in a study with several: units of its other groups are named as such.
     """
     path = store.workspace(result.study_id) / "results.json"
     try:
-        key = (str(path), path.stat().st_mtime_ns)
+        key = (str(path), path.stat().st_mtime_ns, comparison)
     except OSError:
         return None
     with _nc_lock:
         if key in _not_compared:
             return _not_compared[key]
-    value = _rebuild_not_compared(store, result)
+    value = _rebuild_not_compared(store, result, comparison)
     with _nc_lock:
         _not_compared[key] = value
         while len(_not_compared) > MAX_GRIDS:
@@ -546,8 +583,11 @@ def not_compared(store: StudyStore, result: StudyResult) -> NotCompared | None:
     return value
 
 
-def _rebuild_not_compared(store: StudyStore, result: StudyResult) -> NotCompared | None:
+def _rebuild_not_compared(
+    store: StudyStore, result: StudyResult, comparison: str | None = None
+) -> NotCompared | None:
     from qpilot.qpcr.curves import analyse_study
+    from qpilot.qpcr.designs import unit_groups
     from qpilot.qpcr.study import StudySettings, build_model
 
     source = store.source(result.study_id)
@@ -562,6 +602,13 @@ def _rebuild_not_compared(store: StudyStore, result: StudyResult) -> NotCompared
         return None
     matrix = model.matrix
     grouped = model.high | model.rest
+    elsewhere: dict[str, str] = {}  # unit -> its group, compared in another comparison
+    specs = {spec.id: spec for spec in model.space.comparisons}
+    if specs and settings.design is not None:
+        spec = specs.get(comparison or "", model.space.comparisons[0])
+        grouped = spec.group_a | spec.group_b
+        compared = {g for s in specs.values() for g in s.labels}
+        elsewhere = {u: g for u, g in unit_groups(settings.design).items() if g in compared}
     refs = [r for r in model.space.primary["refs"] if r in matrix.columns]
     marker = None if model.labels is not None else settings.marker
     by_reason: dict[str, list[str]] = {}
@@ -575,6 +622,8 @@ def _rebuild_not_compared(store: StudyStore, result: StudyResult) -> NotCompared
         elif missing:
             names = ", ".join(missing)
             reason = f"no value for the control gene{'s' * (len(missing) > 1)} {names}"
+        elif str(sample) in elsewhere:
+            reason = f"in group {elsewhere[str(sample)]}, compared in another comparison"
         elif model.labels is not None:
             reason = "in neither group of the confirmed design"
         else:
@@ -588,12 +637,44 @@ def _rebuild_not_compared(store: StudyStore, result: StudyResult) -> NotCompared
 
 
 def withheld(result: StudyResult) -> list[WithheldGene]:
-    """Genes the engine withheld (``f_withheld_*`` facts), with the reason in words."""
+    """Genes the engine withheld (``f_withheld_*`` facts), with the reason in words.
+
+    A gene detected in one group only carries its ``detected_only`` facts (the group, the
+    counts and that group's ΔCq): never a fold change.
+    """
+    only: dict[str, dict[str, Any]] = {}
+    for fact in result.facts.values():
+        if fact.path.startswith("detected_only."):
+            gene, _, key = fact.path[len("detected_only.") :].rpartition(".")
+            only.setdefault(gene, {})[key] = fact.value
     out = []
     for fid, fact in result.facts.items():
         if fid.startswith("f_withheld_") and fact.path.startswith("withheld."):
-            out.append(WithheldGene(gene=fact.path[len("withheld.") :], reason=str(fact.value)))
+            gene = fact.path[len("withheld.") :]
+            found = only.get(gene)
+            view = None
+            if found is not None:
+                group = found.get("group")
+                view = DetectedOnlyView(
+                    group=None if group == "neither group" else str(group),
+                    absent=str(found.get("absent", "")),
+                    n_detected=int(found.get("n_detected", 0)),
+                    n_group=int(found.get("n_group", 0)),
+                    n_absent=int(found.get("n_absent", 0)),
+                    dcq=_finite(found.get("dcq")),
+                    dcq_sd=_finite(found.get("dcq_sd")),
+                    fisher_p=_finite(found.get("fisher_p")),
+                )
+            out.append(WithheldGene(gene=gene, reason=str(fact.value), detected_only=view))
     return sorted(out, key=lambda w: w.gene)
+
+
+def _finite(value: Any) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
 
 
 def headline_genes(
@@ -629,11 +710,10 @@ def groups(result: StudyResult) -> list[GroupCount]:
             GroupCount(label=str(facts["f_group_a"].value), n=design.n_hi),
             GroupCount(label=str(facts["f_group_b"].value), n=design.n_lo),
         ]
-    marker = design.group_var.removesuffix("_high") or design.group_var
-    return [
-        GroupCount(label=f"{marker}-high", n=design.n_hi),
-        GroupCount(label="rest", n=design.n_lo),
-    ]
+    from qpilot.qpcr.design import marker_group_names
+
+    a, b = marker_group_names(design.group_var)
+    return [GroupCount(label=a, n=design.n_hi), GroupCount(label=b, n=design.n_lo)]
 
 
 def _row(
@@ -643,8 +723,10 @@ def _row(
     at: pd.DataFrame | None,
     verdicts: Mapping[str, str],
     labels: Mapping[str, str],
+    extra: Mapping[str, tuple[float | None, float | None]] | None = None,
 ) -> GeneRow:
     contrast = result.contrasts[gene]
+    p_adjusted, q = (extra or {}).get(gene, (None, None))
     robust = result.robustness.get(gene)
     grade = result.confidence.get(gene)
     yours = None
@@ -680,24 +762,9 @@ def _row(
         at_your_choices=yours,
         verdict=verdict,
         verdict_label=labels.get(verdict) if verdict else None,
+        p_adjusted=p_adjusted,
+        q=q,
     )
-
-
-AXIS_WORDS = {
-    "off": "Not tested: every quantity uses LinRegPCR's mean efficiency of each assay on each "
-    "plate. Testing the other efficiency models adds them as one more choice of the grid; the "
-    "analysis in use stays the same until a person decides otherwise.",
-    "swept": "Tested as one more choice of the grid: changing only the efficiency model changes "
-    "{{f_n_flipped_efficiency}} of {{f_n_genes}} calls. Its Decision Card says what each model "
-    "changes; the analysis in use stays LinRegPCR's mean efficiency until a person decides.",
-    "screened_out": "Tried alone first: no efficiency model changes a call, and the largest "
-    "move of a log2 fold change is {{f_screen_efficiency_dlog2fc}}, under the screening "
-    "threshold, so the grid keeps LinRegPCR's mean efficiency and raises no card.",
-    "not_applicable": "None of the efficiency models asked for applies to this study, so the "
-    "grid keeps LinRegPCR's mean efficiency.",
-    "single_option": "Only LinRegPCR's mean efficiency was asked for, so nothing else is tested.",
-}
-EFFICIENCY_COMMAND = "qpilot run --efficiency all"
 
 
 def axis_views(
@@ -706,98 +773,56 @@ def axis_views(
     cards: Sequence[DecisionCard],
     session: str | None,
 ) -> list[AxisView]:
-    """The further choices the grid can test on request (today: the efficiency models).
+    """The further choices the grid can test on request (:mod:`qpilot.web.axes_views`).
 
-    Read from the study's facts and its stored design: which options were asked for, which
-    apply, what each one alone changes, and the card it raised. Every number is a fact.
+    The efficiency models, the normaliser and the correction between plates: which options
+    were asked for, which apply, what each one alone changes, and the card it raised.
     """
-    from qpilot.core.facts import slug
-    from qpilot.qpcr.axes import get_axis
+    from qpilot.web.axes_views import axis_views as views
 
-    axis = get_axis("efficiency")
-    facts = result.facts
-    try:
-        design = store.design(result.study_id)
-    except (OSError, ValueError):
-        design = None
-    asked = tuple((design.axes or {}).get(axis.name, ())) if design is not None else ()
-    status_fact = facts.get(f"f_axis_{axis.name}")
-    status = str(status_fact.value) if status_fact is not None else "off"
-    if status not in AXIS_WORDS:
-        status = "off"
-    options = []
-    for option in axis.catalogue:
-        s = slug(option.id)
-        why = facts.get(f"f_axis_{axis.name}_unavailable_{s}")
-        flips = facts.get(f"f_n_flipped_eff_{s}") or facts.get(f"f_screen_{axis.name}_flips_{s}")
-        primary = option.tier == "primary"
-        tested = status != "off" and (primary or option.id in asked) and why is None
-        options.append(
-            AxisOptionView(
-                id=option.id,
-                label=option.label,
-                tier=option.tier,
-                primary=primary,
-                tested=tested,
-                flips=fact_ref(flips) if flips is not None and not primary else None,
-                unavailable=str(why.value) if why is not None else None,
-            )
-        )
-    try:
-        text = fact_text(AXIS_WORDS[status], facts)
-    except (KeyError, TypeError, ValueError):
-        text = plain_text(AXIS_WORDS["off"])
-    notes = []
-    if "f_n_eff_excluded_per_well" in facts:
-        notes.append(
-            fact_text(
-                "With each well's own efficiency, {{f_n_eff_excluded_per_well}} study wells "
-                "whose own efficiency is outside LinRegPCR's valid range are left out.",
-                facts,
-            )
-        )
-    fallback = facts.get("f_eff_std_fallback")
-    if fallback is not None and str(fallback.value) not in ("", "none"):
-        notes.append(
-            fact_text(
-                "Amplicons without a dilution series keep LinRegPCR's mean efficiency under the "
-                "dilution-series model: {{f_eff_std_fallback}}.",
-                facts,
-            )
-        )
-    card = next((c for c in cards if KIND_DIMENSION.get(c.kind) == axis.name), None)
-    return [
-        AxisView(
-            name=axis.name,
-            title=axis.title,
-            status=status,  # type: ignore[arg-type]
-            text=text,
-            options=options,
-            card_id=card.id if card is not None else None,
-            notes=notes,
-            can_propose=session is not None,
-            command=None if session is not None else EFFICIENCY_COMMAND,
-        )
-    ]
+    return views(store, result, cards, session)
 
 
-def results_view(store: StudyStore, study_id: str, session: str | None = None) -> ResultsView:
-    """Everything the Results section shows."""
+def _shown(
+    store: StudyStore, study_id: str, comparison: str | None
+) -> tuple[StudyResult, StudyResult, Any, Any, Any]:
+    """``(stored result, result as shown, outcome, primary grid, grid as shown)``.
+
+    ``comparison`` picks one comparison of a study with several (``None``: the primary, as
+    stored); see :mod:`qpilot.web.compare_views`.
+    """
+    from qpilot.web import compare_views as cv
+
+    stored = store.get(study_id)
+    outcome = cv.outcome_of(stored, comparison)
+    grid = load_grid(store, stored)
+    if outcome is None or outcome.primary:
+        return stored, stored, outcome, grid, grid
+    shown_grid = cv.comparison_grid(store, study_id, outcome.id, grid)
+    return stored, cv.shown_result(stored, outcome), outcome, grid, shown_grid
+
+
+def results_view(
+    store: StudyStore, study_id: str, session: str | None = None, comparison: str | None = None
+) -> ResultsView:
+    """Everything the Results section shows (``comparison``: one of several; default primary)."""
     from qpilot.app_state import design_line
     from qpilot.explain.templates import TemplateError, render_template
     from qpilot.qpcr.contrast import ConclusionRule
+    from qpilot.web import compare_views as cv
 
-    result = store.get(study_id)
+    stored, result, outcome, primary_grid, grid = _shown(store, study_id, comparison)
     head, cards, pending = store.snapshot(study_id)
     headline = headline_genes(result, cards, store)
-    grid = load_grid(store, result)
-    at = None
-    at = at_choices(grid, cards)
+    at = cv.at_choices_in(primary_grid, grid, cards)
     verdicts, labels = _verdicts(store, study_id)
-    rows = [_row(g, result, set(headline), at, verdicts, labels) for g in result.contrasts]
+    extra = cv.extra_columns(stored, outcome)
+    rows = [_row(g, result, set(headline), at, verdicts, labels, extra) for g in result.contrasts]
     try:
         summary_text = fact_text(render_template("summary_v1", result.facts).tokens, result.facts)
     except (KeyError, TemplateError):
+        summary_text = None
+    if result is not stored:  # the summary sentence describes the first comparison
         summary_text = None
     rule = ConclusionRule(**result.conclusion_rule)
     genorm = result.genorm
@@ -822,13 +847,13 @@ def results_view(store: StudyStore, study_id: str, session: str | None = None) -
             cut=None if "f_group_a" in result.facts else design.cut,
             design_line=design_line(result),
             text=summary_text,
-            not_compared=not_compared(store, result),
+            not_compared=not_compared(store, stored, outcome.id if outcome is not None else None),
         ),
         rule=RuleView(
             alpha=rule.alpha,
             min_log2fc=rule.min_log2fc,
             min_fold=2**rule.min_log2fc,
-            text=rule.describe(),
+            text=cv.rule_words(stored, rule),
         ),
         references=GenormView(
             used=list(design.refs_primary),
@@ -842,7 +867,7 @@ def results_view(store: StudyStore, study_id: str, session: str | None = None) -
             stable=[g for g, m in genorm.M_initial.items() if m < genorm.cutoff_M],
         ),
         genes=rows,
-        withheld=withheld(result),
+        withheld=withheld(result) + _not_tested(outcome),
         headline=headline,
         counts=counts,
         levels=levels,
@@ -852,7 +877,21 @@ def results_view(store: StudyStore, study_id: str, session: str | None = None) -
         head=head,
         audit=audit_badge(store, study_id),
         axes=axis_views(store, result, cards, session),
+        comparison=outcome.id if outcome is not None else _primary_id(stored),
+        comparisons=[ComparisonTab(**tab) for tab in cv.tabs(stored)],
     )
+
+
+def _primary_id(result: StudyResult) -> str | None:
+    """The primary comparison's id in a study with several (None otherwise)."""
+    return result.comparisons.comparisons[0].id if result.comparisons is not None else None
+
+
+def _not_tested(outcome: Any) -> list[WithheldGene]:
+    """Genes a (non-primary) comparison cannot test, as withheld genes of that comparison."""
+    if outcome is None or outcome.primary:
+        return []
+    return [WithheldGene(gene=g, reason=r) for g, r in sorted(outcome.not_tested.items())]
 
 
 # ---- the flip matrix -------------------------------------------------------------------------
@@ -863,10 +902,17 @@ def _flip_rows(
     grid: Grid | None,
     cards: Sequence[DecisionCard],
     genes: Sequence[str],
+    primary: Grid | None = None,
 ) -> list[FlipRow]:
+    """Decision rows for ``genes``; ``primary`` is the grid the cards' options are read from.
+
+    The cards describe the primary comparison, so for another comparison's ``grid`` the cards'
+    options and the options in use are found in the primary grid (the same analyses).
+    """
     by_dim = {KIND_DIMENSION.get(c.kind): c for c in cards}
-    mapped = card_options(grid, cards) if grid is not None else {}
-    choice = current_cell(grid, cards, mapped) if grid is not None and grid.planned else None
+    source = grid if primary is None else primary
+    mapped = card_options(source, cards) if source is not None else {}
+    choice = current_cell(source, cards, mapped) if source is not None and source.planned else None
     dims: list[str] = []
     for gene in genes:
         for dim in result.robustness[gene].impact:
@@ -919,17 +965,17 @@ def _flip_rows(
     return rows
 
 
-def flips_view(store: StudyStore, study_id: str) -> FlipsView:
+def flips_view(store: StudyStore, study_id: str, comparison: str | None = None) -> FlipsView:
     """Decisions × genes: where a decision alone flips a gene's call, and by how much."""
-    result = store.get(study_id)
+    stored, result, outcome, primary_grid, grid = _shown(store, study_id, comparison)
     cards = store.cards(study_id)
     genes = [g for g in result.contrasts if g in result.robustness]
-    grid = load_grid(store, result)
     return FlipsView(
         study_id=study_id,
         genes=genes,
         planned=[result.contrasts[g].conclusion for g in genes],
-        rows=_flip_rows(result, grid, cards, genes),
+        rows=_flip_rows(result, grid, cards, genes, primary_grid),
+        comparison=outcome.id if outcome is not None else _primary_id(stored),
     )
 
 
@@ -990,7 +1036,7 @@ def card_view(
     own words as the reason; ``asked`` is a person's earlier decision asked again here.
     """
     from qpilot.ai.explain import KIND_TITLE
-    from qpilot.app_state import FLIPPED_FACT, _status_line
+    from qpilot.app_state import STUDY_WIDE, _status_line, decider_words, impact_tokens
     from qpilot.core.validator import names_from_result
     from qpilot.explain.templates import TemplateError, render_template
 
@@ -1001,8 +1047,8 @@ def card_view(
     if carried is not None and card.status == "decided":
         chosen = labels.get(card.decision or "", card.decision or "")
         status = (
-            f"Decided by {card.decided_by}: {chosen}, carried from the earlier analysis "
-            f"{carried.study_id}. Reason: {carried.reason}"
+            f"Decided by {decider_words(card.decided_by)}: {chosen}, carried over from your "
+            f"decision on the earlier analysis of these data. Reason: {carried.reason}"
         )
     try:
         rendered = render_template(
@@ -1011,11 +1057,8 @@ def card_view(
         explanation = fact_text(rendered.tokens, facts)
     except (KeyError, TemplateError):
         explanation = plain_text(KIND_TITLE.get(card.kind, card.kind))
-    flipped = FLIPPED_FACT.get(card.kind)
-    if flipped in facts and "f_n_genes" in facts and card.impact.get("flips"):
-        tokens = "{{" + flipped + "}} of {{f_n_genes}} conclusions change with this choice"
-        if card.kind == "reference_set" and "f_n_flipped_refset_min3" in facts:
-            tokens += "; {{f_n_flipped_refset_min3}} even between sets of three or more genes"
+    tokens = impact_tokens(card, facts)
+    if tokens is not None:
         impact = fact_text(tokens, facts)
     elif card.impact.get("flips"):
         impact = plain_text("Can change a conclusion")
@@ -1025,6 +1068,7 @@ def card_view(
     base = {g: r.conclusion for g, r in recommended.per_gene.items()} if recommended else {}
     not_recommended = set(card.evidence.get("not_recommended", ()) or ())
     requested = {p.option for p in waiting}
+    comparisons, by_option = card_comparisons(card, result)
     options = [
         CardOptionView(
             id=o.id,
@@ -1045,6 +1089,8 @@ def card_view(
                 )
                 for g, r in o.per_gene.items()
             ],
+            by_comparison=by_option.get(o.id, []),
+            **quantity_effects(card, o.id),
         )
         for o in card.options
     ]
@@ -1074,14 +1120,105 @@ def card_view(
         carried=carried,
         asked_again=asked,
         place=card_place(card),
+        comparisons=comparisons,
+        study_wide=STUDY_WIDE if comparisons else None,
     )
+
+
+def quantity_effects(card: DecisionCard, option_id: str) -> dict[str, Any]:
+    """A quantification study's card: what one option reports differently (else nothing)."""
+    from qpilot.qpcr.quantify_study import CLASS_WORDS
+
+    per = (
+        (card.evidence.get("per_option") or {}).get(option_id)
+        if card.kind.startswith("quantity.")
+        else None
+    )
+    if not isinstance(per, dict):
+        return {}
+    rows = [
+        QuantityChange(
+            target=str(c["target"]),
+            unit=str(c["unit"]),
+            class_from=str(c["class_from"]),
+            class_to=str(c["class_to"]),
+            words_from=CLASS_WORDS.get(str(c["class_from"]), str(c["class_from"])),
+            words_to=CLASS_WORDS.get(str(c["class_to"]), str(c["class_to"])),
+            quantity_from=_number(c.get("quantity_from")),
+            quantity_to=_number(c.get("quantity_to")),
+        )
+        for c in per.get("changed") or ()
+        if isinstance(c, dict)
+    ]
+    return {"quantities": rows, "n_quantities_changed": int(per.get("n_changed") or 0)}
+
+
+def card_comparisons(
+    card: DecisionCard, result: StudyResult
+) -> tuple[list[CardComparison], dict[str, list[OptionComparisonEffects]]]:
+    """What a card's choice does in each comparison, and each option's other-comparison effects.
+
+    Empty for a study with one comparison (the card's ``impact`` then has no ``views``).
+    """
+    views = card.impact.get("views")
+    found = result.comparisons
+    if not views or found is None:
+        return [], {}
+    labels = {o.id: o.label for o in found.comparisons}
+    primary = found.comparisons[0].id
+    summary = [
+        CardComparison(
+            id=str(v["id"]),
+            label=labels.get(str(v["id"]), str(v["id"])),
+            primary=v["id"] == primary,
+            flips=bool(v.get("flips")),
+            n_flipped=int(v.get("n_genes_flipped") or 0),
+            genes=[str(g) for g in v.get("genes") or ()],
+            flips_elsewhere=bool(v.get("flips_anywhere")) and not bool(v.get("flips")),
+        )
+        for v in views
+    ]
+    by_option: dict[str, list[OptionComparisonEffects]] = {}
+    for option in card.options:
+        rows = []
+        for view in views[1:]:
+            cid = str(view["id"])
+            per_option = view.get("per_option") or {}
+            results = {
+                g: ContrastResult.model_validate(r)
+                for g, r in per_option.get(option.id, {}).items()
+            }
+            base = {
+                g: str(r["conclusion"]) for g, r in per_option.get(card.recommended, {}).items()
+            }
+            rows.append(
+                OptionComparisonEffects(
+                    comparison=cid,
+                    label=labels.get(cid, cid),
+                    effects=[
+                        OptionEffect(
+                            gene=g,
+                            fc=r.fc,
+                            log2fc=r.log2fc,
+                            ci=(float(r.ci[0]), float(r.ci[1])),
+                            p=r.p,
+                            conclusion=r.conclusion,
+                            changes_call=g in base and base[g] != r.conclusion,
+                        )
+                        for g, r in results.items()
+                    ],
+                )
+            )
+        by_option[option.id] = rows
+    return summary, by_option
 
 
 #: What deciding a card opened from Trace does, said on the card.
 TRACE_CARD_NOTE = (
     "Opened from Trace. Deciding it is a person's choice, kept in the decision chain with the "
-    "reason; the study's numbers stay as analysed (to leave a well out of the analysis, leave "
-    "it out in a Studio session's Curves, or from Controls)."
+    "reason; the study's numbers stay as analysed. To leave the wells out of the analysis, "
+    "decide in Trace's Where to look in a Studio session (it analyses the study again); a "
+    "study analysed outside Studio is opened in Studio first."
 )
 
 
@@ -1219,28 +1356,31 @@ class GeneWithheld(LookupError):
 # ---- one gene --------------------------------------------------------------------------------
 
 
-def gene_view(store: StudyStore, study_id: str, gene: str) -> GeneView:
+def gene_view(
+    store: StudyStore, study_id: str, gene: str, comparison: str | None = None
+) -> GeneView:
     """Everything about one compared gene (``KeyError`` if it is not one)."""
     from qpilot.explain.templates import TemplateError, render_template
+    from qpilot.web import compare_views as cv
 
-    result = store.get(study_id)
+    stored, result, outcome, primary_grid, grid = _shown(store, study_id, comparison)
     if gene not in result.contrasts:
-        held = next((w for w in withheld(result) if w.gene == gene), None)
+        held = next((w for w in withheld(result) + _not_tested(outcome) if w.gene == gene), None)
         if held is not None:
             raise GeneWithheld(f"{gene} has no comparison: {held.reason}.")
         raise KeyError(gene)
     head, cards, pending = store.snapshot(study_id)
     entries = store.entries(study_id)
     headline = headline_genes(result, cards, store)
-    grid = load_grid(store, result)
-    at = None
-    at = at_choices(grid, cards)
+    at = cv.at_choices_in(primary_grid, grid, cards)
     verdicts, labels = _verdicts(store, study_id)
-    row = _row(gene, result, set(headline), at, verdicts, labels)
+    row = _row(gene, result, set(headline), at, verdicts, labels, cv.extra_columns(stored, outcome))
     try:
         rendered = render_template("confidence_v1", result.facts, gene=gene)
         confidence_text = fact_text(rendered.tokens, result.facts)
     except (KeyError, TemplateError):
+        confidence_text = None
+    if result is not stored:  # the sentence's facts are the first comparison's
         confidence_text = None
     gene_grid = None
     if grid is not None and grid.planned is not None:
@@ -1254,12 +1394,18 @@ def gene_view(store: StudyStore, study_id: str, gene: str) -> GeneView:
             p=[_number(x) for x in rows["p"]],
             conclusion=[_text(x) for x in rows["conclusion"]],  # type: ignore[misc]
         )
-    effects = _flip_rows(result, grid, cards, [gene]) if gene in result.robustness else []
+    effects = (
+        _flip_rows(result, grid, cards, [gene], primary_grid) if gene in result.robustness else []
+    )
     links, report = CarryLinks(store, result.input_sha256), carry_report(store, study_id)
+    # Every card the page lists for this gene (a row of "one choice at a time" or a card that
+    # flips it) comes with its full view, so its status line says who decided it and why.
+    listed = {r.card_id for r in effects if r.card_id}
     affecting = [
         card_view(c, result, entries, pending, *card_carry(store, c, entries, links, report))
         for c in cards
-        if result.robustness.get(gene)
+        if c.id in listed
+        or result.robustness.get(gene)
         and result.robustness[gene].impact.get(KIND_DIMENSION.get(c.kind, ""), {}).get("flips")
         or any(gene in o.per_gene for o in c.options)
     ]
@@ -1283,6 +1429,7 @@ def gene_view(store: StudyStore, study_id: str, gene: str) -> GeneView:
         next_gene=order[i + 1] if i + 1 < len(order) else None,
         audit_verdict=verdict,
         audit_verdict_label=labels.get(verdict) if verdict else None,
+        comparison=outcome.id if outcome is not None else _primary_id(stored),
     )
 
 
@@ -1349,7 +1496,7 @@ def set_autonomy(store: StudyStore, study_id: str, level: str) -> bool:
         "actor": "human",
     }
     with store._locked(workspace):
-        with open(workspace / "attempts.jsonl", "a", encoding="utf-8") as fh:
+        with open(workspace / "attempts.jsonl", "a", encoding="utf-8", newline="\n") as fh:
             fh.write(canonical_json(line) + "\n")
     return True
 

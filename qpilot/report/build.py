@@ -11,7 +11,9 @@ from collections import OrderedDict
 from datetime import UTC, datetime
 
 from qpilot.core.store import StudyStore
+from qpilot.explain.words import noun
 from qpilot.io.datasets import VERMEULEN_SHA256
+from qpilot.io.inputs import input_label
 from qpilot.qpcr.confidence_checks import HOLDS_MIN
 from qpilot.report import methods as methods_mod
 from qpilot.report.context import Ctx
@@ -91,7 +93,7 @@ def _header(c: Ctx) -> ReportHeader:
         study_id=c.inputs.study_id,
         session=c.inputs.session,
         title=design_line(r),
-        source_name=source.name if source is not None else None,
+        source_name=input_label(source),  # the person's own file names, never qPilot's
         demo=r.input_sha256 == VERMEULEN_SHA256,
         input_sha256=r.input_sha256,
         chain_head=c.inputs.head,
@@ -101,26 +103,69 @@ def _header(c: Ctx) -> ReportHeader:
     )
 
 
+def _quantify_summary(c: Ctx):  # noqa: ANN202 - ReportText
+    """A study that quantifies samples: what is reported for its samples, by class."""
+    from qpilot.qpcr.quantify_study import CLASS_WORDS, CLASSES, class_of
+    from qpilot.report.methods import study_quantities
+
+    r = c.result
+    plates = c.count("n_plates", r.n_plates, "results.json:/n_plates")
+    parts: list = [
+        f"{plates} {noun(r.n_plates, 'plate')}, a quantification: each sample's quantity is read "
+        "from a standard curve, and no groups are compared. "
+    ]
+    found = study_quantities(c)
+    if found is None or not found.unknowns:
+        parts.append("No sample could be read from a standard curve.")
+        return c.t(*parts)
+    counts = {k: 0 for k in CLASSES}
+    for u in found.unknowns:
+        counts[class_of(u)] += 1
+    n = c.count("qn_items", len(found.unknowns), "quantities:/unknowns@len", "{:,}")
+    listed = [
+        f"{c.count(f'qn_{k}', counts[k], f'quantities:/unknowns@{k}', '{:,}')} {CLASS_WORDS[k]}"
+        for k in reversed(CLASSES)
+        if counts[k]
+    ]
+    parts.append(
+        f"Of {n} sample results (one assay of one biological unit each): " + "; ".join(listed) + "."
+    )
+    return c.t(*parts)
+
+
 def _summary(c: Ctx):  # noqa: ANN202 - ReportText
+    from qpilot.qpcr.quantify_study import is_quantify_result
+
+    if is_quantify_result(c.result):
+        return _quantify_summary(c)
     r = c.result
     a, b = c.group_names
     plates = c.count("n_plates", r.n_plates, "results.json:/n_plates")
+
+    def n(fid: str, one: str, many: str | None = None) -> str:  # "1 plate", "64 plates"
+        value = c.facts.value(fid)
+        return noun(value if isinstance(value, int) else 2, one, many)
+
     parts: list = []
     if c.has("f_n_samples", "f_n_reactions"):
         parts.append(
-            f"{plates} plates, {tok('f_n_samples')} samples and {tok('f_n_reactions')} reactions. "
+            f"{plates} {noun(r.n_plates, 'plate')}, {tok('f_n_samples')} "
+            f"{n('f_n_samples', 'sample')} and {tok('f_n_reactions')} "
+            f"{n('f_n_reactions', 'reaction')}. "
         )
     if c.has("f_n_genes", "f_n_hi", "f_n_lo"):
         parts += [
-            f"{tok('f_n_genes')} genes compared between ",
+            f"{tok('f_n_genes')} {n('f_n_genes', 'gene')} compared between ",
             Q(a),
-            f" ({tok('f_n_hi')} units) and ",
+            f" ({tok('f_n_hi')} {n('f_n_hi', 'unit')}) and ",
             Q(b),
             f" ({tok('f_n_lo')}). ",
         ]
+    up, down, none = (c.calls.get(k, 0) for k in ("up", "down", "none"))
     parts.append(
-        f"At the planned analysis {c.call_count('up')} genes are up, {c.call_count('down')} down "
-        f"and {c.call_count('none')} have no call"
+        f"At the planned analysis {c.call_count('up')} {noun(up, 'gene is', 'genes are')} up, "
+        f"{c.call_count('down')} down and {c.call_count('none')} "
+        f"{noun(none, 'has', 'have')} no call"
     )
     if c.has("f_n_hold_lt_80", "f_n_cells"):
         holds = tok(
@@ -128,8 +173,10 @@ def _summary(c: Ctx):  # noqa: ANN202 - ReportText
                 "holds_min", HOLDS_MIN, "qpilot.qpcr.confidence_checks:/HOLDS_MIN", fmt="{:.0%}"
             )
         )
+        weak = c.facts.value("f_n_hold_lt_80")
+        keep = noun(weak if isinstance(weak, int) else 2, "keeps its", "keep their")
         parts.append(
-            f"; {tok('f_n_hold_lt_80')} keep their call in fewer than {holds} of the "
+            f"; {tok('f_n_hold_lt_80')} {keep} call in fewer than {holds} of the "
             f"{tok('f_n_cells')} analyses qPilot checks"
         )
     parts.append(".")
@@ -137,7 +184,14 @@ def _summary(c: Ctx):  # noqa: ANN202 - ReportText
     if isinstance(counts, dict) and "solid" in counts and "fragile" in counts:
         solid = c.audit_num("verdict_solid", "audit_manifest.json", "verdict_counts", "solid")
         fragile = c.audit_num("verdict_fragile", "audit_manifest.json", "verdict_counts", "fragile")
-        parts.append(f" The audit finds {solid} genes solid and {fragile} fragile.")
+        try:
+            reasonable = c.audit_num(
+                "reasonable", "summary.json", "multiverse", "defensible", "cells"
+            )
+            among = f" in its {reasonable} reasonable analyses"
+        except (KeyError, TypeError):
+            among = ""
+        parts.append(f" The audit finds {solid} genes solid and {fragile} fragile{among}.")
     return c.t(*parts)
 
 
@@ -165,6 +219,14 @@ def _key_numbers(c: Ctx) -> list[KeyNumber]:
             fmt="{:,}",
         )
         out.append(KeyNumber(label="analyses in the audit", fact=fid))
+        reasonable = ((a.summary.get("multiverse") or {}).get("defensible") or {}).get("cells")
+        if isinstance(reasonable, int) and not isinstance(reasonable, bool):
+            fid = c.facts.derive(
+                "audit_reasonable",
+                reasonable,
+                "audit:summary.json:/multiverse/defensible/cells",
+            )
+            out.append(KeyNumber(label="reasonable analyses behind its verdicts", fact=fid))
     for k in out:
         if k.fact not in c.facts.cited:
             c.facts.cited.append(k.fact)

@@ -21,5 +21,11 @@ curl -s -X POST "http://127.0.0.1:$APP_PORT/api/records/verify" -H "$H" \
 # … the same with the edited copy > verified-tampered.json
 ```
 
+Re-recorded on 28 Oct 2026 (agent trust) with the verify answer's new `outcome` and `headline`,
+in process through the same routes (`TestClient` over a copy of the seeded store): the export of
+`e300000d4f9a`, the copy with the first decision's reason edited (`verified-tampered.json`), and
+`verified-flipped.json`, the exported zip with one byte of `decisions.jsonl`'s compressed data
+flipped (the zip's own CRC check fails).
+
 This machine's home folder is shortened to `~` in the recorded paths (where a record is kept);
 nothing else is changed.

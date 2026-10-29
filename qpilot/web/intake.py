@@ -186,6 +186,13 @@ def sort_dropped(items: list[Dropped]) -> Sorted:
             out.exports.append(item)
         else:
             unclaimed.append(item)
+    # a person's own Cq table that names conditions, next to the RDML file or the export it
+    # was typed from, is that run's sample sheet (the curves stay the run's own)
+    curves = out.rdml or [i for i in out.exports if not is_design_table(i)]
+    if curves:
+        tables = [i for i in out.exports if is_design_table(i)]
+        out.exports = [i for i in out.exports if i not in tables]
+        unclaimed.extend(tables)
     labels = _labels()
     if out.rdml and out.exports:
         raise Refused(
@@ -240,6 +247,196 @@ def sort_dropped(items: list[Dropped]) -> Sorted:
             "fluorescence columns; or a Cq table.",
         )
     return out
+
+
+#: Why an RDML file is refused (``RdmlLoadError.kind``) -> what the person reads after
+#: "<file> could not be read:" (``{detail}``: the loader's own short reason).
+UNREADABLE: dict[str, str] = {
+    "too_large": "it is too large ({detail}).",
+    "compression": (
+        "it is too large when unpacked ({detail}); qPilot refuses it before unpacking. "
+        "Export the RDML file again."
+    ),
+    "damaged": (
+        "the zip archive is damaged (what it holds does not match what it says it holds); "
+        "copy the file again, or export RDML again from your instrument's software."
+    ),
+    "no_member": (
+        "it is a zip archive with no RDML data in it (no rdml_data.xml, no XML file). Export "
+        "RDML again from your instrument's software."
+    ),
+    "ambiguous": (
+        "{detail}. Export RDML again from your instrument's software, or keep only the RDML "
+        "file in the archive."
+    ),
+    "version": (
+        "it is written in an RDML version qPilot does not know (it reads RDML 1.0 to 1.4). "
+        "Export RDML again from your instrument's software."
+    ),
+    "schema": "{detail}. Export RDML again from your instrument's software.",
+    "entities": (
+        "it declares XML entities, which qPilot refuses (they can make a file pull in other "
+        "files). Export RDML again from your instrument's software."
+    ),
+    "not_xml_rdml": (
+        "it is an XML file, but not RDML (its first element is not <rdml>). Export RDML from "
+        "your instrument's software, then open that file."
+    ),
+    "not_rdml": (
+        "it is not a valid RDML file. Export RDML again from your instrument's software, then "
+        "open that file."
+    ),
+}
+
+
+def _declares_entities(path: Path | None) -> bool:
+    """True when a plain XML file declares entities (the hardened parser refuses those)."""
+    if path is None:
+        return False
+    try:
+        with path.open("rb") as fh:
+            head = fh.read(64 * 1024)
+    except OSError:
+        return False
+    return b"<!ENTITY" in head
+
+
+def unreadable(name: str, err: Exception, path: Path | None = None) -> str:
+    """Why an RDML file cannot be read, in the person's words, one sentence per refusal kind.
+
+    ``err`` is the loader's :class:`~qpilot.io.rdml_io.RdmlLoadError` (its ``kind``); any other
+    error, or one without a kind, is read from its message as before.
+    """
+    why = str(err)
+    kind = getattr(err, "kind", "")
+    detail = why.split(": ", 1)[1] if ": " in why else why
+    if kind in ("too_large", "compression"):
+        detail = detail.split("input too large", 1)[-1].strip(" ()") or "over the limit"
+        if kind == "compression":
+            detail = f"its {detail}"
+    elif kind == "schema":
+        detail = detail.replace("fails the RDML schema: the file ", "it ", 1)
+    if not kind or kind == "not_rdml":
+        if _declares_entities(path) and "not a valid RDML or XML" in why:
+            kind = "entities"
+        elif "Root element is not" in why:
+            kind = "not_xml_rdml"
+        elif "too large" in why:
+            kind = "compression" if "compression ratio" in why else "too_large"
+            detail = why.split("input too large", 1)[-1].strip(" ()") or "over the limit"
+            detail = f"its {detail}" if kind == "compression" else detail
+        elif "no rdml_data.xml" in why:
+            kind = "no_member"
+        elif "fails the RDML schema" in why or "unsupported RDML" in why:
+            kind = "schema"
+        else:
+            kind = "not_rdml"
+    sentence = UNREADABLE.get(kind, UNREADABLE["not_rdml"]).format(detail=detail.rstrip("."))
+    return f"{name} could not be read: {sentence}"
+
+
+def is_design_table(item: Dropped) -> bool:
+    """A Cq table that also names conditions, groups or animals (``tidy.cq.design``)."""
+    return bool(item.detections) and item.detections[0].dialect == "tidy.cq.design"
+
+
+SHEETS_DIR = "sheets"
+#: Words of a column header that make it a measurement (left out of a Cq table's own sheet).
+MEASURE_WORDS = frozenset(
+    ("cq", "ct", "cp", "crt", "dct", "ddct", "dcq", "ddcq", "deltact", "deltacq", "rq", "rqmin",
+     "rqmax", "quantity", "qty", "copies", "concentration", "conc", "efficiency", "eff", "fold",
+     "foldchange", "expression", "tm", "rfu", "rn", "drn", "threshold", "baseline", "mean",
+     "average", "avg", "sd", "sem", "se", "error", "stdev", "std", "cv", "n0", "ncopy")
+)  # fmt: skip
+
+
+def _measures(header: str) -> bool:
+    import re
+
+    words = re.findall(r"[0-9a-zδΔ]+", header.lower().replace("δ", "delta").replace("Δ", "delta"))
+    return any(w in MEASURE_WORDS for w in words)
+
+
+def design_sheet(store: StudyStore, item: Dropped) -> Path | None:
+    """A Cq table's own sample sheet: its columns without any measurement, as a CSV.
+
+    A person's Cq table names each sample's condition (and often the genes' roles) beside its
+    Cq values. Its sample sheet keeps the sample, condition, replicate, gene and gene-type
+    columns and drops every Cq, mean, error or quantity column, so the design stages never see
+    a number beside a group. Read as the Cq-table reader reads it (the first header with a Cq
+    column on each sheet; a later sheet repeating its samples is left out). ``None``: no table.
+    """
+    import csv
+    import io
+
+    from qpilot.io.connectors.common import COLUMNS
+    from qpilot.io.connectors.tables import find_header, read_grids, table_at
+
+    try:
+        grids = read_grids(item.path)
+    except CaptureError:
+        return None
+    header: list[str] = []
+    rows: list[list[str]] = []
+    seen: set[tuple[str, str]] = set()
+    for grid in grids:
+        at = find_header(grid.rows, COLUMNS, ("cq",))
+        if at is None:
+            continue
+        table = table_at(grid.rows, at, COLUMNS, stop_at_blank=False)
+        pairs = {(table.get(r, "sample"), table.get(r, "target")) for r in table.rows}
+        if seen & pairs:
+            continue
+        seen |= pairs
+        keep = [i for i, h in enumerate(table.headers) if not _measures(h)]
+        named = [table.headers[i] or f"Note {n}" for n, i in enumerate(keep, start=1)]
+        if not header:
+            header = named
+        for row in table.rows:
+            values = dict(zip(named, (row[i] if i < len(row) else "" for i in keep), strict=True))
+            rows.append([values.get(h, "") for h in header])
+    if not header or not rows:
+        return None
+    buffer = io.StringIO(newline="")
+    writer = csv.writer(buffer, lineterminator="\n")
+    writer.writerow(header)
+    writer.writerows(rows)
+    data = buffer.getvalue().encode("utf-8")
+    digest = hashlib.sha256(data).hexdigest()[:20]
+    stem = safe_name(Path(item.name).stem, "table")
+    target = imports_dir(store) / SHEETS_DIR / digest / f"{stem} (sample columns).csv"
+    if not target.exists():
+        target.parent.mkdir(parents=True, exist_ok=True)
+        atomic_write(target, data.decode("utf-8"))
+    return target
+
+
+def sheet_for(store: StudyStore, found: Sorted, sheet: Path | None) -> Path | None:
+    """The sample sheet to open with: the one given or dropped, else a lone Cq table's own.
+
+    A sheet that is itself a Cq table (it has a Cq column) is opened as its sample columns
+    only (:func:`design_sheet`).
+    """
+    from qpilot.web import views
+
+    chosen: Dropped | None = None
+    if sheet is not None:
+        try:
+            chosen = classify(sheet, views.display_name(sheet) or sheet.name)
+        except Refused:
+            return sheet
+    elif found.sheets:
+        chosen = found.sheets[0]
+    elif len(found.exports) == 1 and is_design_table(found.exports[0]):
+        chosen = found.exports[0]
+    if chosen is None:
+        return sheet
+    if chosen.detections and chosen.detections[0].dialect.startswith("tidy.cq"):
+        derived = design_sheet(store, chosen)
+        if derived is not None:
+            views.remember_name(derived, f"{Path(chosen.name).stem} (sample columns).csv")
+            return derived
+    return chosen.path
 
 
 def rdml_input(item: Dropped) -> Path:
@@ -369,8 +566,9 @@ RAWNESS_WORDS: dict[str, tuple[str, str]] = {
     ),
     "cq_only": (
         "Cq values only",
-        "There are no curves to check: only the instrument's Cq values. Efficiency is assumed, "
-        "not measured, so confidence is capped at Low.",
+        "There are no curves to check: only the Cq values in the file. Each assay's efficiency "
+        "comes from its dilution series when the design has one, else it is assumed to be 2.0, "
+        "and confidence is capped (at Low while an efficiency is assumed).",
     ),
     "unknown": (
         "Not clear",
@@ -446,14 +644,18 @@ __all__ = [
     "Refused",
     "Sorted",
     "classify",
+    "design_sheet",
+    "is_design_table",
     "load",
     "rdml_input",
     "read_export",
     "safe_name",
     "save",
+    "sheet_for",
     "sort_dropped",
     "stage",
     "suffix_problem",
     "summary",
     "title",
+    "unreadable",
 ]

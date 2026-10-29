@@ -2,10 +2,12 @@
  * Every write from the page goes through {@link useWrite}: it sends, re-reads the workspace,
  * and says what happened in a toast (with Undo where the chain allows it). A `stale` answer
  * (409: someone decided since this view was read) re-reads the view and says so; a refusal is
- * shown in the server's own words.
+ * shown in the server's own words (a `rate_limited` one, from the public sandbox, for as long as
+ * it asks to wait).
  */
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/api/client";
+import { refresherOf } from "@/api/live";
 import { errorHeading, errorMessage, toast } from "@/ui";
 
 export interface WriteToast {
@@ -27,15 +29,15 @@ export interface WriteOptions<V, R> {
   onError?: (error: unknown, vars: V) => void;
 }
 
-/** Re-read every query about one workspace (and the workspace list). */
+/**
+ * Re-read every query about one workspace (and the workspace list). The events this write
+ * caused are then covered: live.ts does not re-read the same views again for them.
+ */
 export function refreshWorkspace(
   qc: QueryClient,
   key: string | null | undefined,
 ): Promise<unknown> {
-  return Promise.all([
-    key ? qc.invalidateQueries({ predicate: (q) => q.queryKey.includes(key) }) : Promise.resolve(),
-    qc.invalidateQueries({ queryKey: ["workspaces"] }),
-  ]);
+  return refresherOf(qc).refreshNow(key);
 }
 
 /** Say a failed write in words; on `stale`, re-read the workspace first. */
@@ -52,6 +54,16 @@ export function reportWriteError(qc: QueryClient, error: unknown, key?: string |
     toast.error("Open the link qPilot printed in your terminal", {
       description: "This page lost its launch key (qPilot may have been restarted).",
       duration: Infinity,
+    });
+    return;
+  }
+  if (error instanceof ApiError && error.code === "rate_limited") {
+    // The public sandbox is busy for this visitor: the message says how long to wait, so it
+    // stays about that long (and no longer), not until it is closed.
+    const wait = Number(error.details.retry_after_s);
+    toast.warning(errorHeading(error), {
+      description: errorMessage(error),
+      duration: Math.min(Math.max(Number.isFinite(wait) ? wait * 1000 : 0, 8_000), 30_000),
     });
     return;
   }

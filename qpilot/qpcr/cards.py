@@ -23,6 +23,20 @@ register_card_kind(
     "numbers",
     dimension="efficiency",
 )
+# norm (ex/norm): the normaliser axis (NormFinder's / geNorm's best pair, the global mean) and
+# the correction between plates (inter-run calibrator, factor correction).
+register_card_kind(
+    "numbers.normaliser",
+    "What to normalise each gene to",
+    "numbers",
+    dimension="normaliser",
+)
+register_card_kind(
+    "numbers.interrun",
+    "How to correct differences between plates",
+    "numbers",
+    dimension="interrun",
+)
 # capture (agents/capture): the Import Trust Card. Its options have no grid dimension, so the
 # consequence cannot be measured: every card of the kind is a human decision.
 register_card_kind(
@@ -30,4 +44,19 @@ register_card_kind(
     "Whether the imported curves can be analysed as they are",
     "capture",
     always_human=True,
+)
+# quantonly (ex/quantonly): a study whose purpose is to quantify samples (qpcr/quantify_study.py).
+# Each card is a choice that can change what is reported for a sample (its class: quantified,
+# below the LOQ or the LOD, not detected; or its number by more than 2-fold).
+register_card_kind(
+    "quantity.amp_call",
+    "Which wells count as detected, for the quantities",
+    "quantity",
+    dimension="amp_call",
+)
+register_card_kind(
+    "quantity.loq_cv",
+    "How precise a quantity must be to be reported",
+    "quantity",
+    dimension="loq_cv",
 )

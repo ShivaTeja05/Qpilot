@@ -242,7 +242,16 @@ def _study_routes(app, method: str) -> list[str]:
 QUERY = {"layout.csv": {"n_per_group": 3, "genes": "ODC1"}}
 
 BODIES = {
-    "decide": {"option": "x", "reason": "r", "expected_head": "0" * 64},
+    # a card's decide, a gate card's and Where to look's (which also names the place)
+    "decide": {
+        "option": "x",
+        "reason": "r",
+        "expected_head": "0" * 64,
+        "kind": "gene",
+        "id": "1-Mar",
+        "rank": 1,
+    },
+    "put-back": {"card_id": "card_trace_x", "reason": "r"},
     "layout": {"n_per_group": 3, "genes": ["ODC1"]},
     "undo": {"reason": "r", "expected_head": "0" * 64},
     "reject-request": {"reason": "r", "expected_head": "0" * 64},

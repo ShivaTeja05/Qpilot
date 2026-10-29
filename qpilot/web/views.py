@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from qpilot.core.store import StudyNotFound, StudyStore
+from qpilot.explain.sets import AUDIT_DOES
 from qpilot.studio_service import Studio, StudioError
 from qpilot.web.contract import (
     FileFacts,
@@ -76,7 +77,7 @@ def remember_name(kept: Path, name: str) -> None:
         return
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(name, encoding="utf-8")
+        target.write_text(name, encoding="utf-8", newline="\n")
     except OSError:  # the content-named copy is enough to work with
         pass
 
@@ -180,8 +181,13 @@ def next_step(
     undecided_cards: int = 0,
     has_audit: bool = False,
     analysed: bool = True,
+    quantify: bool = False,
 ) -> NextStep:
-    """The one thing to do next. ``proposals`` counts the inbox per stage (``design`` …)."""
+    """The one thing to do next. ``proposals`` counts the inbox per stage (``design`` …).
+
+    A study that quantifies samples (``quantify``) has no audit (it compares no groups): its
+    last step is the report.
+    """
     if not file_present:
         return NextStep(
             title="Open the file again",
@@ -249,10 +255,25 @@ def next_step(
             section="results",
             action="Decide",
         )
+    if quantify and choices is not None and choices.open and not choices.confirmed:
+        return NextStep(
+            title="Confirm the analysis choices",
+            detail="Every card is decided; confirming records the choices with the analysis.",
+            section="results",
+            action="Confirm the analysis choices…",
+        )
+    if quantify:
+        return NextStep(
+            title="Read the quantities and export the report",
+            detail="Every sample's quantity with its 95 % prediction interval, the LOD and the "
+            "LOQ; the report and the Analysis Record keep them with every decision.",
+            section="report",
+            action="Export",
+        )
     if not has_audit:
         return NextStep(
             title="Run the robustness audit",
-            detail="Every combination of eight analysis decisions, one verdict per gene.",
+            detail=AUDIT_DOES,
             section="audit",
             action="Run the audit",
         )
@@ -435,7 +456,9 @@ def study_summary(store: StudyStore, study_id: str) -> WorkspaceSummary:
 
 def _title(file_name: str | None, sha: str) -> str:
     if sha == demo_sha():
-        return "Vermeulen 2013 neuroblastoma study (demo)"
+        # Vermeulen et al. 2009 (Lancet Oncol) is the study; Ruijter et al. 2013 (Methods)
+        # published its raw curves as this RDML file. The year names the study, as cited.
+        return "Vermeulen 2009 neuroblastoma study (demo)"
     return file_name or f"Study {sha[:12]}"
 
 
@@ -534,6 +557,7 @@ def session_view(
             decisions_head = store.chain_head(line.study_id)
         except (StudyNotFound, OSError):
             pass
+    purpose = session_purpose(studio, sid)
     step = next_step(
         line.stages,
         inbox_counts(studio, sid),
@@ -542,8 +566,10 @@ def session_view(
         undecided_cards=undecided(store, line.study_id),
         has_audit=line.has_audit,
         analysed=line.study_id is not None,
+        quantify=purpose == "quantify",
     )
     return WorkspaceView(
+        purpose=purpose,
         autonomy=study_autonomy(store, line.study_id),
         key=sid,
         kind="session",
@@ -566,6 +592,7 @@ def session_view(
 def study_view(store: StudyStore, study_id: str, active_jobs: list[Any] | None = None):
     """The frame of a study analysed outside a Studio session (results straight away)."""
     line = study_summary(store, study_id)
+    purpose = study_purpose(store, study_id)
     step = next_step(
         [],
         {},
@@ -573,8 +600,10 @@ def study_view(store: StudyStore, study_id: str, active_jobs: list[Any] | None =
         results_visible=True,
         undecided_cards=undecided(store, study_id),
         has_audit=line.has_audit,
+        quantify=purpose == "quantify",
     )
     return WorkspaceView(
+        purpose=purpose,
         autonomy=study_autonomy(store, study_id),
         key=study_id,
         kind="study",
@@ -587,6 +616,29 @@ def study_view(store: StudyStore, study_id: str, active_jobs: list[Any] | None =
         has_audit=line.has_audit,
         is_demo=line.is_demo,
     )
+
+
+def session_purpose(studio: Studio, sid: str) -> str:
+    """What a session's study is for, as a person decided it (``compare`` until then).
+
+    Read from the accepted design decisions (a design choice, never a result: blind-safe).
+    """
+    from qpilot.qpcr.designs import purpose_of
+
+    try:
+        return purpose_of(studio.store.proposals(sid).accepted("design."))
+    except (StudioError, StudyNotFound, OSError, ValueError):
+        return "compare"
+
+
+def study_purpose(store: StudyStore, study_id: str) -> str:
+    """What a stored study is for: ``quantify`` for a quantification design, else ``compare``."""
+    from qpilot.qpcr.quantify_study import is_quantify
+
+    try:
+        return "quantify" if is_quantify(store.design(study_id)) else "compare"
+    except (StudyNotFound, OSError, ValueError):
+        return "compare"
 
 
 def archive_demo(store: StudyStore) -> list[Path]:

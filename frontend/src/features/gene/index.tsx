@@ -37,9 +37,14 @@ import {
   YourSamples,
   type Source,
 } from "./AuditParts";
+import { useShownComparison } from "@/features/results/comparison";
+import { GeneComparisons } from "./Comparisons";
+import { GeneFigure } from "./GeneFigure";
 import { GeneHeader, GeneNav } from "./GeneHeader";
 import { neighbours, resolveGene } from "./nav";
 import { SampleDetail } from "./SampleDetail";
+import { carriedUnits, samplesSource, useGeneUnits } from "./units";
+import { UnitSamples } from "./UnitSamples";
 import { WellCurve } from "./WellCurve";
 import { AssayWells, GeneCards, PrismCard, ReferenceStability } from "./StudyParts";
 import { geneSummary, groupLabels } from "./words";
@@ -73,7 +78,10 @@ function GenePage({
   workspace: Schemas["WorkspaceView"];
   wanted: string | undefined;
 }) {
-  const scope = useMemo(() => scopeOf(workspace), [workspace]);
+  const studyKey = workspace.study_id ?? (workspace.kind === "study" ? workspace.key : null);
+  // A study with several comparisons shows one at a time (shared with Results and Trace).
+  const [comparison, setComparison] = useShownComparison(studyKey);
+  const scope = useMemo(() => scopeOf(workspace, comparison), [workspace, comparison]);
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const reducedMotion = useReducedMotion();
@@ -111,7 +119,10 @@ function GenePage({
   // ---- the audit
   const status = useAuditStatus(scope);
   const statusMissing = isNotFound(status.error);
-  const audited = status.data?.status === "ready";
+  // The robustness audit audits the first comparison: another one shown has no audit views.
+  const tabs = results.data?.comparisons ?? [];
+  const firstShown = !comparison || tabs.length < 2 || tabs[0]?.id === comparison;
+  const audited = status.data?.status === "ready" && firstShown;
   // The first read of an audit loads its live views (~15 s); the views wait for that job.
   const warming =
     audited && status.data && !status.data.views_ready ? (status.data.loading ?? null) : null;
@@ -123,6 +134,18 @@ function GenePage({
   const effects = useAuditView(scope, "effects", geneName, covered);
   const lab = useAuditView(scope, "lab", geneName, covered);
   const samples = useAuditSamples(scope, geneName, NO_CHANGES, covered);
+  // "Your samples" from the engine's per-unit values whenever the audit does not draw them, and
+  // for an audited design with technical replicates (only the engine's values show each unit's
+  // wells; the audit's marks are added to them).
+  const replicateAudit = Boolean(status.data?.manifest?.scope?.technical_replicates);
+  const samplesFrom = samplesSource(covered, replicateAudit);
+  const units = useGeneUnits(scope, geneName, samplesFrom === "engine" && Boolean(gene.data));
+  // The audit's own chart stands in when the engine's values cannot be read but the audit's can.
+  const engineShown = samplesFrom === "engine" && !(covered && units.error && !units.data);
+  const carries = useMemo(
+    () => (covered ? carriedUnits(samples.data?.points) : undefined),
+    [covered, samples.data],
+  );
 
   const run = useRunAudit(scope);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -255,6 +278,14 @@ function GenePage({
         className={cn("transition-opacity duration-150", gene.isPlaceholderData && "opacity-60")}
         aria-busy={gene.isPlaceholderData}
       >
+        {tabs.length > 1 ? (
+          <GeneComparisons
+            tabs={tabs}
+            value={comparison ?? tabs[0]!.id}
+            onChange={setComparison}
+            audited={status.data?.status === "ready"}
+          />
+        ) : null}
         <GeneHeader
           view={view}
           labels={labels}
@@ -299,39 +330,50 @@ function GenePage({
               onSource={setSource}
               labels={labels}
             />
-            <YourSamples
-              samples={covered ? samples : null}
-              warming={warming}
-              labels={labels}
-              selected={selectedSample}
-              onSelect={(p: SamplePoint) => selectSample(p.sample)}
-              detail={
-                point && samples.data ? (
-                  <SampleDetail
-                    point={point}
-                    samples={samples.data}
-                    onClose={() => setSelected(null)}
-                    curve={
-                      <WellCurve
-                        workspace={workspace}
-                        scope={scope}
-                        plate={point.plate}
-                        well={point.well}
-                        gene={g.gene}
-                      />
-                    }
+            {engineShown ? (
+              <UnitSamples
+                units={units}
+                selected={selectedSample}
+                onSelect={(unit) => (unit ? selectSample(unit) : setSelected(null))}
+                carries={carries}
+                note={notCoveredNote}
+                curve={(w) => (
+                  <WellCurve
+                    workspace={workspace}
+                    scope={scope}
+                    plate={w.plate}
+                    well={w.well}
+                    gene={g.gene}
                   />
-                ) : null
-              }
-              invite={
-                notCoveredNote ?? (
-                  <EmptyState compact title="Each sample's value comes from the audit">
-                    The audit's engine computes every sample's value under any set of choices. Run
-                    it from “What holds” above; then click a sample to open its well.
-                  </EmptyState>
-                )
-              }
-            />
+                )}
+              />
+            ) : (
+              <YourSamples
+                samples={samples}
+                warming={warming}
+                labels={labels}
+                selected={selectedSample}
+                onSelect={(p: SamplePoint) => selectSample(p.sample)}
+                detail={
+                  point && samples.data ? (
+                    <SampleDetail
+                      point={point}
+                      samples={samples.data}
+                      onClose={() => setSelected(null)}
+                      curve={
+                        <WellCurve
+                          workspace={workspace}
+                          scope={scope}
+                          plate={point.plate}
+                          well={point.well}
+                          gene={g.gene}
+                        />
+                      }
+                    />
+                  ) : null
+                }
+              />
+            )}
             {auditCard ? (
               <AuditReading
                 card={auditCard}
@@ -351,6 +393,12 @@ function GenePage({
             <GeneCards workspace={workspace} gene={g.gene} cards={geneCards} />
             <AssayWells efficiency={g.efficiency} lab={covered ? lab.data : null} />
             <ReferenceStability gene={g.gene} genorm={references} lab={covered ? lab.data : null} />
+            <GeneFigure
+              workspace={workspace}
+              studyId={scope.studyId}
+              gene={g.gene}
+              comparison={tabs.length > 1 ? (comparison ?? tabs[0]?.id ?? null) : undefined}
+            />
             {workspace.kind === "session" ? (
               <PrismCard workspace={workspace} gene={g.gene} />
             ) : null}

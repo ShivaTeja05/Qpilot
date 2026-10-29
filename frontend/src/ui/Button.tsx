@@ -14,13 +14,15 @@ const VARIANT: Record<ButtonVariant, string> = {
   ghost: "text-muted hover:bg-bg-subtle hover:text-fg",
   danger:
     "border border-danger/30 bg-danger-soft text-danger hover:border-danger/60 active:translate-y-px",
-  link: "h-auto px-0 text-accent underline-offset-4 hover:underline",
+  link: "h-auto min-h-0 px-0 py-0 text-accent underline-offset-4 hover:underline",
 };
 
+// A minimum height, not a fixed one: a long label ("Decide: LinRegPCR's own call (a starting
+// quantity was found)") wraps inside a narrow card (a phone) instead of running out of it.
 const SIZE: Record<ButtonSize, string> = {
-  sm: "h-7 gap-1.5 rounded-md px-2.5 text-[13px]",
-  md: "h-8 gap-2 rounded-lg px-3 text-sm",
-  lg: "h-10 gap-2 rounded-lg px-4 text-[15px]",
+  sm: "min-h-7 gap-1.5 rounded-md px-2.5 py-0.5 text-[13px]",
+  md: "min-h-8 gap-2 rounded-lg px-3 py-1 text-sm",
+  lg: "min-h-10 gap-2 rounded-lg px-4 py-1.5 text-[15px]",
 };
 
 // On touch screens icon buttons grow to a 40 px target (WCAG 2.5.8 asks 24, phones want more).
@@ -58,7 +60,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ref,
 ) {
   const classes = cn(
-    "relative inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap font-medium transition-[background-color,border-color,color,transform] duration-150 ease-out disabled:pointer-events-none disabled:opacity-55 [&_svg]:size-4 [&_svg]:shrink-0",
+    "relative inline-flex max-w-full shrink-0 select-none items-center justify-center text-center font-medium leading-snug transition-[background-color,border-color,color,transform] duration-150 ease-out disabled:pointer-events-none disabled:opacity-55 [&_svg]:size-4 [&_svg]:shrink-0",
     SIZE[size],
     VARIANT[variant],
     className,

@@ -19,6 +19,7 @@ from typing import Annotated, Any, TypeVar
 from fastapi import APIRouter, Query
 
 from qpilot.core.store import StudyNotFound
+from qpilot.explain.words import plural
 from qpilot.schemas_studio import Proposal, ProposalCheck, ProposalOutcome
 from qpilot.studio_service import REASON_KINDS, StudioError
 from qpilot.web import studio_views as sv
@@ -69,6 +70,12 @@ PROPOSE_CURVES_S = 15.0  # Check the curves on the demo (Curve Judge + consequen
 MATTERS_S = 6.0
 ANALYSE_S = 30.0  # the demo's first analysis after the curves are confirmed (grid included)
 MAX_IDS = 200
+
+
+NO_CURVE_CQ_ONLY = (
+    "This file has Cq values only: there is no amplification curve to show. The Curves page "
+    "lists each well's Cq instead."
+)
 
 
 # ---- helpers ---------------------------------------------------------------------------------
@@ -233,6 +240,8 @@ def get_curve(
     try:
         return call(sv.curve_view, ctx.studio, sid, well, target)
     except KeyError as err:
+        if call(ctx.studio.cq_only, sid):
+            raise api_error(404, "not_found", NO_CURVE_CQ_ONLY) from err
         raise api_error(404, "not_found", "There is no curve for this well in the file.") from err
     except ValueError as err:
         raise api_error(422, "bad_request", sv.sentence(err)) from err
@@ -242,15 +251,20 @@ def get_curve(
 def get_curve_calls(sid: str, ctx: Ctx, gene: str = Query(min_length=1, max_length=128)):
     """Each well of one target called under every rule (and the Curve Judge where validated)."""
     from qpilot.qpcr.amp_call import get_rule
+    from qpilot.qpcr.cq_only import CQ_RULE_LABEL, NOT_APPLICABLE
 
     session(ctx, sid)
     data = call(ctx.studio.curve_calls, sid, gene)
+    cq_only = call(ctx.studio.cq_only, sid)
     labels: dict[str, str] = {}
     for rule in data["rules"]:
         try:
             labels[rule] = get_rule(rule).label
         except Exception:  # a rule this build does not describe keeps its id
             labels[rule] = rule
+    if cq_only:  # a file of Cq values only: the same rule, read from the file's Cq
+        labels = {r: CQ_RULE_LABEL if r == "linregpcr" else w for r, w in labels.items()}
+        data["curve_judge"] = NOT_APPLICABLE["curve_judge"]
     return CurveCallsView(**data, rule_labels=labels)
 
 
@@ -319,8 +333,15 @@ def propose_curves(sid: str, ctx: Ctx) -> JobStarted:
     if call(studio.confirmed_assembly, sid, "design") is None:
         raise api_error(409, "studio", "Confirm the design first: the curves stage follows it.")
 
+    cq_only = call(studio.cq_only, sid)
+
     def work(progress: Progress) -> dict[str, Any]:
-        progress("Fitting every curve, asking the Curve Judge, and testing what its calls change")
+        if cq_only:
+            progress("Reading the Cq table: this file has Cq values only, no curve to fit")
+        else:
+            progress(
+                "Fitting every curve, asking the Curve Judge, and testing what its calls change"
+            )
         try:
             report = studio.propose_curves(sid)
         except Exception as err:  # every failure is a sentence on the page
@@ -368,9 +389,20 @@ def propose_comparison(sid: str, ctx: Ctx) -> ProposeOne:
     return ProposeOne(outcome=outcome, message=message)
 
 
+#: What each further choice is called in a sentence ("test ... as one more choice").
+AXIS_NOUNS = {
+    "efficiency": "the efficiency models",
+    "normaliser": "the other normalisers (best pairs, global mean)",
+    "interrun": "the corrections between plates",
+}
+
+
 @router.post("/sessions/{sid}/propose/axis", response_model=ProposeOne)
 def propose_axis(sid: str, ctx: Ctx, body: ProposeAxis | None = None) -> ProposeOne:
-    """The rule proposes testing a further choice (the efficiency models), or no longer testing it.
+    """The rule proposes testing a further choice, or no longer testing it.
+
+    The further choices: the efficiency models, the normaliser (NormFinder's and geNorm's best
+    pairs, the global mean) and the correction between plates (inter-run calibrator, factor).
 
     It joins the choices stage's inbox; nothing changes until a person accepts it, and then the
     study is analysed again with the choice as one more dimension of the grid. Results only
@@ -389,11 +421,12 @@ def propose_axis(sid: str, ctx: Ctx, body: ProposeAxis | None = None) -> Propose
     outcome = call(ctx.studio.propose_axis, sid, body.axis, body.on)
     if outcome.status == "proposed":
         changed(ctx, sid)
+        noun = AXIS_NOUNS[body.axis]
         message = (
-            "Proposed: test the efficiency models as one more choice. Check the options, then "
-            "decide; nothing changes until you accept."
+            f"Proposed: test {noun} as one more choice. Check the options, then decide; nothing "
+            "changes until you accept."
             if body.on
-            else "Proposed: stop testing the efficiency models. Nothing changes until you accept."
+            else f"Proposed: stop testing {noun}. Nothing changes until you accept."
         )
     else:
         message = sv.sentence(f"Nothing proposed: {outcome.reason or outcome.status}")
@@ -636,7 +669,8 @@ def _confirm_view(ctx: AppContext, sid: str, stage: str, message: str = "") -> C
         still = [c for c in cards if c.status in ("open", "pending_human")]
         if still:
             warnings.append(
-                f"{len(still)} Decision Card(s) are still open: they would be exported at their "
+                f"{plural(len(still), 'Decision Card')} {'is' if len(still) == 1 else 'are'} "
+                "still open: they would be exported at their "
                 "recommended option, and deciding them later re-opens this stage."
             )
     if not message:

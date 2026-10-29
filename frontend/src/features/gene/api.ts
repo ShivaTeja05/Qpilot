@@ -20,17 +20,26 @@ export interface GeneScope {
   /** The study whose results are shown (null until a session's results exist). */
   studyId: string | null;
   kind: Schemas["WorkspaceView"]["kind"];
+  /** A study with several comparisons: the one shown (null: the first). */
+  comparison?: string | null;
 }
 
-export function scopeOf(workspace: Schemas["WorkspaceView"]): GeneScope {
+export function scopeOf(
+  workspace: Schemas["WorkspaceView"],
+  comparison: string | null = null,
+): GeneScope {
   return {
     key: workspace.key,
     studyId: workspace.study_id ?? (workspace.kind === "study" ? workspace.key : null),
     kind: workspace.kind,
+    comparison,
   };
 }
 
 const wkey = (s: GeneScope, ...rest: unknown[]) => ["w", s.key, s.studyId, ...rest] as const;
+/** The comparison shown, as the routes' `?comparison=` (none: the first). */
+export const shownQuery = (comparison: string | null | undefined) =>
+  comparison ? { comparison } : {};
 
 // ---- errors -------------------------------------------------------------------------------------
 
@@ -43,18 +52,20 @@ export function isNotFound(error: unknown): boolean {
 
 export type CallKey = "up" | "down" | "none";
 
-/** `GET /api/studies/{id}/results`. */
-function fetchResults(studyId: string) {
+/** `GET /api/studies/{id}/results` (one comparison of a study with several). */
+function fetchResults(studyId: string, comparison?: string | null) {
   return unwrap(
-    api.GET("/api/studies/{study_id}/results", { params: { path: { study_id: studyId } } }),
+    api.GET("/api/studies/{study_id}/results", {
+      params: { path: { study_id: studyId }, query: shownQuery(comparison) },
+    }),
   );
 }
 
 /** `GET /api/studies/{id}/genes/{gene}` (404 `not_found` for a gene the study does not compare). */
-function fetchGene(studyId: string, gene: string) {
+function fetchGene(studyId: string, gene: string, comparison?: string | null) {
   return unwrap(
     api.GET("/api/studies/{study_id}/genes/{gene}", {
-      params: { path: { study_id: studyId, gene } },
+      params: { path: { study_id: studyId, gene }, query: shownQuery(comparison) },
     }),
   );
 }
@@ -84,17 +95,17 @@ export interface GeneCardRef {
 
 export function useResults(s: GeneScope) {
   return useQuery({
-    queryKey: wkey(s, "results"),
+    queryKey: wkey(s, "results", s.comparison ?? null),
     enabled: Boolean(s.studyId),
-    queryFn: () => fetchResults(s.studyId!),
+    queryFn: () => fetchResults(s.studyId!, s.comparison),
   });
 }
 
 /** The query for one gene (shared by the view and the neighbours' prefetch). */
 export function geneQuery(s: GeneScope, gene: string | null) {
   return {
-    queryKey: wkey(s, "gene", gene),
-    queryFn: () => fetchGene(s.studyId!, gene!),
+    queryKey: wkey(s, "gene", gene, s.comparison ?? null),
+    queryFn: () => fetchGene(s.studyId!, gene!, s.comparison),
   };
 }
 

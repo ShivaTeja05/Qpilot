@@ -1,0 +1,169 @@
+{
+ "analysis": [],
+ "assays": [
+  {
+   "by_class": {
+    "not_detected": 6,
+    "quantified": 21
+   },
+   "curves": [
+    {
+     "efficiency": 0.997847581140312,
+     "efficiency_high": 1.0575635376556534,
+     "efficiency_low": 0.9443512815817738,
+     "exact_interval": false,
+     "fitted": true,
+     "g": 0.0016662263086938108,
+     "id": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "intercept": 40.33844333333333,
+     "lod": {
+      "at_most": true,
+      "method": "lowest_standard",
+      "quantity": 10.0,
+      "words": "every standard level was detected in at least 95 % of its wells: the limit of detection is at or below the lowest standard; with 3 wells per level, 95 % of a level's wells means all of them, so this is the lowest level where no well failed (the modelled limit, when shown, is the better estimate). Run at least 10 replicates at the levels around the limit (Forootan et al. 2017; Klymus et al. 2020)"
+     },
+     "lod_model": null,
+     "loq": {
+      "at_most": false,
+      "method": "empirical",
+      "quantity": 10.0,
+      "words": "the lowest standard (at or above the limit of detection) whose back-calculated quantities have a CV of at most 35 % (every higher level too)"
+     },
+     "lowest": 10.0,
+     "n_levels": 5,
+     "n_unknowns": 21,
+     "n_wells": 15,
+     "problem": "",
+     "quantity_source": "design",
+     "r2": 0.9953803331219588,
+     "runs": [
+      "2023-11-14_Cov2_Copy"
+     ],
+     "s_yx": 0.34432231735797947,
+     "scope": "plate",
+     "slope": -3.3270966666666664,
+     "suspects": [],
+     "target": "Cov2",
+     "top": 100000.0,
+     "warnings": []
+    }
+   ],
+   "n_flagged": 6,
+   "n_quantified": 21,
+   "n_units": 27,
+   "target": "Cov2"
+  },
+  {
+   "by_class": {
+    "below_loq": 2,
+    "not_detected": 4,
+    "quantified": 21
+   },
+   "curves": [
+    {
+     "efficiency": 1.2400989139499643,
+     "efficiency_high": 1.3286078510071375,
+     "efficiency_low": 1.1622874493999031,
+     "exact_interval": false,
+     "fitted": true,
+     "g": 0.002101671454364789,
+     "id": "PMMoV @ 2023-11-14_PMMoV_VIC",
+     "intercept": 36.034523333333325,
+     "lod": {
+      "at_most": true,
+      "method": "lowest_standard",
+      "quantity": 10.0,
+      "words": "every standard level was detected in at least 95 % of its wells: the limit of detection is at or below the lowest standard; with 3 wells per level, 95 % of a level's wells means all of them, so this is the lowest level where no well failed (the modelled limit, when shown, is the better estimate). Run at least 10 replicates at the levels around the limit (Forootan et al. 2017; Klymus et al. 2020)"
+     },
+     "lod_model": null,
+     "loq": {
+      "at_most": false,
+      "method": "empirical",
+      "quantity": 1000.0,
+      "words": "the lowest standard (at or above the limit of detection) whose back-calculated quantities have a CV of at most 35 % (every higher level too)"
+     },
+     "lowest": 10.0,
+     "n_levels": 5,
+     "n_unknowns": 23,
+     "n_wells": 15,
+     "problem": "",
+     "quantity_source": "design",
+     "r2": 0.9941800735442888,
+     "runs": [
+      "2023-11-14_PMMoV_VIC"
+     ],
+     "s_yx": 0.3318300460499904,
+     "scope": "plate",
+     "slope": -2.854963333333333,
+     "suspects": [],
+     "target": "PMMoV",
+     "top": 100000.0,
+     "warnings": [
+      "efficiency 124.0 % is outside 90 % to 110 % (Taylor et al. 2010)"
+     ]
+    }
+   ],
+   "n_flagged": 6,
+   "n_quantified": 23,
+   "n_units": 27,
+   "target": "PMMoV"
+  }
+ ],
+ "available": true,
+ "can_set_reaction": true,
+ "classes": [
+  {
+   "id": "not_detected",
+   "words": "not detected"
+  },
+  {
+   "id": "no_curve",
+   "words": "detected, but no standard curve to read it from"
+  },
+  {
+   "id": "below_lod",
+   "words": "below the limit of detection"
+  },
+  {
+   "id": "below_loq",
+   "words": "detected, below the limit of quantification"
+  },
+  {
+   "id": "below_lowest",
+   "words": "below the lowest standard (extrapolated)"
+  },
+  {
+   "id": "above_top",
+   "words": "above the top standard (extrapolated)"
+  },
+  {
+   "id": "quantified",
+   "words": "quantified"
+  }
+ ],
+ "groups_shown": true,
+ "inbox_head": "94be20207f2be03599216531b3b771f7d4dad5198e4626378fee465316b7d1ad",
+ "method_card": "methods/absolute_quantification.md",
+ "not_quantified": [],
+ "notes": [],
+ "purpose": "compare",
+ "reaction": null,
+ "references": [
+  "Forootan A, Sjöback R, Björkman J, Sjögreen B, Linz L, Kubista M. Methods to determine limit of detection and limit of quantification in quantitative real-time PCR (qPCR). Biomol Detect Quantif. 2017;12:1-6. doi:10.1016/j.bdq.2017.04.001",
+  "Klymus KE, Merkes CM, Allison MJ, et al. Reporting the limits of detection and quantification for environmental DNA assays. Environmental DNA. 2020;2(3):271-282. doi:10.1002/edn3.29",
+  "Taylor S, Wakem M, Dijkman G, Alsarraj M, Nguyen M. A practical approach to RT-qPCR: publishing data that conform to the MIQE guidelines. Methods. 2010;50(4):S1-S5. doi:10.1016/j.ymeth.2010.01.005",
+  "Fieller EC. Some problems in interval estimation. J R Stat Soc B. 1954;16(2):175-185",
+  "Bustin SA, Benes V, Garson JA, et al. The MIQE guidelines: minimum information for publication of quantitative real-time PCR experiments. Clin Chem. 2009;55(4):611-622. doi:10.1373/clinchem.2008.112797",
+  "Miller JN, Miller JC. Statistics and Chemometrics for Analytical Chemistry, 6th ed. Pearson; 2010. Section 5.6 (inverse prediction from a calibration line)",
+  "Thermo Fisher Scientific. DNA and RNA molecular weights and conversions (reference information)."
+ ],
+ "settings": {
+  "lod_rate": 0.95,
+  "loq_cv": 0.35,
+  "min_levels": 3,
+  "prediction_level": 0.95
+ },
+ "study_id": "06874f98d640",
+ "unit": "",
+ "why": ""
+}

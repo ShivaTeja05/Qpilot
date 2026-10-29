@@ -9,8 +9,11 @@ study leaves something open (a choice not yet decided) the paragraph says so.
 from __future__ import annotations
 
 from collections import Counter
+from typing import Any
 
+from qpilot.explain.words import noun
 from qpilot.io.datasets import VERMEULEN_SHA256
+from qpilot.io.inputs import input_label, is_converted
 from qpilot.qpcr.confidence_checks import HOLDS_MIN
 from qpilot.report.context import Ctx
 from qpilot.report.model import Citation, MethodsParagraph, MethodsView
@@ -47,9 +50,56 @@ REFERENCES: dict[str, str] = {
         "quantitative RT-PCR data by geometric averaging of multiple internal control genes. "
         "Genome Biol. 2002;3(7):research0034. doi:10.1186/gb-2002-3-7-research0034"
     ),
+    "andersen2004": (
+        "Andersen CL, Jensen JL, Ørntoft TF. Normalization of real-time quantitative reverse "
+        "transcription-PCR data: a model-based variance estimation approach to identify genes "
+        "suited for normalization, applied to bladder and colon cancer data sets. Cancer Res. "
+        "2004;64(15):5245–5250. doi:10.1158/0008-5472.CAN-04-0496"
+    ),
+    "mestdagh2009": (
+        "Mestdagh P, Van Vlierberghe P, De Weer A, et al. A novel and universal method for "
+        "microRNA RT-qPCR data normalization. Genome Biol. 2009;10(6):R64. "
+        "doi:10.1186/gb-2009-10-6-r64"
+    ),
+    "hellemans2007": (
+        "Hellemans J, Mortier G, De Paepe A, Speleman F, Vandesompele J. qBase relative "
+        "quantification framework and software for management and automated analysis of "
+        "real-time quantitative PCR data. Genome Biol. 2007;8(2):R19. doi:10.1186/gb-2007-8-2-r19"
+    ),
+    "ruijter2015": (
+        "Ruijter JM, Ruiz Villalba A, Hellemans J, Untergasser A, van den Hoff MJB. Removal of "
+        "between-run variation in a multi-plate qPCR experiment. Biomol Detect Quantif. "
+        "2015;5:10–14. doi:10.1016/j.bdq.2015.07.001"
+    ),
     "welch1947": (
         "Welch BL. The generalization of 'Student's' problem when several different population "
         "variances are involved. Biometrika. 1947;34(1–2):28–35."
+    ),
+    "holm1979": (
+        "Holm S. A simple sequentially rejective multiple test procedure. Scand J Stat. "
+        "1979;6(2):65–70."
+    ),
+    "dunnett1955": (
+        "Dunnett CW. A multiple comparison procedure for comparing several treatments with a "
+        "control. J Am Stat Assoc. 1955;50(272):1096–1121. doi:10.1080/01621459.1955.10501294"
+    ),
+    "tukey1953": (
+        "Tukey JW. The problem of multiple comparisons. Unpublished manuscript, Princeton "
+        "University; 1953. Kramer CY. Extension of multiple range tests to group means with "
+        "unequal numbers of replications. Biometrics. 1956;12(3):307–310. doi:10.2307/3001469"
+    ),
+    "bh1995": (
+        "Benjamini Y, Hochberg Y. Controlling the false discovery rate: a practical and powerful "
+        "approach to multiple testing. J R Stat Soc B. 1995;57(1):289–300."
+    ),
+    "forootan2017": (
+        "Forootan A, Sjöback R, Björkman J, Sjögreen B, Linz L, Kubista M. Methods to determine "
+        "limit of detection and limit of quantification in quantitative real-time PCR (qPCR). "
+        "Biomol Detect Quantif. 2017;12:1–6. doi:10.1016/j.bdq.2017.04.001"
+    ),
+    "miller2010": (
+        "Miller JN, Miller JC. Statistics and Chemometrics for Analytical Chemistry. 6th ed. "
+        "Harlow: Pearson; 2010 (section 5.6, inverse prediction from a calibration line)."
     ),
     "miqe2": (
         "Bustin SA, Ruijter JM, van den Hoff MJB, et al. MIQE 2.0: revision of the Minimum "
@@ -84,7 +134,7 @@ def _names(names: list[str] | tuple[str, ...]) -> str:
 
 
 def _plural(n: int, one: str, many: str) -> str:
-    return one if n == 1 else many
+    return noun(n, one, many)
 
 
 # ---- paragraphs ----------------------------------------------------------------------------------
@@ -97,16 +147,18 @@ def data(c: Ctx, cite: Cites) -> list[Part]:
     parts: list[Part] = []
     reactions = tok("f_n_reactions") if c.has("f_n_reactions") else None
     samples = tok("f_n_samples") if c.has("f_n_samples") else None
-    lead = "Raw fluorescence"
+    lead = "Cq values" if c.has("f_cq_only") else "Raw fluorescence"  # no curves: Cq only
     if reactions:
         lead += f" of {reactions} reactions"
-    lead += f" on {plates} plates"
+    lead += f" on {plates} {noun(r.n_plates, 'plate')}"
     if samples:
         lead += f" ({samples} samples)"
-    parts.append(lead + " was read from ")
-    name = c.inputs.source.name if c.inputs.source is not None else None
+    parts.append(lead + (" were" if c.has("f_cq_only") else " was") + " read from ")
+    name = input_label(c.inputs.source)  # the person's own file names, never qPilot's
     meta = c.inputs.rdml
-    if name:
+    if name and is_converted(c.inputs.source):
+        parts += ["the instrument export ", Q(name), ", converted to RDML by qPilot,"]
+    elif name:
         parts += ["the RDML file ", Q(name)]
     else:
         parts.append("an RDML file")
@@ -135,6 +187,8 @@ def data(c: Ctx, cite: Cites) -> list[Part]:
 
 def curves(c: Ctx, cite: Cites) -> list[Part]:
     """The curve analysis: LinRegPCR, efficiency, amplification calls, wells without a value."""
+    if c.has("f_cq_only"):  # a file of Cq values only: no curve was fitted
+        return _cq_values(c)
     r = c.result
     parts: list[Part] = [
         "Each well's baseline, amplification efficiency and starting quantity (N0) were "
@@ -169,6 +223,44 @@ def curves(c: Ctx, cite: Cites) -> list[Part]:
         parts.append(
             f" Of {tok('f_n_unknown_wells')} sample wells, {tok('f_n_undetermined')} "
             f"({tok('f_pct_undetermined')}) gave no quantity"
+        )
+        card = next((x for x in c.inputs.cards if x.kind == "undetermined"), None)
+        option = (card.decision or card.recommended) if card is not None else None
+        if card is not None and option is not None:
+            verb = "they were left out" if option == "drop" else "they were counted as very low"
+            parts += [f"; {verb} (", Q(c.option_label(card, option) or option), ")"]
+        parts.append(".")
+    design = c.inputs.design
+    excluded = list(design.excluded_wells) if design is not None else []
+    if excluded:
+        n = c.count("n_excluded", len(excluded), "study_design.json:/excluded_wells@len")
+        word = _plural(len(excluded), "well", "wells")
+        parts += [f" A person excluded {n} {word}: ", Q(", ".join(excluded)), "."]
+    return parts
+
+
+def _cq_values(c: Ctx) -> list[Part]:
+    """The curve paragraph of a file of Cq values only (``docs/cq-tables.md``): no curve fitted."""
+    parts: list[Part] = [
+        "The file holds Cq values only (no amplification curves), so no curve was fitted and no "
+        "well's own efficiency, baseline or fit quality exists: each well's Cq is the one in the "
+        "file, as the instrument software set it, and its starting quantity is its assay's "
+        "efficiency raised to the power of minus that Cq. Each assay's efficiency comes from "
+        "its dilution series where the design has one (from the slope of Cq against the "
+        "logarithm of the standards' quantities), and is otherwise assumed to be "
+        f"{tok('f_eff_assumed_value')} (every cycle doubles the product, the ΔΔCq assumption).",
+    ]
+    words = sorted(fid for fid in c.result.facts if fid.startswith("f_eff_words_"))
+    if words:
+        parts.append(" " + " ".join(tok(fid) for fid in words))
+    parts.append(" A well counts as amplified when the file gives it a Cq")
+    if c.has("f_amp_primary"):
+        parts.append(f"; the rule in use is {tok('f_amp_primary')}")
+    parts.append(".")
+    if c.has("f_n_undetermined", "f_n_unknown_wells", "f_pct_undetermined"):
+        parts.append(
+            f" Of {tok('f_n_unknown_wells')} sample wells, {tok('f_n_undetermined')} "
+            f"({tok('f_pct_undetermined')}) had no Cq"
         )
         card = next((x for x in c.inputs.cards if x.kind == "undetermined"), None)
         option = (card.decision or card.recommended) if card is not None else None
@@ -247,6 +339,70 @@ def normalisation(c: Ctx, cite: Cites) -> list[Part]:
                 f"{tok('f_ref_ratio_top_p')})"
             )
         parts.append(".")
+    parts += _normalisers(c, cite)
+    parts += _between_plates(c, cite)
+    return parts
+
+
+def _normalisers(c: Ctx, cite: Cites) -> list[Part]:
+    """NormFinder, geNorm's pair and the global mean, when a person asked to test them."""
+    if not c.has("f_axis_normaliser"):
+        return []
+    parts: list[Part] = []
+    if c.has("f_nf_best_pair", "f_nf_pair_stability"):
+        parts += [
+            " NormFinder ",
+            cite("andersen2004"),
+            f" ranked the same candidates with the groups; its best pair is "
+            f"{tok('f_nf_best_pair')} (stability value {tok('f_nf_pair_stability')})",
+        ]
+        if c.has("f_nf_agreement"):
+            parts.append(f". {tok('f_nf_agreement')}")
+        else:
+            parts.append(".")
+    if c.has("f_gm_n_genes"):
+        parts += [
+            " The global mean ",
+            cite("mestdagh2009"),
+            f" (each of {tok('f_gm_n_genes')} genes weighted equally) was ",
+        ]
+        if c.has("f_axis_normaliser_unavailable_global_mean"):
+            parts.append(
+                f"not tested: qPilot offers it from {tok('f_gm_min_genes')} genes, its own "
+                "default (the paper asks for a large number of genes and gives no minimum)."
+            )
+        else:
+            parts.append("tested as another normaliser.")
+    if c.has("f_n_flipped_normaliser", "f_n_genes"):
+        parts.append(
+            f" Changing only the normaliser changes {tok('f_n_flipped_normaliser')} of "
+            f"{tok('f_n_genes')} calls; the reference genes in use were not changed by it."
+        )
+    elif c.has("f_screen_normaliser"):
+        parts.append(" No other normaliser, tried alone, changes a call.")
+    return parts
+
+
+def _between_plates(c: Ctx, cite: Cites) -> list[Part]:
+    """Inter-run calibration and factor correction, when a person asked to test them."""
+    if not c.has("f_axis_interrun", "f_irc_n_split", "f_irc_n_runs"):
+        return []
+    parts: list[Part] = [
+        f" Of the {tok('f_irc_n_runs')} plates, {tok('f_irc_n_split')} genes have their samples "
+        "on more than one; inter-run calibration ",
+        cite("hellemans2007"),
+        " and factor correction ",
+        cite("ruijter2015"),
+        " were tested as corrections between plates",
+    ]
+    if c.has("f_n_flipped_interrun", "f_n_genes"):
+        parts.append(
+            f": correcting changes {tok('f_n_flipped_interrun')} of {tok('f_n_genes')} calls."
+        )
+    elif c.facts.value("f_axis_interrun") == "not_applicable":
+        parts.append(", but neither can change a result in this study.")
+    else:
+        parts.append(": neither, tried alone, changes a call.")
     return parts
 
 
@@ -267,6 +423,8 @@ def _card_clause(c: Ctx, card) -> list[Part]:  # noqa: ANN001 - DecisionCard
 
 def comparison(c: Ctx, cite: Cites) -> list[Part]:
     """Groups and the comparison: the test, the rule, the calls."""
+    if c.quantify:  # no groups compared: the quantities paragraph and its choices say it all
+        return []
     r = c.result
     rule = r.conclusion_rule
     alpha = f"{rule.get('alpha', 0.05):g}"
@@ -286,6 +444,8 @@ def comparison(c: Ctx, cite: Cites) -> list[Part]:
         if lo:
             parts.append(f" ({lo} units)")
         parts.append("; the groups are defined from the data, not by a clinical call. ")
+    elif r.comparisons is not None and len(r.comparisons.comparisons) > 1:
+        parts.append("The groups come from the confirmed design. ")
     else:
         parts += ["The groups come from the confirmed design: ", Q(a)]
         if hi:
@@ -294,6 +454,10 @@ def comparison(c: Ctx, cite: Cites) -> list[Part]:
         if lo:
             parts.append(f" ({lo} units)")
         parts.append(". ")
+    found = r.comparisons
+    if found is not None:  # several comparisons, or a paired one (StudyDesign.comparisons)
+        parts += _several(c, cite, found, alpha, fold)
+        return parts
     parts += [
         "Technical replicates were averaged within each biological unit (mean log2 N0) and "
         "never counted as n. Each gene was compared between the groups with Welch's t-test ",
@@ -302,16 +466,120 @@ def comparison(c: Ctx, cite: Cites) -> list[Part]:
         f"intervals. A gene is called up or down only if p < {alpha} and the change is at least "
         f"{fold}-fold; otherwise it has no call.",
     ]
-    if c.has("f_n_genes"):
+    if c.has("f_n_genes") and c.facts.value("f_n_genes") != 1:
         parts.append(
             f" No correction for multiple testing was applied across the {tok('f_n_genes')} genes."
         )
     parts.append(
-        f" At this analysis {c.call_count('up')} genes are up, {c.call_count('down')} down and "
-        f"{c.call_count('none')} have no call"
+        f" At this analysis {c.call_count('up')} "
+        f"{noun(c.calls.get('up', 0), 'gene is', 'genes are')} up, {c.call_count('down')} down "
+        f"and {c.call_count('none')} {noun(c.calls.get('none', 0), 'has', 'have')} no call"
     )
     if c.has("f_n_withheld") and int(c.facts.value("f_n_withheld") or 0) > 0:
         parts.append(f"; {tok('f_n_withheld')} genes were withheld (too few values in a group)")
+    parts.append(".")
+    return parts
+
+
+def _several(c: Ctx, cite: Cites, found, alpha: str, fold: str) -> list[Part]:  # noqa: ANN001
+    """The test, the correction and each comparison's calls, for a study with a plan."""
+    n = len(found.comparisons)
+    parts: list[Part] = []
+    if n > 1:
+        parts.append(f"The study has {tok('f_n_comparisons')} comparisons: ")
+        for i in range(1, n + 1):
+            parts.append(
+                f"{tok(f'f_cmp{i}_label')} ({tok(f'f_cmp{i}_n_a')} vs {tok(f'f_cmp{i}_n_b')})"
+            )
+            parts.append("; " if i < n else ". ")
+        parts.append(f"The first, {tok('f_cmp1_label')}, is the one the choices describe. ")
+    parts.append(
+        "Technical replicates were averaged within each biological unit (mean log2 N0) and "
+        "never counted as n. "
+    )
+    if found.pair_by is not None:
+        parts += [
+            f"Units were paired by {tok('f_cmp_pair_by')}: each comparison is a paired t-test on "
+            "the within-pair differences of per-unit log2 normalised quantities (n = complete "
+            "pairs); "
+        ]
+    elif found.correction in ("dunnett", "tukey"):
+        parts.append(
+            "Each comparison is a t-test on per-unit log2 normalised quantities with one "
+            "variance per gene pooled over every compared group (equal variances assumed); "
+        )
+    else:
+        parts += ["Each comparison is a Welch's t-test ", cite("welch1947")]
+        parts.append(" on per-unit log2 normalised quantities; ")
+    parts.append("fold changes are reported with 95 % confidence intervals for each comparison. ")
+    if n > 1 and found.correction == "holm":
+        parts += [
+            "Each gene's p-values were corrected across its comparisons with Holm's step-down "
+            "method ",
+            cite("holm1979"),
+            f"; a gene is called up or down in a comparison only if its corrected p < {alpha} "
+            f"and the change is at least {fold}-fold; otherwise it has no call.",
+        ]
+    elif n > 1 and found.correction in ("dunnett", "tukey"):
+        name, key, what = (
+            ("Dunnett's", "dunnett1955", "each group against the control")
+            if found.correction == "dunnett"
+            else ("Tukey's (Tukey–Kramer)", "tukey1953", "every pair of groups")
+        )
+        parts += [
+            f"Each gene's p-values were corrected with {name} single-step test for comparing "
+            f"{what} ",
+            cite(key),
+            "; the multivariate probabilities were integrated numerically by fixed Gauss "
+            f"quadrature. A gene is called up or down in a comparison only if its corrected p < "
+            f"{alpha} and the change is at least {fold}-fold; otherwise it has no call.",
+        ]
+    else:
+        if n > 1:
+            parts.append("No correction for the several comparisons per gene was chosen; ")
+        parts.append(
+            f"a gene is called up or down only if p < {alpha} and the change is at least "
+            f"{fold}-fold; otherwise it has no call."
+        )
+    parts += [
+        " Benjamini–Hochberg q-values ",
+        cite("bh1995"),
+        " across the genes of each comparison are reported; they do not enter the calls.",
+    ]
+    if found.omnibus_groups:
+        k = c.count("n_omnibus_groups", len(found.omnibus_groups), "comparisons.omnibus_groups@len")
+        parts.append(
+            f" Welch's one-way ANOVA across the {k} groups is reported "
+            "per gene for orientation; it does not enter the calls."
+        )
+    for i in range(1, n + 1):
+        if c.has(f"f_cmp{i}_label", f"f_cmp{i}_n_up", f"f_cmp{i}_n_down"):
+            parts.append(
+                f" {tok(f'f_cmp{i}_label')}: {tok(f'f_cmp{i}_n_up')} up and "
+                f"{tok(f'f_cmp{i}_n_down')} down."
+            )
+    return parts
+
+
+def quantity_choices(c: Ctx, cite: Cites) -> list[Part]:
+    """A quantification study's choices: which wells count as detected, and the LOQ line."""
+    if not c.quantify or not c.has("f_qn_items", "f_qn_fold"):
+        return []
+    rules = c.count("qn_rules", int(c.facts.value("f_n_rules")), "facts.json:/f_n_rules")
+    parts: list[Part] = [
+        f"Every sample result was quantified again under each of {rules} rules for which wells "
+        "count as detected (LinRegPCR's own call, and Cq cut-offs) and under a stricter limit "
+        "of quantification (a smaller read-back coefficient of variation); a choice waited for "
+        "a person only when another option changed what is reported for a sample (its class, "
+        f"or its number by more than {tok('f_qn_fold')})"
+    ]
+    for dim, words in (
+        ("amp_call", "which wells count as detected"),
+        ("loq_cv", "the limit of quantification"),
+    ):
+        fid = f"f_qn_changed_{dim}"
+        if c.has(fid):
+            parts.append(f"; {words} changed {tok(fid)} of {tok('f_qn_items')} sample results")
     parts.append(".")
     return parts
 
@@ -327,6 +595,8 @@ def robustness(c: Ctx, cite: Cites) -> list[Part]:
         "undetermined": ("rule for wells without a quantity", "rules for wells without a quantity"),
         "amp_call": ("amplification-call rule", "amplification-call rules"),
         "efficiency": ("efficiency model", "efficiency models"),
+        "normaliser": ("normaliser", "normalisers"),
+        "interrun": ("correction between plates", "corrections between plates"),
     }
     dims = []
     for dim, options in opts.items():
@@ -341,8 +611,9 @@ def robustness(c: Ctx, cite: Cites) -> list[Part]:
     holds = c.num("holds_min", HOLDS_MIN, "qpilot.qpcr.confidence_checks:/HOLDS_MIN", fmt="{:.0%}")
     if c.has("f_n_hold_lt_80", "f_n_genes"):
         parts.append(
-            f" {tok('f_n_hold_lt_80')} of {tok('f_n_genes')} genes keep their call in fewer than "
-            f"{holds} of them."
+            f" {tok('f_n_hold_lt_80')} of {tok('f_n_genes')} "
+            f"{noun(c.facts.value('f_n_genes'), 'gene keeps its', 'genes keep their')} call in "
+            f"fewer than {holds} of them."
         )
     alone = [
         (fid, label)
@@ -352,6 +623,8 @@ def robustness(c: Ctx, cite: Cites) -> list[Part]:
             ("f_n_flipped_amp_call", "the amplification-call rule"),
             ("f_n_flipped_undetermined", "the rule for wells without a quantity"),
             ("f_n_flipped_efficiency", "the efficiency model"),
+            ("f_n_flipped_normaliser", "the normaliser"),
+            ("f_n_flipped_interrun", "the correction between plates"),
         )
         if c.has(fid)
     ]
@@ -521,9 +794,15 @@ def software(c: Ctx, cite: Cites) -> list[Part]:
     py = c.version("python")
     if py:
         text += f" on Python {py}"
+    curves = (  # a file of Cq values only: no curve analysis, so no LinRegPCR
+        "; no curve analysis (the file holds Cq values only), geNorm"
+        if c.has("f_cq_only")
+        else "; LinRegPCR from rdmlpython (MIT licence), geNorm"
+    )
     text += (
-        "; LinRegPCR from rdmlpython (MIT licence), geNorm reimplemented from its paper and "
-        "Welch's test from SciPy's t distribution"
+        curves
+        + " reimplemented from its paper and Welch's test from SciPy's t distribution"
+        + (", NormFinder reimplemented from its paper" if c.has("f_nf_best_pair") else "")
     )
     if c.inputs.audit is not None:
         text += ", and the audit with qPilot's Decision Simulator"
@@ -535,12 +814,87 @@ def software(c: Ctx, cite: Cites) -> list[Part]:
     return parts
 
 
+def study_quantities(c: Ctx) -> Any:
+    """The study's absolute quantification (:mod:`qpilot.qpcr.absolute_study`), or None."""
+    from qpilot.qpcr.absolute_study import QuantitiesUnavailable, for_study
+
+    source = c.inputs.source
+    if source is None:
+        return None
+    from qpilot.qpcr.quantify_study import analysis_in_use, is_quantify
+
+    design = c.inputs.design
+    choice = analysis_in_use(design, c.inputs.cards) if is_quantify(design) else None
+    try:
+        found = for_study(c.inputs.study_id, c.result.input_sha256, source, design, choice)
+    except (QuantitiesUnavailable, OSError, ValueError):
+        return None
+    return found.result if found.result.curves else None
+
+
+def quantities(c: Ctx, cite: Cites) -> list[Part]:
+    """Absolute quantification: the standard curves, LOD/LOQ and the unknowns' intervals."""
+    result = study_quantities(c)
+    if result is None:
+        return []
+    fitted = [x for x in result.curves if x.fit is not None and x.scope == "plate"]
+    if not fitted:
+        return []
+    path = "quantities:/curves"
+    n = c.count("abs_n_curves", len(fitted), f"{path}@fitted")
+    n_assays = c.count("abs_n_assays", len({x.target for x in fitted}), f"{path}@assays")
+    effs = [x.fit.efficiency for x in fitted]
+    r2s = [x.fit.r2 for x in fitted]
+    lo = c.num("abs_eff_min", min(effs), f"{path}/efficiency@min", "{:.1%}")
+    hi = c.num("abs_eff_max", max(effs), f"{path}/efficiency@max", "{:.1%}")
+    r2 = c.num("abs_r2_min", min(r2s), f"{path}/r2@min", "{:.3f}")
+    sources = {x.quantity_source for x in fitted}
+    where = {
+        "design": "as a person set them on the Design page",
+        "file": "as the input file declares them",
+        "name": "from the standards' names",
+    }
+    told = "; ".join(where.get(s, s.replace("+", " and ")) for s in sorted(sources))
+    rate = c.num(
+        "abs_lod_rate", result.settings.lod_rate, "quantities:/settings/lod_rate", "{:.0%}"
+    )
+    cv = c.num("abs_loq_cv", result.settings.loq_cv, "quantities:/settings/loq_cv", "{:.0%}")
+    parts: list[Part] = [
+        f"Absolute quantities were read from {n} standard curves ({n_assays} assays, one per "
+        f"assay and plate; the standards' quantities {told}): Cq regressed on log10 quantity "
+        "over the detected standard wells by ordinary least squares, efficiency "
+        f"10^(−1/slope) − 1 from {lo} to {hi}, R² at least {r2}. Each unit's quantity is the "
+        "inverse prediction from the mean Cq of its detected wells, with a 95 % prediction "
+        "interval ",
+        cite("miller2010"),
+        f". The limit of detection is the lowest standard detected in at least {rate} of its "
+        "wells, and the limit of quantification the lowest whose read-back quantities have a "
+        f"log-normal coefficient of variation of at most {cv} ",
+        cite("forootan2017"),
+    ]
+    units = result.unknowns
+    if units:
+        out = sum(1 for u in units if {"above_top", "below_lowest"} & set(u.flags))
+        low = sum(1 for u in units if {"below_loq", "below_lod"} & set(u.flags))
+        n_units = c.count("abs_n_units", len(units), "quantities:/unknowns@len", "{:,}")
+        n_out = c.count("abs_n_extrapolated", out, "quantities:/unknowns@extrapolated", "{:,}")
+        n_low = c.count("abs_n_below_limit", low, "quantities:/unknowns@below_limits", "{:,}")
+        parts.append(
+            f"; of {n_units} unit estimates, {n_out} lie outside the standards (extrapolated) and "
+            f"{n_low} below the limit of quantification or detection, and are flagged as such"
+        )
+    parts.append(".")
+    return parts
+
+
 PARAGRAPHS = (
     ("data", "Data", data),
     ("curves", "Curve analysis", curves),
+    ("quantities", "Absolute quantification", quantities),
     ("normalisation", "Reference genes and normalisation", normalisation),
     ("comparison", "Groups and comparison", comparison),
     ("robustness", "Robustness to analysis choices", robustness),
+    ("quantity_choices", "Analysis choices for the quantities", quantity_choices),
     ("decisions", "Analysis decisions", decisions),
     ("audit", "Robustness audit", audit),
     ("software", "Software and reporting", software),

@@ -1,0 +1,1946 @@
+{
+ "curves": [
+  {
+   "band": [
+    {
+     "cq": 38.34218533333333,
+     "high": 39.176727731919456,
+     "log10_quantity": 0.6,
+     "low": 37.50764293474721
+    },
+    {
+     "cq": 37.942933733333334,
+     "high": 38.77124685830009,
+     "log10_quantity": 0.72,
+     "low": 37.11462060836658
+    },
+    {
+     "cq": 37.543682133333334,
+     "high": 38.3660418174289,
+     "log10_quantity": 0.8400000000000001,
+     "low": 36.72132244923777
+    },
+    {
+     "cq": 37.14443053333333,
+     "high": 37.961118641572085,
+     "log10_quantity": 0.9600000000000001,
+     "low": 36.32774242509457
+    },
+    {
+     "cq": 36.74517893333333,
+     "high": 37.5564832420429,
+     "log10_quantity": 1.08,
+     "low": 35.933874624623755
+    },
+    {
+     "cq": 36.34592733333333,
+     "high": 37.15214138406805,
+     "log10_quantity": 1.2000000000000002,
+     "low": 35.539713282598605
+    },
+    {
+     "cq": 35.94667573333333,
+     "high": 36.74809866097686,
+     "log10_quantity": 1.3200000000000003,
+     "low": 35.1452528056898
+    },
+    {
+     "cq": 35.54742413333333,
+     "high": 36.34436046791887,
+     "log10_quantity": 1.4400000000000002,
+     "low": 34.75048779874779
+    },
+    {
+     "cq": 35.14817253333333,
+     "high": 35.94093197534068,
+     "log10_quantity": 1.56,
+     "low": 34.35541309132598
+    },
+    {
+     "cq": 34.74892093333333,
+     "high": 35.53781810247532,
+     "log10_quantity": 1.6800000000000002,
+     "low": 33.96002376419134
+    },
+    {
+     "cq": 34.34966933333333,
+     "high": 35.13502349111691,
+     "log10_quantity": 1.8000000000000003,
+     "low": 33.56431517554975
+    },
+    {
+     "cq": 33.95041773333333,
+     "high": 34.73255247996905,
+     "log10_quantity": 1.9200000000000004,
+     "low": 33.16828298669761
+    },
+    {
+     "cq": 33.55116613333333,
+     "high": 34.33040907986616,
+     "log10_quantity": 2.0400000000000005,
+     "low": 32.77192318680051
+    },
+    {
+     "cq": 33.15191453333333,
+     "high": 33.9285969501722,
+     "log10_quantity": 2.16,
+     "low": 32.375232116494466
+    },
+    {
+     "cq": 32.75266293333333,
+     "high": 33.527119376660806,
+     "log10_quantity": 2.2800000000000002,
+     "low": 31.978206490005864
+    },
+    {
+     "cq": 32.35341133333333,
+     "high": 33.12597925117322,
+     "log10_quantity": 2.4000000000000004,
+     "low": 31.580843415493433
+    },
+    {
+     "cq": 31.954159733333327,
+     "high": 32.7251790533369,
+     "log10_quantity": 2.5200000000000005,
+     "low": 31.183140413329753
+    },
+    {
+     "cq": 31.554908133333328,
+     "high": 32.324720834606396,
+     "log10_quantity": 2.6400000000000006,
+     "low": 30.785095432060256
+    },
+    {
+     "cq": 31.155656533333328,
+     "high": 31.92460620486143,
+     "log10_quantity": 2.7600000000000007,
+     "low": 30.386706861805227
+    },
+    {
+     "cq": 30.75640493333333,
+     "high": 31.52483632176321,
+     "log10_quantity": 2.8800000000000003,
+     "low": 29.987973544903447
+    },
+    {
+     "cq": 30.35715333333333,
+     "high": 31.1254118830317,
+     "log10_quantity": 3.0000000000000004,
+     "low": 29.58889478363496
+    },
+    {
+     "cq": 29.95790173333333,
+     "high": 30.72633312176321,
+     "log10_quantity": 3.1200000000000006,
+     "low": 29.189470344903448
+    },
+    {
+     "cq": 29.55865013333333,
+     "high": 30.327599804861432,
+     "log10_quantity": 3.2400000000000007,
+     "low": 28.78970046180523
+    },
+    {
+     "cq": 29.15939853333333,
+     "high": 29.929211234606402,
+     "log10_quantity": 3.3600000000000008,
+     "low": 28.38958583206026
+    },
+    {
+     "cq": 28.76014693333333,
+     "high": 29.531166253336906,
+     "log10_quantity": 3.480000000000001,
+     "low": 27.989127613329757
+    },
+    {
+     "cq": 28.360895333333332,
+     "high": 29.133463251173225,
+     "log10_quantity": 3.6000000000000005,
+     "low": 27.58832741549344
+    },
+    {
+     "cq": 27.96164373333333,
+     "high": 28.7361001766608,
+     "log10_quantity": 3.7200000000000006,
+     "low": 27.18718729000586
+    },
+    {
+     "cq": 27.56239213333333,
+     "high": 28.339074550172196,
+     "log10_quantity": 3.8400000000000007,
+     "low": 26.785709716494463
+    },
+    {
+     "cq": 27.163140533333326,
+     "high": 27.94238347986615,
+     "log10_quantity": 3.960000000000001,
+     "low": 26.3838975868005
+    },
+    {
+     "cq": 26.763888933333327,
+     "high": 27.546023679969046,
+     "log10_quantity": 4.080000000000001,
+     "low": 25.981754186697607
+    },
+    {
+     "cq": 26.36463733333333,
+     "high": 27.149991491116907,
+     "log10_quantity": 4.2,
+     "low": 25.579283175549755
+    },
+    {
+     "cq": 25.96538573333333,
+     "high": 26.75428290247532,
+     "log10_quantity": 4.32,
+     "low": 25.17648856419134
+    },
+    {
+     "cq": 25.56613413333333,
+     "high": 26.35889357534068,
+     "log10_quantity": 4.44,
+     "low": 24.773374691325976
+    },
+    {
+     "cq": 25.16688253333333,
+     "high": 25.963818867918867,
+     "log10_quantity": 4.5600000000000005,
+     "low": 24.36994619874779
+    },
+    {
+     "cq": 24.76763093333333,
+     "high": 25.56905386097686,
+     "log10_quantity": 4.680000000000001,
+     "low": 23.966208005689797
+    },
+    {
+     "cq": 24.36837933333333,
+     "high": 25.174593384068054,
+     "log10_quantity": 4.800000000000001,
+     "low": 23.562165282598606
+    },
+    {
+     "cq": 23.96912773333333,
+     "high": 24.7804320420429,
+     "log10_quantity": 4.920000000000001,
+     "low": 23.15782342462376
+    },
+    {
+     "cq": 23.569876133333327,
+     "high": 24.38656424157209,
+     "log10_quantity": 5.040000000000001,
+     "low": 22.753188025094566
+    },
+    {
+     "cq": 23.17062453333333,
+     "high": 23.9929842174289,
+     "log10_quantity": 5.16,
+     "low": 22.34826484923776
+    },
+    {
+     "cq": 22.771372933333332,
+     "high": 23.599686058300087,
+     "log10_quantity": 5.28,
+     "low": 21.943059808366577
+    },
+    {
+     "cq": 22.372121333333332,
+     "high": 23.206663731919456,
+     "log10_quantity": 5.4,
+     "low": 21.53757893474721
+    }
+   ],
+   "efficiency": 0.997847581140312,
+   "efficiency_high": 1.0575635376556534,
+   "efficiency_low": 0.9443512815817738,
+   "exact_interval": false,
+   "fitted": true,
+   "g": 0.0016662263086938108,
+   "id": "Cov2 @ 2023-11-14_Cov2_Copy",
+   "intercept": 40.33844333333333,
+   "levels": [
+    {
+     "back_quantity": 121567.27785054347,
+     "cv": 0.11893784773486835,
+     "mean_cq": 23.420766666666665,
+     "n_detected": 3,
+     "n_wells": 3,
+     "quantity": 100000.0,
+     "rate": 1.0,
+     "sd_cq": 0.17125484907976615
+    },
+    {
+     "back_quantity": 9235.967958792608,
+     "cv": 0.038198589551961246,
+     "mean_cq": 27.144900000000003,
+     "n_detected": 3,
+     "n_wells": 3,
+     "quantity": 10000.0,
+     "rate": 1.0,
+     "sd_cq": 0.055174541230534314
+    },
+    {
+     "back_quantity": 852.5038182956331,
+     "cv": 0.09979579070690806,
+     "mean_cq": 30.587733333333333,
+     "n_detected": 3,
+     "n_wells": 3,
+     "quantity": 1000.0,
+     "rate": 1.0,
+     "sd_cq": 0.14384179967357716
+    },
+    {
+     "back_quantity": 79.96377958552459,
+     "cv": 0.2249918157496218,
+     "mean_cq": 34.00733333333334,
+     "n_detected": 3,
+     "n_wells": 3,
+     "quantity": 100.0,
+     "rate": 1.0,
+     "sd_cq": 0.3210944772700609
+    },
+    {
+     "back_quantity": 13.065055054747164,
+     "cv": 0.08504526136036726,
+     "mean_cq": 36.625033333333334,
+     "n_detected": 3,
+     "n_wells": 3,
+     "quantity": 10.0,
+     "rate": 1.0,
+     "sd_cq": 0.12266394471617537
+    }
+   ],
+   "lod": {
+    "at_most": true,
+    "method": "lowest_standard",
+    "quantity": 10.0,
+    "words": "every standard level was detected in at least 95 % of its wells: the limit of detection is at or below the lowest standard; with 3 wells per level, 95 % of a level's wells means all of them, so this is the lowest level where no well failed (the modelled limit, when shown, is the better estimate). Run at least 10 replicates at the levels around the limit (Forootan et al. 2017; Klymus et al. 2020)"
+   },
+   "lod_model": null,
+   "loq": {
+    "at_most": false,
+    "method": "empirical",
+    "quantity": 10.0,
+    "words": "the lowest standard (at or above the limit of detection) whose back-calculated quantities have a CV of at most 35 % (every higher level too)"
+   },
+   "lowest": 10.0,
+   "n_levels": 5,
+   "n_unknowns": 21,
+   "n_wells": 15,
+   "points": [
+    {
+     "back_quantity": 116555.42231081103,
+     "cq": 23.4816,
+     "detected": true,
+     "note": "",
+     "quantity": 100000.0,
+     "residual": -0.22135999999999711,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 1",
+     "well": "D10"
+    },
+    {
+     "back_quantity": 110912.92575326895,
+     "cq": 23.5533,
+     "detected": true,
+     "note": "",
+     "quantity": 100000.0,
+     "residual": -0.14965999999999724,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 1",
+     "well": "D11"
+    },
+    {
+     "back_quantity": 138974.59983294283,
+     "cq": 23.2274,
+     "detected": true,
+     "note": "",
+     "quantity": 100000.0,
+     "residual": -0.475559999999998,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 1",
+     "well": "D12"
+    },
+    {
+     "back_quantity": 8996.862941147565,
+     "cq": 27.1828,
+     "detected": true,
+     "note": "",
+     "quantity": 10000.0,
+     "residual": 0.15274333333333345,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 2",
+     "well": "E10"
+    },
+    {
+     "back_quantity": 9649.571190149407,
+     "cq": 27.0816,
+     "detected": true,
+     "note": "",
+     "quantity": 10000.0,
+     "residual": 0.05154333333333483,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 2",
+     "well": "E11"
+    },
+    {
+     "back_quantity": 9075.031347134349,
+     "cq": 27.1703,
+     "detected": true,
+     "note": "",
+     "quantity": 10000.0,
+     "residual": 0.14024333333333416,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 2",
+     "well": "E12"
+    },
+    {
+     "back_quantity": 891.2559754164646,
+     "cq": 30.5235,
+     "detected": true,
+     "note": "",
+     "quantity": 1000.0,
+     "residual": 0.1663466666666693,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 3",
+     "well": "F10"
+    },
+    {
+     "back_quantity": 760.6303949970443,
+     "cq": 30.7525,
+     "detected": true,
+     "note": "",
+     "quantity": 1000.0,
+     "residual": 0.39534666666667206,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 3",
+     "well": "F11"
+    },
+    {
+     "back_quantity": 913.9298623326731,
+     "cq": 30.4872,
+     "detected": true,
+     "note": "",
+     "quantity": 1000.0,
+     "residual": 0.1300466666666722,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 3",
+     "well": "F12"
+    },
+    {
+     "back_quantity": 83.33873510555524,
+     "cq": 33.9476,
+     "detected": true,
+     "note": "",
+     "quantity": 100.0,
+     "residual": 0.26335000000000264,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 4",
+     "well": "G10"
+    },
+    {
+     "back_quantity": 62.902558224448306,
+     "cq": 34.3541,
+     "detected": true,
+     "note": "",
+     "quantity": 100.0,
+     "residual": 0.6698500000000038,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 4",
+     "well": "G11"
+    },
+    {
+     "back_quantity": 97.53595198759882,
+     "cq": 33.7203,
+     "detected": true,
+     "note": "",
+     "quantity": 100.0,
+     "residual": 0.036050000000003024,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 4",
+     "well": "G12"
+    },
+    {
+     "back_quantity": 11.845724661673692,
+     "cq": 36.7666,
+     "detected": true,
+     "note": "",
+     "quantity": 10.0,
+     "residual": -0.24474666666666423,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 5",
+     "well": "H10"
+    },
+    {
+     "back_quantity": 13.758569139460038,
+     "cq": 36.5503,
+     "detected": true,
+     "note": "",
+     "quantity": 10.0,
+     "residual": -0.46104666666666105,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 5",
+     "well": "H11"
+    },
+    {
+     "back_quantity": 13.683551403841513,
+     "cq": 36.5582,
+     "detected": true,
+     "note": "",
+     "quantity": 10.0,
+     "residual": -0.4531466666666617,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "Std 5",
+     "well": "H12"
+    }
+   ],
+   "problem": "",
+   "quantity_source": "design",
+   "r2": 0.9953803331219588,
+   "runs": [
+    "2023-11-14_Cov2_Copy"
+   ],
+   "s_yx": 0.34432231735797947,
+   "scope": "plate",
+   "slope": -3.3270966666666664,
+   "suspects": [],
+   "target": "Cov2",
+   "top": 100000.0,
+   "warnings": []
+  }
+ ],
+ "reaction": null,
+ "settings": {
+  "lod_rate": 0.95,
+  "loq_cv": 0.35,
+  "min_levels": 3,
+  "prediction_level": 0.95
+ },
+ "study_id": "06874f98d640",
+ "target": "Cov2",
+ "unit": "",
+ "units": [
+  {
+   "curves": [],
+   "flags": [
+    {
+     "id": "not_detected",
+     "words": "not detected in any well"
+    },
+    {
+     "id": "below_lod",
+     "words": "below the limit of detection"
+    }
+   ],
+   "group": null,
+   "high": null,
+   "low": null,
+   "mean_cq": null,
+   "n_detected": 0,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": null,
+   "reported": "not_detected",
+   "reported_words": "not detected",
+   "samples": [
+    "D-231018-Negative Ctrl"
+   ],
+   "unit": "D-231018-Negative Ctrl",
+   "wells": [
+    {
+     "cq": null,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": false,
+     "note": "",
+     "quantity": null,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-Negative Ctrl",
+     "well": "G7"
+    },
+    {
+     "cq": null,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": false,
+     "note": "",
+     "quantity": null,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-Negative Ctrl",
+     "well": "G8"
+    },
+    {
+     "cq": null,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": false,
+     "note": "",
+     "quantity": null,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-Negative Ctrl",
+     "well": "G9"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": null,
+   "high": 561.4620536181062,
+   "low": 291.54192987120206,
+   "mean_cq": 31.664666666666665,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 404.58587550886034,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "D-231018-NorthA"
+   ],
+   "unit": "D-231018-NorthA",
+   "wells": [
+    {
+     "cq": 31.9289,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 336.9706881832334,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-NorthA",
+     "well": "D4"
+    },
+    {
+     "cq": 31.4984,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 453.9251204318494,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-NorthA",
+     "well": "D5"
+    },
+    {
+     "cq": 31.5667,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 432.9680092886161,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-NorthA",
+     "well": "D6"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": null,
+   "high": 666.2066605628128,
+   "low": 346.42690623342855,
+   "mean_cq": 31.41646666666667,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 480.40806855305743,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "D-231018-NorthB"
+   ],
+   "unit": "D-231018-NorthB",
+   "wells": [
+    {
+     "cq": 31.3731,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 495.04500198458055,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-NorthB",
+     "well": "A7"
+    },
+    {
+     "cq": 31.3052,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 518.8631930055525,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-NorthB",
+     "well": "A8"
+    },
+    {
+     "cq": 31.5711,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 431.65157954750356,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-NorthB",
+     "well": "A9"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": null,
+   "high": 80.23707662616928,
+   "low": 40.163797015384915,
+   "mean_cq": 34.50236666666667,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 56.768174699573954,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "D-231018-SS-A"
+   ],
+   "unit": "D-231018-SS-A",
+   "wells": [
+    {
+     "cq": 34.5305,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 55.67357495828739,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-SS-A",
+     "well": "F4"
+    },
+    {
+     "cq": 34.3952,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 61.138558618058134,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-SS-A",
+     "well": "F5"
+    },
+    {
+     "cq": 34.5814,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 53.74653684618348,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-SS-A",
+     "well": "F6"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": null,
+   "high": 82.51982622644728,
+   "low": 41.3387919717564,
+   "mean_cq": 34.46126666666667,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 58.406077850858914,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "D-231018-SS-B"
+   ],
+   "unit": "D-231018-SS-B",
+   "wells": [
+    {
+     "cq": 34.6556,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 51.056231874958605,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-SS-B",
+     "well": "C7"
+    },
+    {
+     "cq": 34.5272,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 55.80086937081962,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-SS-B",
+     "well": "C8"
+    },
+    {
+     "cq": 34.201,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 69.9333615748134,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-SS-B",
+     "well": "C9"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": null,
+   "high": 340.7289983228728,
+   "low": 175.88786497671404,
+   "mean_cq": 32.3906,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 244.80624185397005,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "D-231018-SouthA"
+   ],
+   "unit": "D-231018-SouthA",
+   "wells": [
+    {
+     "cq": 32.2798,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 264.3168168502423,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-SouthA",
+     "well": "E4"
+    },
+    {
+     "cq": 32.1849,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 282.2592366709296,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-SouthA",
+     "well": "E5"
+    },
+    {
+     "cq": 32.7071,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 196.6502497973957,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-SouthA",
+     "well": "E6"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": null,
+   "high": 244.09030769166046,
+   "low": 125.33375679219985,
+   "mean_cq": 32.8764,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 174.90784790729032,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "D-231018-SouthB"
+   ],
+   "unit": "D-231018-SouthB",
+   "wells": [
+    {
+     "cq": 32.7419,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 191.97069295415366,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-SouthB",
+     "well": "B7"
+    },
+    {
+     "cq": 33.1542,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 144.31553202902396,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-SouthB",
+     "well": "B8"
+    },
+    {
+     "cq": 32.7331,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 193.14340401057456,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "D-231018-SouthB",
+     "well": "B9"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": null,
+   "high": 71.17366509868597,
+   "low": 35.50528124404296,
+   "mean_cq": 34.67803333333333,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 50.26968267751618,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231026-DCS-R1"
+   ],
+   "unit": "PR-231026-DCS-R1",
+   "wells": [
+    {
+     "cq": 34.9074,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 42.89109748218847,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231026-DCS-R1",
+     "well": "C1"
+    },
+    {
+     "cq": 34.6814,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 50.15269215411242,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231026-DCS-R1",
+     "well": "C2"
+    },
+    {
+     "cq": 34.4453,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 59.055047326484114,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231026-DCS-R1",
+     "well": "C3"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": "DNI",
+   "high": 272.5291315308124,
+   "low": 140.19944281516075,
+   "mean_cq": 32.7158,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 195.46977360072722,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231026-DNI-R1"
+   ],
+   "unit": "PR-231026-DNI-R1",
+   "wells": [
+    {
+     "cq": 32.5527,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 218.82721320408763,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231026-DNI-R1",
+     "well": "A1"
+    },
+    {
+     "cq": 33.1232,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 147.44515545272745,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231026-DNI-R1",
+     "well": "A2"
+    },
+    {
+     "cq": 32.4715,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 231.4765455794684,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231026-DNI-R1",
+     "well": "A3"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": "DSI",
+   "high": 314.8806688782462,
+   "low": 162.35655251081764,
+   "mean_cq": 32.505433333333336,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 226.1038253797851,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231026-DSI-R1"
+   ],
+   "unit": "PR-231026-DSI-R1",
+   "wells": [
+    {
+     "cq": 32.5638,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 217.1526269394782,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231026-DSI-R1",
+     "well": "B1"
+    },
+    {
+     "cq": 32.5168,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 224.3321496833349,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231026-DSI-R1",
+     "well": "B2"
+    },
+    {
+     "cq": 32.4357,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 237.28327330771663,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231026-DSI-R1",
+     "well": "B3"
+    }
+   ]
+  },
+  {
+   "curves": [],
+   "flags": [
+    {
+     "id": "not_detected",
+     "words": "not detected in any well"
+    },
+    {
+     "id": "below_lod",
+     "words": "below the limit of detection"
+    }
+   ],
+   "group": null,
+   "high": null,
+   "low": null,
+   "mean_cq": null,
+   "n_detected": 0,
+   "n_wells": 2,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": null,
+   "reported": "not_detected",
+   "reported_words": "not detected",
+   "samples": [
+    "PR-231026-NEG-R1"
+   ],
+   "unit": "PR-231026-NEG-R1",
+   "wells": [
+    {
+     "cq": null,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": false,
+     "note": "",
+     "quantity": null,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231026-NEG-R1",
+     "well": "G1"
+    },
+    {
+     "cq": null,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": false,
+     "note": "",
+     "quantity": null,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231026-NEG-R1",
+     "well": "H1"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": null,
+   "high": 94.276226713083,
+   "low": 47.399448236835234,
+   "mean_cq": 34.2662,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 66.84789546463614,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231031-DCS-R1"
+   ],
+   "unit": "PR-231031-DCS-R1",
+   "wells": [
+    {
+     "cq": 34.1632,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 71.78697636525033,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231031-DCS-R1",
+     "well": "F1"
+    },
+    {
+     "cq": 34.3844,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 61.597242277116614,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231031-DCS-R1",
+     "well": "F2"
+    },
+    {
+     "cq": 34.251,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 67.55481156480208,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231031-DCS-R1",
+     "well": "F3"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": "DNI",
+   "high": 103.34658275738173,
+   "low": 52.084751047093484,
+   "mean_cq": 34.13173333333333,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 73.36743851659314,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231031-DNI-R1"
+   ],
+   "unit": "PR-231031-DNI-R1",
+   "wells": [
+    {
+     "cq": 34.675,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 50.37532367263853,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231031-DNI-R1",
+     "well": "D1"
+    },
+    {
+     "cq": 33.8841,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 87.08284598290118,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231031-DNI-R1",
+     "well": "D2"
+    },
+    {
+     "cq": 33.8361,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 90.02426967411938,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231031-DNI-R1",
+     "well": "D3"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": "DSI",
+   "high": 202.77437510665814,
+   "low": 103.76272369736104,
+   "mean_cq": 33.14683333333333,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 145.05316769066854,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231031-DSI-R1"
+   ],
+   "unit": "PR-231031-DSI-R1",
+   "wells": [
+    {
+     "cq": 32.9666,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 164.32308207073027,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231031-DSI-R1",
+     "well": "E1"
+    },
+    {
+     "cq": 33.4584,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 116.91816947834344,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231031-DSI-R1",
+     "well": "E2"
+    },
+    {
+     "cq": 33.0155,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 158.85506734112502,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231031-DSI-R1",
+     "well": "E3"
+    }
+   ]
+  },
+  {
+   "curves": [],
+   "flags": [
+    {
+     "id": "not_detected",
+     "words": "not detected in any well"
+    },
+    {
+     "id": "below_lod",
+     "words": "below the limit of detection"
+    }
+   ],
+   "group": null,
+   "high": null,
+   "low": null,
+   "mean_cq": null,
+   "n_detected": 0,
+   "n_wells": 2,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": null,
+   "reported": "not_detected",
+   "reported_words": "not detected",
+   "samples": [
+    "PR-231031-NEG-R1"
+   ],
+   "unit": "PR-231031-NEG-R1",
+   "wells": [
+    {
+     "cq": null,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": false,
+     "note": "",
+     "quantity": null,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231031-NEG-R1",
+     "well": "G2"
+    },
+    {
+     "cq": null,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": false,
+     "note": "",
+     "quantity": null,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231031-NEG-R1",
+     "well": "H2"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": null,
+   "high": 141.3487077942497,
+   "low": 71.78107335278628,
+   "mean_cq": 33.673766666666666,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 100.72815873677325,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231101-DCS-R1"
+   ],
+   "unit": "PR-231101-DCS-R1",
+   "wells": [
+    {
+     "cq": 33.4717,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 115.8469296501198,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231101-DCS-R1",
+     "well": "C4"
+    },
+    {
+     "cq": 33.8706,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 87.90026931037768,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231101-DCS-R1",
+     "well": "C5"
+    },
+    {
+     "cq": 33.679,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 100.3639978244579,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231101-DCS-R1",
+     "well": "C6"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": "DNI",
+   "high": 325.7794899864587,
+   "low": 168.0613282017473,
+   "mean_cq": 32.4559,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 233.98917451030098,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231101-DNI-R1"
+   ],
+   "unit": "PR-231101-DNI-R1",
+   "wells": [
+    {
+     "cq": 32.7488,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 191.05616335679397,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231101-DNI-R1",
+     "well": "A4"
+    },
+    {
+     "cq": 32.1331,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 292.56157985129005,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231101-DNI-R1",
+     "well": "A5"
+    },
+    {
+     "cq": 32.4858,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 229.19701170108058,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231101-DNI-R1",
+     "well": "A6"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": "DSI",
+   "high": 163.62078348194564,
+   "low": 83.36115955449854,
+   "mean_cq": 33.46,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 116.78877616565103,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231101-DSI-R1"
+   ],
+   "unit": "PR-231101-DSI-R1",
+   "wells": [
+    {
+     "cq": 33.4487,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 117.7056912225391,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231101-DSI-R1",
+     "well": "B4"
+    },
+    {
+     "cq": 33.3644,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 124.7770944141111,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231101-DSI-R1",
+     "well": "B5"
+    },
+    {
+     "cq": 33.5669,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 108.46034761806126,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231101-DSI-R1",
+     "well": "B6"
+    }
+   ]
+  },
+  {
+   "curves": [],
+   "flags": [
+    {
+     "id": "not_detected",
+     "words": "not detected in any well"
+    },
+    {
+     "id": "below_lod",
+     "words": "below the limit of detection"
+    }
+   ],
+   "group": null,
+   "high": null,
+   "low": null,
+   "mean_cq": null,
+   "n_detected": 0,
+   "n_wells": 2,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": null,
+   "reported": "not_detected",
+   "reported_words": "not detected",
+   "samples": [
+    "PR-231101-NEG-R1"
+   ],
+   "unit": "PR-231101-NEG-R1",
+   "wells": [
+    {
+     "cq": null,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": false,
+     "note": "",
+     "quantity": null,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231101-NEG-R1",
+     "well": "G3"
+    },
+    {
+     "cq": null,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": false,
+     "note": "",
+     "quantity": null,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231101-NEG-R1",
+     "well": "H3"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": null,
+   "high": 74.18456060808523,
+   "low": 37.051608449650004,
+   "mean_cq": 34.6173,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 52.42763863326388,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231102-DCS-R1"
+   ],
+   "unit": "PR-231102-DCS-R1",
+   "wells": [
+    {
+     "cq": 34.4844,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 57.4784481148549,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231102-DCS-R1",
+     "well": "F7"
+    },
+    {
+     "cq": 34.8484,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 44.67868041377796,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231102-DCS-R1",
+     "well": "F8"
+    },
+    {
+     "cq": 34.5191,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 56.11455462216714,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231102-DCS-R1",
+     "well": "F9"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": "DNI",
+   "high": 233.23790283239126,
+   "low": 119.66438046683493,
+   "mean_cq": 32.9427,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 167.06366793477852,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231102-DNI-R1"
+   ],
+   "unit": "PR-231102-DNI-R1",
+   "wells": [
+    {
+     "cq": 33.196,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 140.20050192905947,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231102-DNI-R1",
+     "well": "D7"
+    },
+    {
+     "cq": 33.0597,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 154.06933818892142,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231102-DNI-R1",
+     "well": "D8"
+    },
+    {
+     "cq": 32.5724,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 215.86401535548393,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231102-DNI-R1",
+     "well": "D9"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": "DSI",
+   "high": 162.47460493273854,
+   "low": 82.7647063201711,
+   "mean_cq": 33.47026666666667,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 115.96190306192773,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231102-DSI-R1"
+   ],
+   "unit": "PR-231102-DSI-R1",
+   "wells": [
+    {
+     "cq": 33.1724,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 142.5091796070478,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231102-DSI-R1",
+     "well": "E7"
+    },
+    {
+     "cq": 33.4094,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 120.95102760325317,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231102-DSI-R1",
+     "well": "E8"
+    },
+    {
+     "cq": 33.829,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 90.46771048352973,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231102-DSI-R1",
+     "well": "E9"
+    }
+   ]
+  },
+  {
+   "curves": [],
+   "flags": [
+    {
+     "id": "not_detected",
+     "words": "not detected in any well"
+    },
+    {
+     "id": "below_lod",
+     "words": "below the limit of detection"
+    }
+   ],
+   "group": null,
+   "high": null,
+   "low": null,
+   "mean_cq": null,
+   "n_detected": 0,
+   "n_wells": 2,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": null,
+   "reported": "not_detected",
+   "reported_words": "not detected",
+   "samples": [
+    "PR-231102-NEG-R1"
+   ],
+   "unit": "PR-231102-NEG-R1",
+   "wells": [
+    {
+     "cq": null,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": false,
+     "note": "",
+     "quantity": null,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231102-NEG-R1",
+     "well": "G4"
+    },
+    {
+     "cq": null,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": false,
+     "note": "",
+     "quantity": null,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231102-NEG-R1",
+     "well": "H4"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": null,
+   "high": 68.66688906448057,
+   "low": 34.21888020610775,
+   "mean_cq": 34.7306,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 48.473745997431955,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231103-DCS-R1"
+   ],
+   "unit": "PR-231103-DCS-R1",
+   "wells": [
+    {
+     "cq": 35.0573,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 38.66454130975271,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231103-DCS-R1",
+     "well": "C10"
+    },
+    {
+     "cq": 35.3779,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 30.970810596721545,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231103-DCS-R1",
+     "well": "C11"
+    },
+    {
+     "cq": 33.7566,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 95.11616110781839,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231103-DCS-R1",
+     "well": "C12"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": "DNI",
+   "high": 317.48692378252684,
+   "low": 163.7206551193642,
+   "mean_cq": 32.493433333333336,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 227.98940140608937,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231103-DNI-R1"
+   ],
+   "unit": "PR-231103-DNI-R1",
+   "wells": [
+    {
+     "cq": 32.7444,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 191.63883703988247,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231103-DNI-R1",
+     "well": "A10"
+    },
+    {
+     "cq": 32.5416,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 220.5147131469571,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231103-DNI-R1",
+     "well": "A11"
+    },
+    {
+     "cq": 32.1943,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 280.4289698428966,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231103-DNI-R1",
+     "well": "A12"
+    }
+   ]
+  },
+  {
+   "curves": [
+    "Cov2 @ 2023-11-14_Cov2_Copy"
+   ],
+   "flags": [],
+   "group": "DSI",
+   "high": 115.76259293091108,
+   "low": 58.50933588306324,
+   "mean_cq": 33.96573333333333,
+   "n_detected": 3,
+   "n_wells": 3,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": 82.29940724263449,
+   "reported": "quantified",
+   "reported_words": "quantified",
+   "samples": [
+    "PR-231103-DSI-R1"
+   ],
+   "unit": "PR-231103-DSI-R1",
+   "wells": [
+    {
+     "cq": 34.0769,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 76.20512721583265,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231103-DSI-R1",
+     "well": "B10"
+    },
+    {
+     "cq": 34.2678,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 66.77391491328747,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231103-DSI-R1",
+     "well": "B11"
+    },
+    {
+     "cq": 33.5525,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": true,
+     "note": "",
+     "quantity": 109.54664716839399,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231103-DSI-R1",
+     "well": "B12"
+    }
+   ]
+  },
+  {
+   "curves": [],
+   "flags": [
+    {
+     "id": "not_detected",
+     "words": "not detected in any well"
+    },
+    {
+     "id": "below_lod",
+     "words": "below the limit of detection"
+    }
+   ],
+   "group": null,
+   "high": null,
+   "low": null,
+   "mean_cq": null,
+   "n_detected": 0,
+   "n_wells": 2,
+   "per_ng": null,
+   "per_ul": null,
+   "quantity": null,
+   "reported": "not_detected",
+   "reported_words": "not detected",
+   "samples": [
+    "PR-231103-NEG-R1"
+   ],
+   "unit": "PR-231103-NEG-R1",
+   "wells": [
+    {
+     "cq": null,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": false,
+     "note": "",
+     "quantity": null,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231103-NEG-R1",
+     "well": "G5"
+    },
+    {
+     "cq": null,
+     "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
+     "detected": false,
+     "note": "",
+     "quantity": null,
+     "run_id": "2023-11-14_Cov2_Copy",
+     "sample": "PR-231103-NEG-R1",
+     "well": "H5"
+    }
+   ]
+  }
+ ]
+}

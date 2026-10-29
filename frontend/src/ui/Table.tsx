@@ -127,6 +127,11 @@ export interface ColumnMeta {
   width?: string;
   /** Extra classes for this column's cells. */
   className?: string;
+  /**
+   * What the column means, in a sentence: the header's tooltip (dotted underline) and its
+   * accessible description, for a short header that needs one ("Alone", "Moves it most").
+   */
+  help?: string;
 }
 
 export interface DataTableProps<T> {
@@ -274,6 +279,12 @@ export function DataTable<T>({
                   <TH
                     key={h.id}
                     numeric={meta?.numeric}
+                    title={meta?.help}
+                    aria-description={meta?.help}
+                    className={cn(
+                      meta?.help &&
+                        "[&_.qp-th-label]:cursor-help [&_.qp-th-label]:underline [&_.qp-th-label]:decoration-dotted [&_.qp-th-label]:underline-offset-4",
+                    )}
                     aria-sort={
                       sorted === "asc"
                         ? "ascending"
@@ -294,7 +305,9 @@ export function DataTable<T>({
                           sorted && "text-fg",
                         )}
                       >
-                        {flexRender(h.column.columnDef.header, h.getContext())}
+                        <span className="qp-th-label">
+                          {flexRender(h.column.columnDef.header, h.getContext())}
+                        </span>
                         {sorted === "asc" ? (
                           <ArrowUp className="size-3" aria-hidden />
                         ) : sorted === "desc" ? (
@@ -304,7 +317,9 @@ export function DataTable<T>({
                         )}
                       </button>
                     ) : (
-                      flexRender(h.column.columnDef.header, h.getContext())
+                      <span className="qp-th-label">
+                        {flexRender(h.column.columnDef.header, h.getContext())}
+                      </span>
                     )}
                   </TH>
                 );

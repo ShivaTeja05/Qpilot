@@ -4,7 +4,7 @@
  * act on the focused card; the proposals already decided fold away under the list.
  */
 import { CheckCircle2, ChevronRight, Inbox, Search, X } from "lucide-react";
-import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { AnimatePresence, MotionConfig, motion, useIsPresent } from "motion/react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { count, dateTime, relativeTime } from "@/lib/format";
@@ -13,6 +13,7 @@ import {
   CHECK,
   KIND_TITLE,
   STATUS_WORDS,
+  deciderWords,
   describeProposal,
   effectivePayload,
   type CheckStatus,
@@ -36,9 +37,32 @@ import {
 } from "./hooks";
 import { Warming } from "./parts";
 import { ProposalCard, type ProposalCardHandle, type ProposalCardProps } from "./ProposalCard";
+import { refutedGroups, refutedWords } from "./groups";
 
 const PAGE = 20;
 type CheckFilter = "all" | CheckStatus;
+
+/**
+ * A card's content, inert from the moment it leaves the list: a decided card never offers
+ * Accept or Reject again while its exit animation runs (or, in a background tab where the
+ * browser pauses animations, while it waits to run).
+ */
+function Present({ children }: { children: ReactNode }) {
+  const present = useIsPresent();
+  return (
+    <div inert={!present} aria-hidden={present ? undefined : true}>
+      {children}
+    </div>
+  );
+}
+
+/** How a card leaves: animated alone; several at once (a bulk decision) leave at once. */
+const LEAVE = {
+  exit: (many: boolean) =>
+    many
+      ? { opacity: 0, height: 0, marginTop: 0, transition: { duration: 0 } }
+      : { opacity: 0, height: 0, marginTop: 0, transition: { duration: 0.18 } },
+};
 
 /** A filter the section sets from outside (a well clicked on the plate map, say). */
 export interface InboxFilter {
@@ -151,7 +175,27 @@ export function StageInbox({
         (!q || searchable(p).includes(q)),
     );
   }, [pendingAll, checkNow, kindNow, filter, query]);
-  const visible = pending.slice(0, shown);
+  // Many refuted well calls of one target read the same way fold into one line each (the
+  // engine refutes every one); "Show all" opens that group's cards. Folding decides nothing.
+  const [unfolded, setUnfolded] = useState<ReadonlySet<string>>(() => new Set());
+  const folded = useMemo(
+    () => (arriving ? [] : refutedGroups(pending).filter((g) => !unfolded.has(g.key))),
+    [pending, unfolded, arriving],
+  );
+  const listed = useMemo(() => {
+    const hidden = new Set(folded.flatMap((g) => g.ids));
+    return hidden.size ? pending.filter((p) => !hidden.has(p.id)) : pending;
+  }, [pending, folded]);
+  const visible = listed.slice(0, shown);
+  // Several cards leaving at once (a bulk accept or reject) leave without an animation.
+  const idsKey = visible.map((p) => p.id).join(" ");
+  const [lastShown, setLastShown] = useState({ key: idsKey, many: false });
+  let manyLeaving = lastShown.many;
+  if (lastShown.key !== idsKey) {
+    const kept = new Set(visible.map((p) => p.id));
+    manyLeaving = lastShown.key.split(" ").filter((id) => id && !kept.has(id)).length > 1;
+    setLastShown({ key: idsKey, many: manyLeaving });
+  }
 
   const focusIndex = visible.findIndex((p) => p.id === focusAt.id);
   // No card is focused until the person moves (j/k) or clicks one.
@@ -163,13 +207,13 @@ export function StageInbox({
   }, [focused, onFocusProposal]);
 
   const move = (delta: number) => {
-    if (!pending.length) return;
+    if (!listed.length) return;
     const next = Math.max(
       0,
-      Math.min(pending.length - 1, (effectiveIndex < 0 ? -1 : effectiveIndex) + delta),
+      Math.min(listed.length - 1, (effectiveIndex < 0 ? -1 : effectiveIndex) + delta),
     );
     if (next >= shown) setShown((n) => n + PAGE);
-    const p = pending[next];
+    const p = listed[next];
     if (p) {
       setFocusAt({ id: p.id, index: next });
       requestAnimationFrame(() => refs.current.get(p.id)?.focus());
@@ -184,7 +228,7 @@ export function StageInbox({
       e: () => focused && refs.current.get(focused.id)?.edit(),
       x: () => focused && refs.current.get(focused.id)?.reject(),
     },
-    hotkeys && pending.length > 0,
+    hotkeys && listed.length > 0,
   );
 
   if (list.isPending) return <LoadingBlock label="Reading the proposals" lines={6} />;
@@ -311,7 +355,7 @@ export function StageInbox({
                 : `${count(pendingAll.length)} waiting`}
               {" · "}
               {arriving ? "in arrival order" : "contradicted first"}
-              <span className="hidden sm:inline">
+              <span className="hidden sm:inline pointer-coarse:hidden">
                 {" · "}
                 <Kbd>j</Kbd> <Kbd>k</Kbd> move · <Kbd>a</Kbd> <Kbd>e</Kbd> <Kbd>x</Kbd> accept,
                 edit, reject
@@ -326,9 +370,35 @@ export function StageInbox({
           </EmptyState>
         ) : null}
 
-        {pending.length ? (
+        {folded.length ? (
+          <ul aria-label="Refuted proposals, folded" className="flex flex-col gap-2">
+            {folded.map((g) => (
+              <li
+                key={g.key}
+                className="flex flex-col gap-2 rounded-xl border border-line bg-surface px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <p className="text-[13px] text-muted">
+                  <CheckTag status="contradicted" />{" "}
+                  <span className="text-fg">{refutedWords(g)}</span> Each still waits for you: open
+                  them one by one, or reject them together with one reason (Reject contradicted…
+                  above).
+                </p>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="self-start sm:self-center"
+                  onClick={() => setUnfolded((s) => new Set([...s, g.key]))}
+                >
+                  Show all {count(g.ids.length)}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {listed.length ? (
           <ul aria-label={label} className="flex flex-col gap-3">
-            <AnimatePresence initial={false}>
+            <AnimatePresence initial={false} custom={manyLeaving}>
               {visible.map((p) => (
                 <motion.li
                   key={p.id}
@@ -336,45 +406,49 @@ export function StageInbox({
                   // No fade-in: a card is readable at full contrast from its first frame (axe
                   // measured cards still fading in). Only a card that leaves is animated.
                   initial={false}
-                  exit={{ opacity: 0, height: 0, marginTop: 0, transition: { duration: 0.18 } }}
+                  variants={LEAVE}
+                  exit="exit"
+                  custom={manyLeaving}
                   transition={{ duration: 0.16, ease: "easeOut" }}
                 >
-                  <ProposalCard
-                    ref={(h) => {
-                      if (h) refs.current.set(p.id, h);
-                      else refs.current.delete(p.id);
-                    }}
-                    proposal={p}
-                    quotes={lookup}
-                    sheetCells={sheetCells}
-                    resultsVisible={resultsVisible}
-                    focused={focused?.id === p.id}
-                    onFocusCard={() => setFocusAt({ id: p.id, index: visible.indexOf(p) })}
-                    onAccept={(reason) => actions.accept(p.id, reason)}
-                    onEdit={(edits, reason) => actions.edit(p.id, edits, reason)}
-                    onReject={(reason) => actions.reject(p.id, reason)}
-                    onCheckEdit={(edits) => checkEdit(p.id, edits)}
-                    onAskMatters={() => void matters.ask(p.id)}
-                    mattersJob={matters.jobOf(p.id)}
-                    onOpenWell={onOpenWell}
-                    editOptions={editOptions}
-                    {...cardProps?.(p)}
-                  >
-                    {cardExtra?.(p)}
-                  </ProposalCard>
+                  <Present>
+                    <ProposalCard
+                      ref={(h) => {
+                        if (h) refs.current.set(p.id, h);
+                        else refs.current.delete(p.id);
+                      }}
+                      proposal={p}
+                      quotes={lookup}
+                      sheetCells={sheetCells}
+                      resultsVisible={resultsVisible}
+                      focused={focused?.id === p.id}
+                      onFocusCard={() => setFocusAt({ id: p.id, index: visible.indexOf(p) })}
+                      onAccept={(reason) => actions.accept(p.id, reason)}
+                      onEdit={(edits, reason) => actions.edit(p.id, edits, reason)}
+                      onReject={(reason) => actions.reject(p.id, reason)}
+                      onCheckEdit={(edits) => checkEdit(p.id, edits)}
+                      onAskMatters={() => void matters.ask(p.id)}
+                      mattersJob={matters.jobOf(p.id)}
+                      onOpenWell={onOpenWell}
+                      editOptions={editOptions}
+                      {...cardProps?.(p)}
+                    >
+                      {cardExtra?.(p)}
+                    </ProposalCard>
+                  </Present>
                 </motion.li>
               ))}
             </AnimatePresence>
           </ul>
         ) : null}
-        {pending.length > shown ? (
+        {listed.length > shown ? (
           <Button
             variant="secondary"
             className="self-center"
             onClick={() => setShown((s) => s + PAGE)}
           >
-            Show {count(Math.min(PAGE, pending.length - shown))} more (
-            {count(pending.length - shown)} not shown)
+            Show {count(Math.min(PAGE, listed.length - shown))} more ({count(listed.length - shown)}{" "}
+            not shown)
           </Button>
         ) : null}
 
@@ -406,7 +480,7 @@ export function StageInbox({
   );
 }
 
-/** Who decided and when, in words: "Rejected by a person · 20 Oct 2026, 21:24 (2 h ago)". */
+/** Who decided and when, in words: "Rejected by you · 20 Oct 2026, 21:24 (2 h ago)". */
 export function decidedLine(
   p: Pick<Proposal, "status" | "decided_by" | "decided_at" | "superseded_by">,
 ): string {
@@ -414,7 +488,7 @@ export function decidedLine(
     p.status === "superseded"
       ? `replaced by a newer proposal${p.superseded_by ? ` (${p.superseded_by})` : ""}`
       : p.decided_by === "human"
-        ? `${STATUS_WORDS[p.status]} by a person`
+        ? `${STATUS_WORDS[p.status]} by ${deciderWords("human")}`
         : STATUS_WORDS[p.status];
   const when = p.decided_at ? ` · ${dateTime(p.decided_at)} (${relativeTime(p.decided_at)})` : "";
   return `${who.charAt(0).toUpperCase()}${who.slice(1)}${when}`;

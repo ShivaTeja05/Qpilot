@@ -27,6 +27,7 @@ import {
   TH,
   THead,
   TR,
+  SetsNote,
 } from "@/ui";
 import { asExported, useReport, useReportExports, type ReportFormat, type ReportView } from "./api";
 import { Cited } from "./Cited";
@@ -59,7 +60,7 @@ function scrollTo(id: PartId) {
   el.focus({ preventScroll: true });
 }
 
-export default function ReportSection({ workspace }: SectionProps) {
+export default function ReportSection({ workspace, rest }: SectionProps) {
   const key = workspace?.key ?? "";
   const studyId = workspace?.study_id ?? null;
   const readable = studyId && workspace?.results_visible !== false ? studyId : null;
@@ -78,6 +79,13 @@ export default function ReportSection({ workspace }: SectionProps) {
 
   const files = exports.data?.exports ?? [];
   const passport = files.find((f) => f.format === "passport" && f.record) ?? null;
+
+  // A deep link to one part (`report/run-review`, from Controls' "What to repeat") lands on it.
+  const part = PARTS.find((x) => x.id === rest?.[0])?.id ?? null;
+  const loaded = Boolean(report.data);
+  useEffect(() => {
+    if (part && loaded) requestAnimationFrame(() => scrollTo(part));
+  }, [part, loaded]);
 
   const header = (
     <PageHeader
@@ -246,6 +254,11 @@ function Document({
                 ) : null;
               })}
             </ul>
+            <SetsNote
+              grid={gridCount(view)}
+              reasonable={view.audit.reasonable}
+              full={view.audit.analyses}
+            />
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-muted">
               <span>
                 Input <Hash value={h.input_sha256} length={12} />
@@ -321,7 +334,7 @@ function Document({
         <Part
           id="facts"
           title="Every number, and where it comes from"
-          hint="f_… ids are the engine's own facts; f_rpt_… ids are values the report read from the study (the path says where)."
+          hint="Every number this report cites, its value and where it comes from: the engine's own results, or a value the report read from the study's files (the path says which file and where in it)."
         >
           <FactsTable view={view} />
         </Part>
@@ -361,6 +374,12 @@ function Part({
   );
 }
 
+/** qPilot's choice grid, as the report cites it (`f_n_cells`), when the study has one. */
+function gridCount(view: ReportView): number | null {
+  const n = Number(view.facts.f_n_cells?.value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 function FactsTable({ view }: { view: ReportView }) {
   const [open, setOpen] = useState(false);
   const facts = useMemo(() => Object.values(view.facts), [view.facts]);
@@ -385,7 +404,9 @@ function FactsTable({ view }: { view: ReportView }) {
           <Table caption="Every fact the report cites, its value and where it comes from">
             <THead>
               <TR>
-                <TH>Fact</TH>
+                <TH title="The number's name in the Analysis Record: f_… is the engine's own; f_rpt_… one the report read from the study's files.">
+                  Name
+                </TH>
                 <TH numeric>Value</TH>
                 <TH>From</TH>
               </TR>

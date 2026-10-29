@@ -835,6 +835,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{sid}/cq-table": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Cq Table
+         * @description A Cq-only file's Cq table for the curves stage (blind: no group, no comparison).
+         */
+        get: operations["get_cq_table"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{sid}/curve": {
         parameters: {
             query?: never;
@@ -867,6 +887,106 @@ export type paths = {
          * @description Each well of one target called under every rule (and the Curve Judge where validated).
          */
         get: operations["get_curve_calls"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/design/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Design
+         * @description What recording these items would do, with the engine's check of each (writes nothing).
+         */
+        post: operations["check_design"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/design/editor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Editor
+         * @description The design editor: every sample and target, the design so far, what it still needs.
+         */
+        get: operations["get_editor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/design/set": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set Design
+         * @description Record design items as the person's own decisions (each checked; one reason for all).
+         */
+        post: operations["set_design"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/design/template.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Template
+         * @description A sample sheet pre-filled with this plate's samples and targets (CSV, opens in Excel).
+         */
+        get: operations["get_template"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/melt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Session Melt
+         * @description A session's melt curves, judged on its confirmed design (409 until it is confirmed).
+         */
+        get: operations["get_session_melt"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1006,9 +1126,36 @@ export type paths = {
         put?: never;
         /**
          * Prism Roundtrip
-         * @description Compare what Prism sent back with the bundle; each change becomes a proposal.
+         * @description Compare what came back from Prism with the bundle; each change becomes a proposal.
+         *
+         *     What came back is the project Prism saved (a ``.pzfx`` file, or the folder holding it:
+         *     the bundle folder when Prism runs on this computer) or ``send_back.pzc``'s CSV folder.
          */
         post: operations["prism_roundtrip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/prism/roundtrip/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prism Roundtrip Upload
+         * @description The round trip from an uploaded project: the ``.pzfx`` a person saved in Prism.
+         *
+         *     For Prism on another computer: the file is kept inside the bundle's folder
+         *     (``returned/``) and compared like a project saved there. The blind gate answers before
+         *     the form is checked (both fields are required).
+         */
+        post: operations["prism_roundtrip_upload"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1025,6 +1172,9 @@ export type paths = {
         /**
          * Prism Routes
          * @description How often the usual Excel→Prism routes would change a conclusion on this study.
+         *
+         *     The answer is the study's stored facts, so it is kept per study and results file (its
+         *     size and time): only the blind gate runs again on a warm request.
          */
         get: operations["prism_routes"];
         put?: never;
@@ -1206,7 +1356,10 @@ export type paths = {
         put?: never;
         /**
          * Propose Axis
-         * @description The rule proposes testing a further choice (the efficiency models), or no longer testing it.
+         * @description The rule proposes testing a further choice, or no longer testing it.
+         *
+         *     The further choices: the efficiency models, the normaliser (NormFinder's and geNorm's best
+         *     pairs, the global mean) and the correction between plates (inter-run calibrator, factor).
          *
          *     It joins the choices stage's inbox; nothing changes until a person accepts it, and then the
          *     study is analysed again with the choice as one more dimension of the grid. Results only
@@ -1294,6 +1447,28 @@ export type paths = {
         get: operations["get_quarantine"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/sheet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attach Sheet
+         * @description Attach a sample sheet to this session (no need to open the files again).
+         *
+         *     The rules then propose again from it (a job). Nothing is decided.
+         */
+        post: operations["attach_sheet"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1892,6 +2067,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/comparisons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Comparisons
+         * @description Every comparison of the study side by side: each gene's call, fold change, p and q.
+         */
+        get: operations["get_comparisons"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/decisions": {
         parameters: {
             query?: never;
@@ -2063,6 +2258,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/genes/{gene}/units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Gene Units
+         * @description One compared gene's biological units, with their wells, at the planned analysis.
+         */
+        get: operations["get_gene_units"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/history": {
         parameters: {
             query?: never;
@@ -2189,6 +2404,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/melt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Study Melt
+         * @description A study's melt curves: one plate's assays and calls, and the curves of the wells asked.
+         */
+        get: operations["get_study_melt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/planner": {
         parameters: {
             query?: never;
@@ -2253,6 +2488,86 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/quantities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Quantities
+         * @description The study's standard curves and how many units each assay quantified.
+         */
+        get: operations["get_quantities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/quantities/{target}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Assay Quantities
+         * @description One assay: every curve with its points and prediction band, every unit's quantity.
+         */
+        get: operations["get_assay_quantities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/quantities/reaction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Reaction
+         * @description A person records the template volume and input amount of one reaction (with a reason).
+         */
+        post: operations["post_reaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/quantities/standards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Standards
+         * @description The rule proposes leaving out each standard that looks wrong; a person decides each.
+         */
+        post: operations["post_standards"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/record": {
         parameters: {
             query?: never;
@@ -2285,6 +2600,26 @@ export type paths = {
          * @description The records of this study in qPilot's export folder, newest first.
          */
         get: operations["list_records"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/references": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get References
+         * @description Both rankings (geNorm, NormFinder) of the study's candidate reference genes.
+         */
+        get: operations["get_references"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2353,6 +2688,46 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/report/figure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Figure File
+         * @description One gene's figure as SVG (editable text), 300-dpi PNG, or its source data as CSV.
+         */
+        get: operations["figure_file"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/report/figure/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Figure Info
+         * @description One gene's figure: what it shows, its caption (from the engine's facts), its files.
+         */
+        get: operations["figure_info"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/results": {
         parameters: {
             query?: never;
@@ -2385,6 +2760,46 @@ export type paths = {
          * @description The Run Review: headline genes, the Evidence Ledger and the recorded sign-offs.
          */
         get: operations["get_review"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/review/repeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Repeat
+         * @description What to repeat and why, ranked by consequence, and the repeat plate (read-only).
+         */
+        get: operations["get_repeat"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/review/repeat.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Repeat Csv
+         * @description The repeat plate as the planner's CSV (plate, well, sample, group, target, type).
+         */
+        get: operations["get_repeat_csv"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2513,6 +2928,30 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/where-to-look/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Decide Place
+         * @description A person's Decide… in a Studio session: the option leaves wells out or puts them back.
+         *
+         *     The place is traced again at the analysis in use and must still be the one shown (``stale``
+         *     when the chain head moved); only an option that changes the analysis (keep or a set-aside)
+         *     is applied. The study is analysed again (the ``analyse`` job) when the design changed.
+         */
+        post: operations["post_decide_place"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/where-to-look/open": {
         parameters: {
             query?: never;
@@ -2533,6 +2972,46 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/where-to-look/put-back": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Put Back
+         * @description A person puts back the wells they set aside at a place (a Studio session only).
+         */
+        post: operations["post_put_back"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/where-to-look/set-aside": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Set Aside
+         * @description What a person set aside from Trace in this session that is out of the analysis now.
+         */
+        get: operations["get_set_aside"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/system": {
         parameters: {
             query?: never;
@@ -2545,6 +3024,26 @@ export type paths = {
          * @description What this install is, which model it uses and what it never does.
          */
         get: operations["system"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tools/copies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Copies
+         * @description How many copies ``ng`` of a ``length``-long molecule hold, and its dilution series.
+         */
+        get: operations["get_copies"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2791,10 +3290,10 @@ export type components = {
         AgentTool: {
             /**
              * Access
-             * @description read: changes nothing; open: opens a file as a study or session (decides nothing); propose: adds a proposal only a person can accept; request: asks to decide a Decision Card (a choice that can change a conclusion waits for a person).
+             * @description read: changes nothing; open: opens a file as a study or session (decides nothing); propose: adds a proposal only a person can accept; request: asks to decide a Decision Card or to set wells aside (a choice that can change a conclusion waits for a person); export: writes a new file from the study's numbers (decides nothing).
              * @enum {string}
              */
-            access: "read" | "open" | "propose" | "request";
+            access: "read" | "open" | "propose" | "request" | "export";
             /**
              * Description
              * @description The whole description an agent reads, as text.
@@ -2975,6 +3474,48 @@ export type components = {
             why: string;
         };
         /**
+         * AssayQuantities
+         * @description One assay: every curve in full and every unit's quantity.
+         */
+        AssayQuantities: {
+            /** Curves */
+            curves: components["schemas"]["CurveDetail"][];
+            reaction?: components["schemas"]["ReactionView"] | null;
+            settings: components["schemas"]["QuantitiesSettings"];
+            /** Study Id */
+            study_id: string;
+            /** Target */
+            target: string;
+            /** Unit */
+            unit: string;
+            /** Units */
+            units: components["schemas"]["UnitQuantity"][];
+        };
+        /**
+         * AssaySummary
+         * @description One assay: its curves and how many units were quantified or flagged.
+         */
+        AssaySummary: {
+            /**
+             * By Class
+             * @description Units by what is reported for them (class id -> count).
+             * @default {}
+             */
+            by_class: {
+                [key: string]: number;
+            };
+            /** Curves */
+            curves: components["schemas"]["CurveSummary"][];
+            /** N Flagged */
+            n_flagged: number;
+            /** N Quantified */
+            n_quantified: number;
+            /** N Units */
+            n_units: number;
+            /** Target */
+            target: string;
+        };
+        /**
          * AtChoices
          * @description A gene's result at the options a person chose on the Decision Cards (from the grid).
          */
@@ -3109,6 +3650,11 @@ export type components = {
          * @description Whether the robustness audit ran on this study (details: the Audit section).
          */
         AuditBadge: {
+            /**
+             * Analyses
+             * @description Every analysis the audit ran (90,396 on the demo).
+             */
+            analyses?: number | null;
             /** Chain Head */
             chain_head?: string | null;
             /**
@@ -3117,6 +3663,17 @@ export type components = {
              * @default false
              */
             current: boolean;
+            /**
+             * Decisions
+             * @description The audit's decision ids (efficiency, flagged, late_cq, nondetect, refs, cut, test, multiplicity, replicates): what it varies, to say how it differs from qPilot's grid.
+             * @default []
+             */
+            decisions: string[];
+            /**
+             * Reasonable
+             * @description The audit's reasonable set its verdicts count (144 on the demo); not qPilot's choice grid (GeneRow.n_cells).
+             */
+            reasonable?: number | null;
             /**
              * Status
              * @enum {string}
@@ -3205,6 +3762,28 @@ export type components = {
              * @description Share of the spread it explains, of 100.
              */
             spread: number;
+        };
+        /**
+         * AuditComparisons
+         * @description A study with several comparisons: the one the audit audits, and that it is only that one.
+         */
+        AuditComparisons: {
+            /**
+             * Audited
+             * @description The comparison audited (its id): the study's first.
+             */
+            audited: string;
+            /** Audited Label */
+            audited_label: string;
+            /** Correction */
+            correction: string;
+            /** N Comparisons */
+            n_comparisons: number;
+            /**
+             * Note
+             * @description What the audit audits, in plain words.
+             */
+            note: string;
         };
         /**
          * AuditDecision
@@ -3845,6 +4424,48 @@ export type components = {
             m_value?: number | null;
         };
         /**
+         * AuditReplicates
+         * @description How a design's technical replicates were audited (several wells per unit and gene).
+         */
+        AuditReplicates: {
+            /**
+             * Most Wells Per Value
+             * @description The most wells behind one unit's value.
+             */
+            most_wells_per_value: number;
+            /**
+             * Rule
+             * @description The planned rule: qPilot's mean of log2 N0.
+             * @constant
+             */
+            rule: "mean";
+            /**
+             * Values
+             * @description Unit-and-gene values in the audit.
+             */
+            values: number;
+            /**
+             * Values With Several Wells
+             * @description Unit-and-gene values with 2+ wells.
+             */
+            values_with_several_wells: number;
+            /**
+             * Varied
+             * @description The audit also varied how the wells are combined (three or more wells).
+             */
+            varied: boolean;
+            /**
+             * Wells
+             * @description Study wells behind them.
+             */
+            wells: number;
+            /**
+             * Words
+             * @description What was done, in plain words.
+             */
+            words: string;
+        };
+        /**
          * AuditReproduction
          * @description The audit's contract: its planned analysis reproduces qPilot's stored result.
          */
@@ -3990,6 +4611,8 @@ export type components = {
             amplification_rule: string;
             /** Analyses In Full Grid */
             analyses_in_full_grid: number;
+            /** @description Set for a study with several comparisons: the audit audits the first. */
+            comparisons?: components["schemas"]["AuditComparisons"] | null;
             /** Control Gene Candidates */
             control_gene_candidates: string[];
             /**
@@ -4019,6 +4642,8 @@ export type components = {
             prespecified_control_genes: string[];
             /** Reference Sets */
             reference_sets: number;
+            /** @description Set when the design has technical replicates (absent with one well per unit and gene, as on the demo). */
+            technical_replicates?: components["schemas"]["AuditReplicates"] | null;
             /** Undetermined Aligned */
             undetermined_aligned: number;
             /** Wells Excluded By A Person */
@@ -4447,7 +5072,7 @@ export type components = {
         };
         /**
          * AxisView
-         * @description A further choice the grid can test on request (the efficiency models).
+         * @description A further choice the grid can test on request (efficiency, normaliser, between plates).
          */
         AxisView: {
             /**
@@ -4485,6 +5110,28 @@ export type components = {
             /** Title */
             title: string;
         };
+        /**
+         * BandPoint
+         * @description The fitted line and its 95 % prediction band for one new well, at one log10 quantity.
+         */
+        BandPoint: {
+            /** Cq */
+            cq: number;
+            /** High */
+            high: number;
+            /** Log10 Quantity */
+            log10_quantity: number;
+            /** Low */
+            low: number;
+        };
+        /** Body_attach_sheet */
+        Body_attach_sheet: {
+            /**
+             * Sheet
+             * @description The sample sheet (.csv, .tsv, .xlsx or .xlsm).
+             */
+            sheet: string;
+        };
         /** Body_link_gate_run_file */
         Body_link_gate_run_file: {
             /** Plate */
@@ -4517,6 +5164,19 @@ export type components = {
              * @description Optional sample sheet.
              */
             sheet?: string | null;
+        };
+        /** Body_prism_roundtrip_upload */
+        Body_prism_roundtrip_upload: {
+            /**
+             * Bundle
+             * @description A bundle id from `…/prism/bundles`.
+             */
+            bundle?: string | null;
+            /**
+             * Project
+             * @description The project Prism saved (.pzfx).
+             */
+            project?: string | null;
         };
         /** Body_read_run */
         Body_read_run: {
@@ -4785,6 +5445,38 @@ export type components = {
             warnings: components["schemas"]["CaptureNote"][];
         };
         /**
+         * CardComparison
+         * @description What one Decision Card's choice does in one comparison of a study with several.
+         */
+        CardComparison: {
+            /**
+             * Flips
+             * @description A call of this comparison changes with this choice alone.
+             */
+            flips: boolean;
+            /**
+             * Flips Elsewhere
+             * @description It changes no call here at the planned settings, but does at other ones.
+             */
+            flips_elsewhere: boolean;
+            /**
+             * Genes
+             * @description The genes whose call changes (this choice alone).
+             */
+            genes: string[];
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * N Flipped
+             * @description How many of its calls change with this choice alone.
+             */
+            n_flipped: number;
+            /** Primary */
+            primary: boolean;
+        };
+        /**
          * CardOption
          * @description One option on a Decision Card and its consequence for each headline gene.
          */
@@ -4803,6 +5495,12 @@ export type components = {
          * @description One option of a Decision Card.
          */
         CardOptionView: {
+            /**
+             * By Comparison
+             * @description A study with several comparisons: this option's consequences in each other comparison (the first comparison's are `effects`).
+             * @default []
+             */
+            by_comparison: components["schemas"]["OptionComparisonEffects"][];
             /** Chosen */
             chosen: boolean;
             /** Effects */
@@ -4812,10 +5510,22 @@ export type components = {
             /** Label */
             label: string;
             /**
+             * N Quantities Changed
+             * @description How many sample results this option reports differently.
+             * @default 0
+             */
+            n_quantities_changed: number;
+            /**
              * Not Recommended
              * @description E.g. a single control gene (MIQE).
              */
             not_recommended: boolean;
+            /**
+             * Quantities
+             * @description A quantification study's card: the sample results this option reports differently from the recommended one (at most 60 listed).
+             * @default []
+             */
+            quantities: components["schemas"]["QuantityChange"][];
             /** Recommended */
             recommended: boolean;
             /**
@@ -4873,6 +5583,12 @@ export type components = {
             card: components["schemas"]["DecisionCard"];
             /** @description The decision in force was carried from an earlier analysis. */
             carried?: components["schemas"]["CarriedFrom"] | null;
+            /**
+             * Comparisons
+             * @description A study with several comparisons: what this choice does in each one.
+             * @default []
+             */
+            comparisons: components["schemas"]["CardComparison"][];
             explanation: components["schemas"]["FactText"];
             /**
              * Genes
@@ -4893,6 +5609,11 @@ export type components = {
             place?: components["schemas"]["CardPlace"] | null;
             /** Status Line */
             status_line: string;
+            /**
+             * Study Wide
+             * @description A study with several comparisons: that deciding applies to every one.
+             */
+            study_wide?: string | null;
             /** Title */
             title: string;
             /** Undo Label */
@@ -5101,7 +5822,7 @@ export type components = {
              * Check
              * @enum {string}
              */
-            check: "gene" | "direction" | "fold" | "p" | "significance" | "robust" | "normaliser" | "efficiency" | "n" | "grid" | "audit" | "choices" | "reading";
+            check: "gene" | "groups" | "direction" | "fold" | "p" | "significance" | "robust" | "normaliser" | "efficiency" | "n" | "grid" | "audit" | "choices" | "reading";
             /**
              * Status
              * @enum {string}
@@ -5152,7 +5873,7 @@ export type components = {
              * Intent
              * @enum {string}
              */
-            intent: "supported" | "choices" | "overstated" | "contradicted" | "unchecked";
+            intent: "supported" | "choices" | "overstated" | "contradicted" | "mismatch" | "unchecked";
             /** Text */
             text: string;
             /**
@@ -5268,6 +5989,16 @@ export type components = {
              * @description Control genes named.
              */
             normaliser: string[];
+            /**
+             * Normaliser Scope
+             * @description Where the normaliser was read: in the claim's own sentence, a sentence stating it for all the data, the sentence after the claim referring back, or a sentence naming this gene.
+             */
+            normaliser_scope?: ("own" | "text" | "previous" | "gene") | null;
+            /**
+             * Other Groups
+             * @description Groups the words name that the study does not compare, as written.
+             */
+            other_groups?: string[];
             /**
              * P Adjusted
              * @default false
@@ -5484,7 +6215,7 @@ export type components = {
             sentence: components["schemas"]["TextRange"];
             /**
              * Severity
-             * @description Sort key: contradicted 4 … supported 0.
+             * @description Sort key: contradicted 5, different groups 4 … supported 0.
              */
             severity: number;
             /** Spans */
@@ -5495,7 +6226,7 @@ export type components = {
              * Verdict
              * @enum {string}
              */
-            verdict: "supported" | "choices" | "overstated" | "contradicted" | "unchecked";
+            verdict: "supported" | "choices" | "overstated" | "contradicted" | "mismatch" | "unchecked";
             /** Verdict Label */
             verdict_label: string;
         };
@@ -5525,6 +6256,231 @@ export type components = {
             n_entries: number;
             /** Study Id */
             study_id: string;
+        };
+        /**
+         * ComparisonCell
+         * @description One gene in one comparison (the engine's numbers at the planned analysis).
+         */
+        ComparisonCell: {
+            /**
+             * At Your Choices
+             * @description The call at the options a person chose on the cards, when they differ from the planned ones.
+             */
+            at_your_choices?: ("up" | "down" | "none") | null;
+            /** Ci */
+            ci: [
+                number,
+                number
+            ];
+            /**
+             * Conclusion
+             * @enum {string}
+             */
+            conclusion: "up" | "down" | "none";
+            /** Fc */
+            fc: number;
+            /**
+             * Holds
+             * @description Share of the grid with the same call.
+             */
+            holds?: number | null;
+            /** Level */
+            level?: string | null;
+            /** Log2Fc */
+            log2fc: number;
+            /** N A */
+            n_a: number;
+            /** N B */
+            n_b: number;
+            /**
+             * P
+             * @description Uncorrected p-value of this comparison's test.
+             */
+            p: number;
+            /**
+             * P Adjusted
+             * @description The p-value the call uses: Holm-corrected across the gene's comparisons (equal to p without a correction).
+             */
+            p_adjusted: number;
+            /**
+             * Q
+             * @description Benjamini-Hochberg q-value across the genes of this comparison.
+             */
+            q: number;
+        };
+        /**
+         * ComparisonGeneRow
+         * @description One gene across every comparison (``cells`` in the order of ``comparisons``).
+         */
+        ComparisonGeneRow: {
+            /**
+             * Cells
+             * @description None where that comparison cannot test the gene.
+             */
+            cells: (components["schemas"]["ComparisonCell"] | null)[];
+            /** Gene */
+            gene: string;
+            /** Headline */
+            headline: boolean;
+            /**
+             * N Called
+             * @description Comparisons in which the gene is called up or down.
+             */
+            n_called: number;
+            /**
+             * Omnibus Groups Used
+             * @description How many of omnibus_groups the ANOVA used for this gene (a group with fewer than two values is left out).
+             */
+            omnibus_groups_used?: number | null;
+            /**
+             * Omnibus P
+             * @description Welch's one-way ANOVA p across omnibus_groups (orientation, never a call).
+             */
+            omnibus_p?: number | null;
+            /**
+             * Omnibus Words
+             * @description When a group was left out: how many, in words; else empty.
+             * @default
+             */
+            omnibus_words: string;
+        };
+        /**
+         * ComparisonInfo
+         * @description One comparison of the study: its groups, sizes and how many genes it calls.
+         */
+        ComparisonInfo: {
+            /** Group A */
+            group_a: string;
+            /** Group B */
+            group_b: string;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * N A
+             * @description Biological units in group A (pairs, when paired).
+             */
+            n_a: number;
+            /**
+             * N B
+             * @description Biological units in group B (pairs, when paired).
+             */
+            n_b: number;
+            /** N Down */
+            n_down: number;
+            /**
+             * N Pairs
+             * @description Complete pairs (paired designs only).
+             */
+            n_pairs?: number | null;
+            /** N Tested */
+            n_tested: number;
+            /** N Up */
+            n_up: number;
+            /**
+             * Not Tested
+             * @description Genes this comparison cannot test, and why.
+             * @default {}
+             */
+            not_tested: {
+                [key: string]: string;
+            };
+            /**
+             * Primary
+             * @description The first comparison: listed first everywhere, and the one the audit audits.
+             */
+            primary: boolean;
+        };
+        /**
+         * ComparisonNote
+         * @description A plain-words note on what follows the comparisons, and what shows only the first.
+         */
+        ComparisonNote: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "correction" | "paired" | "primary_only" | "not_measured" | "q_value" | "omnibus";
+            /** Text */
+            text: string;
+        };
+        /**
+         * ComparisonsView
+         * @description Every comparison of a study, side by side.
+         */
+        ComparisonsView: {
+            /** Comparisons */
+            comparisons: components["schemas"]["ComparisonInfo"][];
+            /** Control */
+            control?: string | null;
+            /**
+             * Correction
+             * @enum {string}
+             */
+            correction: "holm" | "none" | "dunnett" | "tukey";
+            /** Correction Words */
+            correction_words: string;
+            /** Genes */
+            genes: components["schemas"]["ComparisonGeneRow"][];
+            /**
+             * Not Measured
+             * @description Gene -> the units it was not measured in (left out of it only).
+             * @default {}
+             */
+            not_measured: {
+                [key: string]: string;
+            };
+            /**
+             * Notes
+             * @default []
+             */
+            notes: components["schemas"]["ComparisonNote"][];
+            /**
+             * Omnibus Groups
+             * @description The groups of the per-gene Welch ANOVA (three or more, unpaired designs).
+             * @default []
+             */
+            omnibus_groups: string[];
+            /** Pair By */
+            pair_by?: string | null;
+            /** Pattern */
+            pattern: string;
+            /**
+             * Rule Text
+             * @description When a gene is called up or down, in words.
+             */
+            rule_text: string;
+            /**
+             * Several
+             * @description The study has a comparison plan (several, or paired).
+             */
+            several: boolean;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Test
+             * @enum {string}
+             */
+            test: "welch" | "paired_t" | "pooled_t";
+            /** Test Words */
+            test_words: string;
+        };
+        /**
+         * ComparisonTab
+         * @description One comparison of a study with several, for the page's comparison picker.
+         */
+        ComparisonTab: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** N Down */
+            n_down: number;
+            /** N Up */
+            n_up: number;
+            /** Primary */
+            primary: boolean;
         };
         /**
          * ConfirmRequest
@@ -5608,6 +6564,242 @@ export type components = {
             target: string;
         };
         /**
+         * CopiesAnswer
+         * @description ng to copies for a standard: the numbers and the formula, in words.
+         */
+        CopiesAnswer: {
+            /**
+             * Copies
+             * @description Copies in that many ng.
+             */
+            copies: number;
+            /** Copies Per Ng */
+            copies_per_ng: number;
+            /** Formula */
+            formula: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "dsDNA" | "ssDNA" | "RNA";
+            /** Kind Words */
+            kind_words: string;
+            /** Length */
+            length: number;
+            /**
+             * Molar Mass
+             * @description g/mol of one molecule.
+             */
+            molar_mass: number;
+            /** Ng */
+            ng: number;
+            /** Reference */
+            reference: string;
+            /**
+             * Series
+             * @description A serial dilution from `copies` (when a step was given).
+             * @default []
+             */
+            series: number[];
+        };
+        /**
+         * CqCounts
+         * @description How many wells and replicate sets the table holds, and how many to look at.
+         */
+        CqCounts: {
+            /**
+             * N Controls With Cq
+             * @description Negative-control wells (NTC, no-RT…) with a Cq.
+             */
+            n_controls_with_cq: number;
+            /**
+             * N Late
+             * @description Wells with a Cq above 35.
+             */
+            n_late: number;
+            /**
+             * N Outside
+             * @description Replicate sets wider than G-REP expects.
+             */
+            n_outside: number;
+            /** N Sets */
+            n_sets: number;
+            /**
+             * N Study Without Cq
+             * @description Study-sample wells without a Cq (non-detects).
+             */
+            n_study_without_cq: number;
+            /**
+             * N Wells
+             * @description Wells of the analysed plates (left-out targets excluded).
+             */
+            n_wells: number;
+            /** N With Cq */
+            n_with_cq: number;
+            /** N Without Cq */
+            n_without_cq: number;
+        };
+        /**
+         * CqEfficiencyView
+         * @description One assay's efficiency: from its dilution series, or assumed to be 2.0.
+         */
+        CqEfficiencyView: {
+            /**
+             * Efficiency
+             * @description E (2.0: every cycle doubles the product).
+             */
+            efficiency: number;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "dilution_series" | "assumed";
+            /** Target */
+            target: string;
+            /** Words */
+            words: string;
+        };
+        /**
+         * CqSetView
+         * @description The wells of one sample and target on one plate (its technical replicates).
+         */
+        CqSetView: {
+            /**
+             * Flags
+             * @description What to look at, in plain words.
+             * @default []
+             */
+            flags: string[];
+            /** Mean Cq */
+            mean_cq?: number | null;
+            /** N Wells */
+            n_wells: number;
+            /** N With Cq */
+            n_with_cq: number;
+            /**
+             * Range Cq
+             * @description Highest minus lowest Cq of its wells with a Cq.
+             */
+            range_cq?: number | null;
+            /**
+             * Role
+             * @description Its sample type in the design (unkn, std, ntc, …).
+             */
+            role: string;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Sample Text Id */
+            sample_text_id?: string | null;
+            /**
+             * Spread
+             * @description G-REP's verdict on the replicate spread.
+             * @enum {string}
+             */
+            spread: "within" | "outside" | "not_evaluated";
+            /**
+             * Spread Words
+             * @description G-REP's sentence, or why it was not evaluated.
+             */
+            spread_words: string;
+            /** Target */
+            target: string;
+            /** Target Text Id */
+            target_text_id?: string | null;
+            /**
+             * Tolerance
+             * @description G-REP's expected range for this copy number (cycles).
+             */
+            tolerance?: number | null;
+            /** Wells */
+            wells: components["schemas"]["CqWellView"][];
+        };
+        /**
+         * CqTableView
+         * @description The Curves stage of a file of Cq values only (``cq_only: false`` for a file with curves).
+         */
+        CqTableView: {
+            counts?: components["schemas"]["CqCounts"] | null;
+            /** Cq Only */
+            cq_only: boolean;
+            /**
+             * Efficiencies
+             * @default []
+             */
+            efficiencies: components["schemas"]["CqEfficiencyView"][];
+            /** Key */
+            key: string;
+            /**
+             * Message
+             * @description What this stage is, in one or two sentences.
+             */
+            message: string;
+            /**
+             * Not Applicable
+             * @description The curve-based checks that do not apply, in plain words.
+             * @default []
+             */
+            not_applicable: string[];
+            /**
+             * Rule
+             * @description G-REP's statement (the rule pack's words).
+             * @default
+             */
+            rule: string;
+            /**
+             * Sets
+             * @default []
+             */
+            sets: components["schemas"]["CqSetView"][];
+            /**
+             * Shown
+             * @description The Cq values are shown (the design is confirmed).
+             */
+            shown: boolean;
+        };
+        /**
+         * CqWellView
+         * @description One well of a replicate set: its Cq as the file gives it, and whether it is used.
+         */
+        CqWellView: {
+            /**
+             * Cq
+             * @description The file's Cq (a cycle); none: no Cq.
+             */
+            cq?: number | null;
+            /**
+             * File Excluded
+             * @description The file's own exclusion note, if any.
+             * @default
+             */
+            file_excluded: string;
+            /**
+             * Key
+             * @description `plate/well`.
+             */
+            key: string;
+            /**
+             * Late
+             * @description Its Cq is above the latest Cq cut-off (35).
+             * @default false
+             */
+            late: boolean;
+            /**
+             * Left Out
+             * @description A person left it out of the analysis.
+             * @default false
+             */
+            left_out: boolean;
+            /**
+             * Used
+             * @description It has a Cq and no one left it out.
+             */
+            used: boolean;
+            /** Well */
+            well: string;
+        };
+        /**
          * CurveCallsView
          * @description Each well of one target called under every rule (facts about curves, no conclusion).
          */
@@ -5628,6 +6820,106 @@ export type components = {
             wells: components["schemas"]["WellCall"][];
         };
         /**
+         * CurveDetail
+         * @description A curve with every point, level and the prediction band (for the chart).
+         */
+        CurveDetail: {
+            /** Band */
+            band: components["schemas"]["BandPoint"][];
+            /**
+             * Efficiency
+             * @description 10^(-1/slope) - 1 (1.0 = 100 %).
+             */
+            efficiency?: number | null;
+            /** Efficiency High */
+            efficiency_high?: number | null;
+            /** Efficiency Low */
+            efficiency_low?: number | null;
+            /**
+             * Exact Interval
+             * @description Unknowns read from this curve alone get Fieller's interval.
+             * @default false
+             */
+            exact_interval: boolean;
+            /** Fitted */
+            fitted: boolean;
+            /**
+             * G
+             * @description t² s² / (slope² Sxx): above 0.05 an unknown's interval is Fieller's exact one, not the classical approximation.
+             */
+            g?: number | null;
+            /** Id */
+            id: string;
+            /** Intercept */
+            intercept?: number | null;
+            /** Levels */
+            levels: components["schemas"]["LevelView"][];
+            lod: components["schemas"]["LimitView"];
+            lod_model?: components["schemas"]["LimitView"] | null;
+            loq: components["schemas"]["LimitView"];
+            /** Lowest */
+            lowest?: number | null;
+            /**
+             * N Levels
+             * @default 0
+             */
+            n_levels: number;
+            /**
+             * N Unknowns
+             * @description Units read from this curve.
+             * @default 0
+             */
+            n_unknowns: number;
+            /**
+             * N Wells
+             * @default 0
+             */
+            n_wells: number;
+            /** Points */
+            points: components["schemas"]["StandardPointView"][];
+            /**
+             * Problem
+             * @default
+             */
+            problem: string;
+            /**
+             * Quantity Source
+             * @description design, file, name, or a mix joined with '+'.
+             */
+            quantity_source: string;
+            /** R2 */
+            r2?: number | null;
+            /** Runs */
+            runs: string[];
+            /**
+             * S Yx
+             * @description Residual SD of Cq about the line.
+             */
+            s_yx?: number | null;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "plate" | "pooled";
+            /** Slope */
+            slope?: number | null;
+            /**
+             * Suspects
+             * @description Detected standards that look wrong (never left out by qPilot).
+             * @default []
+             */
+            suspects: components["schemas"]["SuspectView"][];
+            /** Target */
+            target: string;
+            /** Top */
+            top?: number | null;
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
+        };
+        /**
          * CurveSeries
          * @description One well's raw curve.
          */
@@ -5644,6 +6936,100 @@ export type components = {
             target: string;
             /** Well */
             well: string;
+        };
+        /**
+         * CurveSummary
+         * @description One standard curve's numbers (per assay and plate, or pooled over plates).
+         */
+        CurveSummary: {
+            /**
+             * Efficiency
+             * @description 10^(-1/slope) - 1 (1.0 = 100 %).
+             */
+            efficiency?: number | null;
+            /** Efficiency High */
+            efficiency_high?: number | null;
+            /** Efficiency Low */
+            efficiency_low?: number | null;
+            /**
+             * Exact Interval
+             * @description Unknowns read from this curve alone get Fieller's interval.
+             * @default false
+             */
+            exact_interval: boolean;
+            /** Fitted */
+            fitted: boolean;
+            /**
+             * G
+             * @description t² s² / (slope² Sxx): above 0.05 an unknown's interval is Fieller's exact one, not the classical approximation.
+             */
+            g?: number | null;
+            /** Id */
+            id: string;
+            /** Intercept */
+            intercept?: number | null;
+            lod: components["schemas"]["LimitView"];
+            lod_model?: components["schemas"]["LimitView"] | null;
+            loq: components["schemas"]["LimitView"];
+            /** Lowest */
+            lowest?: number | null;
+            /**
+             * N Levels
+             * @default 0
+             */
+            n_levels: number;
+            /**
+             * N Unknowns
+             * @description Units read from this curve.
+             * @default 0
+             */
+            n_unknowns: number;
+            /**
+             * N Wells
+             * @default 0
+             */
+            n_wells: number;
+            /**
+             * Problem
+             * @default
+             */
+            problem: string;
+            /**
+             * Quantity Source
+             * @description design, file, name, or a mix joined with '+'.
+             */
+            quantity_source: string;
+            /** R2 */
+            r2?: number | null;
+            /** Runs */
+            runs: string[];
+            /**
+             * S Yx
+             * @description Residual SD of Cq about the line.
+             */
+            s_yx?: number | null;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "plate" | "pooled";
+            /** Slope */
+            slope?: number | null;
+            /**
+             * Suspects
+             * @description Detected standards that look wrong (never left out by qPilot).
+             * @default []
+             */
+            suspects: components["schemas"]["SuspectView"][];
+            /** Target */
+            target: string;
+            /** Top */
+            top?: number | null;
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
         };
         /**
          * CurveView
@@ -5980,6 +7366,291 @@ export type components = {
             title: string;
         };
         /**
+         * DesignCheckRequest
+         * @description ``POST …/design/check``: what recording these items would do (nothing is written).
+         */
+        DesignCheckRequest: {
+            /** Items */
+            items: components["schemas"]["DesignEditItem"][];
+        };
+        /**
+         * DesignEditItem
+         * @description One design item a person sets: the proposal kind, its subject and its payload.
+         *
+         *     Payloads: ``design.target_role`` ``{"role": "ref"|"toi"|"ignore"}`` (subject: a target);
+         *     ``design.well_role`` ``{"role": "unkn"|"ntc"|"nrt"|"nac"|"pos"|"ntp"|"opt"}`` (a sample);
+         *     ``design.group`` ``{"group": str | null}`` (a sample; null takes it out of every group);
+         *     ``design.bio_unit`` ``{"biological_unit": str | null}`` (a sample; null: its own unit);
+         *     ``design.dilution_series`` ``{"experiment_id": str, "samples": {sample: quantity}}``
+         *     (subject: the series' name; its samples become standards with these quantities);
+         *     ``design.comparison`` ``{"group_a": str, "group_b": str}`` (subject ``comparison``;
+         *     fold change = group_a relative to group_b, the reference group); several comparisons add
+         *     ``comparisons`` (``[{group_a, group_b}, ...]``, the first is ``group_a``/``group_b``),
+         *     ``pattern`` (``vs_control``, ``all_pairs`` or ``chosen``), ``control``, ``correction``
+         *     (``holm``, ``dunnett``, ``tukey`` or ``none``) and ``pair_by`` (the accepted pairing's name);
+         *     ``design.purpose`` ``{"purpose": "compare"|"quantify"}`` (subject ``purpose``): what the study
+         *     is for (compare groups, the default; or quantify samples from a standard curve: no
+         *     comparison and no reference gene needed).
+         */
+        DesignEditItem: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "design.target_role" | "design.well_role" | "design.group" | "design.bio_unit" | "design.dilution_series" | "design.comparison" | "design.purpose";
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            };
+            /** Subject */
+            subject: string;
+        };
+        /**
+         * DesignEditorView
+         * @description ``GET …/design/editor``: the editor's whole view at one head of the inbox.
+         */
+        DesignEditorView: {
+            /** Comparison */
+            comparison?: {
+                [key: string]: string;
+            } | null;
+            /**
+             * Comparison Plan
+             * @description Several comparisons a person set: comparisons, pattern, control, correction and pair_by of the accepted comparison (None: one comparison).
+             */
+            comparison_plan?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Confirmed
+             * @description The design stage is confirmed (a change re-opens it).
+             */
+            confirmed: boolean;
+            /** Experiments */
+            experiments: string[];
+            /**
+             * Groups
+             * @description Group -> study samples in it.
+             */
+            groups: {
+                [key: string]: number;
+            };
+            /**
+             * Has Sheet
+             * @description A sample sheet is attached to this session.
+             */
+            has_sheet: boolean;
+            /** Head */
+            head: string;
+            /**
+             * Membership
+             * @description Each sample's group and unit (one entry per sample, in the same order).
+             */
+            membership: components["schemas"]["EditorMembership"][];
+            /**
+             * N Paired
+             * @description Study samples with a pairing.
+             * @default 0
+             */
+            n_paired: number;
+            /**
+             * N Standards
+             * @description Standard samples on the plate.
+             * @default 0
+             */
+            n_standards: number;
+            /**
+             * N Standards With Quantity
+             * @description Standard samples with a quantity (the file's or a person's).
+             * @default 0
+             */
+            n_standards_with_quantity: number;
+            /** Needs */
+            needs: components["schemas"]["DesignNeed"][];
+            /**
+             * Pair By
+             * @description The pairing a person accepted (donor, animal...), if any.
+             */
+            pair_by?: string | null;
+            /**
+             * Preset
+             * @description A built-in design a person accepted (the demo's).
+             */
+            preset?: string | null;
+            /**
+             * Purpose
+             * @description What the study is for: compare groups (the default) or quantify samples from a standard curve (no comparison, no reference gene).
+             * @default compare
+             * @enum {string}
+             */
+            purpose: "compare" | "quantify";
+            /**
+             * Purposes
+             * @description What a study can be for, in words (compare, quantify).
+             * @default []
+             */
+            purposes: components["schemas"]["EditorOption"][];
+            /** Sample Types */
+            sample_types: components["schemas"]["EditorOption"][];
+            /** Samples */
+            samples: components["schemas"]["EditorSample"][];
+            /** Sheet Name */
+            sheet_name?: string | null;
+            /** Target Roles */
+            target_roles: components["schemas"]["EditorOption"][];
+            /** Targets */
+            targets: components["schemas"]["EditorTarget"][];
+            /**
+             * Template Url
+             * @description The pre-filled sample-sheet template (CSV).
+             */
+            template_url: string;
+            /**
+             * Units
+             * @description Biological unit -> samples in it.
+             */
+            units: {
+                [key: string]: number;
+            };
+            /** Waiting */
+            waiting: number;
+        };
+        /**
+         * DesignNeed
+         * @description One thing the design still needs, and which control on the page gives it.
+         */
+        DesignNeed: {
+            /** Code */
+            code: string;
+            /**
+             * Where
+             * @enum {string}
+             */
+            where: "targets" | "samples" | "comparison" | "inbox" | "engine";
+            /** Words */
+            words: string;
+        };
+        /**
+         * DesignPlanView
+         * @description The plan of one act on the inbox at ``head`` (``POST …/design/check``).
+         */
+        DesignPlanView: {
+            /**
+             * Counts
+             * @description Items per action.
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /** Head */
+            head: string;
+            /** Items */
+            items: components["schemas"]["PlannedItemView"][];
+            /** Message */
+            message: string;
+            /** N Contradicted */
+            n_contradicted: number;
+            /**
+             * N Rejects
+             * @description Waiting proposals the act rejects (they say otherwise).
+             */
+            n_rejects: number;
+        };
+        /**
+         * DesignSetRequest
+         * @description ``POST …/design/set``: record these items as the person's decisions, with one reason.
+         */
+        DesignSetRequest: {
+            /**
+             * Accept Contradicted
+             * @description Record items the engine's check contradicts (the person read why).
+             * @default false
+             */
+            accept_contradicted: boolean;
+            /**
+             * Expected Head
+             * @description The inbox head the page showed (the editor's `head`); 409 stale when something was decided since.
+             */
+            expected_head: string;
+            /** Items */
+            items: components["schemas"]["DesignEditItem"][];
+            /**
+             * Reason
+             * @description Why (kept with every item in the record); required.
+             * @default
+             */
+            reason: string;
+        };
+        /**
+         * DesignSetView
+         * @description What one act recorded (``POST …/design/set``).
+         */
+        DesignSetView: {
+            /** Head */
+            head: string;
+            job?: components["schemas"]["JobView"] | null;
+            /** Message */
+            message: string;
+            /**
+             * Outcomes
+             * @default []
+             */
+            outcomes: components["schemas"]["ProposalOutcome"][];
+            /**
+             * Recorded
+             * @description Proposals accepted (yours, and waiting ones that agree).
+             */
+            recorded: number;
+            /**
+             * Rejected
+             * @description Waiting proposals rejected because you set otherwise.
+             */
+            rejected: number;
+            /** Results Visible */
+            results_visible: boolean;
+            /** Stages */
+            stages: components["schemas"]["StageView"][];
+            /** Unchanged */
+            unchanged: number;
+        };
+        /**
+         * DetectedOnlyView
+         * @description A withheld gene measured in both groups but detected in one only (or in neither).
+         *
+         *     No fold change exists for it (a ratio to nothing); the detected group's ΔCq (the gene's Cq
+         *     minus the mean Cq of the control genes, per biological unit, then the mean) says how much.
+         */
+        DetectedOnlyView: {
+            /**
+             * Absent
+             * @description The group (or groups) it was detected in no unit of.
+             */
+            absent: string;
+            /**
+             * Dcq
+             * @description Mean ΔCq of the detected group.
+             */
+            dcq?: number | null;
+            /** Dcq Sd */
+            dcq_sd?: number | null;
+            /**
+             * Fisher P
+             * @description Fisher's exact test (two-sided) on detected / not detected by group: orientation on the presence/absence difference, never a call.
+             */
+            fisher_p?: number | null;
+            /**
+             * Group
+             * @description The group it was detected in; null: in neither.
+             */
+            group: string | null;
+            /** N Absent */
+            n_absent: number;
+            /** N Detected */
+            n_detected: number;
+            /** N Group */
+            n_group: number;
+        };
+        /**
          * DownloadLink
          * @description A file qPilot wrote into its export folder (beside the store), offered for download.
          */
@@ -6006,6 +7677,101 @@ export type components = {
              * @description `/api/downloads/<id>` (served as an attachment).
              */
             url: string;
+        };
+        /**
+         * EditorMembership
+         * @description A sample's group and biological unit in the design so far.
+         *
+         *     Kept apart from :class:`EditorSample` (which carries counts and a standard's quantity), so
+         *     no object of this API ever holds a group next to a number, even a count.
+         */
+        EditorMembership: {
+            /** Group */
+            group?: string | null;
+            /** Sample */
+            sample: string;
+            /** Unit */
+            unit?: string | null;
+        };
+        /**
+         * EditorOption
+         * @description One choice of a control, in a scientist's words.
+         */
+        EditorOption: {
+            /** Hint */
+            hint: string;
+            /** Label */
+            label: string;
+            /** Value */
+            value: string;
+        };
+        /**
+         * EditorSample
+         * @description One sample as the editor shows it: names, wells and the design so far; no number.
+         */
+        EditorSample: {
+            /** Declared Type */
+            declared_type: string;
+            /** Experiments */
+            experiments: string[];
+            /**
+             * Locked
+             * @description Why its type cannot change (a declared control).
+             */
+            locked?: string | null;
+            /** N Wells */
+            n_wells: number;
+            /**
+             * Quantity
+             * @description A standard's known quantity, as a person or a sheet set it.
+             */
+            quantity?: number | null;
+            /**
+             * Role
+             * @description Its type in the design so far (the file's when undecided).
+             */
+            role: string;
+            /** Sample */
+            sample: string;
+            /** Series */
+            series?: string | null;
+            /** Targets */
+            targets: string[];
+            /** Text Id */
+            text_id?: string | null;
+            /**
+             * Waiting
+             * @description Kinds of the proposals about it that wait.
+             */
+            waiting: string[];
+            /**
+             * Wells
+             * @description `run_id/well` of every well of the sample.
+             */
+            wells: string[];
+        };
+        /**
+         * EditorTarget
+         * @description One target as the editor shows it.
+         */
+        EditorTarget: {
+            /** Declared Type */
+            declared_type: string;
+            /** N Wells */
+            n_wells: number;
+            /**
+             * Role
+             * @description What a person decided (null: not yet).
+             */
+            role?: string | null;
+            /** Runs */
+            runs: string[];
+            /** Target */
+            target: string;
+            /** Text Id */
+            text_id?: string | null;
+            /** Waiting */
+            waiting: string[];
         };
         /**
          * EventBody
@@ -6191,6 +7957,103 @@ export type components = {
             source: "template" | "model";
         };
         /**
+         * FigureFiles
+         * @description Where the figure's files are served (same-origin links).
+         */
+        FigureFiles: {
+            /** Csv */
+            csv: string;
+            /** Png */
+            png: string;
+            /** Svg */
+            svg: string;
+        };
+        /**
+         * FigureGroup
+         * @description One group of a gene's figure: its biological units and the bar drawn for it.
+         */
+        FigureGroup: {
+            /** Ci High */
+            ci_high: number | null;
+            /**
+             * Ci Low
+             * @description 95 % confidence interval of the mean (low).
+             */
+            ci_low: number | null;
+            /**
+             * Mean
+             * @description Mean log2 relative quantity of the units.
+             */
+            mean: number | null;
+            /**
+             * N
+             * @description Biological units with a value (the dots).
+             */
+            n: number;
+            /** Name */
+            name: string;
+        };
+        /**
+         * FigureInfo
+         * @description One gene's figure: what it shows, its caption, and its files.
+         */
+        FigureInfo: {
+            /**
+             * Bases
+             * @description The analyses there is a figure for.
+             */
+            bases: ("as_decided" | "recommended")[];
+            /**
+             * Basis
+             * @enum {string}
+             */
+            basis: "as_decided" | "recommended";
+            /** Basis Label */
+            basis_label: string;
+            /**
+             * Call
+             * @description The engine's call (None: the engine did not compare this gene).
+             */
+            call: ("up" | "down" | "none") | null;
+            /** Caption */
+            caption: string;
+            /** Chain Head */
+            chain_head: string;
+            /** Ci95 High */
+            ci95_high: number | null;
+            /** Ci95 Low */
+            ci95_low: number | null;
+            /** Comparison */
+            comparison: string;
+            /** Comparisons */
+            comparisons: string[];
+            files: components["schemas"]["FigureFiles"];
+            /** Fold Change */
+            fold_change: number | null;
+            /** Gene */
+            gene: string;
+            /** Groups */
+            groups: components["schemas"]["FigureGroup"][];
+            /** N A */
+            n_a: number | null;
+            /** N B */
+            n_b: number | null;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /** P */
+            p: number | null;
+            /**
+             * P Adjusted
+             * @description Several comparisons with a correction: the corrected p the call used.
+             */
+            p_adjusted?: number | null;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
          * FileFacts
          * @description What the opened file declares (counts only; names are in ``summary``).
          */
@@ -6235,6 +8098,16 @@ export type components = {
             note: string;
             /** Seq */
             seq: number | null;
+        };
+        /**
+         * FlagView
+         * @description One flag on an unknown, with its words.
+         */
+        FlagView: {
+            /** Id */
+            id: string;
+            /** Words */
+            words: string;
         };
         /**
          * FlipOption
@@ -6301,6 +8174,11 @@ export type components = {
          * @description Decisions (rows) × genes (columns): where one decision alone flips a gene's call.
          */
         FlipsView: {
+            /**
+             * Comparison
+             * @description The comparison shown, in a study with several.
+             */
+            comparison?: string | null;
             /** Genes */
             genes: string[];
             /** Planned */
@@ -6662,6 +8540,25 @@ export type components = {
              * @enum {string}
              */
             worst: "pass" | "warn" | "fail" | "not_applicable";
+        };
+        /**
+         * GatePlateLine
+         * @description What the Run Gate says about one plate: verdict counts and the rules that warn or fail.
+         */
+        GatePlateLine: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Findings */
+            findings: components["schemas"]["RepeatReason"][];
+            /** Plate */
+            plate: string;
+            /**
+             * Worst
+             * @description fail, warn, pass or not_applicable (the worst verdict).
+             */
+            worst: string;
         };
         /**
          * GateRequestView
@@ -7052,6 +8949,16 @@ export type components = {
             /** P */
             p: number;
             /**
+             * P Adjusted
+             * @description The corrected p-value the call uses (Holm across the gene's comparisons); None when the study has one comparison (the call uses p).
+             */
+            p_adjusted?: number | null;
+            /**
+             * Q
+             * @description Benjamini-Hochberg q-value across the genes of this comparison (shown, never used for a call).
+             */
+            q?: number | null;
+            /**
              * Reasons
              * @default []
              */
@@ -7078,6 +8985,11 @@ export type components = {
              * @description Decision Cards that can change this gene.
              */
             cards: components["schemas"]["CardView"][];
+            /**
+             * Comparison
+             * @description The comparison shown, in a study with several.
+             */
+            comparison?: string | null;
             confidence?: components["schemas"]["Grade"] | null;
             confidence_text?: components["schemas"]["FactText"] | null;
             contrast: components["schemas"]["ContrastResult"];
@@ -7288,6 +9200,22 @@ export type components = {
             summary: string;
         };
         /**
+         * HistoryComparisonTab
+         * @description One comparison of a study with several (the History's picker).
+         */
+        HistoryComparisonTab: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** N Down */
+            n_down: number;
+            /** N Up */
+            n_up: number;
+            /** Primary */
+            primary: boolean;
+        };
+        /**
          * HistoryDiff
          * @description What changed between two steps of the chain (or two analyses of the same file).
          */
@@ -7469,6 +9397,19 @@ export type components = {
             carry?: components["schemas"]["CarryNote"] | null;
             /** Chain Intact */
             chain_intact: boolean;
+            /**
+             * Comparison
+             * @description A study with several comparisons: the one replayed (its id).
+             */
+            comparison?: string | null;
+            /** Comparison Note */
+            comparison_note?: string | null;
+            /**
+             * Comparisons
+             * @description A study with several comparisons: every one (the picker).
+             * @default []
+             */
+            comparisons: components["schemas"]["HistoryComparisonTab"][];
             /**
              * Created At
              * @description When this analysis was made.
@@ -7947,6 +9888,34 @@ export type components = {
             word: string;
         };
         /**
+         * LevelView
+         * @description One standard level: how often it was detected and how well its quantity reads back.
+         */
+        LevelView: {
+            /**
+             * Back Quantity
+             * @description Geometric mean of the read-back quantities.
+             */
+            back_quantity: number | null;
+            /**
+             * Cv
+             * @description Log-normal CV of the read-back quantities (0.35 = 35 %).
+             */
+            cv: number | null;
+            /** Mean Cq */
+            mean_cq: number | null;
+            /** N Detected */
+            n_detected: number;
+            /** N Wells */
+            n_wells: number;
+            /** Quantity */
+            quantity: number;
+            /** Rate */
+            rate: number | null;
+            /** Sd Cq */
+            sd_cq: number | null;
+        };
+        /**
          * Limitation
          * @description One limitation, in plain words.
          */
@@ -7954,6 +9923,27 @@ export type components = {
             /** Id */
             id: string;
             text: components["schemas"]["ReportText"];
+        };
+        /**
+         * LimitView
+         * @description A limit of detection or of quantification: the quantity, how it was found, in words.
+         */
+        LimitView: {
+            /**
+             * At Most
+             * @description Every level passed: the true limit is at or below this.
+             * @default false
+             */
+            at_most: boolean;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "empirical" | "logistic" | "lowest_standard" | "not_determined";
+            /** Quantity */
+            quantity: number | null;
+            /** Words */
+            words: string;
         };
         /**
          * LinkBody
@@ -8052,7 +10042,11 @@ export type components = {
         };
         /**
          * MadeBy
-         * @description Who produced a proposal: a language model, an MCP agent or a deterministic rule.
+         * @description Who produced a proposal: a language model, an MCP agent, a deterministic rule or a person.
+         *
+         *     ``person``: a person made the proposal on the Design page and accepted it in the same act
+         *     (a design item the rules and the model did not propose). Only ``actor="human"`` may propose
+         *     one (``core/proposals.py``); the engine still checks it like any other proposal.
          */
         MadeBy: {
             /** Agent */
@@ -8061,7 +10055,7 @@ export type components = {
              * Kind
              * @enum {string}
              */
-            kind: "model" | "agent" | "rule";
+            kind: "model" | "agent" | "rule" | "person";
             /** Model */
             model?: string | null;
             /** Prompt Sha256 */
@@ -8088,6 +10082,351 @@ export type components = {
             message: string;
             /** Proposal Id */
             proposal_id: string;
+        };
+        /**
+         * MeltAssayView
+         * @description One target on one plate: where its product melts and how its wells were called.
+         */
+        MeltAssayView: {
+            /**
+             * Counts
+             * @description Wells per call.
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /**
+             * Expected Source
+             * @description `file`: the target's melting temperature the file declares; `median`: the median main-peak Tm of the plate's amplified study wells; none: not known.
+             */
+            expected_source?: ("file" | "median") | null;
+            /**
+             * Expected Tm
+             * @description Where the product is expected to melt (°C).
+             */
+            expected_tm?: number | null;
+            /**
+             * Flagged
+             * @description The wells G-MELT points at (`plate/well`).
+             */
+            flagged: string[];
+            /** Max Tm */
+            max_tm?: number | null;
+            /** Median Tm */
+            median_tm?: number | null;
+            /** Min Tm */
+            min_tm?: number | null;
+            /**
+             * N Reference
+             * @description Study wells the median and the noise floor come from.
+             */
+            n_reference: number;
+            /**
+             * N Wells
+             * @description Wells of this target on the plate with a melt curve.
+             */
+            n_wells: number;
+            /**
+             * Noise Floor
+             * @description Peaks lower than this (−dF/dT) are not counted.
+             */
+            noise_floor?: number | null;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Spread C
+             * @description Highest minus lowest of those Tm.
+             */
+            spread_c?: number | null;
+            /** Step C */
+            step_c?: number | null;
+            /**
+             * Summary
+             * @description The assay in one plain sentence.
+             */
+            summary: string;
+            /** Target */
+            target: string;
+        };
+        /**
+         * MeltCallView
+         * @description One well's melt call (no curve): what the plate list and the gate's wells show.
+         */
+        MeltCallView: {
+            /**
+             * Flagged
+             * @description G-MELT points at this well.
+             */
+            flagged: boolean;
+            /**
+             * Key
+             * @description `plate/well`.
+             */
+            key: string;
+            /**
+             * Main Tm
+             * @description The main peak's Tm (°C).
+             */
+            main_tm?: number | null;
+            /**
+             * N Peaks
+             * @default 0
+             */
+            n_peaks: number;
+            /**
+             * Offset C
+             * @description The main peak's Tm minus the expected Tm (°C).
+             */
+            offset_c?: number | null;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Sample Type */
+            sample_type: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "one_product" | "extra_peak" | "tm_off" | "no_peak" | "not_amplified" | "no_product" | "product" | "dimer" | "other_product" | "unclassified" | "not_judged" | "unreadable" | "no_melt";
+            /**
+             * Status Text
+             * @description The call in plain words.
+             */
+            status_text: string;
+            /** Target */
+            target: string;
+            /** Well */
+            well: string;
+        };
+        /**
+         * MeltParamsView
+         * @description The thresholds the calls were made with (the pack's G-MELT parameters).
+         */
+        MeltParamsView: {
+            /**
+             * Dimer Min Below C
+             * @description A no-template control's peak is a primer-dimer candidate only this far (°C) or more below the product's Tm; closer, it is another product.
+             * @default 3
+             */
+            dimer_min_below_c: number;
+            /**
+             * Extra Peak Share
+             * @description An extra peak counts when it carries at least this share of the peaks.
+             */
+            extra_peak_share: number;
+            /**
+             * Min Wells
+             * @description Study wells needed to take the expected Tm from them.
+             */
+            min_wells: number;
+            /**
+             * Noise Share
+             * @description A peak lower than this share of the assay's typical product peak is noise.
+             */
+            noise_share: number;
+            /**
+             * Tm Tolerance C
+             * @description How far (°C) a product may melt from the expected.
+             */
+            tm_tolerance_c: number;
+        };
+        /**
+         * MeltPeakView
+         * @description One counted peak of a well's −dF/dT.
+         */
+        MeltPeakView: {
+            /**
+             * Height
+             * @description −dF/dT at the top (fluorescence per °C).
+             */
+            height: number;
+            /**
+             * Role
+             * @description `main`: the well's main peak (its product, when one is at the expected Tm); `extra`: a peak carrying at least the extra-peak share; `minor`: counted, smaller.
+             * @enum {string}
+             */
+            role: "main" | "extra" | "minor";
+            /**
+             * Share
+             * @description Its share of the well's counted peaks (0 to 1).
+             */
+            share: number;
+            /**
+             * Tm
+             * @description Its melting temperature (°C): the top of the peak.
+             */
+            tm: number;
+            /**
+             * Width C
+             * @description Width at half height (°C).
+             */
+            width_c?: number | null;
+        };
+        /**
+         * MeltTargetView
+         * @description One target over every plate: its product's median Tm and range.
+         */
+        MeltTargetView: {
+            /** Max Tm */
+            max_tm?: number | null;
+            /** Median Tm */
+            median_tm?: number | null;
+            /** Min Tm */
+            min_tm?: number | null;
+            /** N Plates */
+            n_plates: number;
+            /** N Wells */
+            n_wells: number;
+            /** Target */
+            target: string;
+        };
+        /**
+         * MeltView
+         * @description The melt curves of a study or a session: one plate's assays and calls, some wells' curves.
+         *
+         *     ``has_melt`` false: the file holds no melt curve (``message`` says what to export).
+         *     ``calls`` are every well of the plate ``run`` with a melt curve; ``wells`` the curves of the
+         *     wells asked for (at most twelve).
+         */
+        MeltView: {
+            /** Assays */
+            assays: components["schemas"]["MeltAssayView"][];
+            /** Calls */
+            calls: components["schemas"]["MeltCallView"][];
+            /**
+             * Caveat
+             * @description What a melt peak cannot tell (MIQE 2.0).
+             */
+            caveat: string;
+            /** Has Melt */
+            has_melt: boolean;
+            /**
+             * Key
+             * @description The session id or the study id asked about.
+             */
+            key: string;
+            /**
+             * Message
+             * @description What to do when there is nothing to show.
+             * @default
+             */
+            message: string;
+            /**
+             * Method
+             * @description The method card, a path in the repository.
+             */
+            method: string;
+            /**
+             * Pack
+             * @description The rule pack the thresholds come from (name and version).
+             */
+            pack: string;
+            params: components["schemas"]["MeltParamsView"];
+            /**
+             * Plates
+             * @description The plates with melt curves.
+             */
+            plates: string[];
+            /**
+             * Run
+             * @description The plate shown.
+             */
+            run?: string | null;
+            /** Study Id */
+            study_id?: string | null;
+            /** Targets */
+            targets: components["schemas"]["MeltTargetView"][];
+            /** Wells */
+            wells: components["schemas"]["MeltWellView"][];
+        };
+        /**
+         * MeltWellView
+         * @description One well's melt curve: the readings, −dF/dT on an even grid, and its counted peaks.
+         */
+        MeltWellView: {
+            /** Amplified */
+            amplified: boolean;
+            /** Cq */
+            cq?: number | null;
+            /**
+             * Derivative
+             * @description −dF/dT on the grid (fluorescence per °C).
+             */
+            derivative: number[];
+            /**
+             * Flagged
+             * @description G-MELT points at this well.
+             */
+            flagged: boolean;
+            /**
+             * Key
+             * @description `plate/well`.
+             */
+            key: string;
+            /**
+             * Main Tm
+             * @description The main peak's Tm (°C).
+             */
+            main_tm?: number | null;
+            /**
+             * N Peaks
+             * @default 0
+             */
+            n_peaks: number;
+            /**
+             * Offset C
+             * @description The main peak's Tm minus the expected Tm (°C).
+             */
+            offset_c?: number | null;
+            /** Peaks */
+            peaks: components["schemas"]["MeltPeakView"][];
+            /**
+             * Problem
+             * @description `too_few_points` or `coarse` when the curve cannot be judged.
+             * @default
+             */
+            problem: string;
+            /**
+             * Readings Fluorescence
+             * @description The file's melt readings: fluorescence.
+             */
+            readings_fluorescence: (number | null)[];
+            /**
+             * Readings Temperature
+             * @description The file's melt readings: temperatures (°C).
+             */
+            readings_temperature: number[];
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Sample Type */
+            sample_type: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "one_product" | "extra_peak" | "tm_off" | "no_peak" | "not_amplified" | "no_product" | "product" | "dimer" | "other_product" | "unclassified" | "not_judged" | "unreadable" | "no_melt";
+            /**
+             * Status Text
+             * @description The call in plain words.
+             */
+            status_text: string;
+            /**
+             * Step C
+             * @description Median step between readings (°C).
+             */
+            step_c?: number | null;
+            /** Target */
+            target: string;
+            /**
+             * Temperature
+             * @description The even grid −dF/dT is computed on (°C).
+             */
+            temperature: number[];
+            /** Well */
+            well: string;
         };
         /**
          * MethodsParagraph
@@ -8382,6 +10721,16 @@ export type components = {
             samples: string[];
         };
         /**
+         * NotQuantified
+         * @description An assay with standards but no curve, and why.
+         */
+        NotQuantified: {
+            /** Reason */
+            reason: string;
+            /** Target */
+            target: string;
+        };
+        /**
          * OpenDone
          * @description An opened file: the workspace to go to.
          */
@@ -8401,6 +10750,11 @@ export type components = {
          */
         OpenPlaceBody: {
             /**
+             * Comparison
+             * @description A study with several comparisons: the one the trace was read for.
+             */
+            comparison?: string | null;
+            /**
              * Expected Head
              * @description The chain head the trace was read at (409 stale when it moved).
              */
@@ -8411,6 +10765,36 @@ export type components = {
             kind: string;
             /** Rank */
             rank: number;
+        };
+        /**
+         * OpenSteps
+         * @description How to open the project on one operating system, in plain words (no command line).
+         */
+        OpenSteps: {
+            /**
+             * Label
+             * @description Windows or macOS.
+             */
+            label: string;
+            /**
+             * Platform
+             * @enum {string}
+             */
+            platform: "windows" | "macos";
+            /** Steps */
+            steps: string[];
+        };
+        /**
+         * OptionComparisonEffects
+         * @description One option's consequences in another comparison of a study with several.
+         */
+        OptionComparisonEffects: {
+            /** Comparison */
+            comparison: string;
+            /** Effects */
+            effects: components["schemas"]["OptionEffect"][];
+            /** Label */
+            label: string;
         };
         /**
          * OptionEffect
@@ -8838,6 +11222,49 @@ export type components = {
             well: string;
         };
         /**
+         * PlannedItemView
+         * @description What recording one item does, with the engine's check, before anything is written.
+         */
+        PlannedItemView: {
+            /** Accept Id */
+            accept_id?: string | null;
+            /**
+             * Action
+             * @description new: your own proposal, accepted · accept: a waiting proposal that says the same is accepted · keep: the design already says so (waiting proposals that say otherwise are rejected) · unchanged: nothing to record · refused: see refusal.
+             * @enum {string}
+             */
+            action: "new" | "accept" | "keep" | "unchanged" | "refused";
+            /**
+             * Also Accept
+             * @default []
+             */
+            also_accept: string[];
+            check?: components["schemas"]["ProposalCheck"] | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "design.target_role" | "design.well_role" | "design.group" | "design.bio_unit" | "design.dilution_series" | "design.comparison" | "design.purpose";
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Refusal */
+            refusal?: string | null;
+            /**
+             * Rejects
+             * @default []
+             */
+            rejects: string[];
+            /** Subject */
+            subject: string;
+            /**
+             * Words
+             * @description The item in plain words.
+             */
+            words: string;
+        };
+        /**
          * PlannerBody
          * @description What to plan: the change worth finding, the power, and the next experiment's shape.
          */
@@ -8850,10 +11277,9 @@ export type components = {
             controls?: components["schemas"]["PlanControls"];
             /**
              * Fold
-             * @description The smallest fold change worth detecting (e.g. 2, or 0.5).
-             * @default 2
+             * @description The smallest fold change worth detecting (e.g. 2.5, or 0.4); none: a quarter above the call rule's threshold (2.5 for a 2-fold rule; plan.default_fold).
              */
-            fold: number;
+            fold?: number | null;
             /**
              * Genes
              * @description The next experiment's genes (default: the study's headline genes).
@@ -8968,6 +11394,12 @@ export type components = {
             candidates: string[];
             defaults: components["schemas"]["PlannerBody"];
             efficiency: components["schemas"]["PlanEfficiency"];
+            /**
+             * Fold Note
+             * @description How the change worth finding relates to the call rule, in plain words.
+             * @default
+             */
+            fold_note: string;
             /** Genes */
             genes: components["schemas"]["PlannerGene"][];
             /** Groups */
@@ -9175,6 +11607,12 @@ export type components = {
          */
         PlateView: {
             /**
+             * Cq Only
+             * @description The file has Cq values only (no curves): the Cq per well is the file's, and no efficiency, R² or baseline exists (`docs/cq-tables.md`).
+             * @default false
+             */
+            cq_only: boolean;
+            /**
              * Curve Judge
              * @description The Curve Judge's status in words.
              */
@@ -9188,6 +11626,12 @@ export type components = {
             curves_shown: boolean;
             /** Key */
             key: string;
+            /**
+             * Multiplex
+             * @description Some wells hold more than one dye (one curve per target): one row per curve, several rows per well.
+             * @default false
+             */
+            multiplex: boolean;
             /** N Cols */
             n_cols: number;
             /** N Rows */
@@ -9237,6 +11681,11 @@ export type components = {
              * @default false
              */
             disagrees: boolean;
+            /**
+             * Dye
+             * @description The dye this target is read in, as the file names it (several per well on a multiplex plate).
+             */
+            dye?: string | null;
             /**
              * Efficiency
              * @description The well's own amplification factor per cycle (2.0 = 100 %); the starting quantity uses the target's mean (efficiency_target).
@@ -9415,6 +11864,11 @@ export type components = {
              */
             id: string | null;
             /**
+             * Project
+             * @description The project file in the bundle folder (where Prism saves it back), for a bundle with a project; None for a scripts-only bundle.
+             */
+            project?: string | null;
+            /**
              * Round Trip
              * @description A round trip can be started from this page.
              */
@@ -9426,6 +11880,14 @@ export type components = {
             sent_back_folder?: string | null;
             /** Study Id */
             study_id: string;
+        };
+        /**
+         * PrismChecked
+         * @description The result of the background check whether an earlier project still holds.
+         */
+        PrismChecked: {
+            /** Still Current */
+            still_current: boolean;
         };
         /**
          * PrismChoice
@@ -9558,9 +12020,34 @@ export type components = {
             };
             /** Genes */
             genes: string[];
+            /**
+             * Needs Template
+             * @default false
+             */
+            needs_template: boolean;
             /** Not Affiliated */
             not_affiliated: string;
             project: components["schemas"]["PrismProject"];
+            /**
+             * Project File
+             * @description The Prism project Send writes (opens in Prism as it is).
+             */
+            project_file?: string | null;
+            /**
+             * Project Tables
+             * @default []
+             */
+            project_tables: components["schemas"]["PrismTableView"][];
+            /**
+             * Replicates File
+             * @description The project of Nested tables, when units have replicates.
+             */
+            replicates_file?: string | null;
+            /**
+             * Replicates Tables
+             * @default []
+             */
+            replicates_tables: components["schemas"]["PrismTableView"][];
             /** Session Id */
             session_id: string;
             /** Study Id */
@@ -9582,6 +12069,17 @@ export type components = {
          */
         PrismProject: {
             /**
+             * Checking
+             * @description A project accepted for an earlier analysis may still hold: its tables are being compared with this analysis's (the page hears when it is done).
+             * @default false
+             */
+            checking: boolean;
+            /**
+             * Drafted For
+             * @description The analysis it was accepted for, when still current.
+             */
+            drafted_for?: string | null;
+            /**
              * Genes
              * @default []
              */
@@ -9599,6 +12097,12 @@ export type components = {
              * @enum {string}
              */
             status: "accepted" | "waiting" | "none";
+            /**
+             * Still Current
+             * @description Accepted for an earlier analysis whose exported tables hold exactly the same numbers (equal tables digest): it holds for this one, no new draft is needed.
+             * @default false
+             */
+            still_current: boolean;
             /** Template Id */
             template_id?: string | null;
         };
@@ -9630,6 +12134,13 @@ export type components = {
             proposed: string[];
             /** Refused */
             refused: components["schemas"]["RoundTripRefused"][];
+            /**
+             * Source
+             * @description project: read from the project Prism saved; sent_back: from send_back.pzc.
+             * @default sent_back
+             * @enum {string}
+             */
+            source: "project" | "sent_back";
             /** Study Id */
             study_id: string;
         };
@@ -9697,15 +12208,22 @@ export type components = {
          * @description The result of a Send to Prism job.
          */
         PrismSent: {
+            /**
+             * Analyse Steps
+             * @description The clicks that add the t test and the graph in Prism.
+             * @default []
+             */
+            analyse_steps: string[];
             bundle: components["schemas"]["PrismBundleView"];
             /**
              * Command Line
-             * @description What to run on the computer with Prism.
+             * @description Only for the optional scripts: what runs run.pzc. Empty for a project.
+             * @default
              */
             command_line: string;
             /**
              * Done
-             * @description Prism finished run.pzc (when launched).
+             * @description Prism finished run.pzc (scripts-only bundles, when launched).
              * @default null
              */
             done: boolean | null;
@@ -9726,8 +12244,46 @@ export type components = {
             n_files: number;
             /** Notes */
             notes: string[];
-            /** Send Back Command */
+            /**
+             * Open Steps
+             * @description How to open the project, this computer's system first.
+             * @default []
+             */
+            open_steps: components["schemas"]["OpenSteps"][];
+            /**
+             * Project
+             * @description The project file (opens in Prism).
+             * @default null
+             */
+            project: string | null;
+            /**
+             * Replicates Project
+             * @default null
+             */
+            replicates_project: string | null;
+            /**
+             * Round Trip Steps
+             * @description How to bring changes made in Prism back to qPilot.
+             * @default []
+             */
+            round_trip_steps: string[];
+            /**
+             * Scripts
+             * @description The optional Prism scripts were written.
+             * @default false
+             */
+            scripts: boolean;
+            /**
+             * Send Back Command
+             * @default
+             */
             send_back_command: string;
+            /**
+             * This Platform
+             * @description The operating system of this computer.
+             * @enum {string}
+             */
+            this_platform: "windows" | "macos";
         };
         /**
          * PrismStatus
@@ -9785,13 +12341,38 @@ export type components = {
             title: string;
         };
         /**
+         * PrismTableView
+         * @description One table of the Prism project (``.pzfx``).
+         */
+        PrismTableView: {
+            /**
+             * Gene
+             * @description Empty for the grouped table of all genes.
+             */
+            gene: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "column" | "nested" | "grouped";
+            /** N Rows */
+            n_rows: number;
+            /** Name */
+            name: string;
+            /**
+             * Title
+             * @description The table's title in Prism (record ref and chain head).
+             */
+            title: string;
+        };
+        /**
          * PrismTemplate
-         * @description The Prism template the bundle uses.
+         * @description The test and graph the project is drafted for (a template is only for the scripts).
          */
         PrismTemplate: {
             /**
              * Available
-             * @description False: not made in Prism yet (the README says how).
+             * @description A hand-made template is here (only the optional Prism scripts use one; the project file needs none).
              */
             available: boolean;
             /** File */
@@ -9862,7 +12443,7 @@ export type components = {
              * Kind
              * @enum {string}
              */
-            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.dilution_series" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "curve.import_trust" | "choice.axis" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
+            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.pair" | "design.dilution_series" | "design.purpose" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "curve.import_trust" | "choice.axis" | "choice.reaction_input" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
             /**
              * Level
              * @default Low
@@ -10055,11 +12636,11 @@ export type components = {
         ProposeAxis: {
             /**
              * Axis
-             * @description The further choice: which efficiency turns Cq into quantity.
+             * @description The further choice: which efficiency turns Cq into quantity (efficiency), what to normalise each gene to (normaliser: NormFinder's and geNorm's best pairs, the global mean) or how to correct differences between plates (interrun).
              * @default efficiency
-             * @constant
+             * @enum {string}
              */
-            axis: "efficiency";
+            axis: "efficiency" | "normaliser" | "interrun";
             /**
              * On
              * @description True: test it; false: stop testing it.
@@ -10211,6 +12792,125 @@ export type components = {
             summary?: components["schemas"]["FactText"] | null;
         };
         /**
+         * QuantitiesSettings
+         * @description The thresholds in use, shown wherever they apply.
+         */
+        QuantitiesSettings: {
+            /** Lod Rate */
+            lod_rate: number;
+            /** Loq Cv */
+            loq_cv: number;
+            /** Min Levels */
+            min_levels: number;
+            /** Prediction Level */
+            prediction_level: number;
+        };
+        /**
+         * QuantitiesView
+         * @description The study's absolute quantification: every assay with standards.
+         */
+        QuantitiesView: {
+            /**
+             * Analysis
+             * @description A quantification study: the analysis in use in words (which wells count as detected, the LOQ line), and whether a person changed it.
+             * @default []
+             */
+            analysis: string[];
+            /** Assays */
+            assays: components["schemas"]["AssaySummary"][];
+            /**
+             * Available
+             * @description False: no standard has a quantity (see `why`).
+             */
+            available: boolean;
+            /**
+             * Can Set Reaction
+             * @description A person can record the reaction input (a Studio session).
+             * @default false
+             */
+            can_set_reaction: boolean;
+            /**
+             * Classes
+             * @description Every class a sample can be reported as, in order, in words.
+             * @default []
+             */
+            classes: components["schemas"]["FlagView"][];
+            /**
+             * Groups Shown
+             * @description Units carry their design group (a groups design).
+             * @default false
+             */
+            groups_shown: boolean;
+            /**
+             * Inbox Head
+             * @description The session's inbox head (a Studio session's study only): sent back as `expected_head` when the reaction input is recorded.
+             */
+            inbox_head?: string | null;
+            /** Method Card */
+            method_card: string;
+            /** Not Quantified */
+            not_quantified: components["schemas"]["NotQuantified"][];
+            /**
+             * Notes
+             * @default []
+             */
+            notes: string[];
+            /**
+             * Purpose
+             * @description quantify: the study quantifies samples (no groups compared); the quantities are its result, at the analysis in use (its cards' options).
+             * @default compare
+             * @enum {string}
+             */
+            purpose: "compare" | "quantify";
+            reaction?: components["schemas"]["ReactionView"] | null;
+            /** References */
+            references: string[];
+            settings: components["schemas"]["QuantitiesSettings"];
+            /** Study Id */
+            study_id: string;
+            /**
+             * Unit
+             * @description What one unit of the quantities is ('' when not declared).
+             */
+            unit: string;
+            /**
+             * Why
+             * @default
+             */
+            why: string;
+        };
+        /**
+         * QuantityChange
+         * @description One sample result an option of a quantification study's card reports differently.
+         */
+        QuantityChange: {
+            /**
+             * Class From
+             * @description What the recommended option reports (a class id).
+             */
+            class_from: string;
+            /**
+             * Class To
+             * @description What this option reports.
+             */
+            class_to: string;
+            /** Quantity From */
+            quantity_from?: number | null;
+            /** Quantity To */
+            quantity_to?: number | null;
+            /** Target */
+            target: string;
+            /**
+             * Unit
+             * @description The biological unit (the sample when it has none).
+             */
+            unit: string;
+            /** Words From */
+            words_from: string;
+            /** Words To */
+            words_to: string;
+        };
+        /**
          * QuarantineEntry
          * @description One piece of free text from a file, stored once and cited by ``text_id`` everywhere else.
          *
@@ -10246,6 +12946,49 @@ export type components = {
             sheet_cells: {
                 [key: string]: string;
             };
+        };
+        /**
+         * ReactionRecorded
+         * @description What recording the reaction input did.
+         */
+        ReactionRecorded: {
+            /** Head */
+            head: string;
+            /** Message */
+            message: string;
+            /** Status */
+            status: string;
+        };
+        /**
+         * ReactionRequest
+         * @description A person records what one reaction held (all empty: per reaction only).
+         */
+        ReactionRequest: {
+            /**
+             * Expected Head
+             * @description The session's inbox head the quantities view showed (its `inbox_head`); 409 stale when something was decided since.
+             */
+            expected_head: string;
+            /** Input Ng */
+            input_ng?: number | null;
+            /** Reason */
+            reason: string;
+            /** Template Ul */
+            template_ul?: number | null;
+            /** Unit */
+            unit?: string | null;
+        };
+        /**
+         * ReactionView
+         * @description What one reaction held (the design's ``reaction_input``).
+         */
+        ReactionView: {
+            /** Input Ng */
+            input_ng?: number | null;
+            /** Template Ul */
+            template_ul?: number | null;
+            /** Unit */
+            unit?: string | null;
         };
         /**
          * RecordCommands
@@ -10356,6 +13099,12 @@ export type components = {
             /** File Name */
             file_name: string;
             /**
+             * Headline
+             * @description The outcome in one plain sentence.
+             * @default
+             */
+            headline: string;
+            /**
              * Known Study
              * @description The record's study is in this qPilot's store.
              */
@@ -10367,6 +13116,13 @@ export type components = {
              * @description The record verifies (and its audit, when one is bound).
              */
             ok: boolean;
+            /**
+             * Outcome
+             * @description verified; altered (a file changed, damaged, missing or added after export); chain_broken (the files match their checksums but a hash chain does not link); inconsistent (the files disagree with the chain).
+             * @default verified
+             * @enum {string}
+             */
+            outcome: "verified" | "altered" | "chain_broken" | "inconsistent";
             record: components["schemas"]["RecordFacts"];
             report: components["schemas"]["VerifyReport"];
             /**
@@ -10374,6 +13130,141 @@ export type components = {
              * @description One line per problem, or one OK line.
              */
             summary: string[];
+        };
+        /**
+         * ReferenceGeneRow
+         * @description One candidate reference gene under both methods (lower is steadier in each).
+         */
+        ReferenceGeneRow: {
+            /** Gene */
+            gene: string;
+            /**
+             * Genorm M
+             * @description geNorm M: the mean SD of its log2 ratio to each other candidate.
+             */
+            genorm_m?: number | null;
+            /**
+             * Genorm Rank
+             * @description 1 = steadiest by geNorm.
+             */
+            genorm_rank?: number | null;
+            /**
+             * Normfinder
+             * @description NormFinder's stability value: the error it would bring in (log2), from its variation within each group and its shift between the groups.
+             */
+            normfinder?: number | null;
+            /**
+             * Normfinder Rank
+             * @description 1 = steadiest by NormFinder.
+             */
+            normfinder_rank?: number | null;
+            /**
+             * Shift
+             * @description NormFinder's shift of the gene in each group (log2), before shrinkage.
+             */
+            shift?: {
+                [key: string]: number;
+            };
+            /**
+             * Used
+             * @description The analysis in use divides by it.
+             */
+            used: boolean;
+            /**
+             * Within Sd
+             * @description NormFinder's within-group SD (log2), mean over the groups.
+             */
+            within_sd?: number | null;
+        };
+        /**
+         * ReferencePair
+         * @description A best pair by one method, with its value where the method gives one.
+         */
+        ReferencePair: {
+            /** Genes */
+            genes: string[];
+            /** Value */
+            value?: number | null;
+        };
+        /**
+         * ReferenceStability
+         * @description geNorm M and NormFinder's stability side by side, and whether they agree.
+         */
+        ReferenceStability: {
+            /** Candidates */
+            candidates: string[];
+            /**
+             * Choice Note
+             * @description Which reference genes are used stays a person's choice.
+             */
+            choice_note: string;
+            /** @description geNorm's best pair (its last two genes; it cannot order them). */
+            genorm_pair?: components["schemas"]["ReferencePair"] | null;
+            /**
+             * Grouped
+             * @description NormFinder used the study's groups.
+             */
+            grouped: boolean;
+            /**
+             * Groups
+             * @description Group -> units used.
+             */
+            groups?: {
+                [key: string]: number;
+            };
+            /**
+             * Left Out Reasons
+             * @description Why units were left out -> how many.
+             */
+            left_out_reasons?: {
+                [key: string]: number;
+            };
+            /**
+             * N Left Out
+             * @description Units NormFinder could not use, and why below.
+             * @default 0
+             */
+            n_left_out: number;
+            /**
+             * N Units
+             * @default 0
+             */
+            n_units: number;
+            normfinder_pair?: components["schemas"]["ReferencePair"] | null;
+            /**
+             * Rows
+             * @description Every candidate, in candidate order.
+             */
+            rows: components["schemas"]["ReferenceGeneRow"][];
+            /** Sources */
+            sources: string[];
+            /** Study Id */
+            study_id: string;
+            /**
+             * Unavailable
+             * @description Why NormFinder could not run (then no NormFinder numbers).
+             */
+            unavailable?: string | null;
+            /**
+             * Used
+             * @description The reference genes the analysis in use divides by.
+             */
+            used: string[];
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "agree" | "share_one" | "disagree" | "not_available";
+            /**
+             * Warnings
+             * @description The paper's own requirements.
+             */
+            warnings?: string[];
+            /**
+             * Words
+             * @description What the two agree or disagree on, in plain words.
+             */
+            words: string;
         };
         /**
          * RefusedProposal
@@ -10440,6 +13331,187 @@ export type components = {
             design_hash?: string | null;
             /** N Entries */
             n_entries: number;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * RepeatItem
+         * @description One sample x gene to re-run (``target`` None: the whole sample), with why and what for.
+         */
+        RepeatItem: {
+            /** Changed Calls */
+            changed_calls: string[];
+            /**
+             * Consequence
+             * @enum {string}
+             */
+            consequence: "changes_call" | "beyond_ci" | "no_value" | "unknown" | "changes_nothing";
+            /** Consequence Words */
+            consequence_words: string;
+            /**
+             * Group
+             * @default
+             */
+            group: string;
+            /**
+             * On Plate
+             * @description Its reactions are on the repeat plate.
+             * @default false
+             */
+            on_plate: boolean;
+            /** Plates */
+            plates: string[];
+            /**
+             * Rank
+             * @default 0
+             */
+            rank: number;
+            /** Reasons */
+            reasons: components["schemas"]["RepeatReason"][];
+            /**
+             * Repeat
+             * @description Genes it re-runs (the refs are added on the plate).
+             */
+            repeat: string[];
+            /** Sample */
+            sample: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "reaction" | "sample";
+            /** Target */
+            target: string | null;
+            /** Wells */
+            wells: string[];
+        };
+        /**
+         * RepeatPlan
+         * @description What to repeat and why, ranked; the repeat plate; what was looked at and needs no repeat.
+         */
+        RepeatPlan: {
+            /** Calibrator */
+            calibrator?: string | null;
+            /**
+             * Counts
+             * @description Items by consequence.
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /**
+             * Expected Share
+             * @description A sample's missing value is a reason to repeat it when the gene amplified in at least this share of the other samples of its own group (lab-editable).
+             * @default 0.9
+             */
+            expected_share: number;
+            /**
+             * Gate Lines
+             * @description The Run Gate per plate (none unread).
+             */
+            gate_lines: components["schemas"]["GatePlateLine"][];
+            /** Items */
+            items: components["schemas"]["RepeatItem"][];
+            /** N Plates */
+            n_plates: number;
+            /**
+             * N Reactions
+             * @description Sample x assay pairs on the repeat plates (refs too).
+             */
+            n_reactions: number;
+            /** N Samples */
+            n_samples: number;
+            /** N Wells */
+            n_wells: number;
+            /** Not Repeated */
+            not_repeated: components["schemas"]["RepeatReason"][];
+            /** Notes */
+            notes: string[];
+            /** Plate Size */
+            plate_size: number;
+            /** Replicates */
+            replicates: number;
+            /** Study Id */
+            study_id: string;
+            /** Warnings */
+            warnings: string[];
+            /** Wells */
+            wells: components["schemas"]["RepeatPlateWell"][];
+        };
+        /**
+         * RepeatPlateWell
+         * @description One well of the repeat plate, as the planner's CSV writes it.
+         */
+        RepeatPlateWell: {
+            /** Group */
+            group: string;
+            /** Plate */
+            plate: number;
+            /** Sample */
+            sample: string;
+            /** Target */
+            target: string;
+            /** Type */
+            type: string;
+            /** Well */
+            well: string;
+        };
+        /**
+         * RepeatReason
+         * @description One reason to re-run a reaction (or a reason that needs no repeat), in plain words.
+         */
+        RepeatReason: {
+            /**
+             * Code
+             * @description The rule id (G-NTC-1), the check (S1) or the kind of reason.
+             */
+            code: string;
+            /**
+             * Source
+             * @description run_gate, set_aside, no_comparison, no_amplification, trace.
+             */
+            source: string;
+            /**
+             * What To Check
+             * @default
+             */
+            what_to_check: string;
+            /** Words */
+            words: string;
+        };
+        /**
+         * RepeatView
+         * @description ``GET /studies/{id}/review/repeat``: what to repeat and why, ranked, and the repeat plate.
+         *
+         *     Read at the analysis in use from the Run Gate, the wells a person left out, the samples in
+         *     no comparison, wells with no amplification where one was expected and Trace's places to
+         *     look (:mod:`qpilot.qpcr.repeat`). ``plan.gate_lines`` are the Run Gate's lines per plate.
+         *     Read-only; the plate downloads as CSV from ``…/review/repeat.csv``.
+         */
+        RepeatView: {
+            /**
+             * Csv Name
+             * @description The file name the CSV downloads as.
+             */
+            csv_name: string;
+            /**
+             * Csv Url
+             * @description Where the repeat plate downloads as CSV (GET).
+             */
+            csv_url: string;
+            /**
+             * Include
+             * @enum {string}
+             */
+            include: "consequential" | "all";
+            /**
+             * Note
+             * @description What the plan is and is not, in words.
+             */
+            note: string;
+            plan: components["schemas"]["RepeatPlan"];
+            /** Session */
+            session?: string | null;
             /** Study Id */
             study_id: string;
         };
@@ -10521,22 +13593,38 @@ export type components = {
          */
         ReportExportBody: {
             /**
+             * Basis
+             * @description figures: draw the analysis as decided on the Decision Cards (default, also when left out) or the recommended one. The tables always hold the analysis as decided, and the recommended one too when it differs.
+             */
+            basis?: ("as_decided" | "recommended") | null;
+            /**
              * Expected Head
              * @description The chain head the page showed (warns when it moved since).
              */
             expected_head?: string | null;
             /**
              * Format
-             * @description md: the report as Markdown; html: a printable page; passport: one self-contained offline HTML file with charts, bound to a fresh Analysis Record; xlsx: the results as an Excel workbook with Trace's places to look for each gene.
+             * @description md: the report as Markdown; html: a printable page; passport: one self-contained offline HTML file with charts, bound to a fresh Analysis Record; xlsx: the study's numbers as an Excel workbook (results, per unit, per well, decisions, settings, Methods; Trace's places to look); csv: the same tables as CSV files in a zip; figures: a figure per gene (SVG, 300-dpi PNG, source CSV, caption) and a panel, zipped; supplement: what a journal asks for in one zip (the workbook, the tables, the MIQE checklist, the figures, the RDML with qPilot's results, the Analysis Record).
              * @enum {string}
              */
-            format: "md" | "html" | "passport" | "xlsx";
+            format: "md" | "html" | "passport" | "xlsx" | "csv" | "figures" | "supplement";
+            /**
+             * Genes
+             * @description figures and supplement: the genes to draw (default: the headline genes).
+             */
+            genes?: string[] | null;
         };
         /**
          * ReportExported
          * @description One written report file, ready to download.
          */
         ReportExported: {
+            /**
+             * Bases
+             * @description The analyses the file holds: as decided, and recommended.
+             * @default []
+             */
+            bases: ("as_decided" | "recommended")[];
             /** Chain Head */
             chain_head: string;
             download: components["schemas"]["DownloadLink"];
@@ -10544,7 +13632,13 @@ export type components = {
              * Format
              * @enum {string}
              */
-            format: "md" | "html" | "passport" | "xlsx";
+            format: "md" | "html" | "passport" | "xlsx" | "csv" | "figures" | "supplement";
+            /**
+             * Genes
+             * @description The genes drawn (figures, supplement).
+             * @default []
+             */
+            genes: string[];
             /**
              * Head Moved
              * @default false
@@ -10853,6 +13947,17 @@ export type components = {
                 [key: string]: string;
             };
             /**
+             * Comparison
+             * @description The comparison shown (its id) in a study with several; None otherwise.
+             */
+            comparison?: string | null;
+            /**
+             * Comparisons
+             * @description Every comparison of a study with several (the primary first).
+             * @default []
+             */
+            comparisons: components["schemas"]["ComparisonTab"][];
+            /**
              * Counts
              * @description Genes per conclusion (up / down / none).
              */
@@ -10997,7 +14102,7 @@ export type components = {
         };
         /**
          * RoundTripRequest
-         * @description Which bundle came back, and the folder Prism saved the tables into.
+         * @description Which bundle came back, and where: the project Prism saved, or the sent-back folder.
          */
         RoundTripRequest: {
             /**
@@ -11007,7 +14112,7 @@ export type components = {
             bundle: string;
             /**
              * Folder
-             * @description The full path of the sent-back folder.
+             * @description The full path of the project Prism saved (a .pzfx file), of the folder holding it (the bundle folder, by default), or of send_back.pzc's sent_back folder.
              */
             folder: string;
         };
@@ -11077,6 +14182,12 @@ export type components = {
              * @description False for an analysis a Studio session has moved on from (sign off the current one); why_not says so.
              */
             can_sign_off: boolean;
+            /**
+             * Comparisons
+             * @description A study with several comparisons: each one and its headline genes' calls, with the p each call used (corrected when the study corrects), one line each.
+             * @default []
+             */
+            comparisons: components["schemas"]["FactText"][];
             evidence: components["schemas"]["qpilot__web__contract_evidence__EvidenceView"];
             /**
              * Head
@@ -11181,6 +14292,17 @@ export type components = {
              * @enum {string}
              */
             autonomy: "suggest" | "decide_and_tell";
+        };
+        /**
+         * SheetAttached
+         * @description ``POST …/sheet``: the sheet is bound to this session; the rules propose again (a job).
+         */
+        SheetAttached: {
+            job: components["schemas"]["JobView"];
+            /** Message */
+            message: string;
+            /** Sheet Name */
+            sheet_name: string;
         };
         /**
          * SheetCell
@@ -11581,6 +14703,59 @@ export type components = {
             reason: string;
         };
         /**
+         * StandardPointView
+         * @description One standard well (detected or not) on its curve.
+         */
+        StandardPointView: {
+            /** Back Quantity */
+            back_quantity: number | null;
+            /** Cq */
+            cq: number | null;
+            /** Detected */
+            detected: boolean;
+            /**
+             * Note
+             * @description Why a well with a Cq is not used, in words.
+             * @default
+             */
+            note: string;
+            /** Quantity */
+            quantity: number;
+            /** Residual */
+            residual: number | null;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Well */
+            well: string;
+        };
+        /**
+         * StandardsProposed
+         * @description What asking to leave the suspect standards out filed (a person decides each).
+         */
+        StandardsProposed: {
+            /** Head */
+            head: string;
+            /** Message */
+            message: string;
+            /**
+             * Proposed
+             * @description run_id/well of each proposal filed now.
+             */
+            proposed: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "proposed" | "nothing";
+            /**
+             * Waiting
+             * @description Already proposed and waiting for a person.
+             */
+            waiting: string[];
+        };
+        /**
          * StepConclusions
          * @description The calls at one step, and what changed from the step before.
          */
@@ -11671,6 +14846,60 @@ export type components = {
             title: string;
         };
         /**
+         * SuspectView
+         * @description A detected standard that looks wrong, with the curve refitted without it (J2).
+         *
+         *     qPilot never leaves it out: a person does, on the ``curve.exclude_well`` proposal the rule
+         *     files (``POST …/quantities/standards``) or in Curves.
+         */
+        SuspectView: {
+            /** Cq */
+            cq: number;
+            /**
+             * Efficiency
+             * @description The curve without this well.
+             */
+            efficiency?: number | null;
+            /** Efficiency High */
+            efficiency_high?: number | null;
+            /** Efficiency Low */
+            efficiency_low?: number | null;
+            /**
+             * Key
+             * @description run_id/well: the subject of the curve.exclude_well proposal.
+             */
+            key: string;
+            /** Lod */
+            lod?: number | null;
+            /** Loq */
+            loq?: number | null;
+            /**
+             * Proposed
+             * @description Its proposal waits for a person.
+             * @default false
+             */
+            proposed: boolean;
+            /** Quantity */
+            quantity: number;
+            /** R2 */
+            r2?: number | null;
+            /** Residual Z */
+            residual_z?: number | null;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Well */
+            well: string;
+            /**
+             * Why
+             * @description order: its Cq is on the wrong side of most standard wells ten-fold or more away; residual: its studentized residual is beyond ±3.5.
+             */
+            why: ("order" | "residual")[];
+            /** Words */
+            words: string;
+        };
+        /**
          * SystemView
          * @description What this install is and what it will use.
          */
@@ -11755,6 +14984,11 @@ export type components = {
              * @enum {string}
              */
             conclusion: "up" | "down" | "none";
+            /**
+             * Correction
+             * @description The correction's short name.
+             */
+            correction?: string | null;
             /** Fc */
             fc: number;
             /**
@@ -11780,8 +15014,21 @@ export type components = {
             n_a: number;
             /** N B */
             n_b: number;
-            /** P */
+            /**
+             * P
+             * @description The p-value before any correction for comparisons.
+             */
             p: number | null;
+            /**
+             * P Adjusted
+             * @description Several comparisons: the corrected p the call uses (Holm, Dunnett or Tukey).
+             */
+            p_adjusted?: number | null;
+            /**
+             * Q
+             * @description Several comparisons: Benjamini-Hochberg q over this comparison's genes (shown, never used for the call).
+             */
+            q?: number | null;
             /**
              * Se
              * @description Standard error of the log2 fold change.
@@ -11851,6 +15098,68 @@ export type components = {
             undetermined: string;
         };
         /**
+         * TraceDecideBody
+         * @description ``POST …/where-to-look/decide``: a person's option at the place at ``rank`` of a trace.
+         */
+        TraceDecideBody: {
+            /**
+             * Comparison
+             * @description A study with several comparisons: the one the trace was read for.
+             */
+            comparison?: string | null;
+            /**
+             * Expected Head
+             * @description The chain head the trace was read at (409 stale when it moved).
+             */
+            expected_head: string;
+            /**
+             * Expected Inbox
+             * @description The session's inbox head the trace showed.
+             */
+            expected_inbox?: string | null;
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Option */
+            option: string;
+            /** Rank */
+            rank: number;
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
+        };
+        /**
+         * TraceDecided
+         * @description What a Trace decision did: wells left out or put back (the study is analysed again).
+         */
+        TraceDecided: {
+            /** Card Id */
+            card_id: string;
+            /** Inbox Head */
+            inbox_head: string;
+            /** @description The analysis of the changed design, when it changed. */
+            job?: components["schemas"]["JobView"] | null;
+            /** Left Out */
+            left_out: string[];
+            /** Message */
+            message: string;
+            /** Put Back */
+            put_back: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "left_out" | "put_back" | "kept";
+            /**
+             * Study Id
+             * @description The analysis the choice was made at.
+             */
+            study_id: string;
+        };
+        /**
          * TraceFlipSet
          * @description The fewest samples found whose removal together changes the call.
          */
@@ -11887,6 +15196,13 @@ export type components = {
             cell: components["schemas"]["TraceCell"];
             /** Checked */
             checked: string[];
+            /**
+             * Comparison
+             * @description Several comparisons: the id of the one traced.
+             */
+            comparison?: string | null;
+            /** Comparison Label */
+            comparison_label?: string | null;
             flip: components["schemas"]["TraceFlipSet"];
             /** Gene */
             gene: string;
@@ -11961,6 +15277,11 @@ export type components = {
             n_flip_single: number;
             /** P */
             p: number | null;
+            /**
+             * P Adjusted
+             * @description Several comparisons: the corrected p the call uses.
+             */
+            p_adjusted?: number | null;
             /** Rank */
             rank: number;
             /** Top D Log2Fc */
@@ -12152,6 +15473,24 @@ export type components = {
             study_id: string;
         };
         /**
+         * TracePutBackBody
+         * @description ``POST …/where-to-look/put-back``: a person puts back the wells set aside at a place.
+         */
+        TracePutBackBody: {
+            /** Card Id */
+            card_id: string;
+            /**
+             * Expected Inbox
+             * @description The session's inbox head the trace showed.
+             */
+            expected_inbox?: string | null;
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
+        };
+        /**
          * TraceReference
          * @description What one control gene does to this result.
          */
@@ -12248,6 +15587,27 @@ export type components = {
             z_in_group?: number | null;
         };
         /**
+         * TraceSetAsideView
+         * @description ``GET …/where-to-look/set-aside``: what a person set aside from Trace, to put back.
+         *
+         *     Independent of any trace: a gene whose comparison a set-aside removed cannot be traced, and
+         *     its wells can still be put back here.
+         */
+        TraceSetAsideView: {
+            /** Apply Note */
+            apply_note: string;
+            /** Can Apply */
+            can_apply: boolean;
+            /** Inbox Head */
+            inbox_head?: string | null;
+            /** Session */
+            session: string | null;
+            /** Set Aside */
+            set_aside: components["schemas"]["WhereSetAside"][];
+            /** Study Id */
+            study_id: string;
+        };
+        /**
          * TraceStudy
          * @description The study-wide view: genes by fragility, the samples behind the most results.
          */
@@ -12257,6 +15617,13 @@ export type components = {
             cell: components["schemas"]["TraceCell"];
             /** Checked */
             checked: string[];
+            /**
+             * Comparison
+             * @description Several comparisons: the id of the one traced.
+             */
+            comparison?: string | null;
+            /** Comparison Label */
+            comparison_label?: string | null;
             /** Genes */
             genes: components["schemas"]["TraceGeneRow"][];
             /** Labels */
@@ -12695,6 +16062,140 @@ export type components = {
             reason: string;
         };
         /**
+         * UnitGroup
+         * @description One group: its label, its units with a value, those without, and its mean with CI.
+         */
+        UnitGroup: {
+            /**
+             * Ci
+             * @description 95 % confidence interval of the mean (t, n - 1 degrees of freedom); null with fewer than two units.
+             */
+            ci: [
+                number,
+                number
+            ] | null;
+            /** Ci Text */
+            ci_text?: string | null;
+            /** Label */
+            label: string;
+            /** Mean */
+            mean: number | null;
+            /** Mean Text */
+            mean_text?: string | null;
+            /**
+             * Missing
+             * @description Units of the group without a value for this gene.
+             */
+            missing: number;
+            /**
+             * N
+             * @description Biological units with a value (the n of the comparison).
+             */
+            n: number;
+        };
+        /**
+         * UnitGroups
+         * @description The two groups (``high`` is the first group, ``rest`` the second).
+         */
+        UnitGroups: {
+            high: components["schemas"]["UnitGroup"];
+            rest: components["schemas"]["UnitGroup"];
+        };
+        /**
+         * UnitPoint
+         * @description One biological unit: its value of the gene and the wells behind it.
+         */
+        UnitPoint: {
+            /**
+             * Capped
+             * @description Every well was undetermined and the planned analysis sets the value to the lowest amount detected for the gene.
+             */
+            capped: boolean;
+            /**
+             * Cq Range
+             * @description Highest minus lowest Cq of the used wells (cycles); null with one well.
+             */
+            cq_range: number | null;
+            /**
+             * Group
+             * @enum {string}
+             */
+            group: "high" | "rest";
+            /**
+             * N Wells
+             * @description Wells used in the value.
+             */
+            n_wells: number;
+            /**
+             * Samples
+             * @description The samples of this unit (one, or several preparations).
+             */
+            samples: string[];
+            /** Unit */
+            unit: string;
+            /**
+             * Value
+             * @description ``x`` in words.
+             */
+            value: string;
+            /** Wells */
+            wells: components["schemas"]["UnitWell"][];
+            /**
+             * X
+             * @description The unit's relative amount (log2), relative to the second group's mean: the mean of its used wells.
+             */
+            x: number;
+        };
+        /**
+         * UnitQuantity
+         * @description One biological unit's quantity of one assay with its 95 % prediction interval.
+         */
+        UnitQuantity: {
+            /** Curves */
+            curves: string[];
+            /** Flags */
+            flags: components["schemas"]["FlagView"][];
+            /**
+             * Group
+             * @description Its group in the confirmed design.
+             */
+            group?: string | null;
+            /** High */
+            high: number | null;
+            /** Low */
+            low: number | null;
+            /** Mean Cq */
+            mean_cq: number | null;
+            /** N Detected */
+            n_detected: number;
+            /** N Wells */
+            n_wells: number;
+            /** Per Ng */
+            per_ng?: number | null;
+            /** Per Ul */
+            per_ul?: number | null;
+            /** Quantity */
+            quantity: number | null;
+            /**
+             * Reported
+             * @description What is reported for it (a class id: quantified, above_top, below_lowest, below_loq, below_lod, no_curve, not_detected).
+             * @default
+             */
+            reported: string;
+            /**
+             * Reported Words
+             * @description The class in words.
+             * @default
+             */
+            reported_words: string;
+            /** Samples */
+            samples: string[];
+            /** Unit */
+            unit: string;
+            /** Wells */
+            wells: components["schemas"]["UnknownWellView"][];
+        };
+        /**
          * UnitValue
          * @description One biological unit's value in a Prism table (log2 relative quantity).
          */
@@ -12703,6 +16204,186 @@ export type components = {
             unit: string;
             /** Value */
             value: number;
+        };
+        /**
+         * UnitValues
+         * @description One gene's biological units, as the engine computed them.
+         */
+        UnitValues: {
+            /**
+             * At Plan
+             * @description The Decision Cards are at the planned options (else the Prism export, which follows the cards, differs from these values).
+             */
+            at_plan: boolean;
+            /**
+             * Comparison
+             * @description A study with several comparisons: the one shown (its id).
+             */
+            comparison?: string | null;
+            /** Comparison Label */
+            comparison_label?: string | null;
+            /**
+             * Correction
+             * @description The correction's short name.
+             */
+            correction?: string | null;
+            /**
+             * Fold
+             * @description The fold change between the group means, in words.
+             */
+            fold: string;
+            /**
+             * Fold Ci
+             * @description The stored result's 95 % CI of the fold change (log2).
+             */
+            fold_ci: [
+                number,
+                number
+            ] | null;
+            /** Fold Ci Text */
+            fold_ci_text?: string | null;
+            /** Fold Log2 */
+            fold_log2: number | null;
+            /** Gene */
+            gene: string;
+            groups: components["schemas"]["UnitGroups"];
+            /**
+             * How
+             * @description How the values were computed, in plain sentences.
+             */
+            how: string[];
+            /** Late Cut */
+            late_cut: string;
+            /** Line */
+            line: string;
+            /**
+             * Line Log2
+             * @description The fold change a call needs (log2).
+             */
+            line_log2: number;
+            /**
+             * Most Wells
+             * @description The most wells behind one unit's value.
+             */
+            most_wells: number;
+            /** P */
+            p: number | null;
+            /**
+             * P Adjusted
+             * @description Several comparisons: the corrected p the call used.
+             */
+            p_adjusted?: number | null;
+            /**
+             * Paired
+             * @description The comparison is paired: its fold change is within pairs.
+             * @default false
+             */
+            paired: boolean;
+            /** Points */
+            points: components["schemas"]["UnitPoint"][];
+            /**
+             * Q
+             * @description Benjamini-Hochberg q over this comparison's genes.
+             */
+            q?: number | null;
+            /**
+             * Refs
+             * @description The control genes each unit is divided by.
+             */
+            refs: string[];
+            /**
+             * Replicates
+             * @description Some unit has more than one well for this gene.
+             */
+            replicates: boolean;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Undetermined
+             * @description The planned rule for a unit whose wells are all undetermined.
+             * @enum {string}
+             */
+            undetermined: "drop" | "cap";
+        };
+        /**
+         * UnitWell
+         * @description One well behind a unit's value (one technical replicate).
+         */
+        UnitWell: {
+            /**
+             * Cq
+             * @description The well's Cq, to one decimal; null when it has none.
+             */
+            cq: string | null;
+            /**
+             * Cq Value
+             * @description The well's Cq, unrounded.
+             */
+            cq_value: number | null;
+            /**
+             * Flagged
+             * @description LinRegPCR flagged the well (efficiency or very low copy).
+             */
+            flagged: boolean;
+            /**
+             * Late
+             * @description Cq above the late line (``late_cut``).
+             */
+            late: boolean;
+            /**
+             * Plate
+             * @description The well's run (plate) id in the file.
+             */
+            plate: string;
+            /**
+             * Sample
+             * @description The sample the well belongs to (a unit may have several).
+             */
+            sample: string;
+            /**
+             * State
+             * @description ``used`` in the unit's value; ``no_value``: the well never gave a usable curve (undetermined); ``excluded``: a person left it out.
+             * @enum {string}
+             */
+            state: "used" | "no_value" | "excluded";
+            /**
+             * Value
+             * @description ``x`` in words ("1.9× higher").
+             */
+            value: string | null;
+            /** Well */
+            well: string;
+            /**
+             * X
+             * @description The well's relative amount (log2, the unit's control-gene mean removed), relative to the second group's mean; null when the well has no value.
+             */
+            x: number | null;
+        };
+        /**
+         * UnknownWellView
+         * @description One well of an unknown.
+         */
+        UnknownWellView: {
+            /** Cq */
+            cq: number | null;
+            /** Curve */
+            curve: string | null;
+            /** Detected */
+            detected: boolean;
+            /**
+             * Note
+             * @description Why a well with a Cq is not used, in words.
+             * @default
+             */
+            note: string;
+            /** Quantity */
+            quantity: number | null;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Well */
+            well: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -12720,6 +16401,10 @@ export type components = {
         /**
          * VerifyReport
          * @description Outcome of :func:`verify`; ``ok`` only when nothing failed.
+         *
+         *     ``damaged`` lists the zip members whose bytes fail the zip's own check (a CRC or a deflate
+         *     stream that does not decode): the file was altered or damaged after the zip was written, so
+         *     its contents cannot be trusted (see :meth:`with_damaged`).
          */
         VerifyReport: {
             /** Chain Broken At */
@@ -12729,6 +16414,11 @@ export type components = {
              * @default []
              */
             changed: string[];
+            /**
+             * Damaged
+             * @default []
+             */
+            damaged: string[];
             /**
              * Has Proposals
              * @default false
@@ -12834,6 +16524,12 @@ export type components = {
          */
         WhereOption: {
             /**
+             * Applies
+             * @description In a Studio session, deciding it changes the analysis: keep (puts back what a person left out here) or a set-aside (leaves wells out). Reading a well from other wells is a what-if only.
+             * @default false
+             */
+            applies: boolean;
+            /**
              * Changed Calls
              * @description Genes whose call this option changes.
              */
@@ -12849,6 +16545,12 @@ export type components = {
             id: string;
             /** Label */
             label: string;
+            /**
+             * N Wells
+             * @description Wells a set-aside leaves out of the analysis.
+             * @default 0
+             */
+            n_wells: number;
         };
         /**
          * WherePlace
@@ -12882,6 +16584,11 @@ export type components = {
             plate?: string | null;
             /** Rank */
             rank: number;
+            /**
+             * Requests
+             * @description Agents' requests to set wells aside here, waiting for a person: Decide… approves one (choose its option) or turns it down (keep). Nothing is set aside until then.
+             */
+            requests?: components["schemas"]["WhereRequest"][];
             /** Role */
             role: string;
             /** Sample */
@@ -12890,6 +16597,78 @@ export type components = {
             target?: string | null;
             /** Well */
             well?: string | null;
+        };
+        /**
+         * WhereRequest
+         * @description An agent's request to set wells aside at a place; Decide… answers it for a person.
+         */
+        WhereRequest: {
+            /** Agent */
+            agent?: string | null;
+            /** At */
+            at: string;
+            /**
+             * Option
+             * @description The option asked for (set_aside_value or set_aside).
+             */
+            option: string;
+            /** Option Label */
+            option_label: string;
+            /**
+             * Put Back
+             * @description Wells it asks to put back (a person had set more aside here).
+             */
+            put_back?: string[];
+            /**
+             * Reason
+             * @description The agent's reason, as it wrote it.
+             */
+            reason: string;
+            /**
+             * Wells
+             * @description The wells it asks to leave out (RUN/WELL).
+             */
+            wells: string[];
+        };
+        /**
+         * WhereSetAside
+         * @description Wells a person set aside from Trace in this session that are out of the analysis now.
+         */
+        WhereSetAside: {
+            /**
+             * Card Id
+             * @description The place they were set aside at (send it to put back).
+             */
+            card_id: string;
+            /** Decided At */
+            decided_at: string;
+            /**
+             * Matters
+             * @description When decided, the option changed a call.
+             */
+            matters: boolean;
+            /** Option */
+            option: string;
+            /** Option Label */
+            option_label: string;
+            /** Plate */
+            plate?: string | null;
+            /**
+             * Reason
+             * @description The person's reason, as they wrote it.
+             */
+            reason: string;
+            /** Sample */
+            sample: string;
+            /** Target */
+            target?: string | null;
+            /** Well */
+            well?: string | null;
+            /**
+             * Wells
+             * @description The wells left out (RUN/WELL).
+             */
+            wells: string[];
         };
         /**
          * WhereView
@@ -12906,10 +16685,32 @@ export type components = {
              * @description place_to_look, choice_to_look_at, nothing_to_look_at or absent.
              */
             answer: string;
+            /**
+             * Apply Note
+             * @description What Decide… does here, in words.
+             * @default
+             */
+            apply_note: string;
+            /**
+             * Can Apply
+             * @description A Studio session's current analysis: Decide… leaves wells out of the analysis (or puts them back) and analyses the study again.
+             * @default false
+             */
+            can_apply: boolean;
             /** Cannot Show */
             cannot_show: string[];
             /** Checked Nothing Found */
             checked_nothing_found: string[];
+            /**
+             * Comparison
+             * @description A study with several comparisons: the one traced.
+             */
+            comparison?: string | null;
+            /**
+             * Comparison Note
+             * @description A study with several comparisons: which one the consequences are for.
+             */
+            comparison_note?: string | null;
             /** Decide Note */
             decide_note: string;
             /**
@@ -12917,6 +16718,11 @@ export type components = {
              * @description The chain head it was read at; send it to open a card.
              */
             head: string;
+            /**
+             * Inbox Head
+             * @description The session's inbox head it was read at (send it to decide).
+             */
+            inbox_head?: string | null;
             /**
              * Method Card
              * @default methods/trace.md
@@ -12945,6 +16751,11 @@ export type components = {
             };
             /** Session */
             session: string | null;
+            /**
+             * Set Aside
+             * @description Wells a person set aside from Trace that are out of the analysis now.
+             */
+            set_aside?: components["schemas"]["WhereSetAside"][];
             /** Study Id */
             study_id: string;
             /** Text */
@@ -12955,6 +16766,7 @@ export type components = {
          * @description A gene the engine compared no fold change for, and why (it is not in ``genes``).
          */
         WithheldGene: {
+            detected_only?: components["schemas"]["DetectedOnlyView"] | null;
             /** Gene */
             gene: string;
             /** Reason */
@@ -13091,6 +16903,13 @@ export type components = {
             next_step: components["schemas"]["NextStep"];
             /** Proposals Head */
             proposals_head?: string | null;
+            /**
+             * Purpose
+             * @description What the study is for: compare groups (the default), or quantify samples from a standard curve (no groups compared; Results shows the quantities).
+             * @default compare
+             * @enum {string}
+             */
+            purpose: "compare" | "quantify";
             /** Results Visible */
             results_visible: boolean;
             /**
@@ -14454,6 +18273,37 @@ export interface operations {
             };
         };
     };
+    get_cq_table: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CqTableView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_curve: {
         parameters: {
             query: {
@@ -14509,6 +18359,174 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CurveCallsView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_design: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesignCheckRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignPlanView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_editor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignEditorView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_design: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesignSetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignSetView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_template: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The sample-sheet template. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_session_melt: {
+        parameters: {
+            query?: {
+                /** @description The plate to show. */
+                run?: string | null;
+                /** @description Wells of that plate, e.g. `A1,B2`. */
+                wells?: string | null;
+            };
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeltView"];
                 };
             };
             /** @description Validation Error */
@@ -14726,6 +18744,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RoundTripRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prism_roundtrip_upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_prism_roundtrip_upload"];
             };
         };
         responses: {
@@ -15206,6 +19259,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuarantineView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attach_sheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_attach_sheet"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SheetAttached"];
                 };
             };
             /** @description Validation Error */
@@ -16260,6 +20348,37 @@ export interface operations {
             };
         };
     };
+    get_comparisons: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComparisonsView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_decisions: {
         parameters: {
             query?: never;
@@ -16324,7 +20443,10 @@ export interface operations {
     };
     get_flips: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description One comparison of a study with several (its id); default: the first. */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 study_id: string;
@@ -16492,7 +20614,10 @@ export interface operations {
     };
     get_gene: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description One comparison of a study with several (its id); default: the first. */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 gene: string;
@@ -16522,9 +20647,47 @@ export interface operations {
             };
         };
     };
+    get_gene_units: {
+        parameters: {
+            query?: {
+                /** @description A study with several comparisons: the one shown (its id; the first). */
+                comparison?: string | null;
+            };
+            header?: never;
+            path: {
+                gene: string;
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitValues"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_history: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A study with several comparisons: the one replayed (its id; the first). */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 study_id: string;
@@ -16590,6 +20753,8 @@ export interface operations {
     get_history_diff: {
         parameters: {
             query?: {
+                /** @description A study with several comparisons: the one replayed (its id; the first). */
+                comparison?: string | null;
                 /** @description The earlier step (0: as analysed). */
                 from?: number | null;
                 /** @description The later step. */
@@ -16711,6 +20876,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_study_melt: {
+        parameters: {
+            query?: {
+                /** @description The plate to show. */
+                run?: string | null;
+                /** @description Wells of that plate, e.g. `A1,B2`. */
+                wells?: string | null;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeltView"];
                 };
             };
             /** @description Validation Error */
@@ -16867,6 +21068,135 @@ export interface operations {
             };
         };
     };
+    get_quantities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuantitiesView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_assay_quantities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                target: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssayQuantities"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_reaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReactionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReactionRecorded"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_standards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardsProposed"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_record: {
         parameters: {
             query?: never;
@@ -16920,6 +21250,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecordList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_references: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferenceStability"];
                 };
             };
             /** @description Validation Error */
@@ -17030,9 +21391,86 @@ export interface operations {
             };
         };
     };
+    figure_file: {
+        parameters: {
+            query: {
+                basis?: "as_decided" | "recommended";
+                comparison?: string | null;
+                download?: boolean;
+                format?: "svg" | "png" | "csv";
+                gene: string;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The figure as SVG or PNG, or its source data as CSV. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": unknown;
+                    "image/svg+xml": unknown;
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    figure_info: {
+        parameters: {
+            query: {
+                basis?: "as_decided" | "recommended";
+                comparison?: string | null;
+                gene: string;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FigureInfo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_results: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description One comparison of a study with several (its id); default: the first. */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 study_id: string;
@@ -17092,6 +21530,75 @@ export interface operations {
             };
         };
     };
+    get_repeat: {
+        parameters: {
+            query?: {
+                /** @description The lab's own line for 'no amplification where one was expected': the share of the other samples of a sample's group the gene amplified in (default 0.9). */
+                expected_share?: number | null;
+                include?: string;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RepeatView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_repeat_csv: {
+        parameters: {
+            query?: {
+                expected_share?: number | null;
+                include?: string;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The repeat plate as CSV. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     post_sign_off: {
         parameters: {
             query?: never;
@@ -17129,7 +21636,10 @@ export interface operations {
     };
     get_trace_study: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A study with several comparisons: the one to trace (its id; the first). */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 study_id: string;
@@ -17160,7 +21670,10 @@ export interface operations {
     };
     get_trace_gene: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A study with several comparisons: the one to trace (its id; the first). */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 gene: string;
@@ -17192,7 +21705,10 @@ export interface operations {
     };
     post_trace_without: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A study with several comparisons: the one to trace (its id; the first). */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 gene: string;
@@ -17263,6 +21779,8 @@ export interface operations {
     get_where: {
         parameters: {
             query?: {
+                /** @description A study with several comparisons: the one to trace (its id; the first). */
+                comparison?: string | null;
                 gene?: string | null;
                 sample?: string | null;
                 top?: number;
@@ -17284,6 +21802,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WhereView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_decide_place: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TraceDecideBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceDecided"];
                 };
             };
             /** @description Validation Error */
@@ -17332,6 +21885,72 @@ export interface operations {
             };
         };
     };
+    post_put_back: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TracePutBackBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceDecided"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_set_aside: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceSetAsideView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     system: {
         parameters: {
             query?: never;
@@ -17348,6 +21967,45 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SystemView"];
+                };
+            };
+        };
+    };
+    get_copies: {
+        parameters: {
+            query: {
+                kind?: "dsDNA" | "ssDNA" | "RNA";
+                /** @description Bases (dsDNA: base pairs). */
+                length: number;
+                /** @description Levels of the series. */
+                levels?: number;
+                /** @description ng of the standard (or ng per µL). */
+                ng: number;
+                /** @description Dilution step. */
+                step?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CopiesAnswer"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

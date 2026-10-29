@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import datetime as dt
 import math
+import time
 import zipfile
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
@@ -273,9 +274,12 @@ def write_eds(
             if rel in upper:
                 folder, _, name = rel.rpartition("/")
                 full = "APLDBIO\\SDS\\" + folder.upper().replace("/", "\\") + "/" + name
+                # ZipInfo() turns a backslash into "/" on Windows: name it after, as the 7500 did.
+                info = zipfile.ZipInfo(full, date_time=time.localtime()[:6])
+                info.filename = full
+                archive.writestr(info, data, compress_type=zipfile.ZIP_DEFLATED)
             else:
-                full = "apldbio/sds/" + rel
-            archive.writestr(full, data)
+                archive.writestr("apldbio/sds/" + rel, data)
         archive.writestr("[Content_Types].xml", "<Types/>")
     return path
 

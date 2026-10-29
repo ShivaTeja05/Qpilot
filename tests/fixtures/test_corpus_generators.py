@@ -52,7 +52,10 @@ def _same_file(committed: Path, fresh: Path) -> None:
             except ValueError:
                 raise AssertionError((committed.name, a, b)) from None
             decimals = len(a.split(".", 1)[1]) if "." in a and "e" not in a.lower() else 0
-            assert abs(x - y) <= 10.0**-decimals * 1.000001 + 1e-12 * abs(x), (committed.name, a, b)
+            # baselined values are differences of numbers near 1000, so their last bits scale
+            # with those (about 1e-13), not with the small result: never below 1e-12 absolute
+            slack = 1e-12 * max(abs(x), 1.0)
+            assert abs(x - y) <= 10.0**-decimals * 1.000001 + slack, (committed.name, a, b)
 
 
 def test_generator_reproduces_committed_files(tmp_path):

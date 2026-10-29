@@ -274,7 +274,7 @@ def _write(result, path: Path) -> Path:
 
 SHEETS = {
     "person.csv": "Sample,Group,Mouse\nWT_1,WT,M1\nWT_2,WT,M2\nKO_1,KO,M3\nKO_2,KO,M4\n",
-    "with_cq.csv": "Sample,Group,Target,Cq\nWT_1,WT,GAPDH,22.1\nKO_1,KO,GAPDH,23.0\n",
+    "with_cq.csv": "Sample,Group,Cq\nWT_1,WT,22.1\nKO_1,KO,23.0\n",  # no target: a sheet
     "layout.csv": "Well,Sample,Type,Condition\nA1,WT_1,unkn,WT\nA2,NTC,ntc,\n",
     "reps.tsv": "Sample name\tBiological replicate\tTreatment\nS1\t1\tdrug\nS2\t2\tvehicle\n",
 }
@@ -302,21 +302,46 @@ def test_an_xlsx_sample_sheet_is_not_claimed_either(tmp_path):
 HMUY_TABLE = CORPUS / "rdml" / "lightcycler96-lc96p-hmuy" / "hmuy_cq_values.xlsx"
 
 
-def test_the_corpus_depositors_cq_table_with_conditions_is_not_an_export():
-    """It names a condition per sample (a design column), so no connector claims it."""
-    assert detect(HMUY_TABLE) == []
+def test_the_corpus_depositors_cq_table_is_a_cq_table_that_names_its_conditions():
+    """Sample, gene and Cq per row, plus a condition: a Cq table that is its own sheet too."""
+    assert [(d.connector_id, d.dialect) for d in detect(HMUY_TABLE)] == [("tidy", "tidy.cq.design")]
     (first, *_) = tables.read_workbook(HMUY_TABLE, max_rows=1)
     assert "Condition Name" in first.rows[0]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="qpilot.io.sheets opens workbooks in openpyxl's full mode (to expand merged cells), "
-    "which raises IndexError on this Zenodo workbook; the connectors' read-only reader reads it",
-)
 def test_the_corpus_depositors_cq_table_reads_as_a_sample_sheet():
+    # Excel keeps text in a shared-strings table; the sheet reader read none of it before
     table = sheet_table(HMUY_TABLE)
     assert table is not None and {"sample", "group"} <= set(table.columns)
+    assert table.rows[0]["sample"] == "Hm_1" and table.rows[0]["group"] == "Hm"
+
+
+@pytest.mark.parametrize(
+    ("header", "row"),
+    [
+        ("Sample Name,Gene Name,Condition Name,Gene Type,Cq", "WT_1,GAPDH,WT,Reference,22.1"),
+        ("Sample,Detector,Treatment,Role,Ct", "WT_1,GAPDH,drug,Housekeeping,22.1"),
+        ("Name,Target,Group,Target Type,Cp", "WT_1,GAPDH,WT,Endogenous control,22.1"),
+    ],
+)
+def test_a_persons_cq_table_with_groups_and_roles_is_read(tmp_path, header, row):
+    path = tmp_path / "my cq.csv"
+    rows = [row, row.replace("WT_1", "KO_1").replace("22.1", "Undetermined"),
+            row.replace("GAPDH", "MYC").replace(row.split(",")[3], "Target"),
+            row.replace("22.1", "N/A")]  # fmt: skip
+    path.write_text("\n".join([header, *rows]) + "\n", encoding="utf-8")
+    assert detect(path)[0].dialect == "tidy.cq.design"
+    result = capture(path)
+    assert {t["id"]: t["type"] for t in result.doc.targets()} == {"GAPDH": "ref", "MYC": "toi"}
+    plate = result.plates[0]
+    assert [r.cq for r in plate.reactions] == [22.1, None, 22.1, None]
+    assert all(r.sample_type == "unkn" for r in plate.reactions)  # a role is not a sample type
+
+
+def test_a_cq_mean_is_never_read_as_a_wells_cq(tmp_path):
+    path = tmp_path / "means.csv"
+    path.write_text("Sample,Target,Cq Mean\nWT_1,GAPDH,22.1\n", encoding="utf-8")
+    assert detect(path) == []  # no per-well Cq: not a Cq table
 
 
 def test_a_plain_cq_table_is_still_a_tidy_cq_table(tmp_path):

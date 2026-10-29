@@ -6,12 +6,15 @@
 * ``/api/events`` — server-sent events (jobs, decisions, agent requests);
 * ``/`` and ``/assets/...`` — the built page (``qpilot/web/static``, built from ``frontend/``).
 
-See :mod:`qpilot.web.security` for what every request must satisfy.
+See :mod:`qpilot.web.security` for what every request must satisfy. A public sandbox
+(``QPILOT_HOSTED=1``) also limits each visitor's requests and slow work
+(:mod:`qpilot.web.ratelimit`); a person's own computer never does.
 """
 
 from __future__ import annotations
 
 import os
+import re
 import socket
 import sys
 import webbrowser
@@ -24,16 +27,21 @@ os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")  # any library that would
 from fastapi import FastAPI, HTTPException, Request  # noqa: E402
 from fastapi.exceptions import RequestValidationError  # noqa: E402
 from fastapi.responses import FileResponse, JSONResponse, Response  # noqa: E402
+from starlette.middleware.gzip import GZipMiddleware  # noqa: E402
 
 from qpilot import __version__  # noqa: E402
 from qpilot.core.store import StudyStore  # noqa: E402
 from qpilot.studio_service import Studio  # noqa: E402
+from qpilot.web.cache import ApiCache  # noqa: E402
 from qpilot.web.context import AppContext, make_context  # noqa: E402
+from qpilot.web.ratelimit import Busy, Limiter, RateLimit, RateLimits  # noqa: E402
 from qpilot.web.security import Guard, launch_token  # noqa: E402
 
 STATIC = Path(__file__).parent / "static"
 HOST = "127.0.0.1"
 DEFAULT_PORT = 7860
+GZIP_MIN_BYTES = 4096  # small answers are sent as they are
+GZIP_LEVEL = 5  # an 800 KB view in a few milliseconds, about a tenth of its size
 NOT_BUILT = """<!doctype html><meta charset="utf-8"><title>qPilot</title>
 <body style="font:16px system-ui;margin:3rem;max-width:40rem">
 <h1>qPilot</h1><p>The page has not been built in this checkout.</p>
@@ -75,6 +83,13 @@ def create_app(ctx: AppContext) -> FastAPI:
         else:
             body = {"error": {"code": "http_" + str(exc.status_code), "message": str(detail)}}
         return JSONResponse(body, status_code=exc.status_code, headers=exc.headers)
+
+    @app.exception_handler(Busy)
+    async def sandbox_busy(_: Request, exc: Busy) -> JSONResponse:
+        # A job refused while a route ran (the visitor has too much running): in words.
+        return JSONResponse(
+            exc.body(), status_code=exc.status, headers={"Retry-After": str(exc.retry_after)}
+        )
 
     @app.exception_handler(RequestValidationError)
     async def bad_request(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -122,8 +137,35 @@ def create_app(ctx: AppContext) -> FastAPI:
             return Response(NOT_BUILT, media_type="text/html")
         return FileResponse(index, headers={"cache-control": "no-cache"})
 
+    # Innermost first: tags and 304s on the route's own bytes, then compression, then (on a
+    # public sandbox only) the visitor's limit, then the guard.
+    app.add_middleware(ApiCache, bus=ctx.bus)
+    app.add_middleware(GZipMiddleware, minimum_size=GZIP_MIN_BYTES, compresslevel=GZIP_LEVEL)
+    limits = RateLimits.from_env()
+    if limits is not None:
+        limiter = Limiter(limits)
+        app.state.limiter = limiter
+        ctx.jobs.admission = limiter.admit_job
+        app.add_middleware(RateLimit, limiter=limiter, jobs=ctx.jobs, heavy=job_starting_paths())
     app.add_middleware(Guard, token=ctx.token)
     return app
+
+
+def job_starting_paths() -> list[re.Pattern[str]]:
+    """The paths of the ``POST`` routes that answer ``202`` with a job (they start slow work)."""
+    from fastapi.routing import APIRoute
+    from starlette.routing import compile_path
+
+    from qpilot.web.routers import ROUTERS
+
+    return [
+        compile_path("/api" + route.path)[0]
+        for router in ROUTERS
+        for route in router.routes
+        if isinstance(route, APIRoute)
+        and "POST" in (route.methods or ())
+        and route.status_code == 202
+    ]
 
 
 def _type_job_results(app: FastAPI) -> None:
@@ -209,8 +251,10 @@ def main(
     ctx.facts_wait = FACTS_WAIT_S
     from qpilot.web.warm import warm_all
 
-    warm_all(ctx)  # imports, then every session's file, in the background
     app = create_app(ctx)
+    # Imports, then every session's file, then the views a person opens next (all in the
+    # background; the page answers meanwhile).
+    warm_all(ctx, app)
     port = port or free_port()
     url = f"http://{HOST}:{port}/?token={token}" + (f"#/{section}" if section else "")
     print(f"qPilot {__version__} — research use only, not for clinical or diagnostic use.")

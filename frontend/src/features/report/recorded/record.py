@@ -18,7 +18,10 @@ the store, never on a study you keep. It writes, next to this file:
 * ``review-signed.json`` -- the answer to the sign-off (``SignOffDone``);
 * ``review-after.json`` -- ``GET /api/studies/{id}/review`` again, with the sign-off listed;
 * ``session.json`` -- ``GET /api/sessions/{sid}`` (the workspace frame), with the file facts and
-  inspect summary left out (``null``; the section does not read them).
+  inspect summary left out (``null``; the section does not read them);
+* ``repeat.json`` -- ``GET /api/studies/{id}/review/repeat`` (what to repeat and why, the repeat
+  plate, the Run Gate per plate; read-only, waiting out the first read of the Run Gate and
+  Trace), with its items cut to the first 12 (``plan.items``; the counts stay the server's).
 """
 
 from __future__ import annotations
@@ -26,6 +29,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -83,6 +87,14 @@ def main() -> None:
     assert status == 200, after
     status, session = call(args.port, f"/api/sessions/{args.session}")
     assert status == 200 and isinstance(session, dict), session
+    repeat: object = None
+    for _ in range(300):  # the first read waits for the Run Gate and Trace (409 loading)
+        status, repeat = call(args.port, f"/api/studies/{study}/review/repeat")
+        if status != 409:
+            break
+        time.sleep(2)
+    assert status == 200 and isinstance(repeat, dict), repeat
+    repeat["plan"]["items"] = repeat["plan"]["items"][:12]
     session["facts"] = None
     session["summary"] = None
     views = {
@@ -91,6 +103,7 @@ def main() -> None:
         "review-signed.json": signed,
         "review-after.json": after,
         "session.json": session,
+        "repeat.json": repeat,
     }
     for name, view in views.items():
         (HERE / name).write_text(json.dumps(view, indent=1, ensure_ascii=False) + "\n")

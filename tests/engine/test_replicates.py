@@ -28,7 +28,8 @@ def test_one_well_per_sample_keeps_the_original_matrix():
     plain = log2_matrix(_wells(rows))
     by_unit = log2_matrix(_wells(rows), units={})  # the aggregating path, identity units
     pd.testing.assert_frame_equal(plain, by_unit)
-    assert list(plain.index) == ["s1", "s2"] and plain.loc["s1", "G"] == 3.0
+    assert list(plain.index) == ["s1", "s2", "s3"] and plain.loc["s1", "G"] == 3.0
+    assert np.isnan(plain.loc["s3", "G"])  # s3 has no G well: kept for R, left out of G only
 
 
 def test_replicates_are_a_geometric_mean_and_never_n():

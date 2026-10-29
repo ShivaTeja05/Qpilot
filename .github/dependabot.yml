@@ -7,6 +7,16 @@ updates:
     groups:
       python:
         patterns: ["*"]
+  # The page's dependencies (frontend/package.json, pinned exactly; package-lock.json is the truth).
+  # Its build is committed in qpilot/web/static, so an update PR must also carry the rebuilt page:
+  # the `frontend` job fails with a diff until `npm run build` is committed.
+  - package-ecosystem: npm
+    directory: "/frontend"
+    schedule:
+      interval: weekly
+    groups:
+      npm:
+        patterns: ["*"]
   - package-ecosystem: github-actions
     directory: "/"
     schedule:

@@ -115,11 +115,20 @@ def _call_line(panel: _Panel, gene: str) -> str:
     direction = panel.value("direction", "lower")
     group = f" in {panel.tok('group_hi')}" if panel.has("group_hi") else ""
     head = "No call" if call == "none" else f"Called {call}"
-    text = f"{gene}. {head}: {panel.tok('fold')}-fold {direction}{group} (p = {panel.tok('p')})."
+    corrected = panel.has("p_adjusted") and panel.has("correction")
+    if corrected:  # several comparisons: the call uses the corrected p
+        p = (
+            f"corrected p = {panel.tok('p_adjusted')} ({panel.tok('correction')}); p before "
+            f"correction = {panel.tok('p')}"
+        )
+    else:
+        p = f"p = {panel.tok('p')}"
+    text = f"{gene}. {head}: {panel.tok('fold')}-fold {direction}{group} ({p})."
     if panel.has("rule_fold") and panel.has("distance_fold"):
         side = "short of" if float(panel.value("distance_to_line_log2", 0.0)) < 0 else "past"
+        which = "corrected p" if corrected else "p"
         text += (
-            f" The rule needs at least {panel.tok('rule_fold')}-fold and p below "
+            f" The rule needs at least {panel.tok('rule_fold')}-fold and {which} below "
             f"{panel.tok('rule_alpha')}; this fold change is {panel.tok('distance_fold')} "
             f"{side} that line."
         )
@@ -315,7 +324,9 @@ def _absent_lines(panel: _Panel) -> list[str]:
                 f"Its {panel.tok(q + 'target')} {what} well {panel.tok(q + 'well')} on plate "
                 f"{panel.tok(q + 'plate')} has no value"
             )
-            if panel.value(q + "note") == "no_amplification":
+            if panel.has(q + "left_out"):
+                text += ": a person left it out of the analysis"
+            elif panel.value(q + "note") == "no_amplification":
                 text += ": LinRegPCR found no amplification"
             lines.append(text + ".")
         elif reason == "not_measured_for_every_gene":

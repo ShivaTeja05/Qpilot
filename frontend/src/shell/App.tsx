@@ -11,7 +11,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { Link, Router, useLocation } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 import { ApiError, type JobView } from "@/api/client";
-import { onLiveEvent, useLiveEvents } from "@/api/live";
+import { useLiveEvents } from "@/api/live";
 import { cn } from "@/lib/cn";
 import { count } from "@/lib/format";
 import { useHotkeys, useNow } from "@/lib/hooks";
@@ -36,7 +36,7 @@ import { HostedBanner } from "./HostedBanner";
 import { NextStepBanner } from "./NextStep";
 import { G_KEY, Palette } from "./Palette";
 import { BottomBar, Rail } from "./Rail";
-import { pathOf, useRoute, type Route } from "./route";
+import { notFoundWords, pathOf, useRoute, type Route } from "./route";
 import { SECTION, type SectionId } from "./sections";
 import { SectionBoundary } from "./SectionBoundary";
 import { ShortcutSheet } from "./Shortcuts";
@@ -125,26 +125,33 @@ function SectionView({
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const Component = SECTION[route.section].component;
+  const missing =
+    route.notFound ??
+    (route.key && frameError instanceof ApiError && frameError.status === 404
+      ? route.kind === "s"
+        ? "session"
+        : "study"
+      : null);
+  if (missing) {
+    const words = notFoundWords(missing);
+    return (
+      <EmptyState
+        headingLevel={1}
+        className="mx-auto mt-10 max-w-xl"
+        icon={<FolderX />}
+        title={words.title}
+        action={
+          <Button variant="primary" onClick={() => navigate("/")}>
+            Back to Open
+          </Button>
+        }
+      >
+        {words.body}
+      </EmptyState>
+    );
+  }
   if (route.key) {
     if (frameError) {
-      if (frameError instanceof ApiError && frameError.status === 404) {
-        return (
-          <EmptyState
-            headingLevel={1}
-            className="mx-auto mt-10 max-w-xl"
-            icon={<FolderX />}
-            title="This study is not in this qPilot's store"
-            action={
-              <Button variant="primary" onClick={() => navigate("/")}>
-                Open a study
-              </Button>
-            }
-          >
-            The link names a study that this qPilot has not opened (or it was moved aside by “Start
-            a fresh demo”). Open the file again, or pick a study you have.
-          </EmptyState>
-        );
-      }
       return (
         <ErrorPanel
           error={frameError}
@@ -206,7 +213,6 @@ function useAgentRequestToasts(workspaces: ReturnType<typeof useWorkspaces>["dat
 function Shell() {
   const route = useRoute();
   const [, navigate] = useLocation();
-  const qc = useQueryClient();
   const system = useSystem();
   const workspaces = useWorkspaces();
   const frameQuery = useWorkspaceFrame(route.kind ?? undefined, route.key ?? undefined);
@@ -225,23 +231,21 @@ function Shell() {
       navigate(pathOf(route.kind, route.key, defaultSection(frame)), { replace: true });
   }, [route.bare, route.kind, route.key, frame, navigate]);
 
-  // Running work: keep the bell's list current as jobs report.
-  useEffect(
-    () =>
-      onLiveEvent((e) => {
-        if (e.type === "job.updated") {
-          void qc.invalidateQueries({ queryKey: ["jobs"] });
-          if (e.job?.key) void qc.invalidateQueries({ queryKey: ["w", e.job.key, "jobs"] });
-        }
-      }),
-    [qc],
-  );
+  // Running work: the bell's list is kept current from the jobs' own events (api/live.ts).
 
-  // The window title names the section and the study.
+  // The window title names the section and the study; a link that leads nowhere says so (not
+  // "Open", the page it falls back to).
+  const gone =
+    route.notFound != null ||
+    (route.key != null && frameQuery.error instanceof ApiError && frameQuery.error.status === 404);
   useEffect(() => {
     const label = SECTION[route.section].label;
-    document.title = frame ? `${label} · ${frame.title} — qPilot` : `${label} — qPilot`;
-  }, [route.section, frame]);
+    document.title = gone
+      ? "Not found — qPilot"
+      : frame
+        ? `${label} · ${frame.title} — qPilot`
+        : `${label} — qPilot`;
+  }, [route.section, frame, gone]);
 
   // After moving to another section, start reading at its top (focus follows for screen readers).
   // Keyed on the section, not its `rest`: a section that keeps state in the path (the Audit's

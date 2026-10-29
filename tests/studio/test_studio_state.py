@@ -32,12 +32,15 @@ PAYLOADS = {
     "design.target_role": ("GAPDH", {"role": "ref"}),
     "design.gene_symbol": ("1-Mar", {"symbol": "MARCHF1"}),
     "design.comparison": ("comparison", {"group_a": "LPS", "group_b": "PBS"}),
+    "design.pair": ("S1_a", {"pair": "donor 1", "by": "donor"}),
     "design.dilution_series": ("STD", {"experiment_id": "e1", "samples": {"S_1": 1, "S_10": 10}}),
+    "design.purpose": ("purpose", {"purpose": "quantify"}),
     "curve.call_rule": ("amp_call", {"rule": "cq_le_35"}),
     "curve.well_call": ("run1/A1", {"amplified": False}),
     "curve.exclude_well": ("run1/A2", {"excluded": True}),
     "curve.import_trust": ("import", {"option": "cq_only"}),
     "choice.axis": ("efficiency", {"options": ["linregpcr", "per_well", "assumed_2"]}),
+    "choice.reaction_input": ("reaction", {"template_ul": 5, "input_ng": 10, "unit": "copies"}),
     "prism.project": ("prism", {"template_id": "two_groups_log2", "genes": ["ODC1"]}),
     "prism.exclusion_reason": (
         "ODC1/1496",
@@ -72,6 +75,19 @@ def test_every_kind_has_plain_words():
     words = {k: ss.describe(proposal(k, *PAYLOADS[k])) for k in PAYLOADS}
     assert words["design.well_role"] == "Treat sample water_1 as a no-template control"
     assert words["design.comparison"].startswith("Compare group “LPS” with group “PBS”")
+    assert words["design.pair"].startswith("Sample S1_a belongs to donor “donor 1”")
+    plan = {
+        "group_a": "LPS",
+        "group_b": "PBS",
+        "comparisons": [{"group_a": "LPS", "group_b": "PBS"}, {"group_a": "IFN", "group_b": "PBS"}],
+        "pattern": "vs_control",
+        "control": "PBS",
+        "correction": "holm",
+        "pair_by": "donor",
+    }
+    several = ss.describe(proposal("design.comparison", "comparison", plan))
+    assert several.startswith("Compare each group with the control “PBS” (2 comparisons")
+    assert "Holm's correction" in several and "paired by donor" in several
     assert "a Cq above 35 counts as not amplified" in words["curve.call_rule"]
     assert words["curve.well_call"] == "Count well run1/A1 as not amplified (no usable curve)"
     assert words["curve.exclude_well"] == "Leave well run1/A2 out of the analysis"
@@ -82,8 +98,7 @@ def test_every_kind_has_plain_words():
         "amplicon on each plate, the analysis in use)"
     )
     assert (
-        words["stage.confirm"]
-        == "Confirm the Design (blind) stage: it covers 2 accepted proposal(s)"
+        words["stage.confirm"] == "Confirm the Design (blind) stage: it covers 2 accepted proposals"
     )
 
 

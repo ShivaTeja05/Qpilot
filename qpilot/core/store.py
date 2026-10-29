@@ -6,6 +6,7 @@ module under a file lock, with an optimistic version check (``expected_head``)::
 
     $QPILOT_STUDIES_DIR/<input_sha256>/
         results.json  cards.json  facts.json  grid.csv   written atomically (temp -> rename)
+        grid_comparisons.csv                             only for a study with several comparisons
         decisions.jsonl   hash-chained log, append-only, one DecisionEntry per line
         pending.jsonl     agent requests waiting for a human
         study_design.json the confirmed StudyDesign (designed studies only)
@@ -44,6 +45,7 @@ import logging
 import os
 import re
 import tempfile
+import time
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
@@ -217,15 +219,40 @@ def dump_json(data: Any) -> str:
     return json.dumps(data, sort_keys=True, indent=2, ensure_ascii=False) + "\n"
 
 
+_WINDOWS = os.name == "nt"
+
+
+def replace_file(src: str | Path, dst: str | Path) -> None:
+    """``os.replace``, retried for about two seconds on Windows.
+
+    There a reader that still has ``dst`` open (another request, an editor, a virus scanner) makes
+    the rename fail with ``PermissionError`` for a moment; elsewhere the first try is the only one.
+    """
+    delay = 0.02
+    for attempt in range(8):
+        try:
+            os.replace(src, dst)
+            return
+        except PermissionError:
+            if not _WINDOWS or attempt == 7:
+                raise
+            time.sleep(delay)
+            delay *= 2
+
+
 def atomic_write(path: Path, text: str) -> None:
-    """Write ``text`` to ``path`` via a temp file in the same directory and an atomic rename."""
+    """Write ``text`` to ``path`` via a temp file in the same directory and an atomic rename.
+
+    The file is UTF-8 with LF line ends on every system, so a record's checksums (and its
+    record id) are the same on Windows, macOS and Linux.
+    """
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(text)
             fh.flush()
             os.fsync(fh.fileno())
-        os.replace(tmp, path)
+        replace_file(tmp, path)
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
         raise
@@ -494,7 +521,7 @@ class StudyStore:
         out = []
         for d in sorted(self.root.iterdir()):
             if d.is_dir() and (d / "results.json").exists():
-                out.append(json.loads((d / "results.json").read_text())["study_id"])
+                out.append(json.loads((d / "results.json").read_text(encoding="utf-8"))["study_id"])
         return out
 
     @contextmanager
@@ -658,6 +685,7 @@ class StudyStore:
             atomic_write(workspace / "facts.json", dump_json(facts))
             if grid is not None:
                 atomic_write(workspace / "grid.csv", _grid_csv(grid))
+                _put_comparison_grid(workspace, grid)
             if design is not None:
                 atomic_write(workspace / DESIGN_FILE, design.canonical())
             atomic_write(workspace / "format.json", dump_json({"cards": CARDS_FORMAT}))
@@ -904,7 +932,7 @@ class StudyStore:
                     "expected_head": expected_head,
                     "head": entries[-1].hash if entries else root,
                 }
-                with open(workspace / "attempts.jsonl", "a", encoding="utf-8") as fh:
+                with open(workspace / "attempts.jsonl", "a", encoding="utf-8", newline="\n") as fh:
                     fh.write(canonical_json(attempt) + "\n")
                 raise StaleReview(STALE_REVIEW)
             return self._append(
@@ -967,7 +995,7 @@ class StudyStore:
         workspace = self.workspace(study_id)
         line = canonical_json({**entry, "at": _now()}) + "\n"
         with self._locked(workspace):
-            with open(workspace / "ai_calls.jsonl", "a", encoding="utf-8") as fh:
+            with open(workspace / "ai_calls.jsonl", "a", encoding="utf-8", newline="\n") as fh:
                 fh.write(line)
 
     def put_scorecard(self, study_id: str, scorecards: dict[str, Any]) -> None:
@@ -1025,7 +1053,7 @@ class StudyStore:
                     "expected_head": expected_head,
                     "head": head,
                 }
-                with open(workspace / "attempts.jsonl", "a", encoding="utf-8") as fh:
+                with open(workspace / "attempts.jsonl", "a", encoding="utf-8", newline="\n") as fh:
                     fh.write(canonical_json(attempt) + "\n")
                 return DecisionOutcome(
                     status="stale",
@@ -1072,7 +1100,7 @@ class StudyStore:
             **review,
         )
         entry = entry.model_copy(update={"hash": entry_hash(entry)})
-        with open(log, "a", encoding="utf-8") as fh:
+        with open(log, "a", encoding="utf-8", newline="\n") as fh:
             fh.write(entry_line(entry) + "\n")
             fh.flush()
             os.fsync(fh.fileno())
@@ -1119,7 +1147,9 @@ class StudyStore:
         workspace = self.root / study_key(digest, design)
         fresh = False
         if (workspace / "results.json").exists() and not self._outdated(workspace):
-            study_id = json.loads((workspace / "results.json").read_text())["study_id"]
+            study_id = json.loads((workspace / "results.json").read_text(encoding="utf-8"))[
+                "study_id"
+            ]
         else:
             # New, or written by an older qPilot: (re-)analyse. put() replays the log onto the
             # new cards, so decisions people made are kept.
@@ -1356,6 +1386,25 @@ class StudyStore:
         from qpilot.core.pseudonym import Pseudonymiser
 
         return Pseudonymiser(self.proposal_home(study_id)[0])
+
+
+COMPARISON_GRID_FILE = "grid_comparisons.csv"
+
+
+def _put_comparison_grid(workspace: Path, grid: Any) -> None:
+    """Write (or remove) ``grid_comparisons.csv``: every comparison's grid, when there are several.
+
+    The qPCR plugin attaches it to the primary grid (``qpilot.qpcr.study.comparison_grid_of``);
+    a study with one comparison has none, and a stale file from an earlier analysis is removed.
+    """
+    from qpilot.qpcr.study import comparison_grid_csv, comparison_grid_of  # documented lazy import
+
+    path = workspace / COMPARISON_GRID_FILE
+    frame = comparison_grid_of(grid)
+    if frame is not None:
+        atomic_write(path, comparison_grid_csv(frame))
+    elif path.exists():
+        path.unlink()
 
 
 def _grid_csv(grid: Any) -> str:

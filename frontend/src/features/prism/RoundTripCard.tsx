@@ -1,9 +1,11 @@
 /**
- * Step 4: the round trip. After editing in Prism, the scientist runs `send_back.pzc` there; qPilot
- * reads the folder Prism exported the tables into, checks the bundle's checksums, and turns every
- * change into a question with its consequence. Nothing is accepted silently.
+ * Step 4: the round trip. After editing in Prism, the scientist saves the project (.pzfx); qPilot
+ * reads it — uploaded, or from the folder it was saved in (the bundle folder when Prism runs on
+ * this computer) — checks the bundle's checksums, and turns every change into a question with
+ * its consequence: an excluded value asks why, a deleted one too, a changed one offers qPilot's
+ * value back. Nothing is accepted silently. (The older sent_back/ CSV folder still works.)
  */
-import { FolderInput, Inbox as InboxIcon } from "lucide-react";
+import { FileUp, FolderInput, Inbox as InboxIcon } from "lucide-react";
 import { useQueries } from "@tanstack/react-query";
 import { useId, useMemo, useState } from "react";
 import { api, unwrap } from "@/api/client";
@@ -27,6 +29,7 @@ import {
   activeJob,
   usePrismBundles,
   useStartRoundTrip,
+  useStartRoundTripUpload,
   type PrismBundleView,
   type PrismRoundTrip,
   type Proposal,
@@ -44,6 +47,9 @@ export function RoundTripCard({
 }) {
   const bundles = usePrismBundles(workspace.key);
   const start = useStartRoundTrip(workspace.key);
+  const upload = useStartRoundTripUpload(workspace.key);
+  const [file, setFile] = useState<File | null>(null);
+  const fileId = useId();
   const [jobId, setJobId] = useState<string | null>(null);
   const running = activeJob(workspace, "prism.roundtrip");
   const shownJob = jobId ?? running?.id ?? null;
@@ -81,7 +87,7 @@ export function RoundTripCard({
       <CardHeader
         id="prism-roundtrip-title"
         title="Round trip: what changed in Prism"
-        hint="Every value changed, excluded or deleted in Prism comes back as a question, with what accepting it would change."
+        hint="Every value excluded, deleted or changed in Prism comes back as a question, with what accepting it would change."
       />
       <CardBody className="flex flex-col gap-5">
         {bundles.isPending ? (
@@ -112,32 +118,28 @@ export function RoundTripCard({
               </>
             ) : (
               <>
-                Send to Prism first. After editing in Prism, run{" "}
-                <span className="font-mono">send_back.pzc</span> there and come back here.
+                Send to Prism first. After editing in Prism, save the project there and come back
+                here.
               </>
             )}
           </EmptyState>
         ) : (
           <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
             <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[13px] text-fg marker:text-muted">
-              <li>In Prism, make your edits and save the projects.</li>
               <li>
-                Run <span className="font-mono">send_back.pzc</span> from the bundle folder: Prism
-                exports each table to its <span className="font-mono">sent_back</span> folder.
+                In Prism, leave values out with Edit &gt; Exclude, or change them, then save the
+                project: File &gt; Save (keep the Prism XML format, .pzfx, if Prism asks).
               </li>
-              <li>Choose the bundle, give that folder, and read what came back.</li>
+              <li>
+                Choose the saved project here, or give the folder it is in: when Prism runs on this
+                computer that is the bundle folder, already filled in.
+              </li>
+              <li>
+                Each exclusion, deletion or change comes back below as a question, with what it does
+                to the conclusions.
+              </li>
             </ol>
-            <form
-              className="flex flex-col gap-3"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!bundle || !folder.trim()) return;
-                start.mutate(
-                  { bundle: bundle.id, folder: folder.trim() },
-                  { onSuccess: ({ job }) => setJobId(job.id) },
-                );
-              }}
-            >
+            <div className="flex flex-col gap-4">
               <Field label="Bundle sent from this session" htmlFor={bundleSelectId}>
                 <Select
                   id={bundleSelectId}
@@ -160,39 +162,87 @@ export function RoundTripCard({
                   again to edit projects of the current one.
                 </p>
               ) : null}
-              <Field
-                label="Folder Prism sent the tables back to"
-                htmlFor={folderId}
-                hint="On this computer, inside your home folder or qPilot's export folder; links and the study store are refused."
+              <form
+                className="flex flex-col gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!bundle || !file) return;
+                  upload.mutate(
+                    { bundle: bundle.id, file },
+                    { onSuccess: ({ job }) => setJobId(job.id) },
+                  );
+                }}
               >
-                <Input
-                  id={folderId}
-                  value={folder}
-                  onChange={(e) => setTyped(e.target.value)}
-                  placeholder="~/Documents/qpilot-prism/sent_back"
-                  spellCheck={false}
-                  autoComplete="off"
-                  className="font-mono"
-                />
-              </Field>
-              <div>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  icon={<FolderInput />}
-                  loading={start.isPending}
-                  disabled={!bundle || !folder.trim() || Boolean(running)}
+                <Field
+                  label="The project Prism saved (.pzfx)"
+                  htmlFor={fileId}
+                  hint="From any computer: the file is read here and kept with the bundle."
                 >
-                  Read what came back
-                </Button>
-              </div>
-            </form>
+                  <input
+                    id={fileId}
+                    type="file"
+                    accept=".pzfx"
+                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                    className="block w-full text-[13px] text-fg file:mr-3 file:rounded-md file:border file:border-line file:bg-surface-2 file:px-2.5 file:py-1 file:text-[12.5px] file:text-fg hover:file:border-line-strong"
+                  />
+                </Field>
+                <div>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    icon={<FileUp />}
+                    loading={upload.isPending}
+                    disabled={!bundle || !file || Boolean(running)}
+                  >
+                    Read the saved project
+                  </Button>
+                </div>
+              </form>
+              <form
+                className="flex flex-col gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!bundle || !folder.trim()) return;
+                  start.mutate(
+                    { bundle: bundle.id, folder: folder.trim() },
+                    { onSuccess: ({ job }) => setJobId(job.id) },
+                  );
+                }}
+              >
+                <Field
+                  label="Or the folder (or file) it was saved in"
+                  htmlFor={folderId}
+                  hint="On this computer, inside your home folder or qPilot's export folder; links and the study store are refused. The send_back folder of the Prism scripts works too."
+                >
+                  <Input
+                    id={folderId}
+                    value={folder}
+                    onChange={(e) => setTyped(e.target.value)}
+                    placeholder="~/Documents/qpilot-prism"
+                    spellCheck={false}
+                    autoComplete="off"
+                    className="font-mono"
+                  />
+                </Field>
+                <div>
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    icon={<FolderInput />}
+                    loading={start.isPending}
+                    disabled={!bundle || !folder.trim() || Boolean(running)}
+                  >
+                    Read what came back
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 
-        {start.error ? (
+        {start.error || upload.error ? (
           <ErrorPanel
-            error={start.error}
+            error={start.error ?? upload.error}
             title="Could not read what came back from Prism"
             compact
           />
@@ -260,7 +310,7 @@ export function RoundTripSummary({ result }: { result: PrismRoundTrip }) {
       <p>
         {result.items.length
           ? result.message
-          : "No differences: Prism sent back exactly what qPilot wrote."}
+          : "No differences: the tables hold exactly what qPilot wrote."}
       </p>
       {result.items.length ? (
         <ul className="flex flex-wrap gap-1.5" aria-label="Differences by kind">

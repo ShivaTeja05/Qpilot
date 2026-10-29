@@ -106,6 +106,21 @@ def test_without_a_size_the_plan_uses_what_the_chosen_genes_need(walked):
     assert [g["n_needed"] for g in down["genes"]] == [g["n_needed"] for g in out["genes"]]
 
 
+def test_the_default_change_is_above_the_call_threshold_and_says_why(walked):
+    """A default at the rule's own 2-fold line would show "n for a call: none" for every gene."""
+    c, study = walked["client"], walked["study"]
+    view = c.get(f"/api/studies/{study}/planner").json()
+    assert view["defaults"]["fold"] == qplan.default_fold(1.0) == 2.5 > view["min_fold"]
+    note = view["fold_note"]
+    assert "at least 2-fold" in note and "about half the time" in note and "2.5×" in note
+    body = {k: v for k, v in view["defaults"].items() if k != "fold"}
+    out = c.post(f"/api/studies/{study}/planner", json=body).json()  # no fold: the default
+    assert out["fold"] == 2.5 and out["ceiling"] is None
+    focus = [g for g in out["genes"] if g["focus"]]
+    assert all(g["n_for_call"] is not None and g["call_reachable"] for g in focus)
+    assert out == c.post(f"/api/studies/{study}/planner", json={**body, "fold": 2.5}).json()
+
+
 def test_the_rules_are_plans_rules_for_this_layout(walked):
     c, study = walked["client"], walked["study"]
     out = c.post(f"/api/studies/{study}/planner", json={"n_per_group": 40}).json()

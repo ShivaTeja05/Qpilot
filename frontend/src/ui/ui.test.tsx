@@ -28,6 +28,19 @@ describe("ErrorPanel", () => {
     );
     expect(screen.getByText("qPilot is not answering")).toBeTruthy();
   });
+  it("says the shared sandbox is busy in the server's own words, with the wait", () => {
+    const words =
+      "This shared sandbox is busy for you: try again in 12 seconds. To work without limits, install qPilot and run `qpilot app` on your own computer.";
+    render(
+      <ErrorPanel
+        error={new ApiError(429, "rate_limited", words, { retry_after_s: 12, limit: "read" })}
+      />,
+    );
+    expect(screen.getByText("The shared sandbox is busy")).toBeTruthy();
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toContain("try again in 12 seconds");
+    expect(alert.querySelector("code")?.textContent).toBe("qpilot app");
+  });
   it("offers Try again", () => {
     const retry = vi.fn();
     render(<ErrorPanel error={new Error("boom")} onRetry={retry} />);

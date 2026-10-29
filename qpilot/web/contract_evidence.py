@@ -12,6 +12,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from qpilot.qpcr.repeat import RepeatPlan
 from qpilot.web.contract import FactText
 
 EvidenceStatus = Literal["present", "absent", "not_applicable", "unknown"]
@@ -97,6 +98,11 @@ class RunReviewView(BaseModel):
     title: FactText
     purpose: str
     headline: list[ReviewHeadlineView]
+    comparisons: list[FactText] = Field(
+        default=[],
+        description="A study with several comparisons: each one and its headline genes' calls, "
+        "with the p each call used (corrected when the study corrects), one line each.",
+    )
     evidence: EvidenceView
     sign_offs: list[SignOffView]
     outcomes: list[ReviewOutcomeView]
@@ -108,6 +114,24 @@ class RunReviewView(BaseModel):
     why_not: str = ""
     max_comment: int
     max_reviewer: int
+
+
+class RepeatView(BaseModel):
+    """``GET /studies/{id}/review/repeat``: what to repeat and why, ranked, and the repeat plate.
+
+    Read at the analysis in use from the Run Gate, the wells a person left out, the samples in
+    no comparison, wells with no amplification where one was expected and Trace's places to
+    look (:mod:`qpilot.qpcr.repeat`). ``plan.gate_lines`` are the Run Gate's lines per plate.
+    Read-only; the plate downloads as CSV from ``…/review/repeat.csv``.
+    """
+
+    study_id: str
+    session: str | None = None
+    include: Literal["consequential", "all"]
+    plan: RepeatPlan
+    csv_url: str = Field(description="Where the repeat plate downloads as CSV (GET).")
+    csv_name: str = Field(description="The file name the CSV downloads as.")
+    note: str = Field(description="What the plan is and is not, in words.")
 
 
 class SignOffBody(BaseModel):
@@ -138,6 +162,7 @@ __all__ = [
     "EvidenceStatus",
     "EvidenceView",
     "NotBuiltView",
+    "RepeatView",
     "ReviewHeadlineView",
     "ReviewOutcome",
     "ReviewOutcomeView",

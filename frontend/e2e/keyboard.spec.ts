@@ -4,13 +4,10 @@
  */
 import { demoSession, route } from "./support/data";
 import { expect, test } from "./support/fixtures";
-import { LANDED, notLanded } from "./support/sections";
 
 const MOD = process.platform === "darwin" ? "Meta" : "Control";
 
 test.describe("keyboard", () => {
-  test.beforeEach(() => test.fixme(!LANDED.shellKeys, notLanded("shellKeys")));
-
   test("⌘K opens the palette; typing a section and Enter goes there", async ({ app, api }) => {
     const demo = await demoSession(api);
     await app.open(route(demo, "record"));
@@ -72,7 +69,6 @@ test.describe("keyboard", () => {
     app,
     api,
   }) => {
-    test.fixme(!LANDED.askDrawer, notLanded("askDrawer"));
     test.setTimeout(240_000);
     const demo = await demoSession(api);
     await app.open(route(demo, "record"));
@@ -98,7 +94,6 @@ test.describe("keyboard", () => {
   });
 
   test("every Tab stop on Results shows a focus ring", async ({ app, api }) => {
-    test.fixme(!LANDED.results, notLanded("results"));
     const demo = await demoSession(api);
     await app.open(route(demo, "results"));
     const missing: string[] = [];

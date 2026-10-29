@@ -5,7 +5,7 @@
 import { demoSession, literal, route, workspaceView } from "./support/data";
 import { E2E } from "./support/env";
 import { App, expect, test } from "./support/fixtures";
-import { LANDED, notLanded, SECTIONS } from "./support/sections";
+import { SECTIONS } from "./support/sections";
 
 test.describe("the launch key", () => {
   test("the printed link sets the key and drops it from the address bar", async ({ app }) => {
@@ -39,7 +39,6 @@ test.describe("the launch key", () => {
   });
 
   test("without the key the page says to open the printed link", async ({ browser }) => {
-    test.fixme(!LANDED.needsKey, notLanded("needsKey"));
     // A fresh browser profile: no cookie. Open the bare address (no ?token=).
     const context = await browser.newContext();
     const bare = new App(await context.newPage(), test.info());
@@ -63,7 +62,6 @@ test.describe("the launch key", () => {
 
 test.describe("the rail", () => {
   test("Open → Recent → every section is reachable from the rail", async ({ app, api }) => {
-    test.fixme(!LANDED.shellFrame, notLanded("shellFrame"));
     const demo = await demoSession(api);
     await app.open("/");
     // The rail's Recent list (outside a workspace) opens the demo.
@@ -98,7 +96,6 @@ test.describe("the rail", () => {
   });
 
   test("the rail says each confirmed stage in words", async ({ app, api }) => {
-    test.fixme(!LANDED.shellFrame, notLanded("shellFrame"));
     const demo = await demoSession(api);
     const view = await workspaceView(api, demo);
     await app.open(route(demo, "results"));
@@ -114,7 +111,6 @@ test.describe("the rail", () => {
     app,
     api,
   }) => {
-    test.fixme(!LANDED.shellFrame, notLanded("shellFrame"));
     await app.page.setViewportSize({ width: 390, height: 844 });
     const demo = await demoSession(api);
     await app.open(route(demo, "results"));
@@ -136,7 +132,6 @@ test.describe("the rail", () => {
   });
 
   test("the next-step banner names the workspace's next step", async ({ app, api }) => {
-    test.fixme(!LANDED.shellFrame, notLanded("shellFrame"));
     const demo = await demoSession(api);
     const view = await workspaceView(api, demo);
     test.skip(!view.next_step, "the workspace has no next step");
@@ -150,7 +145,6 @@ test.describe("the rail", () => {
     app,
     api,
   }) => {
-    test.fixme(!LANDED.shellFrame, notLanded("shellFrame"));
     const demo = await demoSession(api);
     const view = await workspaceView(api, demo);
     await app.open(route(demo, "record"));
@@ -159,12 +153,13 @@ test.describe("the rail", () => {
   });
 
   test("an unknown study id says so in words, with a way out", async ({ app }) => {
-    test.fixme(!LANDED.shellFrame, notLanded("shellFrame"));
     app.allowConsole(/status of 404/);
     await app.open("/r/000000000000/results");
-    await expect(app.page.getByText("This study is not in this qPilot's store")).toBeVisible();
+    await expect(
+      app.page.getByText("This study was not found (it may have been moved or the link is old)"),
+    ).toBeVisible();
     await app.axe("unknown study");
-    await app.page.getByRole("button", { name: "Open a study" }).click();
+    await app.page.getByRole("button", { name: "Back to Open" }).click();
     await app.settle();
     expect(new URL(app.page.url()).hash).toMatch(/^#\/?$/);
   });
@@ -172,7 +167,6 @@ test.describe("the rail", () => {
 
 test.describe("the theme", () => {
   test("the theme menu switches to dark and the choice survives a reload", async ({ app }) => {
-    test.fixme(!LANDED.shellFrame, notLanded("shellFrame"));
     await app.open("/");
     const html = app.page.locator("html");
     for (const [word, value] of [

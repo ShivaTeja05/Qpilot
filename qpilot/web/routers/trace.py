@@ -21,7 +21,7 @@ import math
 import threading
 import time
 from collections import OrderedDict
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Query
 
@@ -62,9 +62,11 @@ _choices: OrderedDict[tuple[Any, ...], tuple[dict[str, str] | None, Any]] = Orde
 
 def _visible(ctx: AppContext, study_id: str) -> str | None:
     """The results routes' checks (id, study, blind); returns the study's session, if any."""
-    from qpilot.web.routers.results import study
+    from qpilot.web.routers.results import compares_groups, study
 
-    return study(ctx, study_id)
+    sid = study(ctx, study_id)
+    compares_groups(ctx, study_id, "Trace")
+    return sid
 
 
 def _version(ctx: AppContext, study_id: str) -> tuple[str, int]:
@@ -105,9 +107,26 @@ def _find_choice(ctx: AppContext, study_id: str) -> tuple[dict[str, str] | None,
     return {dim: grid.options[dim][idx] for dim, idx in cell.items()}, (grid, cell)
 
 
-def _labels(ctx: AppContext, study_id: str) -> tuple[str, str]:
+def _labels(
+    ctx: AppContext, study_id: str, comparison: str | None = None
+) -> tuple[str, str] | None:
+    if comparison:  # another comparison: the context names its own two groups
+        return None
     labels = [g.label for g in rv.groups(ctx.store.get(study_id))]
     return (labels[0], labels[1]) if len(labels) == 2 else ("group A", "group B")
+
+
+def comparison_of(ctx: AppContext, study_id: str, comparison: str | None) -> str | None:
+    """A comparison id the study has (404 in words otherwise); None for the first one."""
+    from qpilot.web.compare_views import outcome_of
+    from qpilot.web.routers.results import comparison_ok, known_comparison
+
+    wanted = comparison_ok(comparison)
+    if wanted is None:
+        return None
+    with known_comparison():
+        outcome = outcome_of(ctx.store.get(study_id), wanted)
+    return None if outcome is None or outcome.primary else outcome.id
 
 
 def _model(ctx: AppContext, study_id: str) -> Any:
@@ -129,10 +148,13 @@ def _cached_model(ctx: AppContext, study_id: str) -> bool:
         return (study_id, _version(ctx, study_id)) in _models
 
 
-def _context(ctx: AppContext, study_id: str) -> TraceContext:
-    """The study's trace context for the analysis in use (the model must be kept already)."""
+def _context(ctx: AppContext, study_id: str, comparison: str | None = None) -> TraceContext:
+    """The study's trace context for the analysis in use (the model must be kept already).
+
+    ``comparison``: a study with several comparisons, the one traced (None: the first).
+    """
     choice, at = _choice(ctx, study_id)
-    key = (study_id, _version(ctx, study_id), tuple(sorted((choice or {}).items())))
+    key = (study_id, _version(ctx, study_id), tuple(sorted((choice or {}).items())), comparison)
     with _lock:
         if key in _contexts:
             _contexts.move_to_end(key)
@@ -141,9 +163,21 @@ def _context(ctx: AppContext, study_id: str) -> TraceContext:
         with _lock:
             if key in _contexts:
                 return _contexts[key]
-        built = build_context(_model(ctx, study_id), study_id, choice, _labels(ctx, study_id))
+        built = build_context(
+            _model(ctx, study_id),
+            study_id,
+            choice,
+            _labels(ctx, study_id, comparison),
+            comparison=comparison,
+        )
         if at is not None:
-            _same_as_grid(built, *at)
+            grid, cell = at
+            if comparison:
+                from qpilot.web.compare_views import comparison_grid
+
+                grid = comparison_grid(ctx.store, study_id, comparison, grid)
+            if grid is not None:
+                _same_as_grid(built, grid, cell)
         with _lock:
             _contexts[key] = built
             while len(_contexts) > KEEP:
@@ -165,10 +199,10 @@ def _same_as_grid(trace: TraceContext, grid: Any, cell: dict[str, int]) -> None:
             )
 
 
-def _ready(ctx: AppContext, study_id: str) -> TraceContext:
+def _ready(ctx: AppContext, study_id: str, comparison: str | None = None) -> TraceContext:
     """The context, loading the model in a ``trace.load`` job the first time (409 loading)."""
     if _cached_model(ctx, study_id):
-        return _traceable(lambda: _context(ctx, study_id))
+        return _traceable(lambda: _context(ctx, study_id, comparison))
     if ctx.store.source(study_id) is None:
         raise api_error(
             409,
@@ -211,7 +245,7 @@ def _ready(ctx: AppContext, study_id: str) -> TraceContext:
     while job.status in ("queued", "running") and time.monotonic() < deadline:
         time.sleep(0.05)
     if job.status == "done":
-        return _traceable(lambda: _context(ctx, study_id))
+        return _traceable(lambda: _context(ctx, study_id, comparison))
     if job.status == "failed" and job.error:
         raise api_error(409, job.error.get("code", "failed"), job.error.get("message", ""))
     raise api_error(
@@ -251,11 +285,17 @@ def _gene_ok(gene: str) -> str:
 # ---- routes --------------------------------------------------------------------------------
 
 
+ComparisonQuery = Annotated[
+    str | None,
+    Query(description="A study with several comparisons: the one to trace (its id; the first)."),
+]
+
+
 @router.get("/studies/{study_id}/trace", response_model=TraceStudyView)
-def get_trace_study(study_id: str, ctx: Ctx) -> TraceStudyView:
+def get_trace_study(study_id: str, ctx: Ctx, comparison: ComparisonQuery = None) -> TraceStudyView:
     """Genes by how little it takes to change their call; the samples behind the most calls."""
     sid = _visible(ctx, study_id)
-    traced = _ready(ctx, study_id)
+    traced = _ready(ctx, study_id, comparison_of(ctx, study_id, comparison))
     out = trace_study(traced)
     return TraceStudyView(
         study_id=study_id,
@@ -285,11 +325,13 @@ def get_trace_plate(
 
 
 @router.get("/studies/{study_id}/trace/{gene}", response_model=TraceGeneView)
-def get_trace_gene(study_id: str, gene: str, ctx: Ctx) -> TraceGeneView:
+def get_trace_gene(
+    study_id: str, gene: str, ctx: Ctx, comparison: ComparisonQuery = None
+) -> TraceGeneView:
     """One gene's call followed down to its samples, wells and plates."""
     sid = _visible(ctx, study_id)
     _gene_ok(gene)
-    traced = _ready(ctx, study_id)
+    traced = _ready(ctx, study_id, comparison_of(ctx, study_id, comparison))
     try:
         out = trace_gene(traced, gene)
     except TraceError as err:
@@ -305,14 +347,14 @@ def get_trace_gene(study_id: str, gene: str, ctx: Ctx) -> TraceGeneView:
 
 @router.post("/studies/{study_id}/trace/{gene}/without", response_model=TraceWithoutView)
 def post_trace_without(
-    study_id: str, gene: str, body: TraceWithoutBody, ctx: Ctx
+    study_id: str, gene: str, body: TraceWithoutBody, ctx: Ctx, comparison: ComparisonQuery = None
 ) -> TraceWithoutView:
     """The call recomputed with these samples set aside together (a what-if; nothing changes)."""
     _visible(ctx, study_id)
     _gene_ok(gene)
     if not body.samples or any(not s or len(s) > 128 for s in body.samples):
         raise api_error(422, "bad_request", "Name each sample to set aside as the trace lists it.")
-    traced = _ready(ctx, study_id)
+    traced = _ready(ctx, study_id, comparison_of(ctx, study_id, comparison))
     try:
         traced.gene_index(gene)
     except TraceError as err:

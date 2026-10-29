@@ -9,15 +9,18 @@ import { useLocation } from "wouter";
 import { type MapEncoding } from "@/charts";
 import { useMediaQuery } from "@/lib/hooks";
 import { sectionPath, type SectionProps } from "@/shell/sections";
-import { Button, EmptyState, ErrorPanel, PageHeader, Skeleton } from "@/ui";
-import { isWarming, useCards, useFlips, useResults, type ResultsView } from "./api";
+import { Button, EmptyState, ErrorPanel, JobCard, PageHeader, Skeleton } from "@/ui";
+import { isWarming, useCards, useComparisons, useFlips, useResults, type ResultsView } from "./api";
 import { ChoicesConfirm } from "./ChoicesConfirm";
+import { useShownComparison } from "./comparison";
+import { ComparisonPicker, ComparisonsPanel } from "./ComparisonsPanel";
 import { DecisionCards } from "./DecisionCards";
 import { EvidencePanel } from "./EvidencePanel";
 import { FurtherChoices } from "./FurtherChoices";
 import { GenesPanel, NO_FILTER, isFiltered, matches, type GeneFilter } from "./GenesPanel";
 import { ImportTrustCard } from "./ImportTrust";
 import { MapPanel } from "./MapPanel";
+import { DetectedOnlyLine, QuantitiesPanel, QuantifyResults } from "./quantities";
 import { FlipPanel, ReferencesPanel } from "./StudyPanels";
 import { Summary } from "./Summary";
 
@@ -33,7 +36,8 @@ function Withheld({ view }: { view: ResultsView }) {
       <ul className="mt-2 space-y-1 text-muted">
         {list.map((w) => (
           <li key={w.gene}>
-            <span className="font-medium text-fg">{w.gene}</span>: {w.reason}
+            <span className="font-medium text-fg">{w.gene}</span>:{" "}
+            {w.detected_only ? <DetectedOnlyLine gene={w} /> : w.reason}
           </li>
         ))}
       </ul>
@@ -63,9 +67,18 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
   const [, navigate] = useLocation();
   const key = workspace?.key ?? "";
   const studyId = workspace?.results_visible ? workspace.study_id : null;
-  const results = useResults(key, studyId);
+  // A study that quantifies samples has no comparison: its result is the quantities.
+  const quantify = workspace?.purpose === "quantify";
+  const relative = quantify ? null : studyId;
+  // The comparison the page shows, in a study with several (null: the first, as the API says);
+  // shared with Trace and the gene's page.
+  const [comparison, setComparison] = useShownComparison(studyId);
+  const results = useResults(key, relative, comparison);
   const cards = useCards(key, studyId);
-  const flips = useFlips(key, studyId);
+  const flips = useFlips(key, relative, comparison);
+  const several = (results.data?.comparisons.length ?? 0) > 1;
+  const comparisons = useComparisons(key, studyId, several);
+  const show = useCallback((id: string) => setComparison(id), [setComparison]);
   const [by, setBy] = useState<MapEncoding>("conclusion");
   const [filter, setFilter] = useState<GeneFilter>(NO_FILTER);
 
@@ -116,6 +129,7 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
   }
   if (!studyId) {
     const analysing = workspace.next_step.section === "results" && workspace.results_visible;
+    const job = workspace.active_jobs.find((j) => j.kind === "analyse");
     return (
       <div className="mx-auto max-w-3xl p-6 lg:p-10">
         <EmptyState
@@ -126,8 +140,13 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
             ? workspace.next_step.detail
             : "This workspace has no analysed study. Confirm the design and the curves to analyse it."}
         </EmptyState>
+        {job ? <JobCard id={job.id} className="mt-4" /> : null}
       </div>
     );
+  }
+
+  if (quantify) {
+    return <QuantifyResults workspace={workspace} studyId={studyId} cards={cards} rest={rest} />;
   }
 
   const map = view && (
@@ -139,6 +158,19 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
       selected={null}
       onOpen={openGene}
     />
+  );
+  const shownId = view?.comparison ?? view?.comparisons[0]?.id ?? "";
+  const shownLabel = view?.comparisons.find((c) => c.id === shownId)?.label;
+  const compare = view && several && (
+    <>
+      {comparisons.error ? (
+        <ErrorPanel error={comparisons.error} title="The comparisons could not be read" compact />
+      ) : comparisons.data ? (
+        <ComparisonsPanel view={comparisons.data} shown={shownId} onShow={show} onOpen={openGene} />
+      ) : (
+        <Skeleton className="h-48 w-full rounded-xl" />
+      )}
+    </>
   );
   const rest_ = view && (
     <>
@@ -155,7 +187,8 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
       ) : (
         <FlipPanel flips={flips.data} onOpen={openGene} />
       )}
-      <ReferencesPanel view={view} />
+      <ReferencesPanel view={view} workspaceKey={key} />
+      <QuantitiesPanel workspaceKey={key} studyId={studyId} />
       <EvidencePanel workspaceKey={key} studyId={studyId} />
     </>
   );
@@ -210,11 +243,23 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
         </>
       ) : (
         <div className="space-y-6">
+          {several && (
+            <div className="space-y-1">
+              <ComparisonPicker tabs={view.comparisons} value={shownId} onChange={show} />
+              <p className="text-[12.5px] text-muted" role="status">
+                Showing {shownLabel ?? "the first comparison"}: the summary, the map, every gene and
+                the flip matrix below are this comparison&apos;s, and Trace, a gene&apos;s page and
+                History follow it too. A choice on a Decision Card applies to every comparison; a
+                card waits for you when it changes a call in any of them.
+              </p>
+            </div>
+          )}
           <Summary view={view} auditHref={sectionPath(workspace, "audit")} />
           <Withheld view={view} />
           {wide ? (
             <div className="grid grid-cols-[minmax(0,1fr)_420px] gap-6">
               <div className="min-w-0 space-y-6">
+                {compare}
                 {map}
                 {rest_}
               </div>
@@ -224,6 +269,7 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
             </div>
           ) : (
             <div className="space-y-6">
+              {compare}
               {map}
               {decisions}
               {rest_}

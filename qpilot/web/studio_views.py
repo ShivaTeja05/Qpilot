@@ -23,7 +23,7 @@ from typing import Any
 import pandas as pd
 
 from qpilot.schemas_studio import Proposal, ProposalOutcome
-from qpilot.studio_service import BLIND_STAGES, CURVE_JUDGE_FILE, Studio
+from qpilot.studio_service import BLIND_STAGES, CURVE_JUDGE_FILE, CURVE_JUDGE_LISTED, Studio
 from qpilot.web.contract import (
     CurveSeries,
     CurveView,
@@ -96,6 +96,11 @@ WORDS = {
     "curves_shown": (
         "LinRegPCR's numbers per well (with any call a person accepted); the Curve Judge's call "
         "where it ran on this file."
+    ),
+    "curves_shown_cq_only": (
+        "The Cq each well has in the file (with any call a person accepted). This file has Cq "
+        "values only: there is no curve, so no efficiency, R² or baseline per well, and no "
+        "Curve Judge."
     ),
     "curve_note": (
         "Raw fluorescence as exported by the instrument, by cycle. LinRegPCR's baseline is in "
@@ -277,11 +282,17 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
         full = _designed_table(studio, sid, design)
         if full is not None:
             designed = full[full["run_id"] == run.run_id]
+    left_out: Any = None  # wells of targets a person left out (the analysis drops them)
     if designed is not None and not designed.empty:
+        ignored = {t for t, d in design.targets.items() if d.role == "ignore"} if design else set()
+        if ignored:
+            left_out = rows[rows["target"].isin(ignored)]
         rows = designed
     person_calls = dict(design.well_calls) if design is not None else {}
     excluded = set(design.excluded_wells) if design is not None else set()
-    judge = _judge_cache(studio, sid, experiment) if curves_shown and run.in_design else None
+    cq_only = studio.cq_only(sid)
+    judged = curves_shown and run.in_design and not cq_only
+    judge = _judge_cache(studio, sid, experiment) if judged else None
     pending: dict[str, str] = {}
     for p in inbox.proposals:
         if p.kind == "curve.well_call" and p.status == "proposed":
@@ -311,6 +322,7 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
             sample_text_id=facts.sample_text_ids.get(sample),
             target=target,
             target_text_id=facts.target_text_ids.get(target),
+            dye=facts.target_dyes.get(target),
             declared_type=_declared(facts, row),
             role=str(row["sample_type"]) if designed is not None else None,
             excluded_by_person=key in excluded or bool(row.get("design_excluded", False)),
@@ -342,8 +354,34 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
                 }
             )
         wells.append(item)
+    if left_out is not None:
+        for _, row in left_out.iterrows():
+            well, sample, target = str(row["well"]), str(row["sample"]), str(row["target"])
+            r, c = well_position(well)
+            wells.append(
+                PlateWell(
+                    key=f"{run.run_id}/{well}",
+                    well=well,
+                    row=r,
+                    col=c,
+                    sample=sample,
+                    sample_text_id=facts.sample_text_ids.get(sample),
+                    target=target,
+                    target_text_id=facts.target_text_ids.get(target),
+                    dye=facts.target_dyes.get(target),
+                    declared_type=_declared(facts, row),
+                    role=None,
+                    excluded_by_person=False,
+                    excluded_note="its target is left out of the study by a person's decision",
+                    group=groups.get(sample),
+                )
+            )
     n_rows, n_cols = plate_shape((w.row, w.col) for w in wells)
-    if judge is not None:
+    if cq_only:
+        from qpilot.qpcr.cq_only import NOT_APPLICABLE
+
+        judge_words = NOT_APPLICABLE["curve_judge"]
+    elif judge is not None:
         judge_words = "ran on this file (its calls are shown)"
     elif curves_shown and run.in_design:
         judge_words = "not run yet: Check the curves runs it where it is validated"
@@ -356,11 +394,19 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
         n_rows=n_rows,
         n_cols=n_cols,
         targets=sorted({w.target for w in wells}),
+        multiplex=len({(w.key, w.target) for w in wells}) > len({w.key for w in wells}),
         curves_shown=curves_shown,
-        curves_note=WORDS["curves_shown"] if curves_shown else WORDS["curves_hidden"],
+        curves_note=(
+            WORDS["curves_hidden"]
+            if not curves_shown
+            else WORDS["curves_shown_cq_only"]
+            if cq_only
+            else WORDS["curves_shown"]
+        ),
         curve_judge=judge_words,
         results_visible=visible,
         wells=wells,
+        cq_only=cq_only,
     )
 
 
@@ -405,6 +451,7 @@ def curve_view(studio: Studio, sid: str, key: str, target: str | None = None) ->
     here = [w for (wl, _), w in curves.items() if wl == well]
     if target is not None:
         here = [w for w in here if w.target == target]
+    here = [w for w in here if len(w.cycles)]  # a reaction of Cq values only has no curve
     if not here:
         raise KeyError(f"no curve for well {well} on plate {run_id}")
     raw = here[0]
@@ -570,16 +617,38 @@ def report_message(report: dict[str, Any], what: str) -> str:
         )
     if report.get("fallback") is True:
         parts.append("The model was not used; the rules proposed alone.")
+    judged = "disagreements" in report
     for note in map(str, report.get("notes", [])):
+        if judged and note == CURVE_JUDGE_LISTED:
+            continue  # said once below, with the counts
         note = note[:1].upper() + note[1:]
         parts.append(note if note.endswith((".", "!", "?")) else note + ".")
-    if "disagreements" in report:
-        parts.append(
-            f"The Curve Judge disagrees with LinRegPCR on {report['disagreements']} study wells; "
-            f"{report.get('targets_that_matter', 0)} target(s) where that could change a "
-            "conclusion are listed well by well."
-        )
+    if judged:
+        parts.append(curve_judge_sentence(report))
     return " ".join(parts)
+
+
+def curve_judge_sentence(report: dict[str, Any]) -> str:
+    """What the Curve Judge found, once: where it disagrees and what the inbox lists."""
+    n = int(report.get("disagreements") or 0)
+    k = int(report.get("targets_that_matter") or 0)
+    wells = f"{n} study well{'s' * (n != 1)}"
+    if not n:
+        return "The Curve Judge agrees with LinRegPCR on every study well it scored."
+    if not k:
+        none = (
+            "it cannot change a conclusion, so it is not listed"
+            if n == 1
+            else "none of them can change a conclusion, so none is listed"
+        )
+        return f"The Curve Judge disagrees with LinRegPCR on {wells}; {none}."
+    targets = f"{k} target{'s' * (k != 1)}"
+    whose = "that target's" if k == 1 else "those targets'"
+    return (
+        f"The Curve Judge disagrees with LinRegPCR on {wells}; on {targets}, resolving them "
+        f"could change a conclusion, so {whose} wells are listed one by one for you to decide. "
+        "The others change no conclusion and are not listed."
+    )
 
 
 def outcome_message(outcome: ProposalOutcome, done: str) -> str:

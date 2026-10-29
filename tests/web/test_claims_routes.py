@@ -143,6 +143,20 @@ def test_a_fold_inside_and_far_outside_the_interval(study):
     assert next(ch for ch in claim["checks"] if ch["check"] == "fold")["status"] == "stronger"
 
 
+def test_a_named_group_study_flags_groups_it_does_not_compare(study):
+    """On a lab's own file (KO vs WT): a claim about stage or another gene's status is a
+    different comparison; one naming the study's groups is checked as before."""
+    c, sid, row, a, b = study["client"], study["study"], study["row"], study["a"], study["b"]
+    word = "higher" if row["conclusion"] in ("up", "none") else "lower"
+    (claim,) = post(c, sid, f"{GENE} was {word} in TP53-mutant mice.").json()["claims"]
+    assert claim["verdict"] == "mismatch", claim["headline"]["plain"]
+    assert f"compares {a} against {b}, not TP53 status" in claim["headline"]["plain"]
+    (claim,) = post(c, sid, f"{GENE} was {word} in stage 4 tumours.").json()["claims"]
+    assert claim["verdict"] == "mismatch"
+    (claim,) = post(c, sid, f"{GENE} was {word} in {a} than in {b}.").json()["claims"]
+    assert claim["verdict"] != "mismatch" and claim["reading"]["other_groups"] == []
+
+
 def test_normalisers_and_genes_the_study_did_not_measure(study):
     c, sid, refs = study["client"], study["study"], study["refs"]
     (claim,) = post(c, sid, f"Expression was normalised to {refs[0]}.").json()["claims"]

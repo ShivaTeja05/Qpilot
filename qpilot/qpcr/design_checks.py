@@ -24,7 +24,8 @@ rule            what it can refute
 ``D-AXIS``      a further choice to test (``choice.axis``) whose options are not the axis's
                 own, do not start with the analysis in use, or need what the file does not
                 have (each well's own efficiency, a dilution series, an amplicon on several
-                plates).
+                plates; three reference genes for a best pair, many genes for the global
+                mean; a gene split over plates with a calibrator or a shared measurement).
 ==============  ==============================================================================
 
 **Hard bans** (:func:`hard_ban`) are refused before a proposal is stored, whoever proposes it:
@@ -38,7 +39,7 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -67,7 +68,21 @@ SMALL_REPLICATE_SET = 4
 ACCEPTED = ("accepted", "edited")
 SAMPLE_ROLES = ("unkn",)  # roles whose samples count as study samples (D-NTC, D-NGUARD)
 
-RULE_IDS = ("D-SERIES", "D-NTC", "D-REP", "D-SYMBOL", "D-COVER", "D-NGUARD", "D-AXIS")
+RULE_IDS = (
+    "D-SERIES",
+    "D-NTC",
+    "D-REP",
+    "D-SYMBOL",
+    "D-COVER",
+    "D-NGUARD",
+    "D-AXIS",
+    "D-PURPOSE",
+)
+#: D-NGUARD in a study that quantifies samples: the comparison is set aside, so it does not apply.
+NGUARD_NOT_APPLICABLE = (
+    "not applicable: this study quantifies samples and compares no groups (its purpose is "
+    "quantify samples), so the comparison is set aside and no group size is checked"
+)
 
 
 def _check(
@@ -541,7 +556,22 @@ def symbol_check(target_name: str, symbol: str) -> ProposalCheck:
             "contradicted",
             "D-SYMBOL",
             details,
-            "the target is a repeat or spike-in assay, which has no gene symbol",
+            getattr(named, "note", "")
+            or "the target is a repeat or spike-in assay, which has no gene symbol",
+        )
+    # Not circular: a name that is an alias, matches only ignoring case, or fits several genes
+    # does not name the proposed gene by itself, so the lookup that made the proposal cannot
+    # also confirm it (``SymbolFinding.identifies``, io/symbols.py; absent in older builds).
+    if symbol != target_name and getattr(named, "identifies", None) is False:
+        # The genes HGNC lists for the name go in the details (symbols hold digits; notes don't).
+        details = {**details, "name_candidates": list(named.candidates[:5])}
+        return _check(
+            "cannot_check",
+            "D-SYMBOL",
+            details,
+            "the target's name does not by itself name this gene (it is an alias, fits several "
+            "genes, matches only when letter case is ignored, or is not a gene name); a person "
+            "confirms the gene",
         )
     if named.candidates and symbol not in named.candidates:
         return _check(
@@ -579,16 +609,18 @@ def assemble_roles(
         target = by_well if "/" in proposal.subject else by_sample
         target[proposal.subject].add(str(role))
     out: dict[tuple[str, str, str], set[str]] = {}
-    for row in wells[["run_id", "well", "sample", "target"]].itertuples(index=False):
-        well = f"{row.run_id}/{row.well}"
-        key = (row.run_id, row.well, row.target)
+    # Plain lists, not itertuples: on string columns that is ~10x faster (one check per proposal).
+    columns = [wells[c].tolist() for c in ("run_id", "well", "sample", "target")]
+    for run_id, well_id, sample, target_id in zip(*columns, strict=True):
+        well = f"{run_id}/{well_id}"
+        key = (run_id, well_id, target_id)
         if well in by_well:
             roles = set(by_well[well])
-        elif row.sample in by_sample:
-            roles = set(by_sample[row.sample])
+        elif sample in by_sample:
+            roles = set(by_sample[sample])
         else:
-            declared = facts_types.get(row.sample, (("unkn", ""),))
-            specific = {t for t, target in declared if target == row.target}
+            declared = facts_types.get(sample, (("unkn", ""),))
+            specific = {t for t, target in declared if target == target_id}
             roles = specific or {t for t, target in declared if not target} or {"unkn"}
         out.setdefault(key, set()).update(roles)
     return out
@@ -801,7 +833,10 @@ def hard_ban(proposal: Proposal, current: list[Proposal]) -> str | None:
     (b) A ``design.bio_unit`` proposal may not move a sample out of a biological unit a person
     confirmed (an accepted proposal, or the sheet's explicit unit column): that merges or
     splits confirmed units. When the input and its sheet are not known in this process, unit
-    proposals are refused (fail closed) until they are.
+    proposals are refused (fail closed) until they are. The one exception is a person's own
+    change on the Design page (``made_by.kind == "person"``, which only ``actor="human"`` can
+    propose): a person may correct a unit they or their sheet set, with a reason; no rule,
+    model or agent ever can.
 
     A ``design.dilution_series`` must list its samples as an object of sample to quantity; any
     other shape is refused, so no member can slip past (a).
@@ -860,7 +895,7 @@ def hard_ban(proposal: Proposal, current: list[Proposal]) -> str | None:
             return "refused: a dilution series may not include a declared or confirmed control"
     if kind in ("design.group", "design.bio_unit") and is_control(proposal.subject):
         return "refused: a control cannot join a biological group or unit"
-    if kind == "design.bio_unit":
+    if kind == "design.bio_unit" and proposal.made_by.kind != "person":
         unit = payload.get("biological_unit")
         confirmed = dict(declared.sheet_units) if declared else {}
         for p in accepted:
@@ -976,8 +1011,24 @@ def check_with_facts(
         if proposal.subject not in known:
             return _check("contradicted", "D-COVER", {}, "no target in the file has this name")
         original = facts.quarantined(facts.target_text_ids[proposal.subject]) or proposal.subject
+        if design_rules.is_placeholder_name(original) or design_rules.is_placeholder_name(
+            proposal.subject
+        ):
+            return _check(
+                "cannot_check",
+                "D-SYMBOL",
+                {"placeholder": True},
+                "the target's name is a placeholder (a role, a control or a dye), not a gene "
+                "name, so no gene symbol can be checked against it",
+            )
         return symbol_check(original, str(payload.get("symbol", "")))
+    if kind == "design.purpose":
+        return purpose_check(payload, facts, accepted)
     if kind == "design.comparison":
+        from qpilot.qpcr.designs import QUANTIFY, purpose_of
+
+        if purpose_of(accepted) == QUANTIFY:
+            return _check("cannot_check", "D-NGUARD", {"applies": False}, NGUARD_NOT_APPLICABLE)
         groups, units = _groups_and_units(accepted)
         roles = _sample_roles(facts, accepted)
         return nguard_check(
@@ -1007,6 +1058,59 @@ def check_with_facts(
     return ProposalCheck(status="cannot_check", note="no engine check exists for this kind")
 
 
+def purpose_check(
+    payload: Mapping[str, Any], facts: FileFacts, accepted: list[Proposal]
+) -> ProposalCheck:
+    """``D-PURPOSE``: what the study is for. Refuted only when it cannot be what it says.
+
+    What a study is for is a person's to say; no check can show it. Quantifying samples is
+    refuted when the plate has no standard at all (declared, or marked by an accepted
+    decision): there is no curve to read a quantity from. Otherwise the check cannot decide it
+    (``cannot_check``), so it is never in "Accept all consistent", and the note counts the
+    standards and those with a quantity (names and declared quantities only: blind).
+    """
+    from qpilot.qpcr.designs import PURPOSES, QUANTIFY
+
+    purpose = payload.get("purpose")
+    if purpose not in PURPOSES:
+        return _check("contradicted", "D-PURPOSE", {}, "a study compares groups or quantifies")
+    if purpose != QUANTIFY:
+        return _check(
+            "cannot_check",
+            "D-PURPOSE",
+            {"purpose": purpose},
+            "comparing groups needs groups, a comparison and reference genes; the engine "
+            "checks each when it is set",
+        )
+    roles = _sample_roles(facts, accepted)
+    for p in accepted:
+        if p.kind == "design.dilution_series":
+            for sample in p.effective_payload().get("samples") or {}:
+                roles[str(sample)] = "std"
+    standards = sorted(s for s, role in roles.items() if role == "std")
+    given = set()
+    for p in accepted:
+        if p.kind == "design.dilution_series":
+            given |= {str(s) for s in p.effective_payload().get("samples") or {}}
+    declared = {s for s, entries in facts.sample_quantities.items() if entries}
+    with_quantity = [s for s in standards if s in given or s in declared]
+    details = {"n_standards": len(standards), "n_with_quantity": len(with_quantity)}
+    if not standards:
+        return _check(
+            "contradicted",
+            "D-PURPOSE",
+            details,
+            "the plate has no standards (no sample is typed Standard, in the file or by a "
+            "decision), so there is no standard curve to read a quantity from",
+        )
+    note = (
+        f"{len(standards)} standard sample{'s' * (len(standards) != 1)} on the plate, "
+        f"{len(with_quantity)} with a quantity (the file's or a person's); what the study is "
+        "for is yours to say"
+    )
+    return _check("cannot_check", "D-PURPOSE", details, note)
+
+
 def axis_check(
     subject: str, payload: Mapping[str, Any], wells: pd.DataFrame, accepted: list[Proposal]
 ) -> ProposalCheck:
@@ -1033,6 +1137,10 @@ def axis_check(
             "the options are not this choice's own: they start with the analysis in use and "
             "name each of the choice's options at most once",
         )
+    if subject == "normaliser":
+        return _normaliser_axis_check(options, wells, accepted)
+    if subject == "interrun":
+        return _interrun_axis_check(options, wells)
     table, quantities = wells, {}
     for p in accepted:
         if p.kind == "design.dilution_series":
@@ -1072,6 +1180,84 @@ def axis_check(
     )
 
 
+def _refuted(options: Sequence[str], missing: Mapping[str, str], details: dict) -> ProposalCheck:
+    """``D-AXIS`` from the options the file cannot give (option -> why, in plain words)."""
+    refuted = [o for o in options if o in missing]
+    if refuted:
+        details["not_in_the_file"] = refuted
+        return _check("contradicted", "D-AXIS", details, "; ".join(missing[o] for o in refuted))
+    return _check(
+        "consistent",
+        "D-AXIS",
+        details,
+        "each option is the choice's own and the file has what it needs; which options apply "
+        "to the analysed experiment is said again when the study is analysed",
+    )
+
+
+def _reference_targets(accepted: list[Proposal]) -> set[str] | None:
+    """The targets the accepted proposals make reference genes (``None``: a preset decides)."""
+    refs: dict[str, bool] = {}
+    for p in accepted:
+        if p.kind == "design.preset":
+            return None
+        if p.kind == "design.target_role":
+            refs[p.subject] = p.effective_payload().get("role") == "ref"
+    return {t for t, is_ref in refs.items() if is_ref}
+
+
+def _normaliser_axis_check(
+    options: Sequence[str], wells: pd.DataFrame, accepted: list[Proposal]
+) -> ProposalCheck:
+    """``D-AXIS`` for the normaliser: what a best pair and the global mean need.
+
+    A best pair needs three reference genes; the global mean needs many genes with study wells
+    (:data:`qpilot.qpcr.axes.normaliser.GLOBAL_MEAN_MIN_GENES`).
+    """
+    from qpilot.qpcr.axes.normaliser import GLOBAL_MEAN_MIN_GENES
+
+    study = wells[(wells["sample_type"] == "unkn") & wells["n0"].notna()]
+    n_genes = int(study["target"].nunique())
+    refs = _reference_targets(accepted)
+    missing: dict[str, str] = {}
+    if refs is not None and len(refs) < 3:
+        why = "a best pair needs at least three reference genes, and fewer are accepted"
+        missing.update({"normfinder_pair": why, "genorm_pair": why})
+    if n_genes < GLOBAL_MEAN_MIN_GENES:
+        missing["global_mean"] = (
+            "the file measures too few genes for a global mean (qPilot asks for fifty)"
+        )
+    details: dict[str, Any] = {
+        "options": list(options),
+        "genes_with_study_wells": n_genes,
+        "global_mean_min_genes": GLOBAL_MEAN_MIN_GENES,
+        "reference_genes_accepted": None if refs is None else sorted(refs),
+    }
+    return _refuted(options, missing, details)
+
+
+def _interrun_axis_check(options: Sequence[str], wells: pd.DataFrame) -> ProposalCheck:
+    """``D-AXIS`` for the correction between plates: what each correction needs.
+
+    A gene's study wells must be split over plates, and the option needs a calibrator on each
+    of its plates (``calibrator``) or a measurement two plates share (``factor``).
+    """
+    from qpilot.qpcr import interrun as irc
+
+    table = wells[["run_id", "sample", "sample_type", "target", "n0"]].copy()
+    table["n0"] = pd.to_numeric(table["n0"], errors="coerce")
+    missing = irc.unavailable(table)
+    summary = irc.summary(table)
+    details: dict[str, Any] = {
+        "options": list(options),
+        "plates": summary["n_runs"],
+        "genes_split_over_plates": summary["n_split_targets"],
+        "genes_with_a_calibrator_on_each_plate": len(summary["calibrators"]),
+        "plate_pairs_sharing_a_measurement": summary["n_plate_pairs_sharing"],
+    }
+    return _refuted(options, missing, details)
+
+
 #: Why the file cannot give an efficiency model, in words without digits.
 _AXIS_MISSING = {
     "per_well": "no study well has its own efficiency inside LinRegPCR's valid range",
@@ -1098,6 +1284,16 @@ def curve_check(subject: str, payload: Mapping[str, Any], wells: pd.DataFrame) -
     claim = payload.get("amplified")
     if not isinstance(claim, bool):
         return _check("contradicted", "D-CURVE", {}, "a well call is amplified true or false")
+    if "target" in rows.columns and rows["target"].nunique() > 1:  # a multiplex well
+        targets = sorted(set(rows["target"].astype(str)))
+        return _check(
+            "contradicted",
+            "D-CURVE",
+            {"targets": ", ".join(targets)},
+            "this well holds a curve for each of several targets (multiplex), and a call on the "
+            "well would set every one of them at once; leave the well out instead, or leave the "
+            "call to LinRegPCR, which calls each dye's curve on its own",
+        )
     row = rows.iloc[0]
     has_quantity = bool(pd.notna(row["n0"]))
     fitted = bool(row["amplification"]) and bool(row["plateau"]) and has_quantity
@@ -1159,11 +1355,15 @@ def _sample_roles(facts: FileFacts, accepted: list[Proposal]) -> dict[str, str]:
 def _groups_and_units(accepted: list[Proposal]) -> tuple[dict[str, str], dict[str, str]]:
     groups: dict[str, str] = {}
     units: dict[str, str] = {}
-    for p in accepted:
-        if p.kind == "design.group":
-            groups[p.subject] = str(p.effective_payload().get("group"))
-        elif p.kind == "design.bio_unit":
-            units[p.subject] = str(p.effective_payload().get("biological_unit"))
+    for p in accepted:  # a later decision on the same sample wins; None takes the value away
+        if p.kind not in ("design.group", "design.bio_unit"):
+            continue
+        into, key = (groups, "group") if p.kind == "design.group" else (units, "biological_unit")
+        value = p.effective_payload().get(key)
+        if value is None:
+            into.pop(p.subject, None)
+        else:
+            into[p.subject] = str(value)
     return groups, units
 
 

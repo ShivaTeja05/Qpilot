@@ -52,6 +52,8 @@ import hashlib
 import json
 import os
 import re
+import threading
+from collections import OrderedDict
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -156,6 +158,44 @@ def chain_lines(path: Path) -> list[str]:
     return [line for line in _lines(path) if line.strip()]
 
 
+# Chains verified in this process, by (root, study id, digest of the exact text) — see _load.
+_VERIFIED: OrderedDict[tuple[str, str, bytes], tuple[tuple[ProposalEntry, ...], Replay]] = (
+    OrderedDict()
+)
+_VERIFIED_LOCK = threading.Lock()
+VERIFIED_KEPT = 64
+
+
+def _verified(key: tuple[str, str, bytes]) -> tuple[list[ProposalEntry], Replay] | None:
+    with _VERIFIED_LOCK:
+        found = _VERIFIED.get(key)
+        if found is None:
+            return None
+        _VERIFIED.move_to_end(key)
+    entries, state = found
+    return list(entries), _copy_replay(state)
+
+
+def _keep_verified(
+    key: tuple[str, str, bytes], entries: list[ProposalEntry], state: Replay
+) -> None:
+    with _VERIFIED_LOCK:
+        _VERIFIED[key] = (tuple(entries), _copy_replay(state))
+        while len(_VERIFIED) > VERIFIED_KEPT:
+            _VERIFIED.popitem(last=False)
+
+
+def _copy_replay(state: Replay) -> Replay:
+    """A replay whose maps and lists are its own (writes apply their entry to the copy)."""
+    return Replay(
+        proposals=dict(state.proposals),
+        proposed_at=dict(state.proposed_at),
+        decided=list(state.decided),
+        problems=list(state.problems),
+        agent_bytes=state.agent_bytes,
+    )
+
+
 # ---- replay ------------------------------------------------------------------------------------
 
 
@@ -196,6 +236,8 @@ def _step(state: Replay, entry: ProposalEntry, study_id: str | None) -> str | No
             return "a propose line with fields its action does not use"
         if study_id is not None and proposal.study_id != study_id:
             return "a proposal for another study"
+        if proposal.made_by.kind == "person" and entry.actor != "human":
+            return f"a proposal made by a person but proposed by {entry.actor}"
         state.proposals[pid] = proposal
         state.proposed_at[pid] = entry.seq
         return None
@@ -362,9 +404,14 @@ def _require_human(actor: Any) -> None:
 
 
 def _check_maker(proposal: Proposal, actor: str) -> None:
-    """An agent's proposal is an agent's; only the system proposes a confirm step, as the rule."""
+    """Who may propose what: an agent's proposal is an agent's, a person's only a person's.
+
+    Only the system proposes a confirm step, as the rule.
+    """
     if actor == "agent" and proposal.made_by.kind != "agent":
         raise ProposalError("an agent's proposal is always recorded as made by an agent")
+    if proposal.made_by.kind == "person" and actor != "human":
+        raise ProposalError("only a person makes a proposal recorded as made by a person")
     if proposal.kind in SYSTEM_ONLY_KINDS and (
         actor != "system" or proposal.made_by.kind != "rule"
     ):
@@ -374,11 +421,41 @@ def _check_maker(proposal: Proposal, actor: str) -> None:
         )
 
 
-def _ask(guard: Guard | None, candidate: Proposal, current: list[Proposal]) -> str | None:
+class _Copies:
+    """Deep copies of the inbox's proposals for the guard, each made once per proposal state.
+
+    One decision that settles many proposals (:meth:`ProposalStore.decide_together`) asks the
+    guard once per item; copying the whole inbox for every question made a person's act of a
+    few hundred items quadratic. A proposal is copied again only when the inbox holds a new
+    object for it (its status changed). The original is kept beside its copy, so its identity
+    can never be reused by another object while the copy is served.
+    """
+
+    def __init__(self) -> None:
+        self._made: dict[str, tuple[Proposal, Proposal]] = {}
+
+    def of(self, proposals: Iterable[Proposal]) -> list[Proposal]:
+        out = []
+        for p in proposals:
+            hit = self._made.get(p.id)
+            if hit is None or hit[0] is not p:
+                hit = (p, p.model_copy(deep=True))
+                self._made[p.id] = hit
+            out.append(hit[1])
+        return out
+
+
+def _ask(
+    guard: Guard | None,
+    candidate: Proposal,
+    current: list[Proposal],
+    copies: _Copies | None = None,
+) -> str | None:
     """The guard's refusal, on copies: a guard can read the inbox but never change it."""
     if guard is None:
         return None
-    refusal = guard(candidate.model_copy(deep=True), [p.model_copy(deep=True) for p in current])
+    others = copies.of(current) if copies else [p.model_copy(deep=True) for p in current]
+    refusal = guard(candidate.model_copy(deep=True), others)
     return str(refusal)[:500] if refusal else None
 
 
@@ -451,8 +528,22 @@ class ProposalStore:
             yield
 
     def _load(self) -> tuple[list[ProposalEntry], Replay]:
-        """The chain and its replay; :class:`ProposalError` when it does not verify."""
-        lines = chain_lines(self.path)
+        """The chain and its replay; :class:`ProposalError` when it does not verify.
+
+        A chain whose exact text was verified before (same root, same bytes) is not parsed and
+        verified again: its entries and replay are reused (a fresh copy of the replay's lists and
+        maps each time; proposals themselves are only ever replaced, never changed in place).
+        """
+        text = self.path.read_text(encoding="utf-8") if self.path.exists() else ""
+        key = (self.root, self.study_id, hashlib.blake2b(text.encode("utf-8")).digest())
+        known = _verified(key)
+        if known is not None:
+            return known
+        entries, state = self._verify([line for line in text.split("\n") if line.strip()])
+        _keep_verified(key, entries, state)
+        return entries, state
+
+    def _verify(self, lines: list[str]) -> tuple[list[ProposalEntry], Replay]:
         try:
             entries = [ProposalEntry.model_validate_json(line) for line in lines]
         except (ValueError, RecursionError) as err:
@@ -810,11 +901,14 @@ class ProposalStore:
                 return every("stale", STALE_REASON, head)
             written: list[ProposalEntry] = []
             done: list[tuple[str, str]] = []
+            copies = _Copies()  # the guard's copies of the inbox, made once per proposal state
             at = _now()  # one click, one moment
             for clean, action in made:
                 current = list(state.proposals.values())
                 waiting = [p for p in current if p.status == "proposed"]
-                refusal = self._full(clean, waiting, state) or _ask(self._guard, clean, current)
+                refusal = self._full(clean, waiting, state) or _ask(
+                    self._guard, clean, current, copies
+                )
                 if refusal:
                     return every("refused", refusal, head)
                 pid = proposal_id(clean, at, len(entries) + len(written) + 1)
@@ -843,7 +937,7 @@ class ProposalStore:
                 done.append((pid, action))
             for pid, action in done:
                 if action == "accept":
-                    refusal = self._guarded(state.proposals[pid], None, state)
+                    refusal = self._guarded(state.proposals[pid], None, state, copies)
                     if refusal:
                         return every("refused", refusal, head)
                 written.append(
@@ -906,14 +1000,18 @@ class ProposalStore:
     # ---- internals ----------------------------------------------------------------------------
 
     def _guarded(
-        self, proposal: Proposal, edits: dict[str, Any] | None, state: Replay
+        self,
+        proposal: Proposal,
+        edits: dict[str, Any] | None,
+        state: Replay,
+        copies: _Copies | None = None,
     ) -> str | None:
         """The guard's refusal of what would take effect (edits merged in), or None."""
         effective = proposal
         if edits:
             effective = proposal.model_copy(update={"payload": {**proposal.payload, **edits}})
         others = [p for p in state.proposals.values() if p.id != proposal.id]
-        return _ask(self._guard, effective, others)
+        return _ask(self._guard, effective, others, copies)
 
     def _entry(
         self,
@@ -950,7 +1048,7 @@ class ProposalStore:
 
     def _write(self, entries: list[ProposalEntry]) -> None:
         text = "".join(canonical_line(e) + "\n" for e in entries)
-        with open(self.path, "a", encoding="utf-8") as fh:
+        with open(self.path, "a", encoding="utf-8", newline="\n") as fh:
             fh.write(text)
             fh.flush()
             os.fsync(fh.fileno())

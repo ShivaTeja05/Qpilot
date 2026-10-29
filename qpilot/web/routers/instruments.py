@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import APIRouter, File, UploadFile
+from fastapi.concurrency import run_in_threadpool
 
 from qpilot.core.instruments import (
     INSTRUMENT_ID,
@@ -45,6 +46,7 @@ from qpilot.core.instruments import (
     reject_incident,
     suggest_id,
 )
+from qpilot.explain.words import plural
 from qpilot.web import results_views as rv
 from qpilot.web import views
 from qpilot.web.context import AppContext, Ctx, api_error
@@ -493,7 +495,8 @@ async def read_run(
     run: Annotated[UploadFile, File(description="An .eds, a QuantStudio or CFX export, or RDML.")],
 ) -> RunFileView:
     """What a run file says about its instrument, and which registered instrument it names."""
-    return run_view(ctx, await _keep_run(ctx, run))
+    path = await _keep_run(ctx, run)
+    return await run_in_threadpool(run_view, ctx, path)  # off the event loop (RT-EX-010)
 
 
 @router.post("/instruments/runs/{run_id}/link", response_model=Linked)
@@ -518,7 +521,9 @@ def link_run(run_id: str, body: LinkBody, ctx: Ctx) -> Linked:
     except InstrumentError as err:
         raise _refused(err) from err
     ctx.bus.publish({"type": "instruments.changed", "key": instrument_id, "source": "page"})
-    told = f"{len(events)} event(s) the file states were logged" if events else "nothing new"
+    told = (
+        f"{plural(len(events), 'event')} the file states were logged" if events else "nothing new"
+    )
     return Linked(
         instrument_id=instrument_id,
         n_logged=len(events),

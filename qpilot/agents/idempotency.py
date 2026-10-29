@@ -74,8 +74,14 @@ class IdempotencyLedger:
         key: Any,
         args: dict[str, Any],
         call: Callable[[], dict[str, Any]],
+        *,
+        lock: str = ".lock",
     ) -> dict[str, Any]:
-        """Answer ``call()`` once per key; replay a fresh saved answer for the same arguments."""
+        """Answer ``call()`` once per key; replay a fresh saved answer for the same arguments.
+
+        ``lock`` names the file lock held while ``call()`` runs: a tool whose call takes long (an
+        export) passes its own, so it never makes another tool's keyed retry wait for it.
+        """
         if key is None:
             return call()
         if not isinstance(key, str) or not KEY.match(key):
@@ -86,7 +92,7 @@ class IdempotencyLedger:
             return call()  # arguments that are not JSON are refused by the tool itself
         path = self._path(key)
         path.parent.mkdir(parents=True, exist_ok=True)
-        with FileLock(str(self.folder / ".lock"), timeout=LOCK_TIMEOUT_S):
+        with FileLock(str(self.folder / lock), timeout=LOCK_TIMEOUT_S):
             saved = self._saved(path)
             if saved is not None:
                 if saved.get("fingerprint") != wanted:

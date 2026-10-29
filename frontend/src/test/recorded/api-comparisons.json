@@ -1,0 +1,200 @@
+{
+ "study_id": "b04b6f5bc401",
+ "several": true,
+ "test": "welch",
+ "test_words": "Welch's t-test on log2 relative quantities (no equal-variance assumption)",
+ "correction": "holm",
+ "correction_words": "Holm's correction across each gene's comparisons",
+ "pattern": "vs_control",
+ "control": "Control",
+ "pair_by": null,
+ "rule_text": "up or down only if the corrected p < 0.05 and the change is at least 2-fold; otherwise no call",
+ "comparisons": [
+  {
+   "id": "drug_a_vs_control",
+   "label": "Drug A vs Control",
+   "group_a": "Drug A",
+   "group_b": "Control",
+   "primary": true,
+   "n_a": 4,
+   "n_b": 4,
+   "n_pairs": null,
+   "n_up": 1,
+   "n_down": 0,
+   "n_tested": 3,
+   "not_tested": {}
+  },
+  {
+   "id": "drug_b_vs_control",
+   "label": "Drug B vs Control",
+   "group_a": "Drug B",
+   "group_b": "Control",
+   "primary": false,
+   "n_a": 4,
+   "n_b": 4,
+   "n_pairs": null,
+   "n_up": 2,
+   "n_down": 0,
+   "n_tested": 3,
+   "not_tested": {}
+  }
+ ],
+ "genes": [
+  {
+   "gene": "IL6",
+   "headline": true,
+   "cells": [
+    {
+     "conclusion": "up",
+     "fc": 6.114557789737076,
+     "log2fc": 2.6122481655356156,
+     "ci": [
+      2.869052221584681,
+      13.031417372871557
+     ],
+     "p": 0.001096449130980229,
+     "p_adjusted": 0.002192898261960458,
+     "q": 0.003289347392940687,
+     "n_a": 4,
+     "n_b": 4,
+     "holds": 1.0,
+     "level": "Moderate",
+     "at_your_choices": null
+    },
+    {
+     "conclusion": "up",
+     "fc": 6.87381903906859,
+     "log2fc": 2.7811118716585943,
+     "ci": [
+      2.9269843121259496,
+      16.142685830640247
+     ],
+     "p": 0.0015917467027628265,
+     "p_adjusted": 0.002192898261960458,
+     "q": 0.004775240108288479,
+     "n_a": 4,
+     "n_b": 4,
+     "holds": 1.0,
+     "level": "Moderate",
+     "at_your_choices": null
+    }
+   ],
+   "n_called": 2,
+   "omnibus_p": 0.002206769077969685
+  },
+  {
+   "gene": "MYC",
+   "headline": true,
+   "cells": [
+    {
+     "conclusion": "none",
+     "fc": 1.0828328588695795,
+     "log2fc": 0.1148105723191164,
+     "ci": [
+      0.5040509272780586,
+      2.326207406421147
+     ],
+     "p": 0.8074895491964262,
+     "p_adjusted": 0.8074895491964262,
+     "q": 0.9306438533051885,
+     "n_a": 4,
+     "n_b": 4,
+     "holds": 1.0,
+     "level": "Low",
+     "at_your_choices": null
+    },
+    {
+     "conclusion": "up",
+     "fc": 3.3126957189641106,
+     "log2fc": 1.7280056936386892,
+     "ci": [
+      1.41216882163953,
+      7.770992220110321
+     ],
+     "p": 0.014092156791268337,
+     "p_adjusted": 0.028184313582536674,
+     "q": 0.021138235186902506,
+     "n_a": 4,
+     "n_b": 4,
+     "holds": 1.0,
+     "level": "Low",
+     "at_your_choices": null
+    }
+   ],
+   "n_called": 1,
+   "omnibus_p": 0.03298893282076021
+  },
+  {
+   "gene": "TP53",
+   "headline": false,
+   "cells": [
+    {
+     "conclusion": "none",
+     "fc": 0.972130006602427,
+     "log2fc": -0.0407788311195767,
+     "ci": [
+      0.45363909990704787,
+      2.083234778330342
+     ],
+     "p": 0.9306438533051885,
+     "p_adjusted": 1.0,
+     "q": 0.9306438533051885,
+     "n_a": 4,
+     "n_b": 4,
+     "holds": 1.0,
+     "level": "Low",
+     "at_your_choices": null
+    },
+    {
+     "conclusion": "none",
+     "fc": 0.8937742706576927,
+     "log2fc": -0.16201758084232631,
+     "ci": [
+      0.2596557888228567,
+      3.0765054401874807
+     ],
+     "p": 0.8044406219076464,
+     "p_adjusted": 1.0,
+     "q": 0.8044406219076464,
+     "n_a": 3,
+     "n_b": 4,
+     "holds": 1.0,
+     "level": "Low",
+     "at_your_choices": null
+    }
+   ],
+   "n_called": 0,
+   "omnibus_p": 0.9694844272314049
+  }
+ ],
+ "notes": [
+  {
+   "kind": "correction",
+   "text": "Each gene is compared 2 times, so its p-values are corrected with Holm's method across those 2 comparisons: a gene is called only when its corrected p is below 0.05 and the change is at least 2-fold. Each 95 % interval is for its comparison alone."
+  },
+  {
+   "kind": "primary_only",
+   "text": "A choice on a Decision Card applies to every comparison, and a card waits for a person when it changes a call in any of them. The gene table, the robustness map, Trace, a gene's page and History follow the comparison you pick; the Run Review lists every one. The robustness audit audits the first comparison (Drug A vs Control) only."
+  },
+  {
+   "kind": "q_value",
+   "text": "q (false discovery rate) is the share of false findings expected among the genes with that q or lower in one comparison (Benjamini-Hochberg across its genes). It is shown, never used for a call."
+  },
+  {
+   "kind": "omnibus",
+   "text": "“Any difference” asks whether a gene differs anywhere among Drug A, Control and Drug B: Welch's one-way ANOVA (unequal variances) at the planned analysis. It is for orientation only; the calls are the comparisons'."
+  },
+  {
+   "kind": "not_measured",
+   "text": "Some biological units were not measured for every gene; each is left out of only the genes it lacks."
+  }
+ ],
+ "not_measured": {
+  "TP53": "DrugB_D4"
+ },
+ "omnibus_groups": [
+  "Drug A",
+  "Control",
+  "Drug B"
+ ]
+}

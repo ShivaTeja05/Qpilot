@@ -39,7 +39,7 @@ import numpy as np
 import pandas as pd
 
 from qpilot.claims.extract import Claim, extract
-from qpilot.claims.lexicon import Lexicon
+from qpilot.claims.lexicon import PLAN_GROUP, Lexicon, plan_groups
 from qpilot.claims.models import (
     VERDICT_LABEL,
     VERDICT_RULE,
@@ -64,7 +64,8 @@ from qpilot.core.validator import TOKEN, method_constants, validate
 from qpilot.schemas import DecisionCard, Fact, StudyResult
 
 SEVERITY: dict[str, int] = {
-    "contradicted": 4,
+    "contradicted": 5,
+    "mismatch": 4,
     "overstated": 3,
     "choices": 2,
     "unchecked": 1,
@@ -560,18 +561,136 @@ def _unchecked(book: Book, gene: str, status: str | None) -> Outcome:
     return Outcome("unchecked", [_check("gene", "unknown", text)], text)
 
 
+def _groups_words(book: Book, claim: Claim, cid: str) -> tuple[str, list[str]]:
+    """What the study compares and what the claim's words compare instead, as a sentence."""
+    record = book.record
+    lex = record.lexicon
+    a, b = record.phrases
+    written, what = claim.other_groups[0]
+    mark = next(
+        (m for m in claim.marks if m.role == "group" and m.written == written), None
+    )  # the first such group in the claim's words
+    quoted = book.quote(cid, "group", mark.span.start, mark.span.end) if mark else written
+    names = [lex.group_a, lex.group_b, what, lex.basis]
+    if lex.basis and lex.group_b == "rest":
+        short = lex.basis.removesuffix(" expression")
+        ours = f"{lex.group_a} against {short}-low expression (the rest)"
+        names.append(f"{short}-low")
+    else:
+        ours = f"{a} against {b}"
+    return f"This study compares {ours}, not {what} ({quoted})", names
+
+
+def _span_of(claim: Claim, written: str) -> tuple[int, int]:
+    """Where the claim's words ``written`` are (the first mark that wrote them)."""
+    mark = next(m for m in claim.marks if m.written == written)
+    return mark.span.start, mark.span.end
+
+
+def _mismatch(book: Book, claim: Claim, cid: str, gene: str) -> Outcome:
+    """A claim about groups the study does not compare: its numbers do not test it."""
+    words, names = _groups_words(book, claim, cid)
+    text = book.say(f"{words}: its numbers do not test this claim.", [gene, *names])
+    return Outcome(
+        "mismatch",
+        [_check("groups", "opposite", text)],
+        text,
+        suggestion=suggest_gene(book, gene),
+        gene=gene,
+    )
+
+
+def _corrected_p(record: StudyRecord, gene: str) -> tuple[float, str] | None:
+    """The first comparison's corrected p and its words, when the study corrects (else None)."""
+    found = record.result.comparisons
+    if found is None or found.correction == "none" or len(found.comparisons) < 2:
+        return None
+    value = found.comparisons[0].p_adjusted.get(gene)
+    if value is None or not math.isfinite(value):
+        return None
+    return float(value), "corrected p"
+
+
+def _other_comparison(book: Book, claim: Claim, cid: str, gene: str) -> Outcome:
+    """A claim naming a group of the study's other comparisons: not read against the first.
+
+    The record's contrasts are the first comparison's; reading a claim about another group
+    against them would call it supported, overstated or contradicted on the wrong numbers.
+    """
+    record = book.record
+    a, b = record.phrases
+    written = next(w for w, what in claim.other_groups if what == PLAN_GROUP)
+    mark = next((m for m in claim.marks if m.role == "group" and m.written == written), None)
+    quoted = book.quote(cid, "group", mark.span.start, mark.span.end) if mark else written
+    names = [gene, a, b, written, *plan_groups(record.result)]
+    text = book.say(
+        f"This study has several comparisons and your words name {quoted}, a group of another "
+        f"of them. The Claim Auditor checks a claim against the first comparison only ({a} "
+        f"against {b}), so it does not check this one: {written}'s numbers are on Results.",
+        names,
+    )
+    return Outcome("unchecked", [_check("groups", "unknown", text)], text, gene=gene)
+
+
+def _normaliser_source(book: Book, claim: Claim, cid: str) -> str:
+    """Where a claim's normaliser was read, when not in its own sentence (with a quotation)."""
+    if claim.normaliser_from is None or claim.normaliser_scope in (None, "own"):
+        return ""
+    where = book.quote(cid, "normaliser", claim.normaliser_from.start, claim.normaliser_from.end)
+    return {
+        "text": f"Your text states once, for all the data, how it was normalised ({where}); "
+        "read as applying to this claim. ",
+        "previous": f"The sentence after this claim says how it was normalised ({where}). ",
+        "gene": f"Another sentence says how this gene was normalised ({where}). ",
+    }[claim.normaliser_scope]
+
+
 def check_gene(book: Book, claim: Claim, cid: str) -> Outcome:
     """The verdict on a claim about one gene."""
     record = book.record
     gene = claim.gene or ""
     if claim.gene_status != "compared" or gene not in record.result.contrasts:
         return _unchecked(book, gene, claim.gene_status)
+    if claim.relation:
+        quoted = book.quote(cid, "relation", *_span_of(claim, claim.relation))
+        text = book.say(
+            f"Your sentence relates {gene} to another measure ({quoted}); this study compares "
+            "two groups and computes no correlation, so it cannot check this.",
+            [gene],
+        )
+        return Outcome("unchecked", [_check("reading", "unknown", text)], text, gene=gene)
+    if any(what == PLAN_GROUP for _, what in claim.other_groups):
+        return _other_comparison(book, claim, cid, gene)
+    if claim.other_groups and not claim.names_groups:
+        return _mismatch(book, claim, cid, gene)
     a, b = record.phrases
     contrast = record.result.contrasts[gene]
     f = _gene_facts(book, gene)
     reading = reading_of(claim, contrast)
     names = [gene, *claim.normaliser]
     checks: list[ClaimCheck] = []
+    if not claim.names_groups and plan_groups(record.result):
+        checks.append(
+            _check(
+                "groups",
+                "note",
+                book.say(
+                    "This study has several comparisons; with no group named, the claim is "
+                    f"read against the first, {a} against {b}.",
+                    [*names, a, b],
+                ),
+            )
+        )
+    if claim.other_groups:  # "MYCN-high (MYCN-amplified) tumours": read as the study's groups
+        words, extra = _groups_words(book, claim, cid)
+        names += extra
+        checks.append(
+            _check(
+                "groups",
+                "note",
+                book.say(f"{words}; read as the study's own groups.", names),
+            )
+        )
     estimate = f"fold {f['fc']} (95 % CI {f['lo']}–{f['hi']}), p {f['p']}"
     call = contrast.conclusion
     d = reading.direction
@@ -702,18 +821,26 @@ def check_gene(book: Book, claim: Claim, cid: str) -> Outcome:
             )
         checks.append(_check("p", status, book.say(text, names)))
     if claim.significance is not None and not (claim.p is not None and not claim.p.adjusted):
-        below = contrast.p < record.alpha
+        p_used, p_words, p_token = contrast.p, "p", f["p"]
+        corrected = _corrected_p(record, gene)
+        if corrected is not None:  # the call uses the corrected p: so does "significant"
+            p_used, p_words = corrected
+            p_token = book.add(
+                f"f_claims_padj_{slug(gene)}", p_used, "{:.2g}", "",
+                f"comparisons.comparisons[0].p_adjusted.{gene}", "result",
+            )  # fmt: skip
+        below = p_used < record.alpha
         level = f"its significance level {record.alpha:g}"
         if claim.significance == "significant":
             status = "ok" if below else "stronger"
             text = (
-                f"The study's p for {gene}, {f['p']}, is "
+                f"The study's {p_words} for {gene}, {p_token}, is "
                 f"{'below' if below else 'not below'} {level}."
             )
         else:
             status = "weaker" if below else "ok"
             text = (
-                f"The study's p for {gene}, {f['p']}, is "
+                f"The study's {p_words} for {gene}, {p_token}, is "
                 f"{'below' if below else 'not below'} {level}."
             )
         checks.append(_check("significance", status, book.say(text, names)))
@@ -775,16 +902,25 @@ def check_gene(book: Book, claim: Claim, cid: str) -> Outcome:
     if claim.normaliser:
         absent = [g for g in claim.normaliser if record.lexicon.status(g) == "absent"]
         listed = _join(planned_refs)
+        source = _normaliser_source(book, claim, cid)
         if absent:
             checks.append(
                 _check(
                     "normaliser",
                     "note",
                     book.say(
-                        f"Your text normalises to {_join(absent)}, which this study did not "
-                        f"measure; checked against qPilot's planned set ({listed}) instead.",
+                        f"{source}Your text normalises to {_join(absent)}, which this study did "
+                        f"not measure; checked against qPilot's planned set ({listed}) instead.",
                         names,
                     ),
+                )
+            )
+        elif set(claim.normaliser) == set(planned_refs) and source:
+            checks.append(
+                _check(
+                    "normaliser",
+                    "ok",
+                    book.say(f"{source}It is qPilot's planned set ({listed}).", names),
                 )
             )
         elif set(claim.normaliser) != set(planned_refs) and record.grid is not None:
@@ -795,8 +931,9 @@ def check_gene(book: Book, claim: Claim, cid: str) -> Outcome:
                         "normaliser",
                         "note",
                         book.say(
-                            f"Your text normalises to {_join(claim.normaliser)}, a set qPilot's "
-                            f"grid does not hold; checked against the planned set ({listed}).",
+                            f"{source}Your text normalises to {_join(claim.normaliser)}, a set "
+                            f"qPilot's grid does not hold; checked against the planned set "
+                            f"({listed}).",
                             names,
                         ),
                     )
@@ -815,10 +952,10 @@ def check_gene(book: Book, claim: Claim, cid: str) -> Outcome:
                             "normaliser",
                             "ok" if named_holds else "note",
                             book.say(
-                                f"Your text normalises to {_join(claim.normaliser)}; qPilot's "
-                                f"planned set is {listed}. With your set the fold for {gene} is "
-                                f"{fc} and the call is {_call_word(named_choice.call or '')}: "
-                                f"the claim {word} there.",
+                                f"{source}Your text normalises to {_join(claim.normaliser)}; "
+                                f"qPilot's planned set is {listed}. With your set the fold for "
+                                f"{gene} is {fc} and the call is "
+                                f"{_call_word(named_choice.call or '')}: the claim {word} there.",
                                 names,
                             ),
                         )
@@ -1225,7 +1362,11 @@ def _reading(text: str, claim: Claim, lexicon: Lexicon) -> ClaimReading:
         a, b = lexicon.group_a, lexicon.group_b
         if b == "rest":
             a, b = f"the {a} group", "the rest"
-        if d in ("up", "down"):
+        other = claim.other_groups[0][0] if claim.other_groups and not claim.names_groups else ""
+        if other:
+            said = {"up": "higher", "down": "lower", "none": "no difference"}.get(d or "", "")
+            words.append(f"{said or 'a change'} in {other} (not this study's groups)")
+        elif d in ("up", "down"):
             words.append(f"{'higher' if d == 'up' else 'lower'} in {a} than in {b}")
         elif d == "none":
             words.append(f"no difference between {a} and {b}")
@@ -1236,7 +1377,12 @@ def _reading(text: str, claim: Claim, lexicon: Lexicon) -> ClaimReading:
             if w:
                 words.append(w)
         if claim.normaliser:
-            words.append("normalised to " + _join(list(claim.normaliser)))
+            scope = {
+                "text": " (stated once for all the data)",
+                "previous": " (from the sentence after it)",
+                "gene": " (from another sentence about this gene)",
+            }.get(claim.normaliser_scope or "", "")
+            words.append("normalised to " + _join(list(claim.normaliser)) + scope)
     elif claim.kind == "normaliser":
         words.append("normalised to " + _join(list(claim.normaliser)))
     elif claim.kind == "efficiency":
@@ -1269,6 +1415,8 @@ def _reading(text: str, claim: Claim, lexicon: Lexicon) -> ClaimReading:
         robust_written=written("robust"),
         normaliser=list(claim.normaliser),
         groups_written=groups,
+        other_groups=[w for w, _ in claim.other_groups],
+        normaliser_scope=claim.normaliser_scope,
         n_written=written("n"),
         efficiency_written=text[eff[-1].span.start : eff[-1].span.end] if eff else None,
         efficiency_genes=list(claim.genes),

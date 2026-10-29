@@ -20,8 +20,16 @@ biological unit, from the design's ``rt_replicate`` labels; ranges as :mod:`qpil
 computes them) and ``instrument_run`` (G-INSTR: what each plate's run file says about the run
 and the instrument, the lines of :mod:`qpilot.qpcr.gate_instr`, read from a run file a person
 linked to the plate, else the plate's run file in the instrument export the study was opened
-from, else the study's own file). Rules label; they never drop a well. What leaving wells out
-would do is the consequence test (:func:`run_gate`).
+from, else the study's own file), and ``melt_products`` (G-MELT: whether each amplified study
+well melts as one product at its assay's melting temperature, and what melted in each
+no-template control, from the file's melt curves as :mod:`qpilot.qpcr.melt` reads them; G-NTC-1
+grades a control's amplification with that class), and ``ipc_inhibition`` (G-IPC: in multiplex
+wells, an internal positive control that comes up much later than in the no-template wells, a
+sign of inhibition; :mod:`qpilot.qpcr.multiplex`). Every rule works per target, so the curves of a
+multiplex well are judged one dye at a time; an internal positive control is meant to amplify in
+the no-template wells, so G-NTC-1 does not judge it. Rules label; they never drop a well. What
+leaving wells out would do is the consequence test (:func:`run_gate`); in a multiplex well it
+leaves out every curve of the well together (one reaction).
 """
 
 from __future__ import annotations
@@ -29,7 +37,7 @@ from __future__ import annotations
 import hashlib
 import math
 import re
-from collections.abc import Collection, Iterator, Mapping
+from collections.abc import Collection, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -53,9 +61,21 @@ from qpilot.core.rules import (
     pack_from_json,
 )
 from qpilot.core.validator import TOKEN
+from qpilot.qpcr import multiplex as mx
 from qpilot.qpcr.gate_instr import DEFAULT_HOLD_LIMIT_C
 from qpilot.qpcr.gate_rt import RT_RANGE_LIMIT
 from qpilot.qpcr.instrument_context import RunContext
+from qpilot.qpcr.melt import (
+    JUDGED,
+    NO_TEMPLATE,
+    NTC_FLAGS,
+    STUDY_FLAGS,
+    AssayMelt,
+    MeltData,
+    MeltParams,
+    WellCall,
+    judge,
+)
 from qpilot.qpcr.quant import EXCLUDED
 from qpilot.schemas import Fact
 
@@ -107,7 +127,9 @@ class GateContext:
     """What the evaluators read. ``facts`` collects every number they show.
 
     ``design`` is the confirmed design (its ``rt_replicate`` labels, for G-RT); ``runs`` maps a
-    plate to its :class:`RunFile` (for G-INSTR), ``None`` when no run context was given.
+    plate to its :class:`RunFile` (for G-INSTR), ``None`` when no run context was given; ``melt``
+    is the study file's melt curves (for G-MELT, and G-NTC-1's class of a control's product),
+    ``None`` when none were read, judged with ``melt_params`` (the pack's G-MELT thresholds).
     """
 
     table: pd.DataFrame
@@ -116,15 +138,39 @@ class GateContext:
     confirmed_no_controls: frozenset[str] = frozenset()
     design: Any = None
     runs: Mapping[str, RunFile] | None = None
+    melt: MeltData | None = None
+    melt_params: MeltParams = field(default_factory=MeltParams)
+    internal: pd.DataFrame | None = None
     facts: FactRegistry = field(default_factory=FactRegistry)
     _std_fits: dict[tuple[str, str], dict[str, Any]] = field(default_factory=dict)
+    _melt: dict[tuple[str, str], AssayMelt] | None = None
+    _multiplex: frozenset[str] | None = None
 
     def __post_init__(self) -> None:
-        t = self.table
-        self.table = t.assign(
-            key=t["run_id"] + "/" + t["well"],
-            amplified=t["amplification"].eq(True) & t["cq"].notna(),
-        )
+        self.table = _keyed(self.table)
+        if self.internal is not None:
+            self.internal = _keyed(self.internal)
+
+    def multiplex_keys(self) -> frozenset[str]:
+        """The keys of the wells that hold more than one target's curve (computed once)."""
+        if self._multiplex is None:
+            self._multiplex = mx.multiplex_keys(self.table)
+        return self._multiplex
+
+    def control_rows(self) -> pd.DataFrame:
+        """The internal positive controls' curves (G-IPC), with the wells' other curves.
+
+        ``internal`` holds them when the design leaves the control out of the analysis
+        (``run_gate`` keeps its curves for this rule); otherwise they are in ``table``.
+        """
+        if self.internal is None:
+            return self.table
+        others = self.table[~self.table["target"].isin(set(self.internal["target"]))]
+        return pd.concat([others, self.internal], ignore_index=True)
+
+    def internal_controls(self) -> list[str]:
+        """The targets that are internal positive controls (:func:`multiplex.internal_controls`)."""
+        return mx.internal_controls(self.control_rows())
 
     def plates(self) -> list[str]:
         """Plate ids in table order."""
@@ -139,6 +185,13 @@ class GateContext:
         """(plate, target, rows) in table order."""
         for (plate, target), rows in self.table.groupby(["run_id", "target"], sort=False):
             yield str(plate), str(target), rows
+
+    def melt_assays(self) -> dict[tuple[str, str], AssayMelt]:
+        """(plate, target) -> its melt calls (:func:`qpilot.qpcr.melt.judge`), computed once."""
+        if self._melt is None:
+            found = judge(self.table, self.melt, self.melt_params) if self.melt else []
+            self._melt = {(a.run_id, a.target): a for a in found}
+        return self._melt
 
     def quantity(self, sample: str, target: str) -> float | None:
         """A standard's declared quantity for this target (or for every target)."""
@@ -164,6 +217,14 @@ class GateContext:
         path = "gate/" + "/".join([rule.id, *(f"{k}={scope[k]}" for k in sorted(scope)), name])
         self.facts.add(Fact(id=fid, value=value, fmt=fmt, unit=unit, path=path))
         return fid
+
+
+def _keyed(t: pd.DataFrame) -> pd.DataFrame:
+    """The table with each row's well key and the engine's amplification call."""
+    return t.assign(
+        key=t["run_id"] + "/" + t["well"],
+        amplified=t["amplification"].eq(True) & t["cq"].notna(),
+    )
 
 
 def _na(scope: dict[str, str], code: str, reason: str) -> Finding:
@@ -229,10 +290,14 @@ def ntc_gap(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
     k = _param(rule, "k_cycles", 5.0)
     findings, untyped = _untyped(ctx, rule)
     yield from findings
+    controls = set(ctx.internal_controls())
     for plate, target, rows in ctx.plate_targets():
         if plate in untyped:
             continue
         scope = {"plate": plate, "target": target}
+        if target in controls:
+            yield _na(scope, "internal_control", INTERNAL_CONTROL_NTC)
+            continue
         ntc = rows[rows["sample_type"].isin(("ntc", "ntp"))]
         unkn = rows[rows["sample_type"] == ANALYSED]
         if ntc.empty:
@@ -270,17 +335,21 @@ def ntc_gap(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
             f_gap = ctx.fact(rule, scope, "gap", gap, "{:.2f}")
             facts.append(f_gap)
             evidence["gap_to_lowest_unknown"] = gap
+        melt_class = ntc_melt_class(ctx, plate, target, list(amp["key"]))
+        if melt_class is not None:
+            evidence["chemistry_class"] = melt_class
         if tainted.empty:
             earliest = (
                 f" (the earliest {{{{{f_gap}}}}} cycles before it)" if f_gap is not None else ""
             )
+            classed = f" {MELT_CLASS_SAID[melt_class]}" if melt_class is not None else ""
             yield Finding(
                 scope=scope,
                 outcome="amplified_clear",
                 reason=(
                     f"{{{{{n_amp}}}}} of {{{{{n_ntc}}}}} no-template wells amplified, the "
                     f"earliest at Cq {{{{{f_cq}}}}}; every study sample amplified at least "
-                    f"{{{{{f_k}}}}} cycles earlier{earliest}."
+                    f"{{{{{f_k}}}}} cycles earlier{earliest}.{classed}"
                 ),
                 facts=facts,
                 evidence=evidence,
@@ -310,21 +379,83 @@ def ntc_gap(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
                 "theirs."
             )
             shown = [f_frac]
+        product = (
+            MELT_CLASS_TAINTED[melt_class]
+            if melt_class is not None
+            else "Without melt data the control's product is unclassified (contamination or "
+            "primer-dimer) and is treated as possible contamination."
+        )
         yield Finding(
             scope=scope,
-            outcome="tainted",
+            outcome="tainted_dimer" if melt_class == "dimer_candidate" else "tainted",
             reason=(
                 f"{{{{{n_amp}}}}} of {{{{{n_ntc}}}}} no-template wells amplified, the earliest at "
                 f"Cq {{{{{f_cq}}}}}. {{{{{f_n}}}}} {wells} amplified less than {{{{{f_k}}}}} "
                 f"cycles before it, so {its} positive call and quantity are in doubt (MIQE 2.0). "
-                f"{share} Without melt data the control's product is unclassified (contamination "
-                "or primer-dimer) and is treated as possible contamination."
+                f"{share} {product}"
             ),
             facts=[*facts, f_n, *shown],
             evidence=evidence,
             flagged=sorted(tainted["key"]),
             options={"exclude_flagged": sorted(tainted["key"])},
         )
+
+
+#: Why G-NTC-1 does not judge an internal positive control.
+INTERNAL_CONTROL_NTC = (
+    "This target is the internal positive control: it is added to every well, the no-template "
+    "controls too, and is meant to amplify there (G-IPC reads it)."
+)
+
+
+#: How G-NTC-1 says G-MELT's class of the product in the no-template wells that amplified.
+MELT_CLASS_SAID = {
+    "dimer_candidate": "Their melt curves peak below this assay's product only (G-MELT): "
+    "primer-dimers are more likely than template.",
+    "contamination_candidate": "A no-template well that amplified melts at this assay's product "
+    "temperature (G-MELT): a contamination candidate.",
+    "other_product": "A no-template well that amplified melts above this assay's product "
+    "(G-MELT): another product.",
+    "unclassified": "Their melt curves do not classify every one of them (G-MELT).",
+}
+MELT_CLASS_TAINTED = {
+    "dimer_candidate": "Their melt curves peak below this assay's product only (G-MELT): "
+    "primer-dimers are more likely than template, so this is a warning rather than a failure; a "
+    "primer-dimer can still add signal to late study wells.",
+    "contamination_candidate": "A no-template well that amplified melts at this assay's product "
+    "temperature (G-MELT), so the control's product is treated as contamination.",
+    "other_product": "A no-template well that amplified melts above this assay's product "
+    "(G-MELT): another product, treated as possible contamination.",
+    "unclassified": "The melt curves do not classify every no-template well that amplified "
+    "(G-MELT), so the control's product is treated as possible contamination.",
+}
+
+
+def ntc_melt_class(ctx: GateContext, plate: str, target: str, keys: list[str]) -> str | None:
+    """G-MELT's class of the product in these no-template wells (scientist spec, G-NTC-1).
+
+    ``None`` when the plate has no melt curve at all (G-NTC-1 then says so as before);
+    ``dimer_candidate`` when every one of them peaks below the product only;
+    ``contamination_candidate`` when one peaks at the product's temperature; ``other_product``
+    when one peaks above it (and none at it); ``unclassified`` otherwise (a well without a
+    readable melt curve, no peak, or no known product temperature), treated as contamination.
+    """
+    if ctx.melt is None or plate not in ctx.melt.plates_with_melt():
+        return None
+    assay = ctx.melt_assays().get((plate, target))
+    if assay is None:
+        return "unclassified"
+    status = {w.key: w.status for w in assay.wells}
+    found = [status.get(k, "no_melt") for k in keys]
+    if not found:
+        return "unclassified"
+    if "product" in found:
+        return "contamination_candidate"
+    if "other_product" in found:
+        return "other_product"
+    if all(s == "dimer" for s in found):
+        return "dimer_candidate"
+    return "unclassified"
 
 
 # ---------- G-NAC ----------
@@ -605,10 +736,17 @@ def std_curve(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
                 f"The fewest replicates at one level is {{{{{f['rep']}}}}} (MIQE 2.0: ideally "
                 "three or more per dilution step)."
             )
-        sentences.append(
-            "In relative quantification this does not taint study samples; it marks the curve as "
-            "an efficiency source."
-        )
+        if is_quantify(ctx.design):
+            sentences.append(
+                "This study quantifies samples: every quantity of this assay on this plate is "
+                "read from this curve, so a curve that fails a check weakens all of them (the "
+                "Quantities view names what MIQE would question)."
+            )
+        else:
+            sentences.append(
+                "In relative quantification this does not taint study samples; it marks the "
+                "curve as an efficiency source."
+            )
         reason = " ".join(sentences)
         yield Finding(
             scope=scope,
@@ -631,6 +769,22 @@ def range_quantile(n: int) -> float:
     if n in _Q95:
         return _Q95[n]
     return float(stats.studentized_range.ppf(0.95, n, np.inf))
+
+
+#: Two Cq deviations this close (cycles) are a tie: no one well is farther than the other.
+TIE_CYCLES = 1e-6
+
+
+def outlier_well(keys: Sequence[str], cqs: np.ndarray) -> str | None:
+    """The replicate farthest from the replicates' median, or ``None`` when that is a tie.
+
+    With duplicates the two wells are always equally far from their median, and with three wells
+    spread symmetrically (20.0, 20.5, 21.0) the two outer ones are: the spread is then not one
+    well's, and proposing the first in well order would be arbitrary (science review J10).
+    """
+    dev = np.abs(np.asarray(cqs, dtype=float) - float(np.median(cqs)))
+    farthest = np.flatnonzero(dev >= dev.max() - TIE_CYCLES)
+    return str(keys[int(farthest[0])]) if len(farthest) == 1 else None
 
 
 def replicate_spread(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
@@ -708,9 +862,15 @@ def replicate_spread(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
                 f_u = ctx.fact(rule, scope, "nundet", undetermined)
                 facts.append(f_u)
                 reason += f" {{{{{f_u}}}}} more replicate wells did not amplify."
-            median = float(np.median(cqs))
-            far = amp.iloc[int(np.argmax(np.abs(cqs - median)))]["key"]
-            options = {"drop_outlier_well": [far], "drop_sample": sorted(g["key"])}
+            far = outlier_well(amp["key"].tolist(), cqs)
+            options = {"drop_sample": sorted(g["key"])}
+            if far is not None:
+                options = {"drop_outlier_well": [far], **options}
+            elif outside:  # science review J10: a tie is not one well's spread
+                reason += (
+                    " The spread is not one well's: the wells farthest from the others' median "
+                    "are equally far from it, so no single well is proposed to leave out."
+                )
             yield Finding(
                 scope=scope,
                 outcome="outside" if outside else "within",
@@ -726,7 +886,7 @@ def replicate_spread(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
                     "flags": ",".join(flags),
                     "notes": ";".join(sorted({n for n in amp["note"] if n})),
                 },
-                flagged=[far] if outside else [],
+                flagged=([far] if far is not None else sorted(amp["key"])) if outside else [],
                 options=options if outside else {},
             )
         if evaluated and flagged_groups / evaluated > share_max:
@@ -1061,7 +1221,564 @@ def with_linked(
     return out
 
 
+# ---------- G-MELT ----------
+
+#: G-MELT's outcomes and their verdicts (scientist spec, G-MELT; the pack may remap them).
+MELT_OUTCOMES: dict[str, Severity] = {
+    "one_product": "pass",
+    "extra_peak": "warn",
+    "tm_off": "fail",
+    "no_peak": "fail",
+    "ntc_clean": "pass",
+    "ntc_dimer": "pass",
+    "ntc_other_product": "warn",
+    "ntc_product": "warn",
+}
+NO_MELT_STUDY = (
+    "This study's file has no melt curves, so the products' melting temperatures are not "
+    "checked. For SYBR Green or another DNA-binding dye, export the melt curves with the "
+    "amplification (CFX: Melt Curve RFU Results; QuantStudio: Melt Curve Raw Data) and open "
+    "them together."
+)
+NO_MELT_PLATE = (
+    "This plate has no melt curves, so its products' melting temperatures are not checked."
+)
+NO_MELT_TARGET = "No well of this target on this plate has a melt curve."
+PROBE_CHEMISTRY = (
+    "The file names a probe chemistry for this target: a melt curve does not show its product."
+)
+MIQE_MELT = (
+    "A single peak at the expected temperature does not guarantee that it is the intended "
+    "amplicon (MIQE 2.0)."
+)
+#: A study group's outcome is its worst well's status, in this order.
+STUDY_ORDER = ("tm_off", "no_peak", "extra_peak")
+#: A no-template group's outcome is its worst well's class, in this order.
+NTC_ORDER = ("product", "other_product", "dimer")
+NTC_OUTCOME = {
+    "product": "ntc_product",
+    "other_product": "ntc_other_product",
+    "dimer": "ntc_dimer",
+    "no_product": "ntc_clean",
+}
+#: Wells a G-MELT reason names one by one before it counts the rest.
+MELT_WELLS_SAID = 6
+DEG = " °C"
+
+
+class _Said:
+    """The facts of one G-MELT finding, registered as its reason cites them."""
+
+    def __init__(self, rule: Rule, ctx: GateContext, scope: Mapping[str, str]) -> None:
+        self.rule, self.ctx, self.scope = rule, ctx, dict(scope)
+        self.facts: list[str] = []
+
+    def __call__(self, name: str, value: float | int | str, fmt: str = "{}", unit: str = "") -> str:
+        fid = self.ctx.fact(self.rule, self.scope, name, value, fmt, unit)
+        if fid not in self.facts:
+            self.facts.append(fid)
+        return "{{" + fid + "}}"
+
+    def tm(self, name: str, value: float) -> str:
+        return self(name, float(value), "{:.1f}", DEG)
+
+    def delta(self, name: str, value: float) -> str:
+        return self(name, abs(float(value)), "{:.1f}", DEG)
+
+
+def _expected_said(assay: AssayMelt, say: _Said) -> str:
+    """Where this assay's product is expected to melt, in words (a clause, lower case)."""
+    p = assay.params
+    if assay.expected_tm is None:
+        return (
+            "the product's melting temperature on this plate is not known (fewer than "
+            f"{say('minwells', p.min_wells)} study wells melted and the file declares none), so "
+            "only extra peaks are checked"
+        )
+    exp = say.tm("exptm", assay.expected_tm)
+    tol = say.tm("tol", p.tm_tolerance_c)
+    if assay.expected_source == "file":
+        return f"the file declares this target's product to melt at {exp} (the rule allows ±{tol})"
+    n_ref = say("nref", len(assay.reference))
+    return (
+        f"this assay's product melts at {exp} on this plate (the median of {n_ref} study wells; "
+        f"the rule allows ±{tol})"
+    )
+
+
+def _amplified_said(w: WellCall, say: _Said, i: int) -> str:
+    if w.amplified and w.cq is not None:
+        return f" (it amplified at Cq {say(f'cq{i}', float(w.cq), '{:.1f}')})"
+    return " (it gave no Cq: the product may have formed late)"
+
+
+def _study_flag(w: WellCall, i: int, say: _Said) -> str:
+    """One flagged study well in words."""
+    well = say(f"well{i}", w.well)
+    main = w.main
+    if w.status == "no_peak" or main is None:
+        cq = f" (Cq {say(f'cq{i}', float(w.cq), '{:.1f}')})" if w.cq is not None else ""
+        return (
+            f"Well {well} amplified{cq} but its melt curve shows no peak above this plate's "
+            "noise: no product melted at the expected temperature."
+        )
+    tm = say.tm(f"tm{i}", main.tm)
+    if w.status == "tm_off" and w.offset is not None:
+        side = "below" if w.offset < 0 else "above"
+        return (
+            f"Well {well}'s main peak is at {tm}, {say.delta(f'off{i}', w.offset)} {side} it: "
+            "no product at the expected temperature; it may be another product."
+        )
+    shares = dict(zip(w.peaks, w.shares, strict=True))
+    parts = [
+        f"{say.tm(f'xtm{i}_{j}', pk.tm)} ({say(f'xshare{i}_{j}', shares[pk], '{:.0%}')} of its "
+        "peak height)"
+        for j, pk in enumerate(w.extra)
+    ]
+    more = "a second peak" if len(parts) == 1 else f"{say(f'nextra{i}', len(parts))} more peaks"
+    return f"Well {well} shows {more} beside its product at {tm}: at {' and at '.join(parts)}."
+
+
+def _study_finding(
+    rule: Rule,
+    ctx: GateContext,
+    scope: dict[str, str],
+    assay: AssayMelt,
+    usable: list[WellCall],
+) -> Finding:
+    """One study sample's amplified wells on one plate, for one target."""
+    say = _Said(rule, ctx, scope)
+    expected = _expected_said(assay, say)
+    flagged = [w for w in usable if w.status in STUDY_FLAGS]
+    worst = next((s for s in STUDY_ORDER if any(w.status == s for w in usable)), "one_product")
+    n = len(usable)
+    sentences: list[str] = []
+    if not flagged:
+        tms = [w.main.tm for w in usable if w.main is not None]
+        lo, hi = min(tms), max(tms)
+        if n == 1:
+            lead = f"Its amplified well melts as one product at {say.tm('tm', lo)}"
+        elif round(lo, 1) == round(hi, 1):
+            lead = (
+                f"Its {say('n', n)} amplified wells each melt as one product at {say.tm('tm', lo)}"
+            )
+        else:
+            lead = (
+                f"Its {say('n', n)} amplified wells each melt as one product, at "
+                f"{say.tm('tmlo', lo)} to {say.tm('tmhi', hi)}"
+            )
+        sentences += [f"{lead}; {expected}.", MIQE_MELT]
+    else:
+        ok = n - len(flagged)
+        if ok:
+            sentences.append(
+                f"{say('nok', ok)} of its {say('n', n)} amplified wells melt as one product; "
+                f"{expected}."
+            )
+        else:
+            sentences.append(f"{expected[0].upper()}{expected[1:]}.")
+        sentences += [_study_flag(w, i, say) for i, w in enumerate(flagged[:MELT_WELLS_SAID])]
+        if len(flagged) > MELT_WELLS_SAID:
+            rest = say("nrest", len(flagged) - MELT_WELLS_SAID)
+            sentences.append(f"{rest} more of its wells are flagged the same way.")
+        if any(w.status == "extra_peak" for w in flagged):
+            sentences.append(
+                "Part of the signal of a well with an extra peak is not the product, so its Cq "
+                "may not measure the target alone; a peak below the product is usually a "
+                "primer-dimer."
+            )
+        if any(w.status in ("tm_off", "no_peak") for w in flagged):
+            sentences.append(
+                "A well without a product at the expected temperature may have amplified "
+                "something else."
+            )
+    keys = sorted(w.key for w in flagged)
+    return Finding(
+        scope=scope,
+        outcome=worst,
+        reason=" ".join(sentences),
+        facts=say.facts,
+        evidence={
+            "expected_tm": assay.expected_tm,
+            "expected_source": assay.expected_source or "",
+            "tolerance_c": assay.params.tm_tolerance_c,
+            "n_wells": n,
+            "n_flagged": len(flagged),
+            "calls": ",".join(f"{w.well}:{w.status}" for w in usable),
+        },
+        flagged=keys,
+        options={"exclude_flagged": keys} if keys else {},
+    )
+
+
+def _ntc_finding(
+    rule: Rule,
+    ctx: GateContext,
+    scope: dict[str, str],
+    assay: AssayMelt,
+    usable: list[WellCall],
+) -> Finding:
+    """One no-template sample's wells on one plate, for one target: what melted in them."""
+    say = _Said(rule, ctx, scope)
+    found = [w for w in usable if w.status in NTC_ORDER]
+    if not found and any(w.status == "unclassified" for w in usable):
+        p = assay.params
+        return Finding(
+            scope=scope,
+            outcome=NOT_APPLICABLE,
+            code="no_expected_tm",
+            reason=(
+                "A no-template well's melt curve shows a peak, but this assay's product "
+                "temperature on this plate is not known (fewer than "
+                f"{say('minwells', p.min_wells)} study wells melted and the file declares "
+                "none), so the peak cannot be classified."
+            ),
+            facts=say.facts,
+        )
+    worst = next((s for s in NTC_ORDER if any(w.status == s for w in usable)), "no_product")
+    sentences: list[str] = []
+    if not found:
+        if len(usable) == 1:
+            sentences.append("This no-template well's melt curve shows no peak: nothing melted.")
+        else:
+            sentences.append(
+                f"None of its {say('n', len(usable))} no-template wells shows a melt peak: "
+                "nothing melted in them."
+            )
+    else:
+        exp = say.tm("exptm", assay.expected_tm or 0.0)
+        tol = say.tm("tol", assay.params.tm_tolerance_c)
+        for i, w in enumerate(found[:MELT_WELLS_SAID]):
+            well = say(f"well{i}", w.well)
+            amp = _amplified_said(w, say, i)
+            if w.status == "product":
+                at = next(
+                    (
+                        pk
+                        for pk in (w.main, *w.extra)
+                        if pk is not None
+                        and assay.expected_tm is not None
+                        and abs(pk.tm - assay.expected_tm) <= assay.params.tm_tolerance_c
+                    ),
+                    w.main,
+                )
+                sentences.append(
+                    f"Well {well} shows a peak at {say.tm(f'tm{i}', at.tm if at else 0.0)}, "
+                    f"within ±{tol} of this assay's product ({exp}): template may have reached "
+                    f"it, a contamination candidate{amp}."
+                )
+                continue
+            main = w.main
+            assert main is not None and w.offset is not None
+            tm, off = say.tm(f"tm{i}", main.tm), say.delta(f"off{i}", w.offset)
+            if w.status == "other_product" and w.offset < 0:
+                # below the product but closer than a primer-dimer melts (science review J5)
+                gap = say.tm("dimergap", assay.params.dimer_min_below_c)
+                sentences.append(
+                    f"Well {well} melts at {tm}, {off} below this assay's product ({exp}), "
+                    f"closer than the {gap} a primer-dimer is expected to melt below it: a "
+                    f"shorter product or a variant amplicon may have formed in it{amp}."
+                )
+            elif w.status == "other_product":
+                sentences.append(
+                    f"Well {well} melts at {tm}, {off} above this assay's product ({exp}): "
+                    f"another product formed in it{amp}."
+                )
+            else:
+                sentences.append(
+                    f"Well {well} melts at {tm}, {off} below this assay's product ({exp}): a "
+                    f"primer-dimer is more likely than template{amp}."
+                )
+        if len(found) > MELT_WELLS_SAID:
+            rest = say("nrest", len(found) - MELT_WELLS_SAID)
+            sentences.append(f"{rest} more of its wells show a peak.")
+        if worst in ("product", "other_product"):
+            sentences.append(
+                "Whether that touches the study wells is for the no-template control rule to say "
+                "(how many cycles earlier they amplified); leaving a control out changes no "
+                "conclusion."
+            )
+        else:
+            sentences.append(
+                "A primer-dimer is usually harmless in a no-template control; the no-template "
+                "control rule grades the control's amplification as a primer-dimer."
+            )
+    flagged = sorted(w.key for w in usable if w.status in NTC_FLAGS)
+    return Finding(
+        scope=scope,
+        outcome=NTC_OUTCOME[worst],
+        reason=" ".join(sentences),
+        facts=say.facts,
+        evidence={
+            "expected_tm": assay.expected_tm,
+            "expected_source": assay.expected_source or "",
+            "tolerance_c": assay.params.tm_tolerance_c,
+            "n_wells": len(usable),
+            "calls": ",".join(f"{w.well}:{w.status}" for w in usable),
+        },
+        flagged=flagged,
+    )
+
+
+def _unreadable(rule: Rule, ctx: GateContext, scope: dict[str, str], assay: AssayMelt) -> Finding:
+    """An assay none of whose melt curves can be read (too few or too far-apart readings)."""
+    if assay.coarse and assay.step_c is not None:
+        say = _Said(rule, ctx, scope)
+        return Finding(
+            scope=scope,
+            outcome=NOT_APPLICABLE,
+            code="coarse_melt",
+            reason=(
+                f"The melt readings are about {say.tm('step', assay.step_c)} apart: too far "
+                "apart to place a melting temperature to within the rule's tolerance."
+            ),
+            facts=say.facts,
+        )
+    return _na(scope, "too_few_points", "The melt curves have too few readings to find peaks.")
+
+
+def melt_products(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
+    """One product at the assay's melting temperature (G-MELT; :mod:`qpilot.qpcr.melt`).
+
+    Per study sample x target x plate, over its amplified wells (unknowns, positives,
+    standards): one product at the expected Tm passes; an extra peak warns; a main peak off the
+    expected Tm, or no peak, fails; the flagged wells go to the consequence test. Per
+    no-template sample: no peak, a primer-dimer candidate, another product or a contamination
+    candidate (G-NTC-1 grades the control's amplification with this class); a control is not a
+    study sample, so it has no consequence test of its own.
+    """
+    params = MeltParams.from_rule(rule.params)
+    if ctx.melt is None or not ctx.melt.has_melt:
+        yield _na({}, "no_melt_data", NO_MELT_STUDY)
+        return
+    if params != ctx.melt_params:  # this rule's own thresholds (a lab's edited pack)
+        ctx.melt_params, ctx._melt = params, None
+    assays = ctx.melt_assays()
+    with_melt = ctx.melt.plates_with_melt()
+    for plate in ctx.plates():
+        if plate not in with_melt:
+            yield _na({"plate": plate}, "no_melt_data", NO_MELT_PLATE)
+            continue
+        rows = ctx.table[ctx.table["run_id"] == plate]
+        for target in dict.fromkeys(str(t) for t in rows["target"]):
+            scope = {"plate": plate, "target": target}
+            if ctx.melt.probe(target):
+                yield _na(scope, "probe_chemistry", PROBE_CHEMISTRY)
+                continue
+            assay = assays.get((plate, target))
+            if assay is None:
+                yield _na(scope, "no_melt_data", NO_MELT_TARGET)
+                continue
+            if not any(w.melt is not None and not w.melt.problem for w in assay.wells):
+                yield _unreadable(rule, ctx, scope, assay)
+                continue
+            yield from _melt_assay(rule, ctx, scope, assay)
+
+
+def _melt_assay(
+    rule: Rule, ctx: GateContext, scope: dict[str, str], assay: AssayMelt
+) -> Iterator[Finding]:
+    """The findings of one target on one plate: its study samples, then its controls."""
+    studied: dict[str, list[WellCall]] = {}
+    controls: dict[str, list[WellCall]] = {}
+    for w in assay.wells:
+        if w.sample_type in JUDGED:
+            studied.setdefault(w.sample, []).append(w)
+        elif w.sample_type in NO_TEMPLATE:
+            controls.setdefault(w.sample, []).append(w)
+    quiet = 0
+    for sample, wells in studied.items():
+        usable = [w for w in wells if w.amplified and w.melt is not None and not w.melt.problem]
+        if usable:
+            yield _study_finding(rule, ctx, {**scope, "sample": sample}, assay, usable)
+        elif any(w.amplified for w in wells):
+            yield _na(
+                {**scope, "sample": sample},
+                "no_melt_curve",
+                "Its amplified wells have no melt curve that can be read.",
+            )
+        else:
+            quiet += 1
+    if quiet:
+        say = _Said(rule, ctx, scope)
+        yield Finding(
+            scope=scope,
+            outcome=NOT_APPLICABLE,
+            code="not_amplified",
+            reason=(
+                f"{say('nquiet', quiet)} study samples here did not amplify, so their melt curves "
+                "are not judged."
+                if quiet > 1
+                else "One study sample here did not amplify, so its melt curve is not judged."
+            ),
+            facts=say.facts,
+        )
+    for sample, wells in controls.items():
+        usable = [w for w in wells if w.melt is not None and not w.melt.problem]
+        if usable:
+            yield _ntc_finding(rule, ctx, {**scope, "sample": sample}, assay, usable)
+        else:
+            yield _na(
+                {**scope, "sample": sample},
+                "no_melt_curve",
+                "This no-template control has no melt curve that can be read.",
+            )
+
+
 # ---------- registry ----------
+
+# ---------- G-IPC ----------
+
+#: G-IPC's outcomes and their verdicts.
+IPC_OUTCOMES = {"ipc_ok": "pass", "ipc_delayed": "warn", "ipc_failed": "warn"}
+
+
+def ipc_inhibition(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
+    """An internal positive control much later than in the no-template wells (G-IPC).
+
+    Per plate and internal control (:func:`qpilot.qpcr.multiplex.internal_controls`): its
+    expected Cq is the median over the no-template wells where it amplified (nothing there to
+    compete with it or to inhibit it), else, with fewer than ``min_reference_wells`` of them, the
+    median over the plate's study wells. A study well whose control is ``delay_cycles`` or more
+    later suggests inhibition; a well where the control did not amplify while no other target of
+    the well did either cannot tell a negative from an inhibited reaction. A control that did not
+    amplify beside a target that did is not read as inhibition: a strongly amplifying target can
+    use up the reaction before the control rises. The consequence test leaves out the flagged
+    wells, every curve of each (one reaction).
+    """
+    delay = _param(rule, "delay_cycles", 3.0)
+    min_reference = int(_param(rule, "min_reference_wells", 2))
+    table = ctx.control_rows()
+    controls = mx.internal_controls(table)
+    if not controls:
+        yield _na(
+            {},
+            "no_internal_control",
+            "No internal positive control is measured in the same wells as the targets, so "
+            "inhibition is not checked this way.",
+        )
+        return
+    for (plate, target), rows in table.groupby(["run_id", "target"], sort=False):
+        if target not in controls:
+            continue
+        scope = {"plate": str(plate), "target": str(target)}
+        on_plate = table[table["run_id"] == plate]
+        others = mx.partners(on_plate, str(target))
+        others = others[~others["target"].isin(controls)]
+        partner_amplified = others.groupby("key")["amplified"].any()
+        blank = rows[rows["sample_type"].isin(("ntc", "ntp")) & rows["amplified"]]
+        study = rows[rows["sample_type"] == ANALYSED]
+        if study.empty:
+            yield _na(scope, "no_unknowns", "No study samples for this control on this plate.")
+            continue
+        if len(blank) >= min_reference:
+            expected = float(blank["cq"].median())
+            basis = "no-template wells where it amplified"
+            n_basis = len(blank)
+        else:
+            seen = study[study["amplified"]]
+            if len(seen) < 3:
+                yield _na(
+                    scope,
+                    "too_few_controls",
+                    "The control amplified in too few wells here to say what its Cq should be.",
+                )
+                continue
+            expected = float(seen["cq"].median())
+            basis = "study wells where it amplified (too few no-template wells had it)"
+            n_basis = len(seen)
+        amp = study[study["amplified"]]
+        late = amp[amp["cq"] - expected >= delay]
+        silent = study[~study["amplified"]]
+        rescued = silent["key"].map(partner_amplified).fillna(False).astype(bool)
+        failed, outcompeted = silent[~rescued], silent[rescued]
+        f_n = ctx.fact(rule, scope, "nstudy", int(len(study)))
+        f_e = ctx.fact(rule, scope, "expected", expected, "{:.2f}")
+        f_b = ctx.fact(rule, scope, "nbasis", int(n_basis))
+        f_d = ctx.fact(rule, scope, "delay", delay, "{:g}")
+        facts = [f_n, f_e, f_b, f_d]
+        evidence: dict[str, Any] = {
+            "expected_cq": expected,
+            "basis": "no_template" if basis.startswith("no-template") else "study",
+            "n_study_wells": int(len(study)),
+            "n_delayed": int(len(late)),
+            "n_failed": int(len(failed)),
+            "n_outcompeted": int(len(outcompeted)),
+            "delay_cycles": delay,
+        }
+        said = (
+            f"The control's expected Cq is {{{{{f_e}}}}}, its median over the {{{{{f_b}}}}} "
+            f"{basis}."
+        )
+        extra = ""
+        if len(outcompeted):
+            f_o = ctx.fact(rule, scope, "noutcompeted", int(len(outcompeted)))
+            facts.append(f_o)
+            extra = (
+                f" In {{{{{f_o}}}}} wells it did not amplify beside a target that did: a strongly "
+                "amplifying target can use up the reaction first, which is not inhibition."
+            )
+        if late.empty and failed.empty:
+            yield Finding(
+                scope=scope,
+                outcome="ipc_ok",
+                reason=(
+                    f"{said} In every one of the {{{{{f_n}}}}} study wells where it amplified, it "
+                    f"came up less than {{{{{f_d}}}}} cycles later than that.{extra}"
+                ),
+                facts=facts,
+                evidence=evidence,
+            )
+            continue
+        parts = []
+        if len(late):
+            shift = float((late["cq"] - expected).max())
+            f_l = ctx.fact(rule, scope, "ndelayed", int(len(late)))
+            f_s = ctx.fact(rule, scope, "maxshift", shift, "{:.2f}")
+            facts += [f_l, f_s]
+            evidence["max_delay"] = shift
+            parts.append(
+                f"In {{{{{f_l}}}}} of the {{{{{f_n}}}}} study wells it came up {{{{{f_d}}}}} or "
+                f"more cycles later (up to {{{{{f_s}}}}}): something in those samples may have "
+                "slowed the reaction (inhibition), so the targets measured with it may be "
+                "underestimated."
+            )
+        if len(failed):
+            f_f = ctx.fact(rule, scope, "nfailed", int(len(failed)))
+            facts.append(f_f)
+            parts.append(
+                f"In {{{{{f_f}}}}} study wells neither the control nor any target amplified: an "
+                "inhibited reaction cannot be told from a negative one there."
+            )
+        flagged = sorted({*late["key"], *failed["key"]})
+        evidence["samples"] = ", ".join(
+            dict.fromkeys(str(s) for s in rows.loc[rows["key"].isin(flagged), "sample"])
+        )
+        yield Finding(
+            scope=scope,
+            outcome="ipc_delayed" if len(late) else "ipc_failed",
+            reason=" ".join([said, *parts]) + extra,
+            facts=facts,
+            evidence=evidence,
+            flagged=flagged,
+            options={"exclude_inhibited": flagged},
+        )
+
+
+#: Added to a finding whose options leave out multiplex wells.
+MULTIPLEX_OPTION_NOTE = (
+    "These wells hold more than one dye (multiplex): leaving a well out leaves out every curve "
+    "in it, so each gene keeps the reference measured in the same reaction."
+)
+
+
+def _multiplex_words(ev: RuleEval, ctx: GateContext) -> RuleEval:
+    """``ev`` with :data:`MULTIPLEX_OPTION_NOTE` when one of its options leaves out such wells."""
+    shared = ctx.multiplex_keys()
+    if not shared or not any(shared.intersection(keys) for keys in ev.options.values()):
+        return ev
+    return ev.model_copy(update={"reason": f"{ev.reason} {MULTIPLEX_OPTION_NOTE}"})
+
 
 CHECKS: dict[str, Check] = {
     c.name: c
@@ -1125,6 +1842,18 @@ CHECKS: dict[str, Check] = {
             outcomes=INSTR_OUTCOMES,
             options=("exclude_run",),
         ),
+        Check(
+            name="melt_products",
+            evaluate=melt_products,
+            outcomes=MELT_OUTCOMES,
+            options=("exclude_flagged",),
+        ),
+        Check(
+            name="ipc_inhibition",
+            evaluate=ipc_inhibition,
+            outcomes=IPC_OUTCOMES,
+            options=("exclude_inhibited",),
+        ),
     )
 }
 
@@ -1137,6 +1866,7 @@ OPTION_LABELS = {
     "exclude_unit_target": "Leave out this unit's wells for this target",
     "drop_rt_replicate": "Leave out the reverse-transcription replicate farthest from the others",
     "exclude_run": "Leave out this run's study wells",
+    "exclude_inhibited": "Leave out the wells whose internal control suggests inhibition",
 }
 
 
@@ -1172,8 +1902,12 @@ def resolve_pack(pack: RulePack | str | Path | None = None) -> RulePack:
 
 
 def evaluate(pack: RulePack, ctx: GateContext) -> list[RuleEval]:
-    """Every rule of ``pack`` on ``ctx``: pack order, then plate/target order."""
-    return evaluate_pack(pack, CHECKS, ctx)
+    """Every rule of ``pack`` on ``ctx``: pack order, then plate/target order.
+
+    A finding whose options leave out multiplex wells says that every curve of such a well is
+    left out with it (:data:`MULTIPLEX_OPTION_NOTE`).
+    """
+    return [_multiplex_words(ev, ctx) for ev in evaluate_pack(pack, CHECKS, ctx)]
 
 
 def plate_status(evals: Collection[RuleEval]) -> dict[str, str]:
@@ -1196,6 +1930,7 @@ def run_gate(
     model: Any = None,
     cell: Mapping[str, Any] | None = None,
     runs: Mapping[str, RunFile] | None = None,
+    melt: MeltData | None = None,
 ) -> core_gate.GateReport:
     """Evaluate ``pack`` on a study's wells and run the consequence test on every hit.
 
@@ -1214,6 +1949,9 @@ def run_gate(
             :func:`stored_runs`), the instrument export's (:func:`with_export`), with any a
             person linked on top (:func:`with_linked`); ``None`` when none was read (G-INSTR is
             then not applicable on every plate).
+        melt: The study file's melt curves (:func:`qpilot.qpcr.melt.read_melt`) for G-MELT
+            and G-NTC-1's class of a control's product; ``None`` or none in the file: G-MELT
+            is not applicable and G-NTC-1 says the product is unclassified, as before.
 
     Returns:
         The report; deterministic for the same inputs.
@@ -1224,15 +1962,25 @@ def run_gate(
     settings = settings or StudySettings()
     rule_pack = resolve_pack(pack)
     table = design_curves(curves, settings.design) if settings.design is not None else curves
+    given = dict(quantities or {})
+    if is_quantify(settings.design):  # a person's quantities over the file's, as Quantities
+        mine = {s: d.quantity for s, d in settings.design.samples.items() if d.quantity}
+        given = {k: v for k, v in given.items() if k[0] not in mine}
+        given.update({(s, ""): float(q) for s, q in mine.items()})
     ctx = GateContext(
         table=table,
-        quantities=dict(quantities or {}),
+        internal=_left_out_controls(curves, settings.design),
+        quantities=given,
         rawness=rawness,
         confirmed_no_controls=frozenset(confirmed_no_controls),
         design=settings.design,
         runs=runs,
+        melt=melt,
+        melt_params=melt_params(rule_pack),
     )
     evals = evaluate(rule_pack, ctx)
+    if is_quantify(settings.design):  # quantify samples: does a sample's reported result change?
+        return _quantify_report(rule_pack, ctx, evals, curves, settings, quantities, cell)
     model = model or build_model(curves, settings)
     base = core_gate.baseline(core_gate.at_cell(model.space, cell))
     analysed = set(ctx.table.loc[ctx.table["sample_type"] == ANALYSED, "key"])
@@ -1274,6 +2022,127 @@ def run_gate(
     )
 
 
+def is_quantify(design: Any) -> bool:
+    """A study that quantifies samples (:func:`qpilot.qpcr.quantify_study.is_quantify`)."""
+    from qpilot.qpcr.quantify_study import is_quantify as quantify
+
+    return quantify(design)
+
+
+def _quantify_report(
+    rule_pack: RulePack,
+    ctx: GateContext,
+    evals: list[RuleEval],
+    curves: pd.DataFrame,
+    settings: Any,
+    quantities: Mapping[tuple[str, str], float] | None,
+    cell: Mapping[str, Any] | None,
+) -> core_gate.GateReport:
+    """The consequence test of a study that quantifies samples (no groups compared).
+
+    Every rule runs as for any study. For each flagged set of wells the study is quantified
+    again without them, at the analysis in use (``cell``: the amplification rule and the LOQ
+    line a person chose on the quantity cards), and each sample result is compared: ``flip``
+    when its class or its number (more than 2-fold) changes
+    (:func:`qpilot.qpcr.quantify_study.gate_compare`). Standards count as well as study
+    samples: leaving a standard out moves the curve, so every quantity read from it.
+    """
+    from qpilot.qpcr import quantify_study as qs
+    from qpilot.qpcr.designs import design_units
+
+    design = settings.design
+    given = design.reaction_input
+    inputs = qs.Inputs(
+        table=ctx.table,
+        quantities={s: d.quantity for s, d in design.samples.items() if d.quantity},
+        declared={k: (float(v), "") for k, v in (quantities or {}).items()},
+        units=design_units(design) or None,
+        calls=dict(design.well_calls) or None,
+        reaction=qs.ab.ReactionInputs(given.template_ul, given.input_ng, given.unit)
+        if given
+        else None,
+        amp_calls=tuple(design.amp_calls),
+    )
+    amp = str((cell or {}).get("amp_call") or design.amp_calls[0])
+    loq = str((cell or {}).get("loq_cv") or qs.LOQ_OPTIONS[0])
+    items = qs.reported(inputs.at(amp, loq))
+    base = qs.gate_baseline(items)
+    used = set(ctx.table.loc[ctx.table["sample_type"].isin([ANALYSED, "std"]), "key"])
+    left_out = set()
+    if EXCLUDED in ctx.table.columns:
+        left_out = set(ctx.table.loc[ctx.table[EXCLUDED].astype(bool), "key"])
+    params = rule_pack.consequence
+
+    def variant(keys: list[str]) -> Any:
+        if left_out.issuperset(keys):
+            return core_gate.unchanged("", keys, ALREADY_LEFT_OUT, code="already_left_out")
+        if not used.intersection(keys):
+            return core_gate.unchanged(
+                "",
+                keys,
+                "These wells are neither samples nor standards, so no quantity uses them.",
+                code="not_study_samples",
+            )
+        found = qs.reported(inputs.without(keys).at(amp, loq))
+        return qs.gate_compare("", keys, items, found, params.magnitude_log2)
+
+    done = core_gate.run_consequences(
+        evals, base, variant, params.magnitude_log2, params.magnitude_agreement
+    )
+    return core_gate.build_report(
+        rule_pack.ref(),
+        plate_status(evals),
+        evals,
+        done,
+        base,
+        ctx.facts.as_dict(),
+        OPTION_LABELS,
+        [],
+    )
+
+
+def _left_out_controls(curves: pd.DataFrame, design: Any) -> pd.DataFrame | None:
+    """The curves of internal positive controls the design leaves out of the analysis (G-IPC).
+
+    A person may leave an IPC out of the study (role ``ignore``: it is not a gene to compare),
+    and the engine then never sees it; G-IPC still reads its curves, typed as the design types
+    the wells. ``None`` when the design leaves no such control out.
+    """
+    from qpilot.qpcr.designs import design_curves
+
+    if design is None:
+        return None
+    ignored = {
+        t
+        for t, d in design.targets.items()
+        if d.role == "ignore" and mx.is_internal_control_name(t)
+    }
+    if not ignored:
+        return None
+    targets = {t: d for t, d in design.targets.items() if t not in ignored}
+    kept = design_curves(curves, design.model_copy(update={"targets": targets}))
+    rows = kept[kept["target"].isin(ignored)]
+    return rows if not rows.empty else None
+
+
+def melt_params(pack: RulePack) -> MeltParams:
+    """The pack's G-MELT thresholds (the defaults when the pack has no enabled G-MELT rule)."""
+    for rule in pack.rules:
+        if rule.check == "melt_products" and rule.enabled:
+            return MeltParams.from_rule(rule.params)
+    return MeltParams()
+
+
+def file_melt(rdml_path: str | Path, experiment_id: str | None = None) -> MeltData | None:
+    """The file's melt curves for the gate (``None`` when they cannot be read)."""
+    from qpilot.qpcr.melt import MeltError, read_melt
+
+    try:
+        return read_melt(rdml_path, experiment_id)
+    except (MeltError, OSError, ValueError):
+        return None
+
+
 def study_quantities(rdml_path: str | Path) -> dict[tuple[str, str], float]:
     """Declared quantities of the file's samples: ``(sample, target) -> value``."""
     from qpilot.qpcr.inspect import file_facts
@@ -1297,7 +2166,8 @@ def gate_file(
 ) -> core_gate.GateReport:
     """:func:`run_gate` on an RDML file with the study's settings (curves from the cache).
 
-    G-INSTR reads the file's own runs (:func:`file_runs`: the instrument and the run date).
+    G-INSTR reads the file's own runs (:func:`file_runs`: the instrument and the run date),
+    G-MELT the file's melt curves (:func:`file_melt`).
     """
     from qpilot.qpcr.curves import analyse_study
     from qpilot.qpcr.study import StudySettings
@@ -1315,4 +2185,5 @@ def gate_file(
         rawness=rawness,
         confirmed_no_controls=confirmed_no_controls,
         runs=file_runs(rdml_path),
+        melt=file_melt(rdml_path, settings.experiment_id),
     )

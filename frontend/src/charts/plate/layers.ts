@@ -15,6 +15,8 @@ export interface PlateWell {
   well: string;
   sample?: string | null;
   target?: string | null;
+  /** The dye the target is read in (a multiplex well has one curve per dye). */
+  dye?: string | null;
   /** RDML sample type (`unkn`, `std`, `ntc`, `nrt`, `nac`, `pos`, `opt`, `ntp`); others shown as text. */
   role?: string | null;
   /** The amplification call in use (null: no call, e.g. no curve). */
@@ -59,14 +61,14 @@ export function layerOptions(
 export interface RoleStyle {
   /** A CSS colour from the tokens. */
   color: string;
-  /** One letter drawn in the well (none for study samples, the bulk of a plate). */
+  /** A letter or three drawn in the well (none for study samples, the bulk of a plate). */
   letter: string;
   label: string;
 }
 
 const ROLE_STYLE: Record<string, Omit<RoleStyle, "label">> = {
   unkn: { color: "color-mix(in oklab, var(--text-faint) 55%, var(--surface))", letter: "" },
-  std: { color: "var(--info)", letter: "S" },
+  std: { color: "var(--info)", letter: "Std" }, // never "S": it reads as "sample"
   ntc: { color: "var(--warn)", letter: "N" },
   nrt: { color: "var(--v-check)", letter: "R" },
   nac: { color: "var(--v-fragile)", letter: "A" },
@@ -208,7 +210,7 @@ export function rampInk(t: number): string {
 export function wellSummary(w: PlateWell, layer: PlateLayer): string {
   const parts = [w.well];
   if (w.sample) parts.push(`sample ${w.sample}`);
-  if (w.target) parts.push(w.target);
+  if (w.target) parts.push(w.dye ? `${w.target} (${w.dye})` : w.target);
   if (layer === "role") parts.push(roleStyle(w.role).label);
   else if (layer === "call") parts.push(CALL_STYLE[callKey(w.amplified)].words);
   else parts.push(`${PLATE_LAYER_LABEL[layer]} ${numberText(layer, NUMERIC[layer].get(w))}`);

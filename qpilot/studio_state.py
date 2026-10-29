@@ -37,6 +37,7 @@ from qpilot.ai.prompts import SYSTEM_INTERPRET
 from qpilot.app_state import conclusion_word, esc
 from qpilot.core.facts import slug
 from qpilot.explain.templates import to_html
+from qpilot.explain.words import plural
 from qpilot.schemas import Fact
 from qpilot.schemas_studio import TEXT_ID, InspectSummary, MadeBy, Proposal, QuarantineEntry
 from qpilot.studio_service import BLIND_STAGES, STAGES
@@ -116,9 +117,15 @@ def _short_json(data: Any, limit: int = 300) -> str:
     return text if len(text) <= limit else text[:limit] + "…"
 
 
-def rule_words(rule: Any) -> str:
-    """An amplification-call rule id in words."""
+#: ``linregpcr`` for a file of Cq values only (``docs/cq-tables.md``): the same rule, no curve.
+CQ_RULE_WORDS = "the file's own Cq (a well counts when the file gives it a Cq; Cq values only)"
+
+
+def rule_words(rule: Any, cq_values: bool = False) -> str:
+    """An amplification-call rule id in words (``cq_values``: a file of Cq values only)."""
     rule = str(rule)
+    if rule == "linregpcr" and cq_values:
+        return CQ_RULE_WORDS
     if rule == "linregpcr":
         return "LinRegPCR's call (it found an exponential phase and a quantity)"
     if rule == "learned":
@@ -141,10 +148,14 @@ def _d_role(subject: str, d: Mapping[str, Any]) -> str:
 
 
 def _d_group(subject: str, d: Mapping[str, Any]) -> str:
+    if d["group"] is None:
+        return f"Take sample {subject} out of every group (it is not compared)"
     return f"Put sample {subject} in group “{d['group']}”"
 
 
 def _d_unit(subject: str, d: Mapping[str, Any]) -> str:
+    if d["biological_unit"] is None:
+        return f"Sample {subject} is its own biological unit (its wells are technical replicates)"
     return (
         f"Sample {subject} belongs to biological unit “{d['biological_unit']}”: its wells are "
         "technical replicates of that unit and are never counted as separate n"
@@ -157,6 +168,8 @@ def _d_target_role(subject: str, d: Mapping[str, Any]) -> str:
         return f"Use target {subject} as a reference gene (other genes are normalised to it)"
     if role == "toi":
         return f"Treat target {subject} as a gene of interest"
+    if role == "ignore":
+        return f"Leave target {subject} out of the study (none of its wells is used)"
     return f"Give target {subject} the role {role!r}"
 
 
@@ -166,7 +179,43 @@ def _d_symbol(subject: str, d: Mapping[str, Any]) -> str:
 
 def _d_comparison(subject: str, d: Mapping[str, Any]) -> str:
     a, b = d["group_a"], d["group_b"]
-    return f"Compare group “{a}” with group “{b}” (fold change = {a} relative to {b})"
+    text = f"Compare group “{a}” with group “{b}” (fold change = {a} relative to {b})"
+    listed = [c for c in d.get("comparisons") or [] if isinstance(c, Mapping)]
+    others = [c for c in listed if (c.get("group_a"), c.get("group_b")) != (a, b)]
+    if others:
+        pattern = d.get("pattern")
+        if pattern == "vs_control" and d.get("control"):
+            head = f"Compare each group with the control “{d['control']}”"
+        elif pattern == "all_pairs":
+            head = "Compare every pair of groups"
+        else:
+            head = "Compare these groups"
+        pairs = "; ".join(
+            f"{c.get('group_a')} vs {c.get('group_b')}"
+            for c in [{"group_a": a, "group_b": b}, *others]
+        )
+        text = f"{head} ({len(others) + 1} comparisons: {pairs}; the first is {a} vs {b})"
+        correction = d.get("correction") or "holm"
+        text += {
+            "holm": ", with Holm's correction across each gene's comparisons",
+            "dunnett": ", with Dunnett's correction (each group against the control; one "
+            "variance pooled over the groups)",
+            "tukey": ", with Tukey's correction (every pair of groups; one variance pooled over "
+            "the groups)",
+        }.get(correction, ", with no correction for several comparisons")
+    if d.get("pair_by"):
+        text += f", paired by {d['pair_by']} (a paired test within each {d['pair_by']})"
+    return text
+
+
+def _d_pair(subject: str, d: Mapping[str, Any]) -> str:
+    pair, by = d.get("pair"), d.get("by") or "pair"
+    if not pair:
+        return f"Sample {subject} is not paired with samples of the other groups"
+    return (
+        f"Sample {subject} belongs to {by} “{pair}”: it is paired with that {by}'s samples in "
+        "the other groups"
+    )
 
 
 def _d_series(subject: str, d: Mapping[str, Any]) -> str:
@@ -181,7 +230,7 @@ def _d_series(subject: str, d: Mapping[str, Any]) -> str:
 
 
 def _d_rule(subject: str, d: Mapping[str, Any]) -> str:
-    return f"Count a well as amplified by {rule_words(d['rule'])}"
+    return f"Count a well as amplified by {rule_words(d['rule'], d.get('basis') == 'cq')}"
 
 
 def _d_well(subject: str, d: Mapping[str, Any]) -> str:
@@ -209,6 +258,31 @@ def _d_trust(subject: str, d: Mapping[str, Any]) -> str:
         raise TypeError("not an option of the Import Trust card")
     label = LABELS[option]
     return f"Import Trust: {label[0].lower()}{label[1:]}"
+
+
+def _d_reaction(subject: str, d: Mapping[str, Any]) -> str:
+    parts = []
+    if d.get("template_ul") not in (None, ""):
+        parts.append(f"{float(d['template_ul']):g} µL of template")
+    if d.get("input_ng") not in (None, ""):
+        parts.append(f"{float(d['input_ng']):g} ng of input")
+    if not parts:
+        return "Give absolute quantities per reaction only (no template volume or input amount)"
+    unit = f" ({d['unit']})" if d.get("unit") else ""
+    return "Each reaction held " + " and ".join(parts) + f": quantities per µL and per ng{unit}"
+
+
+def _d_purpose(subject: str, d: Mapping[str, Any]) -> str:
+    if d["purpose"] == "quantify":
+        return (
+            "This study quantifies samples from a standard curve (how much of each target is "
+            "there); no groups are compared and no reference gene is needed"
+        )
+    if d["purpose"] == "compare":
+        return (
+            "This study compares groups (fold changes between them, normalised to reference genes)"
+        )
+    raise ValueError(d["purpose"])
 
 
 def _d_axis(subject: str, d: Mapping[str, Any]) -> str:
@@ -247,7 +321,7 @@ def _d_exclusion(subject: str, d: Mapping[str, Any]) -> str:
     gene, sample = d.get("gene", "?"), d.get("sample") or "an unknown sample"
     if d.get("action") == "restore":
         return f"Keep sample {sample} in {gene} (restore it in the analysis)"
-    return f"Exclude sample {sample} from {gene}, as it is in the table Prism sent back"
+    return f"Exclude sample {sample} from {gene}, as it is excluded in Prism"
 
 
 def _d_value_edit(subject: str, d: Mapping[str, Any]) -> str:
@@ -264,8 +338,9 @@ def _d_confirm(subject: str, d: Mapping[str, Any]) -> str:
     covers = d.get("covers") or []
     label = STAGE_LABELS.get(subject, subject)
     if subject == "choices":
-        return f"Confirm the {label} stage: the Decision Cards of analysis {d.get('study_id', '?')}"
-    return f"Confirm the {label} stage: it covers {len(covers)} accepted proposal(s)"
+        return f"Confirm the {label} stage: the Decision Cards of this analysis"
+    n = len(covers)
+    return f"Confirm the {label} stage: it covers {n} accepted proposal{'s' * (n != 1)}"
 
 
 _DESCRIBERS: dict[str, Callable[[str, Mapping[str, Any]], str]] = {
@@ -276,12 +351,15 @@ _DESCRIBERS: dict[str, Callable[[str, Mapping[str, Any]], str]] = {
     "design.target_role": _d_target_role,
     "design.gene_symbol": _d_symbol,
     "design.comparison": _d_comparison,
+    "design.pair": _d_pair,
     "design.dilution_series": _d_series,
+    "design.purpose": _d_purpose,
     "curve.call_rule": _d_rule,
     "curve.well_call": _d_well,
     "curve.exclude_well": _d_exclude,
     "curve.import_trust": _d_trust,
     "choice.axis": _d_axis,
+    "choice.reaction_input": _d_reaction,
     "prism.project": _d_project,
     "prism.exclusion_reason": _d_exclusion,
     "prism.value_edit": _d_value_edit,
@@ -358,7 +436,7 @@ def details_rows(details: Mapping[str, Any]) -> list[tuple[str, str]]:
                     rows.append((esc(rule), text))
             continue
         if isinstance(value, Mapping | list | tuple) and not _scalars(value):
-            rows.append((label, _folded(value, f"{len(value)} item(s)")))
+            rows.append((label, _folded(value, plural(len(value), "item"))))
         elif isinstance(value, list | tuple):
             shown = ", ".join(_value_text(v) for v in value[:12])
             more = f" … ({len(value)} in all)" if len(value) > 12 else ""
@@ -643,6 +721,8 @@ def maker_text(made_by: MadeBy) -> str:
         return "Made by a fixed rule in qPilot (no model)."
     if made_by.kind == "agent":
         return f"Proposed by an agent over MCP ({made_by.agent or 'unnamed'})."
+    if made_by.kind == "person":
+        return "Set by a person on the Design page (and accepted in the same act)."
     if made_by.provider == CURVE_JUDGE:
         return (
             f"Made by the Curve Judge, a local curve classifier (model {made_by.model}); it reads "
@@ -739,7 +819,8 @@ def card_html(
         what.append(f"<p>As edited by a person: {esc(describe(p, p.effective_payload()))}</p>")
     if p.alternatives:
         alts = "; ".join(esc(describe(p, alt)) for alt in p.alternatives[:6])
-        what.append(f'<p class="qs-alt">Other reading(s): {alts}</p>')
+        head = "Other reading" if len(p.alternatives) == 1 else "Other readings"
+        what.append(f'<p class="qs-alt">{head}: {alts}</p>')
     what.append(
         f'<p class="qs-meta"><code>{esc(p.kind)}</code> · '
         f"{esc(STATUS_WORDS.get(p.status, p.status))} · <span class='qs-id'>{esc(p.id)}</span></p>"

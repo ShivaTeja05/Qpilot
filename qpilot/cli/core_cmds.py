@@ -9,8 +9,12 @@ from pathlib import Path
 from qpilot.cli._types import Command
 
 
-def _record_dir(path: str, scratch: Path) -> Path:
-    """A record folder, unpacking a zip record (any name or case) safely first."""
+def _record_dir(path: str, scratch: Path, damaged: list[str] | None = None) -> Path:
+    """A record folder, unpacking a zip record (any name or case) safely first.
+
+    With ``damaged`` a list, zip members that fail the zip's own check are named there instead
+    of stopping the unpacking (see :func:`qpilot.core.record.unzip_record`).
+    """
     import zipfile
 
     from qpilot.core.record import RecordError, unzip_record
@@ -19,7 +23,7 @@ def _record_dir(path: str, scratch: Path) -> Path:
     if p.is_dir():
         return p
     if p.suffix.lower() == ".zip" or (p.is_file() and zipfile.is_zipfile(p)):
-        return unzip_record(p, scratch / p.stem)
+        return unzip_record(p, scratch / p.stem, damaged=damaged)
     if p.exists():
         raise RecordError(f"not an Analysis Record folder or zip: {p}")
     raise RecordError(f"no such record: {p}")
@@ -77,14 +81,25 @@ def _verify_arguments(parser: argparse.ArgumentParser) -> None:
 def _verify(args: argparse.Namespace) -> int:
     import tempfile
 
-    from qpilot.core.record import RecordError, verify
+    from qpilot.core.record import RecordError, member_names, verify
 
     with tempfile.TemporaryDirectory() as tmp:
+        damaged: list[str] = []
         try:
-            report = verify(_record_dir(args.record, Path(tmp)))
+            folder = _record_dir(args.record, Path(tmp), damaged)
+            if damaged and not (folder / "CHECKSUMS.sha256").exists():
+                raise RecordError(
+                    f"this record was altered or damaged after export: {', '.join(damaged[:3])} "
+                    "fails the zip's own check, so it cannot be verified"
+                )
+            report = verify(folder)
         except RecordError as err:
             print(f"qpilot verify: {err}", file=sys.stderr)
             return 2
+        report = report.with_damaged(
+            member_names(damaged, folder, Path(tmp) / Path(args.record).stem)
+        )
+    print(report.headline())
     print(report.summary())
     print("(tamper-evident, not tamper-proof)")
     return 0 if report.ok else 1
@@ -156,7 +171,13 @@ def _rerun(args: argparse.Namespace) -> int:
 def _plan_arguments(parser: argparse.ArgumentParser) -> None:
     from qpilot.qpcr.plan import SD_RT_HELP, SD_WELL_HELP, SIGMA_HELP
 
-    parser.add_argument("--fc", type=float, default=2.0, help="fold change to detect (default 2)")
+    parser.add_argument(
+        "--fc",
+        type=float,
+        default=2.5,
+        help="fold change to detect (default 2.5: above qPilot's 2-fold call threshold, which a "
+        "true 2-fold change reaches only about half the time)",
+    )
     parser.add_argument("--sd", type=float, default=None, help=SIGMA_HELP)
     parser.add_argument("--n", type=int, default=None, help="planned samples (subjects) per group")
     parser.add_argument("--alpha", type=float, default=0.05)
@@ -181,9 +202,26 @@ def _plan_arguments(parser: argparse.ArgumentParser) -> None:
     budget.add_argument("--cost-well", type=float, default=None, help="cost of one qPCR well")
     budget.add_argument(
         "--cq",
+        "--expected-cq",
+        dest="cq",
         type=float,
         default=None,
-        help="expected Cq of the target (accepted; the claim-floor check is not built yet)",
+        help="expected Cq of the target: sets the well SD's floor from Poisson sampling of the "
+        "copies a well holds at that Cq (the plan uses the larger of that and --sd-well)",
+    )
+    budget.add_argument(
+        "--cq-one-copy",
+        type=float,
+        default=None,
+        help="the Cq at which one copy crosses the threshold, i.e. your standard curve's "
+        "intercept (default 35, a lab-editable assumption); used with --cq",
+    )
+    budget.add_argument(
+        "--curve-from",
+        metavar="FILE",
+        default=None,
+        help="take the one-copy Cq from this RDML file's or export's standard curve in copies "
+        "(its intercept); used with --cq when --cq-one-copy is not given",
     )
     parser.add_argument("--json", action="store_true", help="print JSON")
 
@@ -191,6 +229,23 @@ def _plan_arguments(parser: argparse.ArgumentParser) -> None:
 def _plan(args: argparse.Namespace) -> int:
     from qpilot.qpcr.plan import plan
 
+    one_copy, source = args.cq_one_copy, None
+    if args.curve_from and args.cq is not None and one_copy is None:
+        from qpilot.qpcr.absolute_study import quantify_file
+        from qpilot.qpcr.plan import cq_one_copy_from
+
+        try:
+            taken = cq_one_copy_from(quantify_file(args.curve_from).curves)
+        except Exception as err:  # a file that cannot be read: say so, plan nothing
+            print(f"qpilot plan: cannot read the standard curve: {err}", file=sys.stderr)
+            return 2
+        if taken is None:
+            print(
+                "qpilot plan: the file has no standard curve in copies; give --cq-one-copy",
+                file=sys.stderr,
+            )
+            return 2
+        one_copy, source = taken
     try:
         out = plan(
             fc=args.fc,
@@ -209,6 +264,8 @@ def _plan(args: argparse.Namespace) -> int:
             cost_rt=args.cost_rt,
             cost_well=args.cost_well,
             expected_cq=args.cq,
+            cq_one_copy=one_copy,
+            cq_one_copy_source=source,
         )
     except ValueError as err:
         print(f"qpilot plan: {err}", file=sys.stderr)

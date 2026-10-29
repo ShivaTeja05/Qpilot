@@ -19,11 +19,12 @@ from __future__ import annotations
 import hashlib
 import json
 import shutil
+import threading
 import zipfile
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, File, Query, UploadFile
+from fastapi import APIRouter, Body, File, Form, Query, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 
@@ -31,6 +32,7 @@ from qpilot.core.record import (
     CHECKSUMS,
     RecordError,
     VerifyReport,
+    member_names,
     unzip_record,
     verify,
     write_record,
@@ -45,9 +47,11 @@ from qpilot.web.contract_files import (
     AuditBinding,
     DownloadLink,
     GroupPoints,
+    OpenSteps,
     PreviewTable,
     PrismBundles,
     PrismBundleView,
+    PrismChecked,
     PrismChoice,
     PrismDrafted,
     PrismFigure,
@@ -58,6 +62,7 @@ from qpilot.web.contract_files import (
     PrismRoutes,
     PrismSent,
     PrismStatus,
+    PrismTableView,
     PrismTemplate,
     RecordCommands,
     RecordExported,
@@ -74,6 +79,7 @@ from qpilot.web.jobs import JobError, Progress
 router = APIRouter(tags=["files"])
 #: The model of each job's result, by job kind (typed in the schema: ``routers.job_results``).
 JOB_RESULTS = {
+    "prism.check": PrismChecked,
     "prism.draft": PrismDrafted,
     "prism.send": PrismSent,
     "prism.roundtrip": PrismRoundTrip,
@@ -94,6 +100,7 @@ EXPORT_FILE = "export.json"  # beside each exported record zip: what the export 
 DRAFT_TYPICAL_S = 6.5  # the rules' draft, no model
 SEND_TYPICAL_S = 25.0  # the bundle (the engine rebuilds the export inputs) and its zip
 ROUNDTRIP_TYPICAL_S = 8.5  # one edited table: the diff and each exclusion's consequence
+CHECK_TYPICAL_S = 6.0  # two analyses' tables rebuilt and compared (28 Oct, busy laptop: 18 s)
 RECORD_TYPICAL_S = 1.5  # copy, hash and zip (7.8 MB with the input file)
 BLIND = (
     "Results stay hidden until you confirm the Design and the Curves stages: Prism shows "
@@ -112,21 +119,38 @@ PRISM_ERRORS: tuple[type[BaseException], ...] = (ValueError, KeyError, OSError, 
 
 
 def _session(ctx: AppContext, sid: str) -> None:
+    """A known session whose file is read: 404 unknown, ``503 warming`` while it is cold.
+
+    The Studio routes' rule: a request about a session whose file is still being read answers
+    ``warming`` within a moment instead of waiting for the whole read (seconds to a minute).
+    """
+    from qpilot.web.warm import require, session_file_present
+
     check_key(sid)
     if not is_session(ctx.store, sid):
         raise api_error(404, "not_found", "There is no Studio session with this id.")
+    if session_file_present(ctx.store, sid):
+        require(ctx, sid)
 
 
 def _visible_study(ctx: AppContext, sid: str) -> str:
-    """The session's current analysis; 403 ``blind`` until the design and curves are confirmed."""
+    """The session's current analysis; 403 ``blind`` until the design and curves are confirmed.
+
+    One read of the gate: :meth:`Studio.study` refuses while a blind stage is open, and only
+    then is the reason looked up.
+    """
     _session(ctx, sid)
     try:
-        if not ctx.studio.results_visible(sid):
-            raise api_error(403, "blind", BLIND)
         return ctx.studio.study(sid)
     except StudyNotFound as err:
         raise api_error(404, "not_found", "There is no Studio session with this id.") from err
     except StudioError as err:
+        try:
+            visible = ctx.studio.results_visible(sid)
+        except (StudyNotFound, StudioError, OSError):
+            visible = False
+        if not visible:
+            raise api_error(403, "blind", BLIND) from err
         raise api_error(409, "studio", _sentence(err)) from err
     except OSError as err:
         raise api_error(
@@ -138,24 +162,33 @@ def _choices_confirmed(ctx: AppContext, sid: str) -> bool:
     return any(s.stage == "choices" and s.confirmed for s in ctx.studio.stages(sid))
 
 
-def _project(ctx: AppContext, sid: str, study_id: str) -> PrismProject:
-    """The accepted project of this analysis, else a draft waiting, else none (old page's rule)."""
+def _project(ctx: AppContext, sid: str, study_id: str, *, compute: bool = False) -> PrismProject:
+    """The accepted project of this analysis, else a draft waiting, else none (old page's rule).
+
+    A project accepted for an earlier analysis still holds when the tables it exports hold
+    exactly the same numbers now (``still_current``): deciding a choice that changed no number
+    never asks for a new draft. Comparing the tables rebuilds them (seconds), so a reading
+    route never waits for it: until it is known the project reads ``checking`` and a
+    background job compares them, then tells the page (``proposals.changed``).
+    """
     projects = [p for p in ctx.studio.inbox(sid, "prism") if p.kind == PROJECT_KIND]
-    accepted = [
-        p
-        for p in projects
-        if p.status in ("accepted", "edited") and p.effective_payload().get("study_id") == study_id
-    ]
     waiting = [p for p in projects if p.status == "proposed"]
+    if compute:
+        accepted, carried = ctx.studio.prism_project(sid, study_id)
+        pending = False
+    else:
+        accepted, carried, pending = ctx.studio.prism_project_cached(sid, study_id)
+        if pending:
+            _check_project(ctx, sid, study_id)
     chosen, status = (
-        (accepted[-1], "accepted")
-        if accepted
+        (accepted, "accepted")
+        if accepted is not None
         else (waiting[-1], "waiting")
         if waiting
         else (None, "none")
     )
     if chosen is None:
-        return PrismProject(status="none")
+        return PrismProject(status="none", checking=pending)
     payload = chosen.effective_payload()
     return PrismProject(
         status=status,
@@ -163,6 +196,23 @@ def _project(ctx: AppContext, sid: str, study_id: str) -> PrismProject:
         template_id=payload.get("template_id"),
         genes=[str(g) for g in payload.get("genes") or []],
         made_by=chosen.made_by.kind,
+        still_current=status == "accepted" and carried,
+        drafted_for=str(payload.get("study_id")) if status == "accepted" and carried else None,
+        checking=pending and status != "accepted",
+    )
+
+
+def _check_project(ctx: AppContext, sid: str, study_id: str) -> None:
+    """Compare an earlier analysis's project tables with this one's, in the background."""
+
+    def work(progress: Progress) -> dict[str, Any]:
+        progress("Checking whether the Prism project accepted earlier still holds")
+        found, carried = ctx.studio.prism_project(sid, study_id)
+        ctx.bus.publish({"type": "proposals.changed", "key": sid, "source": "prism"})
+        return PrismChecked(still_current=bool(found is not None and carried)).model_dump()
+
+    ctx.jobs.submit(
+        "prism.check", work, title="Checking the Prism project", key=sid, typical_s=CHECK_TYPICAL_S
     )
 
 
@@ -212,10 +262,20 @@ def prism_status(sid: str, ctx: Ctx) -> PrismStatus:
     study_id = _visible_study(ctx, sid)
     confirmed = _choices_confirmed(ctx, sid)
     project = _project(ctx, sid, study_id)
-    if project.status == "accepted" and confirmed:
+    if project.status == "accepted" and confirmed and project.still_current:
+        step = (
+            "The Prism project accepted earlier is still current (the tables hold the same "
+            "numbers): press Send to Prism."
+        )
+    elif project.status == "accepted" and confirmed:
         step = "The Prism project for this analysis is accepted: press Send to Prism."
     elif project.status == "waiting":
         step = "A drafted Prism project is waiting in the Prism inbox: check it, then accept it."
+    elif project.checking:
+        step = (
+            "Checking whether the Prism project accepted for the earlier analysis still holds "
+            "(its tables against this analysis's)."
+        )
     elif confirmed:
         step = "No Prism project yet: press “Draft the Prism project”."
     else:
@@ -258,10 +318,12 @@ def prism_preview(
         raise api_error(409, "no_preview", f"No Prism preview: {_sentence(err)}") from err
     parsed = folders.preview_tables(full)
     template = full.get("template") or {}
+    project = full.get("project") or {}
     bundle = full.get("bundle") or {}
     info = bundle.get("info") or {}
     figures: dict[str, PrismFigure] = {}
-    if template.get("layout") == "column":
+    sizes = _group_sizes(ctx, study_id)
+    if template.get("layout") == "column":  # the preview's tables are the Column tables
         scale = str(info.get("scale") or "log2 relative quantity")
         for gene, table in parsed.items():
             groups = [
@@ -269,7 +331,8 @@ def prism_preview(
                 for name, points in folders.group_points(table["columns"], table["rows"]).items()
             ]
             if any(g.n for g in groups):
-                figures[gene] = PrismFigure(gene=gene, scale=scale, groups=groups, note=FIGURE_NOTE)
+                note = FIGURE_NOTE + _fewer_units(gene, groups, sizes)
+                figures[gene] = PrismFigure(gene=gene, scale=scale, groups=groups, note=note)
     cards = {c.id: c for c in ctx.store.cards(study_id)}
     return PrismPreview(
         session_id=sid,
@@ -294,6 +357,37 @@ def prism_preview(
         project=_project(ctx, sid, study_id),
         choices_confirmed=_choices_confirmed(ctx, sid),
         not_affiliated=str(full.get("not_affiliated", "")),
+        project_file=project.get("file"),
+        project_tables=[PrismTableView(**t) for t in project.get("tables", [])],
+        replicates_file=project.get("replicates_file"),
+        replicates_tables=[PrismTableView(**t) for t in project.get("replicates_tables", [])],
+        needs_template=bool(project.get("needs_template", False)),
+    )
+
+
+def _group_sizes(ctx: AppContext, study_id: str) -> dict[str, int]:
+    """Each compared group's size in units, as Results shows it ({} when it cannot be read)."""
+    from qpilot.web.results_views import groups
+
+    try:
+        return {g.label: g.n for g in groups(ctx.store.get(study_id))}
+    except (StudyNotFound, OSError, ValueError, KeyError):
+        return {}
+
+
+def _fewer_units(gene: str, groups: list[GroupPoints], sizes: dict[str, int]) -> str:
+    """Why a group's n here is below the group's size on Results (" ODC1 has a value for …")."""
+    fewer = [
+        f"{g.n} of the {sizes[g.name]} {g.name} units"
+        for g in groups
+        if sizes.get(g.name) is not None and g.n < sizes[g.name]
+    ]
+    if not fewer:
+        return ""
+    return (
+        f" {gene} has a value for {' and '.join(fewer)}: a unit with no value for this gene (no "
+        "quantity, or a well left out) has no row in its table, so the n here can be below the "
+        "group's size on Results."
     )
 
 
@@ -326,10 +420,42 @@ def _choice(choice: dict[str, Any], card: Any) -> PrismChoice:
 
 @router.get("/sessions/{sid}/prism/routes", response_model=PrismRoutes)
 def prism_routes(sid: str, ctx: Ctx) -> PrismRoutes:
-    """How often the usual Excel→Prism routes would change a conclusion on this study."""
+    """How often the usual Excel→Prism routes would change a conclusion on this study.
+
+    The answer is the study's stored facts, so it is kept per study and results file (its
+    size and time): only the blind gate runs again on a warm request.
+    """
+    study_id = _visible_study(ctx, sid)
+    stamp = _results_stamp(ctx, study_id)
+    key = (str(ctx.store.root), sid, study_id, stamp)
+    with _ROUTES_LOCK:
+        cached = _ROUTES.get(key)
+    if cached is not None:
+        return cached
+    view = _routes_view(ctx, sid, study_id)
+    with _ROUTES_LOCK:
+        if len(_ROUTES) > 64:
+            _ROUTES.clear()
+        _ROUTES[key] = view
+    return view
+
+
+_ROUTES: dict[tuple[str, str, str, tuple[int, int] | None], PrismRoutes] = {}
+_ROUTES_LOCK = threading.Lock()
+
+
+def _results_stamp(ctx: AppContext, study_id: str) -> tuple[int, int] | None:
+    """The study's results file as (size, mtime_ns): a re-analysis changes it."""
+    try:
+        stat = (ctx.store.workspace(study_id) / "results.json").stat()
+    except (OSError, StudyNotFound):
+        return None
+    return (stat.st_size, stat.st_mtime_ns)
+
+
+def _routes_view(ctx: AppContext, sid: str, study_id: str) -> PrismRoutes:
     from qpilot.qpcr.routes import ROUTE_LABELS
 
-    study_id = _visible_study(ctx, sid)
     result = ctx.store.get(study_id)
     facts = result.facts
     n_genes = facts["f_n_genes"].value if "f_n_genes" in facts else None
@@ -395,9 +521,10 @@ def _bundle_views(ctx: AppContext, sid: str, current: str | None) -> list[PrismB
         if token is not None and folders.bundle_folder(exports, token) != folder:
             token = None
         archive = exports / _bundle_zip_name(str(entry.get("study_id", "")), token or "")
-        sent_back = entry.get("sent_back_dir") or (
-            str(folder / folders.SENT_BACK_DIR) if token else None
-        )
+        project = entry.get("project")
+        # Prism saves a project where it was opened: the bundle folder is where it comes back
+        default = str(folder) if project else str(folder / folders.SENT_BACK_DIR)
+        sent_back = entry.get("sent_back_dir") or (default if token else None)
         out.append(
             PrismBundleView(
                 id=token,
@@ -410,6 +537,7 @@ def _bundle_views(ctx: AppContext, sid: str, current: str | None) -> list[PrismB
                 sent_back_folder=sent_back,
                 round_trip=token is not None,
                 download=_link(ctx, archive) if token and archive.is_file() else None,
+                project=str(folder / project) if project else None,
             )
         )
     return out
@@ -473,7 +601,7 @@ def prism_send(sid: str, ctx: Ctx) -> JobStarted:
     study_id = _visible_study(ctx, sid)
     if not _choices_confirmed(ctx, sid):
         raise api_error(409, "studio", "Confirm the analysis choices first.")
-    if _project(ctx, sid, study_id).status != "accepted":
+    if _project(ctx, sid, study_id, compute=True).status != "accepted":
         raise api_error(409, "studio", "Accept the Prism project for this analysis first.")
 
     def work(progress: Progress) -> dict[str, Any]:
@@ -489,7 +617,7 @@ def prism_send(sid: str, ctx: Ctx) -> JobStarted:
         name = _bundle_zip_name(result.bundle.study_id, folders.bundle_id(folder) or "bundle")
         base = exports / name.removesuffix(".zip")
         archive = Path(shutil.make_archive(str(base), "zip", root_dir=folder))
-        progress("Starting Prism (when it is installed on this computer)", 0.7)
+        progress("Opening the project in Prism (when it is installed on this computer)", 0.7)
         try:
             launched = ctx.studio.launch_prism(result, actor="human")
         except PRISM_ERRORS as err:
@@ -500,20 +628,7 @@ def prism_send(sid: str, ctx: Ctx) -> JobStarted:
         )
         if view is None:  # the export is always remembered; this is only belt and braces
             raise JobError("studio", "The bundle was written but this session does not list it.")
-        return PrismSent(
-            bundle=view,
-            n_files=len(result.files),
-            files=sorted(
-                p.relative_to(folder).as_posix() for p in folder.rglob("*") if p.is_file()
-            ),
-            notes=[str(n) for n in result.notes],
-            launched=bool(launched.get("launched")),
-            done=launched.get("done") if launched.get("launched") else None,
-            launch_note=None if launched.get("launched") else str(launched.get("note") or ""),
-            command_line=result.launch.command_line,
-            send_back_command=result.send_back.command_line,
-            download=_link(ctx, archive),
-        ).model_dump(mode="json")
+        return _sent(ctx, result, view, folder, launched, archive).model_dump(mode="json")
 
     view = _job(
         ctx, "prism.send", work, title="Sending to Prism", key=sid, typical_s=SEND_TYPICAL_S
@@ -521,28 +636,138 @@ def prism_send(sid: str, ctx: Ctx) -> JobStarted:
     return JobStarted(job=view)
 
 
+def _sent(
+    ctx: AppContext,
+    result: Any,
+    view: PrismBundleView,
+    folder: Path,
+    launched: dict[str, Any],
+    archive: Path,
+) -> PrismSent:
+    """The Send job's answer: where the project is and how to open it, in plain words."""
+    from qpilot.prism import PLATFORMS
+    from qpilot.prism.project import (
+        ANALYSE_STEPS,
+        PLATFORM_WORDS,
+        ROUND_TRIP_STEPS,
+        open_steps,
+    )
+    from qpilot.prism.script import host_platform
+
+    here = host_platform()
+    project = getattr(result, "project", None)
+    replicates = getattr(result, "replicates_project", None)
+    order = [here, *(p for p in PLATFORMS if p != here)]
+    scripts = bool(getattr(result, "scripts", False))
+    is_project = project is not None
+    ok = bool(launched.get("launched"))
+    return PrismSent(
+        bundle=view,
+        n_files=len(result.files),
+        files=sorted(p.relative_to(folder).as_posix() for p in folder.rglob("*") if p.is_file()),
+        notes=[str(n) for n in result.notes],
+        launched=ok,
+        done=launched.get("done") if ok and not is_project else None,
+        launch_note=None if ok else str(launched.get("note") or ""),
+        project=project.name if is_project else None,
+        replicates_project=replicates.name if replicates is not None else None,
+        this_platform=here,
+        open_steps=[
+            OpenSteps(platform=p, label=PLATFORM_WORDS[p], steps=open_steps(project.name, p))
+            for p in order
+        ]
+        if is_project
+        else [],
+        analyse_steps=list(ANALYSE_STEPS) if is_project else [],
+        round_trip_steps=list(ROUND_TRIP_STEPS) if is_project else [],
+        scripts=scripts,
+        command_line="" if is_project else result.launch.command_line,
+        send_back_command=result.send_back.command_line if result.send_back is not None else "",
+        download=_link(ctx, archive),
+    )
+
+
 @router.post("/sessions/{sid}/prism/roundtrip", response_model=JobStarted, status_code=202)
 def prism_roundtrip(sid: str, body: RoundTripRequest, ctx: Ctx) -> JobStarted:
-    """Compare what Prism sent back with the bundle; each change becomes a proposal."""
+    """Compare what came back from Prism with the bundle; each change becomes a proposal.
+
+    What came back is the project Prism saved (a ``.pzfx`` file, or the folder holding it:
+    the bundle folder when Prism runs on this computer) or ``send_back.pzc``'s CSV folder.
+    """
     _visible_study(ctx, sid)
-    bundle = folders.bundle_folder(_ws_exports(ctx, sid), body.bundle)
+    bundle = _round_trip_bundle(ctx, sid, body.bundle)
+    roots, outside = folders.returned_rule(_exports(ctx))
+    try:
+        returned = folders.allowed_returned(
+            body.folder, roots=roots, store_root=ctx.store.root, outside=outside
+        )
+    except folders.FolderRefused as err:
+        raise api_error(400, "bad_folder", str(err)) from err
+    view = _round_trip_job(ctx, sid, body.bundle, bundle, returned)
+    return JobStarted(job=view)
+
+
+@router.post("/sessions/{sid}/prism/roundtrip/upload", response_model=JobStarted, status_code=202)
+async def prism_roundtrip_upload(
+    sid: str,
+    ctx: Ctx,
+    bundle: Annotated[str | None, Form(description="A bundle id from `…/prism/bundles`.")] = None,
+    project: Annotated[
+        UploadFile | None, File(description="The project Prism saved (.pzfx).")
+    ] = None,
+) -> JobStarted:
+    """The round trip from an uploaded project: the ``.pzfx`` a person saved in Prism.
+
+    For Prism on another computer: the file is kept inside the bundle's folder
+    (``returned/``) and compared like a project saved there. The blind gate answers before
+    the form is checked (both fields are required).
+    """
+    await run_in_threadpool(_visible_study, ctx, sid)
+    if not bundle or project is None:
+        raise api_error(
+            422, "bad_request", "Choose the bundle and the project file Prism saved (.pzfx)."
+        )
+    folder = _round_trip_bundle(ctx, sid, bundle)
+    name = Path(project.filename or "project.pzfx").name[:120] or "project.pzfx"
+    if not name.lower().endswith(".pzfx"):
+        raise api_error(
+            400, "not_pzfx", f"{name} is not a Prism XML project: choose the saved .pzfx file."
+        )
+    target_dir = folder / RETURNED_DIR
+    target_dir.mkdir(exist_ok=True)
+    target = target_dir / f"{folders.new_token()}.pzfx"
+    try:
+        size = await folders.save_upload(project, target, MAX_PROJECT_UPLOAD)
+    except folders.FolderRefused as err:
+        raise api_error(413, "too_large", f"{name} is {err}.") from err
+    if size == 0:
+        target.unlink(missing_ok=True)
+        raise api_error(400, "empty_file", f"{name} is empty.")
+    view = _round_trip_job(ctx, sid, bundle, folder, target)
+    return JobStarted(job=view)
+
+
+RETURNED_DIR = "returned"  # inside a bundle folder: projects uploaded back from Prism
+MAX_PROJECT_UPLOAD = 64 * 1024 * 1024
+
+
+def _round_trip_bundle(ctx: AppContext, sid: str, token: str) -> Path:
+    """The bundle folder a round trip reads against (sent from this session, by this page)."""
+    bundle = folders.bundle_folder(_ws_exports(ctx, sid), token)
     if bundle is None:
         raise api_error(404, "not_found", NOT_FROM_HERE)
     if not any(Path(str(e.get("bundle_dir", ""))) == bundle for e in ctx.studio.exports(sid)):
         raise api_error(409, "studio", "This bundle was not sent to Prism from this session.")
-    try:
-        folder = folders.allowed_folder(
-            body.folder, roots=(_exports(ctx), Path.home()), store_root=ctx.store.root
-        )
-    except folders.FolderRefused as err:
-        raise api_error(400, "bad_folder", str(err)) from err
+    return bundle
 
+
+def _round_trip_job(ctx: AppContext, sid: str, token: str, bundle: Path, returned: Path) -> JobView:
     def work(progress: Progress) -> dict[str, Any]:
         from qpilot.prism import PrismExportError
 
-        progress("Reading what Prism sent back and comparing it with the bundle")
+        progress("Reading what came back from Prism and comparing it with the bundle")
         try:
-            report = ctx.studio.round_trip(sid, bundle, folder)
+            report = ctx.studio.round_trip(sid, bundle, returned)
         except (StudioError, PrismExportError, *PRISM_ERRORS) as err:
             raise JobError(
                 "cannot_read", f"Could not read what came back from Prism: {_sentence(err)}"
@@ -565,7 +790,7 @@ def prism_roundtrip(sid: str, body: RoundTripRequest, ctx: Ctx) -> JobStarted:
                 + (f" ({', '.join(map(str, changed))})." if changed else ".")
             )
         return PrismRoundTrip(
-            bundle_id=body.bundle,
+            bundle_id=token,
             study_id=str(report.get("study_id", "")),
             items=items,
             proposed=added,
@@ -573,9 +798,10 @@ def prism_roundtrip(sid: str, body: RoundTripRequest, ctx: Ctx) -> JobStarted:
             notes=notes,
             combined=combined,
             message=" ".join(words),
+            source="project" if report.get("source") == "project" else "sent_back",
         ).model_dump(mode="json")
 
-    view = _job(
+    return _job(
         ctx,
         "prism.roundtrip",
         work,
@@ -583,7 +809,6 @@ def prism_roundtrip(sid: str, body: RoundTripRequest, ctx: Ctx) -> JobStarted:
         key=sid,
         typical_s=ROUNDTRIP_TYPICAL_S,
     )
-    return JobStarted(job=view)
 
 
 def _study_gate(ctx: AppContext, study_id: str) -> None:
@@ -674,7 +899,9 @@ def export_record(
             warnings=warnings,
             commands=_commands(archive.name),
         )
-        (folder / EXPORT_FILE).write_text(exported.model_dump_json(), encoding="utf-8")
+        (folder / EXPORT_FILE).write_text(
+            exported.model_dump_json(), encoding="utf-8", newline="\n"
+        )
         return exported.model_dump(mode="json")
 
     view = _job(
@@ -753,19 +980,30 @@ def _verify_upload(ctx: AppContext, upload: Path, target: Path, name: str) -> Re
         raise api_error(
             400,
             "not_zip",
-            f"{name} is not a zip file: verify the record's .zip (or zip its folder).",
+            f"{name} is not a qPilot record: it is not a zip file. Verify the record's .zip (or "
+            "zip its folder).",
         )
     _refuse_bombs(upload, name)
+    damaged: list[str] = []
     try:
-        unpacked = unzip_record(upload, target)
+        unpacked = unzip_record(upload, target, damaged=damaged)
     except RecordError as err:
         raise api_error(400, "bad_record", f"{name}: {_sentence(err)}.") from err
     records = folders.find_marked(target, CHECKSUMS, depth=1)
     if unpacked in records:
         records = [unpacked]
     if not records:
+        if damaged:  # the checksum list itself is what was altered or damaged
+            raise api_error(
+                400,
+                "bad_record",
+                f"{name}: this record was altered or damaged after export: "
+                f"{', '.join(damaged[:3])} fails the zip's own check, so it cannot be verified.",
+            )
         raise api_error(
-            400, "not_record", f"{name} holds no Analysis Record (there is no {CHECKSUMS} in it)."
+            400,
+            "not_record",
+            f"{name} is not a qPilot record: there is no {CHECKSUMS} in it.",
         )
     if len(records) > 1:
         raise api_error(
@@ -778,6 +1016,7 @@ def _verify_upload(ctx: AppContext, upload: Path, target: Path, name: str) -> Re
         report = VerifyReport(
             ok=False, inconsistent=[f"the record cannot be read: {_sentence(err)}"]
         )
+    report = report.with_damaged(member_names(damaged, record_dir, target))
     facts = _record_facts(record_dir)
     known = bool(facts.study_id) and _known_study(ctx, facts.study_id or "")
 
@@ -803,6 +1042,8 @@ def _verify_upload(ctx: AppContext, upload: Path, target: Path, name: str) -> Re
     return RecordVerified(
         ok=report.ok,
         file_name=name,
+        outcome=report.outcome(),  # type: ignore[arg-type]
+        headline=report.headline(),
         summary=report.summary().splitlines(),
         report=report,
         record=facts,

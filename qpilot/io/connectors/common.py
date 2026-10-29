@@ -28,12 +28,18 @@ COLUMNS: dict[str, tuple[str, ...]] = {
     "rn": ("rn", "normalized reporter", "normalised reporter"),
     "drn": ("delta rn", "deltarn", "drn", "Δrn", "dRn", "delta rn (Δrn)"),
     "target": ("target", "target name", "gene", "gene name", "assay", "assay name", "detector",
-               "detector name", "primer", "amplicon", "target id"),
-    "sample": ("sample", "sample name", "sample id", "name", "sample label", "biological sample"),
+               "detector name", "primer", "amplicon", "target id", "gene symbol", "target gene",
+               "primer pair", "primer set", "probe", "assay id"),
+    "sample": ("sample", "sample name", "sample id", "name", "sample label", "biological sample",
+               "specimen", "specimen id", "sample code"),
+    "target_type": ("gene type", "target type", "target role", "gene role", "assay type",
+                    "assay role", "gene category", "reference gene", "housekeeping",
+                    "is reference", "reference or target"),
     "type": ("sample type", "type", "task", "content", "role", "well type", "well role"),
     "dye": ("dye", "reporter", "fluor", "fluorophore", "channel", "reporter dye", "filter"),
     "plate": ("plate", "plate id", "plate name", "run", "run id", "run name", "plate number"),
-    "cq": ("cq", "ct", "cp", "cq value", "ct value", "cp value", "crt", "cq (Δrn)", "c q"),
+    "cq": ("cq", "ct", "cp", "cq value", "ct value", "cp value", "crt", "cq (Δrn)", "c q",
+           "threshold cycle", "quantification cycle", "crossing point", "ct (drn)", "cq (rfu)"),
     "quantity": ("quantity", "starting quantity", "starting quantity (sq)", "sq", "copies",
                  "copy number", "concentration", "conc", "std quantity", "given conc"),
     "temperature": ("temperature", "temp", "tm", "melt temperature", "temperature (°c)"),
@@ -50,6 +56,39 @@ _STEM_TRAILERS = re.compile(
     r"sample\s+setup|melt\s+curve\s+raw\s+data|multicomponent\s+data|raw\s+data|amp|melt|"
     r"amplification|melting|data|export|cq|ct)(_[A-Za-z0-9 ()-]{1,24})?(_\d+)?$"
 )
+
+
+#: A target-role cell (a gene type / role column) -> ``ref`` or ``toi``; other words say nothing.
+TARGET_ROLES: dict[str, str] = {
+    **dict.fromkeys(
+        ("reference", "ref", "reference gene", "refgene", "housekeeping", "housekeeping gene",
+         "hk", "hkg", "endogenous control", "endogenous", "normaliser", "normalizer",
+         "normalization", "normalisation", "control gene", "internal control", "yes", "y",
+         "true", "x", "1"),
+        "ref",
+    ),
+    **dict.fromkeys(
+        ("target", "target gene", "gene of interest", "goi", "toi", "target of interest",
+         "test", "test gene", "no", "n", "false", "0"),
+        "toi",
+    ),
+}  # fmt: skip
+_ROLE_KEYS = {re.sub(r"[^0-9a-z]+", "", key): role for key, role in TARGET_ROLES.items()}
+#: Words a sample-type column holds that are target roles only (a "Type" column of a Cq table).
+_ROLE_ONLY = {"reference", "referencegene", "housekeeping", "housekeepinggene", "target",
+              "targetgene", "geneofinterest", "goi", "toi", "endogenouscontrol", "normaliser",
+              "normalizer"}  # fmt: skip
+
+
+def target_role(text: str) -> str:
+    """``ref``, ``toi`` or ``""`` for a cell of a gene type / role column."""
+    return _ROLE_KEYS.get(re.sub(r"[^0-9a-z]+", "", text.strip().lower()), "")
+
+
+def roles_not_types(values: Iterable[str]) -> bool:
+    """Whether a "Type"/"Role" column holds target roles (Reference/Target), not sample types."""
+    words = {re.sub(r"[^0-9a-z]+", "", v.strip().lower()) for v in values if v.strip()}
+    return bool(words) and words <= _ROLE_ONLY
 
 
 def plate_stem(file_stem: str) -> str:
@@ -214,9 +253,12 @@ def header_pairs(lines: Iterable[str]) -> list[tuple[str, str]]:
 
 __all__ = [
     "COLUMNS",
+    "TARGET_ROLES",
     "LongAssembler",
     "header_pairs",
     "plate_sources",
     "plate_stem",
+    "roles_not_types",
+    "target_role",
     "well_position",
 ]

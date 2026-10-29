@@ -37,17 +37,28 @@ class RdmlConnector:
     suffixes = (".rdml", ".rdm", ".xml")
 
     def sniff(self, probe: Probe) -> Sniff | None:
-        """An RDML zip (``rdml_data.xml`` inside) or XML whose root element is ``rdml``."""
+        """An RDML zip (``rdml_data.xml``, or one XML member holding ``<rdml``) or RDML XML.
+
+        CFX Manager 3.0 names the archive's member after the file; a zip of another kind with
+        an ``.rdml`` suffix is still claimed, so its refusal speaks of RDML.
+        """
         if probe.kind == "zip":
             import zipfile
+            import zlib
 
             try:
                 with zipfile.ZipFile(probe.path) as archive:
-                    names = archive.namelist()
-            except zipfile.BadZipFile:
+                    infos = archive.infolist()
+                    if any(i.filename == rdml_io.RDML_MEMBER for i in infos):
+                        return Sniff(100, "rdml.zip")
+                    xml = [i for i in infos if i.filename.lower().endswith(".xml")]
+                    if len(xml) == 1 and not xml[0].is_dir():
+                        with archive.open(xml[0]) as member:
+                            head = member.read(4096)  # a few KB, whatever the member holds
+                        if b"<rdml" in head or b":rdml" in head:
+                            return Sniff(95, "rdml.zip.member")
+            except (zipfile.BadZipFile, zlib.error, OSError, EOFError, ValueError):
                 return None
-            if rdml_io.RDML_MEMBER in names:
-                return Sniff(100, "rdml.zip")
             if probe.suffix in (".rdml", ".rdm"):
                 return Sniff(60, "rdml.zip.misnamed")
             return None
@@ -73,7 +84,11 @@ class RdmlConnector:
         if len(sources) != 1:
             raise CaptureError("import one RDML file at a time (it can hold many plates)")
         source = sources[0]
-        return plates_from_document(self.load(source.path), source.path.name)
+        doc = self.load(source.path)
+        plates = plates_from_document(doc, source.path.name)
+        if plates:  # what the loader repaired to read the file, said once
+            plates[0].notes.extend(rdml_io.load_notes(doc).notes)
+        return plates
 
 
 def _text(element, tag: str) -> str:

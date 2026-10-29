@@ -5,14 +5,23 @@ control ("reference") genes measured in the same sample; on the log2 scale that 
 subtraction. This module builds a samples x genes matrix of ``log2(n0)`` and computes those
 differences for any chosen set of control genes and either way of handling undetermined wells.
 
-Only study samples (``sample_type == "unkn"``) are used, and only samples measured for *every*
-gene are kept, as in the validation oracle. After that restriction a missing value (NaN) always
-means "the well never produced a usable signal" (undetermined), or that a person excluded it.
+Only study samples (``sample_type == "unkn"``) are used. A unit that was not measured for some
+gene (no well of that gene at all) is kept for the genes it has and left out of only the genes
+it lacks: :func:`not_measured_cells` marks those values, and they are left out under every
+option, never treated as undetermined (so never capped). A unit missing a *control* gene has
+no normaliser, so it is left out of every gene; the study's facts say so. Otherwise a missing
+value (NaN) means "the well never produced a usable signal" (undetermined), or that a person
+excluded it. On a table where every unit has every gene (the demo) the matrix is what it
+always was.
 
 Technical replicates (several wells of one sample and gene) and biological units (several
 samples of one animal or patient, from a study design) are averaged before anything else: per
-unit and gene, the mean of ``log2(n0)`` over the wells that have a quantity, which is the
-geometric mean of N0. The unit is undetermined only when every replicate is. Technical
+sample and gene, the mean of ``log2(n0)`` over the wells that have a quantity (the geometric
+mean of N0); per unit, the mean of its samples' means. With one sample per unit (the common
+case, the demo) that is the mean over the unit's wells, exactly as before; with several, each
+sample weighs the same whatever its number of wells (science review J10: two RNA preparations
+of one animal are sub-replicates, and a preparation run in three wells must not count three
+times one run in one). The unit is undetermined only when every replicate is. Technical
 replicates are never counted as n; their spread is kept by :func:`replicate_sd`. A table with
 one well per sample and gene, and no units, gives exactly the matrix it always did.
 """
@@ -34,7 +43,7 @@ class QuantError(Exception):
 
 
 def log2_matrix(curves: pd.DataFrame, units: Mapping[str, str] | None = None) -> pd.DataFrame:
-    """Return ``log2(n0)`` as a units x genes matrix over units measured for every gene.
+    """Return ``log2(n0)`` as a units x genes matrix over every study unit.
 
     Args:
         curves: The per-well table from :func:`qpilot.qpcr.curves.analyse_study`. An optional
@@ -45,17 +54,63 @@ def log2_matrix(curves: pd.DataFrame, units: Mapping[str, str] | None = None) ->
 
     Returns:
         A DataFrame indexed by unit (sorted) with one column per gene (sorted); NaN marks an
-        undetermined (or excluded) value.
+        undetermined, excluded or not measured value (:func:`left_out_cells` tells which of
+        those are left out under every option).
     """
     unknown = curves[curves["sample_type"] == "unkn"]
     simple = units is None and not unknown.duplicated(["sample", "target"]).any()
     if simple and not _has_exclusions(unknown):
         measured = unknown.pivot(index="sample", columns="target", values="n0")
-        present = unknown.assign(one=1).pivot(index="sample", columns="target", values="one")
-        complete = present.notna().all(axis=1)
-        matrix = np.log2(measured.loc[complete])
+        matrix = np.log2(measured)
         return matrix.sort_index().sort_index(axis=1)
     return _aggregate(unknown, units)[0]
+
+
+def not_measured_cells(
+    curves: pd.DataFrame, units: Mapping[str, str] | None = None
+) -> pd.DataFrame:
+    """Units x genes, ``True`` where the unit has no study well of that gene at all.
+
+    Same index and columns as :func:`log2_matrix`. Such a value is left out of that gene only,
+    under every option; it is never undetermined (never capped).
+    """
+    unknown = curves[curves["sample_type"] == "unkn"]
+    unit = unit_map(unknown["sample"], units).to_numpy()
+    wells = pd.DataFrame({"unit": unit, "target": unknown["target"].to_numpy(), "one": 1})
+    present = wells.groupby(["unit", "target"])["one"].sum().unstack("target")
+    present = present.reindex(index=sorted(present.index), columns=sorted(present.columns))
+    out = present.isna()
+    out.index.name, out.columns.name = "sample", "target"
+    return out
+
+
+def left_out_cells(
+    curves: pd.DataFrame, units: Mapping[str, str] | None = None
+) -> pd.DataFrame | None:
+    """Units x genes values left out under every option: excluded by a person or not measured.
+
+    ``None`` when there are none (no exclusion column and every unit has every gene), so a
+    complete table keeps the arithmetic it always had. Same index and columns as
+    :func:`log2_matrix`.
+    """
+    missing = not_measured_cells(curves, units)
+    unknown = curves[curves["sample_type"] == "unkn"]
+    if EXCLUDED not in unknown.columns and not missing.to_numpy().any():
+        return None
+    if EXCLUDED not in unknown.columns:
+        return missing
+    excluded = excluded_cells(curves, units)
+    return excluded | missing.reindex_like(excluded).fillna(True).astype(bool)
+
+
+def not_measured(curves: pd.DataFrame, units: Mapping[str, str] | None = None) -> dict[str, list]:
+    """Gene -> the units with no study well of it (sorted), for genes some unit lacks."""
+    missing = not_measured_cells(curves, units)
+    return {
+        str(gene): sorted(str(u) for u in missing.index[missing[gene].to_numpy()])
+        for gene in missing.columns
+        if missing[gene].any()
+    }
 
 
 def excluded_cells(curves: pd.DataFrame, units: Mapping[str, str] | None = None) -> pd.DataFrame:
@@ -103,10 +158,21 @@ def _usable(unknown: pd.DataFrame, units: Mapping[str, str] | None) -> pd.DataFr
     return pd.DataFrame(
         {
             "unit": unit_map(rows["sample"], units).to_numpy(),
+            "sample": rows["sample"].astype(str).to_numpy(),
             "target": rows["target"].to_numpy(),
             "log2": np.log2(rows["n0"].to_numpy(dtype=float)),
         }
     )
+
+
+def unit_means(used: pd.DataFrame, column: str = "log2") -> pd.Series:
+    """Per ``(unit, target)``: the mean over the unit's samples of each sample's mean ``column``.
+
+    ``used`` has ``unit``, ``sample``, ``target`` and ``column``. A unit with one sample gets the
+    plain mean of its wells (the same number, bit for bit, as one flat mean).
+    """
+    per_sample = used.groupby(["unit", "sample", "target"])[column].mean()
+    return per_sample.groupby(level=["unit", "target"]).mean()
 
 
 def _aggregate(
@@ -120,11 +186,10 @@ def _aggregate(
     else:
         wells["excluded"] = False
     present = wells.groupby(["unit", "target"]).size().unstack("target")
-    complete = present.notna().all(axis=1)
     all_excluded = wells.groupby(["unit", "target"])["excluded"].all().unstack("target")
     used = _usable(unknown, units)
-    means = used.groupby(["unit", "target"])["log2"].mean().unstack("target")
-    index = present.index[complete].sort_values()
+    means = unit_means(used).unstack("target")
+    index = present.index.sort_values()
     columns = present.columns.sort_values()
     values = means.reindex(index=index, columns=columns)
     excluded = all_excluded.reindex(index=index, columns=columns)
@@ -135,7 +200,7 @@ def _aggregate(
 
 
 def samples_common(matrix: pd.DataFrame) -> list[str]:
-    """Samples measured for every gene (the matrix's rows)."""
+    """The study units (the matrix's rows)."""
     return list(matrix.index)
 
 
@@ -144,18 +209,21 @@ def relative(
     target: str,
     refs: Sequence[str],
     undetermined: Undetermined = "drop",
+    left_out: pd.DataFrame | None = None,
 ) -> pd.Series:
     """Return ``log2(target) - mean(log2(refs))`` per sample.
 
     Samples missing any chosen control gene are skipped. An undetermined target well is skipped
     with ``"drop"``, or set to the lowest value detected for that gene with ``"cap"`` (the curve
-    never rose, so the amount is treated as "at most the smallest one seen").
+    never rose, so the amount is treated as "at most the smallest one seen"). A value marked in
+    ``left_out`` (:func:`left_out_cells`: excluded or not measured) is skipped under both.
 
     Args:
         matrix: From :func:`log2_matrix`.
         target: The gene to normalise.
         refs: The control genes to divide by (one or more).
         undetermined: ``"drop"`` or ``"cap"``.
+        left_out: Units x genes, ``True`` for values left out under every option.
 
     Returns:
         A Series indexed by sample.
@@ -172,6 +240,9 @@ def relative(
         keep = refs_ok
     else:
         raise ValueError(f"undetermined must be 'drop' or 'cap', not {undetermined!r}")
+    if left_out is not None and target in left_out.columns:
+        out = left_out[target].reindex(matrix.index).astype("boolean").fillna(False)
+        keep = keep & ~out.astype(bool)
     result = values[keep] - reference[keep].mean(axis=1)
     result.name = target
     return result

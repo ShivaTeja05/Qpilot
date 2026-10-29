@@ -1,7 +1,5 @@
 """Step 4.1 gate: which curves count as amplified, as a screened robustness dimension."""
 
-import time
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -22,6 +20,7 @@ from qpilot.qpcr.amp_call import (
 )
 from qpilot.schemas import ContrastResult
 from qpilot.schemas_studio import AmpCallRule
+from tests.timing import work_time
 
 NAN = float("nan")
 
@@ -202,11 +201,10 @@ def test_demo_grid_size_and_sweep_time(studio_demo, demo_curves):
     matrix = log2_matrix(demo_curves)
     others = {r: log2_matrix(apply_rule(demo_curves, r)) for r in STUDIO_AMP_CALLS[1:]}
     space = QpcrSpace(matrix, genorm(matrix, REFERENCE_TARGETS), amp_alternatives=others)
-    start = time.perf_counter()
-    swept = robustness.run_grid(space)
-    elapsed = time.perf_counter() - start
+    with work_time() as spent:
+        swept = robustness.run_grid(space)
     assert len(swept) == 744 * 58
-    assert elapsed < 2, f"744-cell sweep took {elapsed:.2f} s"
+    assert spent.seconds < 2, f"744-cell sweep took {spent}"
     # the primary cell is the legacy analysis exactly: a rule never changes the primary choice
     legacy = QpcrSpace(matrix, genorm(matrix, REFERENCE_TARGETS)).evaluate(
         {"refs": REFERENCE_TARGETS, "cut": 0.15, "undetermined": "drop"}
@@ -248,3 +246,73 @@ def test_a_curve_the_learned_rule_cannot_score_keeps_linregpcrs_call(monkeypatch
         {"run_id": ["r"] * 3, "well": ["A1", "A2", "A3"], "n0": [5.0, 5.0, 5.0], "cq": [20.0] * 3}
     )
     assert amp_call.amplified(curves, rule.id).tolist() == [True, False, True]
+
+
+# ---------- science review J1: LinRegPCR's own "no amplification" respected (opt-in) ----------
+
+
+def test_the_strict_rule_follows_linregpcrs_call():
+    from qpilot.qpcr.amp_call import STRICT, no_amplification_with_quantity
+
+    table = _table().assign(
+        sample_type=["unkn", "unkn", "std", "unkn", "unkn"],
+        amplification=[True, False, False, True, False],
+    )
+    assert list(amplified(table, STRICT)) == [True, False, False, True, False]
+    assert list(amplified(table, "linregpcr")) == [True, True, True, True, False]
+    assert list(no_amplification_with_quantity(table)) == [False, True, True, False, False]
+    assert list(amplified(table, STRICT, {"p1/A2": True})) == [True, True, False, True, False]
+    # a negative control keeps its quantity: it is the contamination signal the gate weighs
+    ntc = table.assign(sample_type=["ntc"] * 5)
+    assert list(amplified(ntc, STRICT)) == list(amplified(ntc, "linregpcr"))
+    # a table without LinRegPCR's call (a file of Cq values only) falls back on the quantity
+    assert list(amplified(_table(), STRICT)) == list(amplified(_table(), "linregpcr"))
+    assert STRICT in RULES and STRICT not in STUDIO_AMP_CALLS  # offered, not the default
+    assert not RULES[STRICT].recommended
+
+
+def test_strict_rule_on_the_edna_sample_plate():
+    """QuantStudio 7 Pro eDNA plate (corpus): 7 unknown wells LinRegPCR calls no amplification
+    carry quantities, one at Cq 19.1 with 2.5 x 10^6 copies; its NTCs are left as they are."""
+    from pathlib import Path
+
+    from qpilot.qpcr.amp_call import STRICT, no_amplification_with_quantity
+    from qpilot.qpcr.curves import analyse_study
+
+    folder = Path(__file__).parents[1] / "fixtures/corpus/rdml/quantstudio7pro-rdml-1.2-edna"
+    path = folder / "SupplementaryMaterials2_qPCR_Plate1.rdml"
+    table = analyse_study(path, None, ())
+    flat = table[no_amplification_with_quantity(table)]
+    assert sorted(flat["well"]) == ["A5", "C5", "C9", "D9", "E1", "E6", "F5"]
+    assert set(flat["sample_type"]) == {"unkn"}
+    c9 = flat[flat["well"] == "C9"].iloc[0]
+    assert c9["cq"] == pytest.approx(19.1, abs=0.05) and c9["n0"] == pytest.approx(2.49e6, rel=0.01)
+    assert int(amplified(table, "linregpcr").sum()) - int(amplified(table, STRICT).sum()) == 7
+    out = apply_rule(table, STRICT)
+    assert out.loc[flat.index, "n0"].isna().all()
+    ntc = table["sample_type"] == "ntc"
+    pd.testing.assert_series_equal(out.loc[ntc, "n0"], table.loc[ntc, "n0"])
+
+
+@pytest.mark.demo_data
+def test_demo_strict_rule_changes_no_call(demo_curves):
+    """The review's measurement: 11 of 24 576 wells, no call changes, at most 0.069 log2."""
+    from qpilot.io.datasets import VERMEULEN_SHA256
+    from qpilot.qpcr.amp_call import STRICT, no_amplification_with_quantity
+    from qpilot.qpcr.designs import vermeulen_design
+    from qpilot.qpcr.study import StudySettings, study_from_curves
+
+    flat = demo_curves[no_amplification_with_quantity(demo_curves)]
+    assert len(demo_curves) == 24_576 and len(flat) == 11
+    mtss1 = flat[flat["target"] == "MTSS1"].iloc[0]
+    assert mtss1["cq"] == pytest.approx(23.82, abs=0.01)
+    design = vermeulen_design().model_copy(update={"amp_calls": ("linregpcr", STRICT)})
+    result, _, grid = study_from_curves(
+        demo_curves, VERMEULEN_SHA256, StudySettings.from_design(design)
+    )
+    assert result.facts["f_screen_amp_flips_linregpcr_call"].value == 0
+    assert result.facts["f_screen_amp_dlog2fc_linregpcr_call"].value == pytest.approx(
+        0.0687, abs=5e-4
+    )
+    assert result.facts["f_screen_amp_call"].value == "not admitted"  # the grid stays 186 cells
+    assert result.facts["f_n_cells"].value == 186 and "amp_call" not in grid.columns

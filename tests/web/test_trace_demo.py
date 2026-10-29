@@ -1,4 +1,4 @@
-"""Trace on the real demo study (Vermeulen 2013: 64 plates, 366 tumours, 58 compared genes).
+"""Trace on the real demo study (Vermeulen 2009: 64 plates, 366 tumours, 58 compared genes).
 
 The numbers ``qPilot-TRACE-PLAN.md`` measured with prototype scripts, re-measured here with the
 engine (``qpilot.trace``) and with an independent brute-force re-run (scipy's Welch test on the
@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import math
 import shutil
-import time
 
 import numpy as np
 import pytest
@@ -23,7 +22,8 @@ from qpilot.trace.welch import CALL_NAMES
 from qpilot.web.context import make_context
 from qpilot.web.routers import trace as trace_router
 from qpilot.web.server import create_app
-from tests.web.conftest import BASE, TOKEN, wait_job
+from tests.timing import work_time
+from tests.web.conftest import BASE, TOKEN, get_settled
 
 pytestmark = pytest.mark.demo_data
 
@@ -150,16 +150,19 @@ def test_nothing_to_look_at_never_calls_unusual_wells_normal(ctx):
 
 def test_speed_after_the_model_is_kept(ctx):
     """Measured on an M3 Pro: context 0.1 s, a gene 0.05-0.15 s, the overview 0.6 s cold."""
-    start = time.perf_counter()
-    fresh = build_context(ctx.model, ctx.study_id, labels=ctx.labels)
-    built = time.perf_counter() - start
-    trace_study(fresh)
-    overview = time.perf_counter() - start - built
-    start = time.perf_counter()
-    for gene in ("ODC1", "NTRK1", "BIRC5", "NM23A"):
-        trace_gene(fresh, gene)
-    per_gene = (time.perf_counter() - start) / 4
-    assert built < 2.0 and overview < 6.0 and per_gene < 1.0, (built, overview, per_gene)
+    with work_time() as built:
+        fresh = build_context(ctx.model, ctx.study_id, labels=ctx.labels)
+    with work_time() as overview:
+        trace_study(fresh)
+    with work_time() as genes:
+        for gene in ("ODC1", "NTRK1", "BIRC5", "NM23A"):
+            trace_gene(fresh, gene)
+    per_gene = genes.seconds / 4
+    assert built.seconds < 2.0 and overview.seconds < 6.0 and per_gene < 1.0, (
+        built,
+        overview,
+        genes,
+    )
 
 
 def test_the_route_on_the_demo(demo_study, tmp_path):
@@ -171,11 +174,9 @@ def test_the_route_on_the_demo(demo_study, tmp_path):
     try:
         with TestClient(create_app(context), base_url=BASE) as c:
             c.headers["x-qpilot-token"] = TOKEN
-            r = c.get(f"/api/studies/{study_id}/trace/ODC1")
-            if r.status_code == 409:
-                assert r.json()["error"]["code"] == "loading"
-                assert wait_job(c, r.json()["error"]["details"]["job"])["status"] == "done"
-                r = c.get(f"/api/studies/{study_id}/trace/ODC1")
+            jobs: list[dict] = []
+            r = get_settled(c, f"/api/studies/{study_id}/trace/ODC1", jobs=jobs)
+            assert all(job["status"] == "done" for job in jobs), jobs
             assert r.status_code == 200, r.text
             body = r.json()
             row = next(
@@ -185,9 +186,9 @@ def test_the_route_on_the_demo(demo_study, tmp_path):
             assert body["trace"]["call"]["log2fc"] == pytest.approx(row["log2fc"], abs=1e-9)
             assert body["trace"]["call"]["conclusion"] == row["conclusion"] == "up"
             assert math.isclose(body["trace"]["call"]["fc"], row["fc"], rel_tol=1e-9)
-            start = time.perf_counter()
-            assert c.get(f"/api/studies/{study_id}/trace/BIRC5").status_code == 200
-            assert time.perf_counter() - start < 2.0
+            with work_time() as spent:
+                assert c.get(f"/api/studies/{study_id}/trace/BIRC5").status_code == 200
+            assert spent.seconds < 2.0, spent
     finally:
         context.close()
         trace_router.clear()

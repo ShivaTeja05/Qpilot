@@ -33,7 +33,7 @@ const demoEntry: Plugin = {
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), ...(staticDemo ? [demoEntry] : [])],
-  resolve: { alias: { "@": resolve(__dirname, "src") } },
+  resolve: { alias: { "@": resolve(import.meta.dirname, "src") } },
   define: { __QPILOT_STATIC_DEMO__: JSON.stringify(staticDemo) },
   build: {
     outDir: staticDemo ? "dist-demo" : "../qpilot/web/static",

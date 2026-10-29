@@ -10,7 +10,14 @@ tests). It finds, in a text:
 * approved HGNC symbols the study did not measure (``GAPDH``), so a claim about one can be
   answered "not measured in this study" instead of being missed;
 * the two compared groups, in the words papers use (``MYCN-high`` / ``MYCN-low``, ``the rest``;
-  or the design's own group names such as ``KO`` / ``WT``).
+  or the design's own group names such as ``KO`` / ``WT``);
+* groupings the study does **not** make (``MYCN-amplified`` where the study compares MYCN
+  expression, ``high-risk``, ``stage 4``, ``ALK-mutated``), so a claim about those groups is
+  answered "a different comparison" instead of being checked against the study's own groups.
+
+:func:`find_genes` is the one resolver of written gene names (a study's name, its name without
+an assay suffix, or an unambiguous HGNC alias or previous symbol such as ``survivin`` for
+``BIRC5``); the Claim Auditor and Ask both use it.
 """
 
 from __future__ import annotations
@@ -19,7 +26,7 @@ import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Literal
+from typing import Any, Literal
 
 from qpilot.io.symbols import load_table, normalise_assay_name
 
@@ -56,12 +63,61 @@ class Found:
 
 @dataclass(frozen=True)
 class GroupFound:
-    """One mention of a compared group."""
+    """One mention of a group, compared (``a``, ``b``) or not (``other``).
+
+    For ``other``, ``what`` says what the words group by (``MYCN amplification``).
+    """
 
     start: int
     end: int
     written: str
-    which: Literal["a", "b"]
+    which: Literal["a", "b", "other"]
+    what: str = ""
+
+
+# Groupings that are not the study's comparison (pattern, what they group by). "gene status"
+# (``ALK-mutated``) counts only when its first word is an HGNC symbol or a study gene.
+_STATUS_WORDS = (
+    r"(?:non[\s-]?)?amplified|amplifications?|mutant|mutated|mutations?|deleted|deletions?"
+    r"|positive|negative|translocated|translocations?|rearranged|rearrangements?|wild[\s-]?type"
+)
+_ARM = r"(?:\d{1,2}|X|Y)[pq](?:\d{1,2}(?:\.\d{1,2})?)?"  # a chromosome arm or band: 1p, 11q23
+OTHER_GROUPS: tuple[tuple[str, str], ...] = (
+    (r"(?:high|low|intermediate)[\s-]risk", "risk group"),
+    (r"stage[\s-]?(?:[1-4][SsAaBb]?|IV|I{1,3}|4S)(?![\w])", "tumour stage"),
+    (
+        r"(?:non[\s-]?)?metastatic|relapsed|relapsing|recurrent"
+        r"|(?:un)?favou?rable\s+(?:histology|outcome|prognosis)|(?:poor|good)\s+(?:outcome|prognosis)"
+        r"|died|deceased|(?:non[\s-]?)?survivors",
+        "clinical course",
+    ),
+    (
+        r"(?:older|younger)\s+than\s+\d+(?:\.\d+)?\s*(?:months?|years?|weeks?|days?)"
+        r"|aged\s+(?:over|under|above|below)\s+\d+",
+        "age",
+    ),
+    (r"(?:male|female)(?=\s+(?:patients|mice|subjects|donors|animals|individuals))", "sex"),
+    (
+        rf"{_ARM}[\s-]?(?:deleted|deletions?|loss|gain(?:ed)?|amplified|LOH)"
+        rf"|(?:loss|gain|deletion)\s+of\s+(?:chromosome\s+)?{_ARM}",
+        "a chromosomal change",
+    ),
+    (rf"[A-Z][A-Z0-9]{{1,9}}[\s-](?:{_STATUS_WORDS})", "gene status"),
+    (r"[A-Z][A-Z0-9]{1,9}[\s-]?(?:high|low)(?:[\s-]expressing)?", "gene status"),
+)
+# In a marker split (samples grouped by a gene's expression), experimental groups are another
+# comparison altogether.
+EXPERIMENT_GROUPS: tuple[tuple[str, str], ...] = (
+    (
+        r"KO|WT|knock[\s-]?(?:out|down)|wild[\s-]?type|transgenic|transfected|treated|untreated"
+        r"|vehicle[\s-]treated|si[\s-]?RNA|sh[\s-]?RNA",
+        "an experimental treatment or genotype",
+    ),
+    (
+        r"hypoxi[ac]|normoxi[ac]|(?:un)?stimulated|(?:un)?infected|(?:un)?exposed",
+        "an experimental condition",
+    ),
+)
 
 
 @dataclass
@@ -78,6 +134,9 @@ class Lexicon:
         group_b: The reference group's label (``rest``, ``WT``).
         group_a_words: Regular expressions for the compared group.
         group_b_words: Regular expressions for the reference group.
+        other_group_words: (pattern, what it groups by) for groupings the study does not make;
+            :data:`OTHER_GROUPS` is always added.
+        basis: What the two groups are defined by, in words (``MYCN expression``), or empty.
     """
 
     compared: Sequence[str]
@@ -89,6 +148,8 @@ class Lexicon:
     group_b: str = "group B"
     group_a_words: Sequence[str] = ()
     group_b_words: Sequence[str] = ()
+    other_group_words: Sequence[tuple[str, str]] = ()
+    basis: str = ""
 
     def __post_init__(self) -> None:
         self._status: dict[str, GeneStatus] = {}
@@ -104,6 +165,10 @@ class Lexicon:
             self._status[self.marker] = "marker"
         self._pattern, self._names = _gene_pattern(self._status)
         self._groups = _group_pattern(self.group_a_words, self.group_b_words)
+        self._others = [
+            (re.compile(rf"(?<![\w-])(?:{p})(?![\w])", re.I if "[A-Z]" not in p else 0), what)
+            for p, what in (*self.other_group_words, *OTHER_GROUPS)
+        ]
 
     # ---- building ---------------------------------------------------------------------------
 
@@ -122,12 +187,17 @@ class Lexicon:
         if split is not None and getattr(split, "marker", None):
             marker = str(split.marker)
         measured = [g for g in result.efficiency if g not in result.contrasts and g not in refs]
+        others: list[tuple[str, str]] = []
+        basis = ""
         if "f_group_a" in facts and "f_group_b" in facts:
             a, b = str(facts["f_group_a"].value), str(facts["f_group_b"].value)
             a_words, b_words = named_groups(a, b)
+            others = [(_word(g), PLAN_GROUP) for g in plan_groups(result) if g not in (a, b)]
         else:  # labelled as the Results section labels them (``MYCN-high`` / ``rest``)
             name = result.design.group_var.removesuffix("_high") or (marker or "")
             a, b, a_words, b_words = marker_groups(name)
+            others = [*marker_other_groups(name), *EXPERIMENT_GROUPS]
+            basis = f"{normalise_assay_name(name) or name} expression"
         return cls(
             compared=list(result.contrasts),
             references=refs,
@@ -138,6 +208,8 @@ class Lexicon:
             group_b=b,
             group_a_words=a_words,
             group_b_words=b_words,
+            other_group_words=others,
+            basis=basis,
         )
 
     # ---- reading ----------------------------------------------------------------------------
@@ -153,7 +225,7 @@ class Lexicon:
         taken: list[tuple[int, int]] = []
         for match in self._pattern.finditer(text, start, end) if self._pattern else ():
             written = match.group(0)
-            gene, via = self._resolve(written)
+            gene, via = _resolve(self._names, written)
             if gene is None:
                 continue
             found.append(Found(match.start(), match.end(), written, gene, via, self._status[gene]))
@@ -169,36 +241,97 @@ class Lexicon:
         return sorted(found, key=lambda f: f.start)
 
     def groups(self, text: str, start: int = 0, end: int | None = None) -> list[GroupFound]:
-        """Every mention of a compared group in ``text[start:end]``, in order."""
-        end = len(text) if end is None else end
-        if self._groups is None:
-            return []
-        out = []
-        for match in self._groups.finditer(text, start, end):
-            which = "a" if match.lastgroup == "a" else "b"
-            out.append(GroupFound(match.start(), match.end(), match.group(0), which))  # type: ignore[arg-type]
-        return out
+        """Every mention of a group in ``text[start:end]``, in order.
 
-    def _resolve(self, written: str) -> tuple[str | None, Via]:
-        key = written.casefold()
-        # an alias matches regardless of case only when it has four letters or more
-        # (``Survivin``, ``TrkA``); a three-letter one must be written as HGNC writes it
-        hits = [
-            h
-            for h in self._names.get(key, [])
-            if h[1] != "alias" or h[2] == written or len(h[2]) >= 4
-        ]
-        exact = [h for h in hits if h[1] in ("name", "assay")]
-        chosen = exact or hits
-        genes = {h[0] for h in chosen}
-        if len(genes) != 1:
-            return None, "name"
-        gene = next(iter(genes))
-        via = min((h[1] for h in chosen), key=("name", "assay", "alias").index)
-        return gene, via  # type: ignore[return-value]
+        The two compared groups, and groupings the study does not make (``which="other"``).
+        """
+        end = len(text) if end is None else end
+        out: list[GroupFound] = []
+        if self._groups is not None:
+            for match in self._groups.finditer(text, start, end):
+                which = "a" if match.lastgroup == "a" else "b"
+                out.append(GroupFound(match.start(), match.end(), match.group(0), which))  # type: ignore[arg-type]
+        labels = {x.casefold() for x in (self.group_a, self.group_b) if x and x != "rest"}
+        for pattern, what in self._others:
+            for match in pattern.finditer(text, start, end):
+                s, e = match.span()
+                touching = [g for g in out if g.start < e and s < g.end]
+                # "MYCN-high" itself, or a phrase another grouping already holds: nothing new
+                if any(g.which == "other" or (g.start <= s and e <= g.end) for g in touching):
+                    continue
+                words = {w.casefold() for w in re.findall(r"[\w+]+", match.group(0))}
+                if words & labels:  # "TP53-mutant" in a study whose groups are "mutant" / "WT"
+                    continue
+                label = what
+                if what == "gene status":
+                    symbol = re.split(r"[\s-]", match.group(0))[0]
+                    known = symbol in self._status or symbol in load_table().approved
+                    if symbol in NOT_GENES or not known:
+                        continue
+                    label = f"{symbol} status"
+                # a longer phrase that names another grouping is that grouping: "high MYCN copy
+                # number" is not the group "high MYCN"
+                out = [g for g in out if g not in touching]
+                out.append(GroupFound(s, e, match.group(0), "other", label))
+        return sorted(out, key=lambda g: g.start)
+
+
+# ---- one resolver of written gene names ------------------------------------------------------
+
+
+def _resolve(
+    names: Mapping[str, list[tuple[str, Via, str]]], written: str
+) -> tuple[str | None, Via]:
+    """The one study gene ``written`` names (None when it names none or more than one)."""
+    key = written.casefold()
+    # an alias matches regardless of case only when it has four letters or more
+    # (``Survivin``, ``TrkA``); a three-letter one must be written as HGNC writes it
+    hits = [h for h in names.get(key, []) if h[1] != "alias" or h[2] == written or len(h[2]) >= 4]
+    exact = [h for h in hits if h[1] in ("name", "assay")]
+    chosen = exact or hits
+    genes = {h[0] for h in chosen}
+    if len(genes) != 1:
+        return None, "name"
+    gene = next(iter(genes))
+    via = min((h[1] for h in chosen), key=("name", "assay", "alias").index)
+    return gene, via  # type: ignore[return-value]
+
+
+@lru_cache(maxsize=32)
+def _names_of(genes: tuple[str, ...]) -> tuple[re.Pattern[str] | None, dict]:
+    return _gene_pattern(dict.fromkeys(genes, "compared"))
+
+
+def find_genes(text: str, genes: Iterable[str]) -> list[Found]:
+    """Each of ``genes`` that ``text`` names, in order, however it is written.
+
+    By the name itself (any case), by the name without its assay suffix (``UBC`` for ``UBC(2)``,
+    ``PRKACB`` for ``PRKACB_bis``) or by an HGNC alias or previous symbol that names only that
+    gene and is not an English word (``survivin`` for ``BIRC5``, ``TrkA`` for ``NTRK1``). A name
+    two of the genes share is used only when written exactly. ``Found.status`` is ``compared``.
+    """
+    pattern, names = _names_of(tuple(dict.fromkeys(str(g) for g in genes)))
+    out = []
+    for match in pattern.finditer(text) if pattern else ():
+        gene, via = _resolve(names, match.group(0))
+        if gene is not None:
+            out.append(Found(match.start(), match.end(), match.group(0), gene, via, "compared"))
+    return out
 
 
 # ---- helpers ---------------------------------------------------------------------------------
+
+
+#: What a group of a study's other comparisons is (the claim is then read against none of them).
+PLAN_GROUP = "a group of another of this study's comparisons"
+
+
+def plan_groups(result: Any) -> list[str]:
+    """Every group a study with several comparisons compares, in order (empty: one comparison)."""
+    found = getattr(result, "comparisons", None)
+    if found is None or len(found.comparisons) < 2:
+        return []
+    return list(dict.fromkeys(g for o in found.comparisons for g in (o.group_a, o.group_b)))
 
 
 def named_groups(a: str, b: str) -> tuple[list[str], list[str]]:
@@ -221,9 +354,30 @@ def marker_groups(marker: str) -> tuple[str, str, list[str], list[str]]:
     return f"{short}-high", "rest", a_words, b_words
 
 
+def marker_other_groups(marker: str) -> list[tuple[str, str]]:
+    """Groupings by the marker gene that are not its expression level (``MYCN-amplified``).
+
+    A marker split compares the samples with the highest expression of the marker against the
+    rest; amplification, mutation, knock-down or a positive/negative status group samples by
+    something else, however often the two agree.
+    """
+    short = normalise_assay_name(marker) or marker
+    m = re.escape(short)
+    return [
+        (rf"{m}[\s-]?(?:non[\s-]?)?amplif(?:ied|ication)|(?:non[\s-]?)?amplif(?:ied|ication)"
+         rf"\s+(?:of\s+)?{m}", f"{short} amplification"),
+        (rf"{m}[\s-]?(?:copy[\s-]number|gain|deleted|deletion)", f"{short} copy number"),
+        (rf"{m}[\s-]?(?:mutant|mutated|mutations?)|(?:mutant|mutated)\s+{m}", f"{short} mutation"),
+        (rf"{m}[\s-]?(?:knock[\s-]?(?:out|down|ed[\s-]down)|silenced|depleted|deficient|null)",
+         f"{short} knock-down or knock-out"),
+        (rf"{m}[\s-]?wild[\s-]?type|wild[\s-]?type\s+{m}", f"{short} genotype"),
+        (rf"{m}[\s-]?(?:positive|negative)", f"{short} status (positive or negative)"),
+    ]  # fmt: skip
+
+
 def _word(label: str) -> str:
-    """A group label as a whole-word pattern."""
-    return rf"(?<![\w-]){re.escape(label)}(?![\w-])"
+    """A group label as a whole-word pattern (``20`` is not the ``20`` of ``p = 0.20``)."""
+    return rf"(?<![\w.-]){re.escape(label)}(?![\w-]|[.,]\d)"
 
 
 @lru_cache(maxsize=1)

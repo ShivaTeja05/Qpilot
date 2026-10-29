@@ -36,6 +36,11 @@ STAGES = (
         "Wells that were flagged, amplified very late or never amplified.",
         ("flagged", "late_cq", "nondetect"),
     ),
+    (
+        "Combine the replicates",
+        "A sample's replicate wells become one value; replicates are never counted as samples.",
+        ("replicates",),
+    ),
     ("Normalise", "Each sample is divided by the average of its reference genes.", ("refs",)),
     ("Define the groups", "Samples are split into the high group and the rest.", ("cut",)),
     ("Compare the groups", "A two-group test gives a p-value for each gene.", ("test",)),
@@ -53,6 +58,24 @@ def _fold(fold: float) -> str:
 
 def _pct(share: float) -> int:
     return int(round(100 * float(share)))
+
+
+def _wells_of(s, col: int):
+    """(Cq, plate, efficiency flag, low-copy flag) of every well of one gene's column.
+
+    One well per sample: the study's own columns. With technical replicates: every real well
+    (:class:`qsim.data.Replicates`), so "wells" counts wells, not samples.
+    """
+    reps = s.replicates
+    if reps is None:
+        return s.cq[:, col], s.run[:, col], s.flag_eff[:, col], s.flag_low[:, col]
+    here = reps.present[:, col, :]
+    return (
+        reps.cq[:, col, :][here],
+        reps.run[:, col, :][here],
+        reps.flag_eff[:, col, :][here],
+        reps.flag_low[:, col, :][here],
+    )
 
 
 class LabViews:
@@ -97,10 +120,11 @@ class LabViews:
         """
         if self._genorm_cache is None:
             from qpilot.qpcr.quant import log2_matrix
-            from qpilot.qpcr.refgenes import genorm
+
+            from qsim.study_space import stability_m
 
             s = self.engine.study
-            m_values = genorm(log2_matrix(s.curves), list(s.candidates)).M_initial
+            m_values = stability_m(log2_matrix(s.curves), s.candidates)
             self._genorm_cache = {str(g): float(v) for g, v in m_values.items()}
         return self._genorm_cache
 
@@ -110,7 +134,7 @@ class LabViews:
         cell = self.space.baseline_index()
         v, ids = e.values_of(cell), e.ids_of(cell)
         with self._engine_lock:
-            matrix = e.matrix(v["efficiency"], v["flagged"], v["nondetect"], late=v.get("late_cq"))
+            matrix = e.matrix_of(v)
             _, valid = e.relative(matrix, ids["refs"])
         return valid[:, e.items.index(gene)]
 
@@ -196,7 +220,7 @@ class LabViews:
         e, s = self.engine, self.engine.study
         v, ids = e.values_of(cell), e.ids_of(cell)
         with self._engine_lock:
-            matrix = e.matrix(v["efficiency"], v["flagged"], v["nondetect"], late=v.get("late_cq"))
+            matrix = e.matrix_of(v)
             rel, valid = e.relative(matrix, ids["refs"])
         i = e.items.index(gene)
         col = s.genes.index(gene)
@@ -259,7 +283,8 @@ class LabViews:
         s = self.engine.study
         col = s.genes.index(gene)
         e = self.explain[gene]
-        cq = s.cq[:, col]
+        well_cq, runs, flag_eff, flag_low = _wells_of(s, col)  # every well, replicates included
+        cq = well_cq
         found = cq[~np.isnan(cq)]
         lates = [o.value for o in self.space.decision("late_cq").options if o.value is not None]
         eff = np.nanmedian(s.eff_assay[:, col])
@@ -280,7 +305,7 @@ class LabViews:
             in_groups += f" ({v_rest} with a value)"
         rows = [
             ("Samples in each group", in_groups),
-            ("Plates for this assay", f"{len(set(s.run[:, col]))}"),
+            ("Plates for this assay", f"{len(set(runs))}"),
             (
                 "Cq, median (lowest to highest)",
                 f"{np.median(found):.1f} ({found.min():.1f} to {found.max():.1f})"
@@ -299,8 +324,8 @@ class LabViews:
                 if np.isfinite(std).any()
                 else "no standard curve on this plate",
             ),
-            ("Wells flagged for efficiency", f"{int(s.flag_eff[:, col].sum())}"),
-            ("Wells flagged as very low copy number", f"{int(s.flag_low[:, col].sum())}"),
+            ("Wells flagged for efficiency", f"{int(flag_eff.sum())}"),
+            ("Wells flagged as very low copy number", f"{int(flag_low.sum())}"),
             ("p-value, planned analysis", f"{e['p']:.2g}"),
         ]
         references = [
@@ -318,7 +343,7 @@ class LabViews:
             "n_rest": n_rest,
             "n_high_value": v_high,
             "n_rest_value": v_rest,
-            "n_plates": len(set(s.run[:, col])),
+            "n_plates": len(set(runs)),
             "cq_median": float(np.median(found)) if found.size else None,
             "cq_min": float(found.min()) if found.size else None,
             "cq_max": float(found.max()) if found.size else None,
@@ -326,8 +351,8 @@ class LabViews:
             "n_nondetect": int(np.isnan(cq).sum()),
             "eff_assay": float(eff),
             "eff_std_curve": float(np.nanmedian(std)) if np.isfinite(std).any() else None,
-            "n_flag_eff": int(s.flag_eff[:, col].sum()),
-            "n_flag_low": int(s.flag_low[:, col].sum()),
+            "n_flag_eff": int(flag_eff.sum()),
+            "n_flag_low": int(flag_low.sum()),
             "p": float(e["p"]),
         }
         return {
@@ -395,6 +420,9 @@ class LabViews:
         decisions = pd.read_csv(self.dir / "decisions.csv").set_index("decision")
         stages = []
         for title, text, ids in STAGES:
+            ids = [d for d in ids if d in self.space.names]  # replicates: only when there are any
+            if not ids:
+                continue
             items = []
             for d in ids:
                 dec = self.space.decision(d)
@@ -456,7 +484,7 @@ class LabViews:
         ]
         val = self.dir / "validation_untergasser.json"
         if val.exists():
-            v = json.loads(val.read_text())
+            v = json.loads(val.read_text(encoding="utf-8"))
             eff = self.space.decision("efficiency")
             labels = {o.id: o.label for o in eff.options}
             out["known"] = {

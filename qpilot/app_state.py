@@ -33,7 +33,50 @@ FLIPPED_FACT = {
     "undetermined": "f_n_flipped_undetermined",
     "amp_call": "f_n_flipped_amp_call",
     "numbers.efficiency_model": "f_n_flipped_efficiency",
+    "numbers.normaliser": "f_n_flipped_normaliser",
+    "numbers.interrun": "f_n_flipped_interrun",
 }
+#: The kinds of a quantification study's cards (``qpilot.qpcr.quantify_study``).
+QUANTITY_PREFIX = "quantity."
+#: ``DesignSummary.note`` of a study that quantifies samples (``qpilot.qpcr.quantify_study``).
+QUANTIFY_NOTE = "quantify samples: no groups compared"
+#: What a card with several comparisons says about deciding it (choices are the study's).
+STUDY_WIDE = (
+    "A choice on this card applies to the whole study: every comparison is analysed with the "
+    "option you pick."
+)
+
+
+def impact_tokens(card: DecisionCard, facts: Facts) -> str | None:
+    """The card's impact sentence as fact tokens (None: no fact-backed sentence fits).
+
+    With several comparisons it names each comparison whose calls the choice changes and how
+    many (``f_cmp<i>_n_flipped_<dimension>``); otherwise the study's flip count of the card.
+    """
+    if card.kind.startswith(QUANTITY_PREFIX):  # a quantification study's card
+        from qpilot.explain.quantity_text import impact_tokens as quantity_tokens
+
+        return quantity_tokens(card, facts)
+    flipped = FLIPPED_FACT.get(card.kind)
+    views = card.impact.get("views")
+    if views and flipped:
+        suffix = flipped.removeprefix("f_n_flipped_")
+        parts = []
+        for i, view in enumerate(views, start=1):
+            count, label = f"f_cmp{i}_n_flipped_{suffix}", f"f_cmp{i}_label"
+            if view.get("flips") and count in facts and label in facts:
+                parts.append("{{" + count + "}} in {{" + label + "}}")
+        if parts:
+            return "Calls that change with this choice: " + "; ".join(parts)
+        return None
+    if flipped in facts and "f_n_genes" in facts and card.impact.get("flips"):
+        tokens = "{{" + flipped + "}} of {{f_n_genes}} conclusions change with this choice"
+        if card.kind == "reference_set" and "f_n_flipped_refset_min3" in facts:
+            tokens += "; {{f_n_flipped_refset_min3}} even between sets of three or more genes"
+        return tokens
+    return None
+
+
 #: ``DesignSummary.note`` of a study whose groups come from a confirmed design (sample sheet or
 #: accepted proposals), as written by ``qpilot.qpcr.study``; such a study has no cut-off.
 GROUPS_NOTE = "groups from the confirmed design"
@@ -85,6 +128,11 @@ def study_summary(result: StudyResult) -> SummaryView:
 def design_line(result: StudyResult) -> str:
     """How the groups were made, from the engine's design record."""
     design = result.design
+    if design.note == QUANTIFY_NOTE:
+        return (
+            "A quantification: each sample's quantity read from a standard curve; no groups "
+            "compared; technical replicates averaged within each biological unit."
+        )
     if design.note == GROUPS_NOTE:
         return (
             f"Groups from the confirmed design ({design.group_var}): {design.n_hi} vs "
@@ -132,6 +180,14 @@ class CardView:
     where_html: str = ""  # a Trace card: the place it is about and what to check
 
 
+DECIDER_WORDS = {"human": "you", "agent": "an agent", "system": "qPilot"}
+
+
+def decider_words(actor: str | None) -> str:
+    """Who decided a card, as the page says it to the person using it ("Decided by you")."""
+    return DECIDER_WORDS.get(actor or "", actor or "someone")
+
+
 def _status_line(
     card: DecisionCard, labels: Mapping[str, str], pending_option: str | None = None
 ) -> str:
@@ -145,11 +201,13 @@ def _status_line(
         )
     if card.status == "decided":
         reason = f" Reason: {card.reason}" if card.reason else ""
-        return f"Decided by {card.decided_by or 'someone'}: {chosen}.{reason}"
+        return f"Decided by {decider_words(card.decided_by)}: {chosen}.{reason}"
     if card.status == "pending_human":
         # The request lives in the store's pending list; card.decision is the earlier choice.
         asked = labels.get(pending_option or "", pending_option or "another option")
         return f"Waiting for a person: an agent asked to choose {asked}."
+    if card.impact.get("flips") and card.kind.startswith(QUANTITY_PREFIX):
+        return "Your decision: this choice changes what is reported for at least one sample."
     if card.impact.get("flips"):
         return "Your decision: this choice can change a conclusion."
     return "Open."
@@ -202,11 +260,8 @@ def card_view(
     except (KeyError, TemplateError):
         explanation_plain = KIND_TITLE.get(card.kind, card.kind)
         explanation_html = esc(explanation_plain)
-    flipped = FLIPPED_FACT.get(card.kind)
-    if flipped in facts and "f_n_genes" in facts and card.impact.get("flips"):
-        tokens = "{{" + flipped + "}} of {{f_n_genes}} conclusions change with this choice"
-        if card.kind == "reference_set" and "f_n_flipped_refset_min3" in facts:
-            tokens += "; {{f_n_flipped_refset_min3}} even between sets of three or more genes"
+    tokens = impact_tokens(card, facts)
+    if tokens is not None:
         impact = to_html(tokens, facts)
     elif card.impact.get("flips") and on_demand and card.impact.get("flipped_genes"):
         changed = ", ".join(esc(g) for g in card.impact["flipped_genes"])
@@ -324,6 +379,10 @@ def decision_counter(cards: Sequence[DecisionCard]) -> str:
     human = sum(1 for c in cards if c.impact.get("flips"))
     auto = sum(1 for c in cards if c.status == "auto_decided")
     noun = "decision" if human == 1 else "decisions"
+    if cards and all(c.kind.startswith(QUANTITY_PREFIX) for c in cards):
+        return (
+            f"{human} {noun} could change what is reported for a sample · {auto} made automatically"
+        )
     return f"{human} {noun} could change a conclusion · {auto} made automatically"
 
 

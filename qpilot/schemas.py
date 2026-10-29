@@ -7,7 +7,7 @@ owned by Dev 2.
 
 from typing import Annotated, Any, Literal, Protocol
 
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, SerializerFunctionWrapHandler, StringConstraints, model_serializer
 
 Conclusion = Literal["up", "down", "none"]
 Actor = Literal["human", "agent", "system"]
@@ -129,8 +129,67 @@ class DecisionCard(BaseModel):
     decided_at: str | None = None
 
 
+class ComparisonOutcome(BaseModel):
+    """One comparison of a study with several (or a paired one): every tested gene's result.
+
+    ``contrasts`` carry the uncorrected p-value; their ``conclusion`` was made from
+    ``p_adjusted`` (Holm across the gene's comparisons, or Dunnett's or Tukey's adjusted p of a
+    pooled-variance test; equal to ``p`` without a correction).
+    ``q_value`` is Benjamini-Hochberg across the genes of this comparison (shown, never used for
+    a call). A gene this comparison cannot test (fewer than two values or pairs) is in
+    ``not_tested`` with the reason, and in no other field.
+    """
+
+    id: str
+    group_a: str
+    group_b: str
+    label: str
+    primary: bool = False
+    n_a: int
+    n_b: int
+    n_pairs: int | None = None
+    contrasts: dict[str, ContrastResult]
+    p_adjusted: dict[str, float]
+    q_value: dict[str, float]
+    robustness: dict[str, GeneRobustness]
+    confidence: dict[str, Grade] = {}
+    not_tested: dict[str, str] = {}
+
+
+class Omnibus(BaseModel):
+    """Welch's one-way ANOVA of one gene across a study's groups (for orientation, never a call)."""
+
+    f: float
+    df1: float
+    df2: float
+    p: float
+
+
+class ComparisonsResult(BaseModel):
+    """A study's comparisons (``StudyDesign.comparisons``): the test, the correction, each one.
+
+    ``comparisons[0]`` is the primary: the same numbers as ``StudyResult.contrasts``,
+    ``robustness`` and ``confidence``. ``omnibus`` is Welch's ANOVA per gene across
+    ``omnibus_groups`` (three or more groups, unpaired designs only), at the planned analysis.
+    """
+
+    test: Literal["welch", "paired_t", "pooled_t"]
+    correction: Literal["holm", "none", "dunnett", "tukey"]
+    pattern: str = "chosen"
+    control: str | None = None
+    pair_by: str | None = None
+    comparisons: list[ComparisonOutcome]
+    omnibus_groups: list[str] = []
+    omnibus: dict[str, Omnibus] = {}
+
+
 class StudyResult(BaseModel):
-    """Everything the engine computed for one study."""
+    """Everything the engine computed for one study.
+
+    ``comparisons`` is set only for a design with several comparisons or a paired one, and is
+    left out of the JSON when it is ``None``, so every other study's ``results.json`` is
+    byte-identical to what it was.
+    """
 
     study_id: str
     input_sha256: str
@@ -145,6 +204,14 @@ class StudyResult(BaseModel):
     efficiency: dict[str, float] = {}
     conclusion_rule: dict[str, float] = {"alpha": 0.05, "min_log2fc": 1.0}
     facts: dict[str, Fact] = {}
+    comparisons: ComparisonsResult | None = None
+
+    @model_serializer(mode="wrap")
+    def _drop_absent(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        data = handler(self)
+        if data.get("comparisons") is None:
+            data.pop("comparisons", None)
+        return data
 
 
 class DecisionEntry(BaseModel):
@@ -184,10 +251,14 @@ class PlanResult(BaseModel):
     """Design check before an experiment: samples needed and what the design cannot detect.
 
     ``budget`` is the replicate budget (RT and technical replicates, costs); it is ``None``
-    unless a replicate or cost input was given (``qpilot.qpcr.plan.plan``).
+    unless a replicate or cost input was given (``qpilot.qpcr.plan.plan``). ``n_needed`` is
+    the samples per group a two-sided t test needs (exact, non-central t); ``n_for_call`` the
+    samples per group at which qPilot's own rule (p and the 2-fold line) calls the change with
+    the power asked, the plan's headline (``None``: no group size does, or no SD was given).
     """
 
     n_needed: int | None
+    n_for_call: int | None = None
     mde_fold: float | None
     cannot_detect: list[str]
     rules: list[str]

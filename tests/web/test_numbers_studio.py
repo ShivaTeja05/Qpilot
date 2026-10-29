@@ -214,6 +214,10 @@ def test_curve_calls_follow_the_rule_definitions(api, world, design, engine_well
         calls = {"linregpcr": quantity}
         for rule, line in CQ_LINES.items():
             calls[rule] = quantity and not (pd.notna(r.cq) and r.cq > line)
+        if "linregpcr_call" in view["rules"]:  # science review J1: LinRegPCR's own call
+            negative = r.sample_type in ("ntc", "nac", "ntp", "nrt")
+            called = True if pd.isna(r.amplification) else bool(r.amplification)
+            calls["linregpcr_call"] = quantity and (called or negative)
         if key in design.well_calls:
             calls = dict.fromkeys(calls, quantity and design.well_calls[key])
         if "learned" in view["rules"] and key in judge:

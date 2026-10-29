@@ -21,7 +21,9 @@ modules and registered here: ``evidence_v1``, ``grt_v1`` and ``runreview_v1``
 (:mod:`qpilot.explain.lookback_text`), ``trace_v1`` (needs ``gene=`` and that gene's trace facts
 for the panel) and ``trace_set_aside_v1`` (:mod:`qpilot.explain.trace_text`; the rationale of a
 ``trace_set_aside`` card), ``sheetcheck_v1``, ``sheetcheck_findings_v1`` and
-``sheetcheck_handover_v1`` (:mod:`qpilot.explain.sheetcheck_text`). Each renders a digit-free
+``sheetcheck_handover_v1`` (:mod:`qpilot.explain.sheetcheck_text`), ``quantity_amp_v1`` and
+``quantity_loq_v1`` (:mod:`qpilot.explain.quantity_text`; a quantification study's cards). Each
+renders a digit-free
 sentence when its facts are absent; ``instrument_gate_v1``, ``lookback_v1`` and ``position_v1``
 need their structured result for anything more.
 """
@@ -396,6 +398,71 @@ def _efficiency(facts: Facts, card: DecisionCard | None, gene: str | None) -> st
     return text + _flips_sentence(facts, "f_n_flipped_efficiency")
 
 
+def _axis_options(facts: Facts, prefix: str) -> list[str]:
+    """The option slugs of an axis card, from its ``f_<prefix>_label_*`` facts."""
+    head = f"f_{prefix}_label_"
+    return [fid[len(head) :] for fid in facts if fid.startswith(head)]
+
+
+def _axis_flips(facts: Facts, prefix: str, primary: str) -> str:
+    """The sentence saying how many genes each other option alone flips."""
+    _need(facts, "f_n_genes")
+    parts = []
+    for s in sorted(o for o in _axis_options(facts, prefix) if o != primary):
+        _need(facts, f"f_n_flipped_{prefix}_{s}")
+        parts.append(
+            f"with {_t(f'f_{prefix}_label_{s}')}, {_t(f'f_n_flipped_{prefix}_{s}')} of "
+            f"{_t('f_n_genes')} genes change their conclusion"
+        )
+    return "Changing only this choice: " + "; ".join(parts) + ". "
+
+
+def _normaliser(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    text = (
+        "What each gene is divided by is a choice: the reference genes chosen for this study, "
+        "another pair a stability ranking prefers, or the mean of every gene measured. "
+    )
+    if "f_n_flipped_normaliser" not in facts or "planned" not in _axis_options(facts, "norm"):
+        return text + "This analysis divides by the reference genes chosen for this study only."
+    text += "This analysis divides by the reference genes chosen for this study. "
+    if "f_nf_agreement" in facts:
+        text += f"{_t('f_nf_agreement')} "
+    text += _axis_flips(facts, "norm", "planned")
+    if "global_mean" in _axis_options(facts, "norm") and "f_gm_n_genes" in facts:
+        text += (
+            f"The global mean is the mean of {_t('f_gm_n_genes')} genes, those with a value in "
+            "every compared unit; it is valid only when the genes measured were not chosen for "
+            "this comparison. "
+        )
+    return text + _flips_sentence(facts, "f_n_flipped_normaliser")
+
+
+def _interrun(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    text = (
+        "Whether to correct differences between plates is a choice: each plate adds its own "
+        "offset, which matters when a gene's samples are on more than one plate. "
+    )
+    if "f_n_flipped_interrun" not in facts or "none" not in _axis_options(facts, "irc"):
+        return text + "This analysis does not correct between plates."
+    if "f_irc_n_split" in facts:
+        text += f"{_t('f_irc_n_split')} genes have their samples on more than one plate. "
+    text += "This analysis does not correct between plates. "
+    text += _axis_flips(facts, "irc", "none")
+    return text + _flips_sentence(facts, "f_n_flipped_interrun")
+
+
+def _quantity_amp(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    from qpilot.explain.quantity_text import amp_text
+
+    return amp_text(facts, card, gene)
+
+
+def _quantity_loq(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    from qpilot.explain.quantity_text import loq_text
+
+    return loq_text(facts, card, gene)
+
+
 TEMPLATES: dict[str, Template] = {
     "refset_v1": _refset,
     "cutoff_v1": _cutoff,
@@ -403,6 +470,8 @@ TEMPLATES: dict[str, Template] = {
     "undetermined_v1": _undetermined,
     "ampcall_v1": _ampcall,
     "efficiency_v1": _efficiency,
+    "normaliser_v1": _normaliser,
+    "interrun_v1": _interrun,
     "summary_v1": _summary,
     "meter_v1": _meter,
     "confidence_v1": _confidence,
@@ -417,6 +486,8 @@ TEMPLATES: dict[str, Template] = {
     "sheetcheck_v1": _sheetcheck,
     "sheetcheck_findings_v1": _sheetcheck_findings,
     "sheetcheck_handover_v1": _sheetcheck_handover,
+    "quantity_amp_v1": _quantity_amp,
+    "quantity_loq_v1": _quantity_loq,
 }
 
 

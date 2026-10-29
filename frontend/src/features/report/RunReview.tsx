@@ -1,7 +1,8 @@
 /**
  * The Run Review: one place for the person who reviews someone else's run. The headline genes,
- * the Evidence Ledger (what this study cannot tell you first), the parts not built yet (and the
- * section that shows each instead), every recorded sign-off, and the sign-off itself: accept,
+ * the Evidence Ledger (what this study cannot tell you first), what to repeat and why with the
+ * repeat plate to download and the Run Gate's lines per plate (`RepeatPlan.tsx`), the part not
+ * built yet (and the section that shows it instead), every recorded sign-off, and the sign-off itself: accept,
  * repeat or discuss, with a comment and a name, kept in the decision log as the person's. qPilot
  * never passes or fails a run, so no outcome is drawn as a pass or a fail.
  */
@@ -35,6 +36,7 @@ import {
   type SignOffOutcome,
 } from "./api";
 import { FactLine } from "./FactLine";
+import { RepeatBlocks } from "./RepeatPlan";
 import { EVIDENCE } from "./words";
 
 /** Sign-offs shown before "Show all". */
@@ -84,6 +86,7 @@ export function RunReviewBody({
       </div>
       <Headline view={view} />
       <Ledger evidence={view.evidence} />
+      <RepeatBlocks workspace={workspace} workspaceKey={workspaceKey} studyId={view.study_id} />
       {view.not_built.length ? <NotBuiltList items={view.not_built} workspace={workspace} /> : null}
       <SignOffs view={view} workspaceKey={workspaceKey} />
     </div>
@@ -113,7 +116,7 @@ function Block({
 
 // ---- headline genes --------------------------------------------------------------------------
 
-function Headline({ view }: { view: RunReviewView }) {
+export function Headline({ view }: { view: RunReviewView }) {
   return (
     <Block title="Headline genes">
       {view.headline.length ? (
@@ -128,6 +131,20 @@ function Headline({ view }: { view: RunReviewView }) {
       ) : (
         <p className="text-[13px] text-muted">This study names no headline genes.</p>
       )}
+      {view.comparisons?.length ? (
+        <div className="mt-4" data-testid="review-comparisons">
+          <p className="text-[12.5px] font-medium text-fg">
+            Each comparison of the study (the headline above is the first)
+          </p>
+          <ul className="mt-1.5 flex flex-col gap-1.5" aria-label="Comparisons">
+            {view.comparisons.map((line, i) => (
+              <li key={i} className="text-[13px] leading-relaxed">
+                <FactLine text={line} className="text-muted" />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </Block>
   );
 }

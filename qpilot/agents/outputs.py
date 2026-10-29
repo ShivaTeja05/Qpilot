@@ -116,6 +116,46 @@ class ImportView(_Open):
     warnings: list[ImportNote]
 
 
+class ComparisonGeneView(_Open):
+    """One gene in one comparison of a study with several (the engine's numbers)."""
+
+    conclusion: str
+    fc: Num
+    ci: list[Num] | None = None
+    p: Num = None
+    p_adjusted: Num = Field(None, description="The corrected p-value the call uses (Holm).")
+    q: Num = Field(None, description="Benjamini-Hochberg q-value across the genes.")
+    holds: Num = None
+    level: str | None = None
+    fact_ids: dict[str, str] | None = None
+
+
+class ComparisonView(_Open):
+    """One comparison of a study with several (the first is the one ``contrasts`` describe)."""
+
+    id: str
+    label: str
+    group_a: str
+    group_b: str
+    primary: bool
+    n_a: int
+    n_b: int
+    n_pairs: int | None = None
+    n_up: int
+    n_down: int
+    contrasts: dict[str, ComparisonGeneView] | None = None
+    not_tested: dict[str, str] | None = None
+
+
+class ComparisonsOut(_Open):
+    """A study's comparisons: the test, the correction, the pairing, and each comparison."""
+
+    test: str
+    correction: str
+    pair_by: str | None = None
+    comparisons: list[ComparisonView]
+
+
 class StudyOut(_Open):
     """``qpcr_study``: the analysed study."""
 
@@ -141,6 +181,9 @@ class StudyOut(_Open):
     imported: ImportView | None = None
     evidence: dict[str, str] | None = Field(
         None, description="Evidence Ledger item id -> status, when the study kept a ledger."
+    )
+    comparisons: ComparisonsOut | None = Field(
+        None, description="Every comparison of a study with several (absent otherwise)."
     )
     response_format: ResponseFormat = "detailed"
 
@@ -169,6 +212,11 @@ class RobustnessOut(_Open):
     open_cards: list[str] | None = None
     n_open_cards: int | None = None
     fact_ids: dict[str, str] | None = None
+    comparison: str | None = Field(
+        None, description="The comparison described, in a study with several (its id)."
+    )
+    p_adjusted: Num = Field(None, description="The corrected p-value the call uses (Holm).")
+    q: Num = Field(None, description="Benjamini-Hochberg q-value across the genes.")
     response_format: ResponseFormat = "detailed"
 
 
@@ -219,7 +267,14 @@ class GateOut(_Open):
 class PlanOut(_Open):
     """``qpcr_plan``: samples per group and what a design cannot detect."""
 
-    n_needed: int | None
+    n_needed: int | None = Field(
+        description="Per group for a two-sided t test (p alone), exact (non-central t)."
+    )
+    n_for_call: int | None = Field(
+        None,
+        description="Per group for qPilot's own rule (p and the 2-fold line) to call the change "
+        "with the power asked: the headline. Null when no group size reaches it.",
+    )
     mde_fold: Num
     cannot_detect: list[str]
     rules: list[str]
@@ -418,6 +473,221 @@ class CheckSheetOut(_Open):
     saved: bool
 
 
+# ---- comparisons, per-unit values, melt curves, the repeat plan, exports, set-aside requests -----
+
+
+class StudyComparisonsOut(ComparisonsOut):
+    """``qpcr_comparisons``: every comparison of a study with several (or a paired one)."""
+
+    study_id: str
+    n_comparisons: int
+    omnibus_groups: list[str] | None = None
+    omnibus: dict[str, Any] | None = Field(
+        None, description="Welch's one-way ANOVA per gene across the groups (orientation only)."
+    )
+    response_format: ResponseFormat = "detailed"
+
+
+class UnitWellView(_Open):
+    """One well behind a unit's value (one technical replicate)."""
+
+    plate: str
+    well: str
+    sample: str
+    cq: Num = None
+    log2: Num = Field(
+        None, description="The well's log2 relative amount, relative to the second group's mean."
+    )
+    state: Literal["used", "no_value", "excluded"]
+    late: bool
+    flagged: bool
+
+
+class UnitView(_Open):
+    """One biological unit: its value of the gene and the wells behind it."""
+
+    unit: str
+    group: str
+    samples: list[str]
+    log2: Num = Field(
+        description="The unit's log2 relative amount of the gene (the engine's normalisation), "
+        "relative to the second group's mean."
+    )
+    n_wells: int = Field(description="Wells used in the value.")
+    cq_range: Num = Field(None, description="Highest minus lowest Cq of the used wells.")
+    capped: bool
+    wells: list[UnitWellView] | None = None
+
+
+class UnitGroupView(_Open):
+    """One group of a gene's units: its label, how many units, and its mean with its 95 % CI."""
+
+    label: str
+    n: int
+    missing: int
+    mean: Num = None
+    ci: list[Num] | None = Field(None, description="95 % CI of the mean (log2, Student's t).")
+
+
+class UnitsOut(_Open):
+    """``qpcr_units``: each biological unit's value of one gene, with the wells behind it."""
+
+    study_id: str
+    gene: str
+    comparison: str | None = None
+    groups: list[UnitGroupView]
+    units: list[UnitView]
+    n_units: int | None = Field(
+        None, description="Every unit with a value or none; units is a page."
+    )
+    offset: int | None = None
+    next_offset: int | None = Field(
+        None, description="Where the next page starts; null at the end."
+    )
+    fold_log2: Num = None
+    fold_ci_log2: list[Num] | None = None
+    p: Num = None
+    refs: list[str]
+    undetermined: str
+    replicates: bool
+    most_wells: int
+    late_cq: Num = None
+    at_plan: bool
+    line_log2: Num = None
+    how: list[str] | None = None
+    saved: bool
+    response_format: ResponseFormat = "detailed"
+
+
+class QuantitiesOut(_Open):
+    """``qpcr_quantities``: standard curves, LOD/LOQ and each sample's quantity (absolute)."""
+
+    study_id: str
+    purpose: str = Field(
+        description="quantify: the study quantifies samples (no groups compared); compare: a "
+        "study comparing groups whose plates also carry standards."
+    )
+    available: bool
+    why: str = ""
+    unit: str
+    analysis: list[str] = Field(
+        default=[], description="A quantification study: the analysis in use, in words."
+    )
+    assays: list[dict[str, Any]]
+    not_quantified: list[dict[str, Any]] = []
+    target: str | None = None
+    units: list[dict[str, Any]] | None = Field(
+        None,
+        description="With target: every biological unit's quantity per reaction, its 95 % "
+        "prediction interval, what is reported for it (its class) and its wells.",
+    )
+    text: str
+
+
+class MeltOut(_Open):
+    """``qpcr_melt``: each well's melt call, each assay's expected Tm, some wells' peaks."""
+
+    study_id: str
+    has_melt: bool
+    message: str = ""
+    run: str | None = None
+    plates: list[str]
+    params: dict[str, Any]
+    pack: str
+    method: str
+    caveat: str
+    assays: list[dict[str, Any]]
+    targets: list[dict[str, Any]]
+    calls: list[dict[str, Any]] | None = None
+    n_calls: int | None = None
+    flagged: list[str] | None = None
+    wells: list[dict[str, Any]] | None = None
+    saved: bool
+    response_format: ResponseFormat = "detailed"
+
+
+class RepeatPlanOut(_Open):
+    """``qpcr_repeat_plan``: what to repeat and why, ranked, and the repeat plate."""
+
+    study_id: str
+    include: Literal["consequential", "all"]
+    items: list[dict[str, Any]]
+    n_items: int | None = Field(None, description="Every item of the plan; items is a page.")
+    offset: int | None = None
+    next_offset: int | None = Field(
+        None, description="Where the next page starts; null at the end."
+    )
+    counts: dict[str, int]
+    gate_lines: list[dict[str, Any]]
+    calibrator: str | None = None
+    replicates: int
+    plate_size: int
+    n_samples: int
+    n_reactions: int
+    n_wells: int
+    n_plates: int
+    notes: list[str]
+    warnings: list[str]
+    not_repeated: list[dict[str, Any]] | None = None
+    wells: list[dict[str, Any]] | None = None
+    csv: str | None = Field(None, description="The repeat plate as the planner's CSV.")
+    expected_share: float | None = Field(
+        None, description="The lab's line for 'no amplification where one was expected'."
+    )
+    decision: str = Field(description="Re-running is a person's call; nothing here decides it.")
+    saved: bool
+    response_format: ResponseFormat = "detailed"
+
+
+class ExportFile(_Open):
+    """A file the export wrote (new; nothing is ever overwritten)."""
+
+    name: str
+    path: str
+    bytes: int
+    sha256: str
+
+
+class ExportOut(_Open):
+    """``qpcr_export``: the file written from the study's own engine output."""
+
+    status: Literal["written"]
+    study_id: str
+    format: Literal["xlsx", "csv", "figures", "supplement"]
+    title: str
+    file: ExportFile
+    copied_to: ExportFile | None = Field(
+        None, description="The same file, copied into the out_dir asked for."
+    )
+    chain_head: str
+    written_at: str
+    bases: list[str]
+    genes: list[str]
+    warnings: list[str]
+    record: dict[str, Any] | None = None
+    listed_on_page: bool
+    next: str
+    idempotent_replay: bool | None = None
+
+
+class SetAsideOut(_Open):
+    """``qpcr_request_set_aside``: a request that waits for a person (nothing is set aside)."""
+
+    status: Literal["pending_human"]
+    applied: bool = Field(description="Always false: only a person sets wells aside.")
+    chain_head: str
+    reason: str | None = None
+    code: str | None = None
+    fix: str | None = None
+    card_id: str
+    option: str
+    place: dict[str, Any]
+    wells: list[str]
+    proposals: list[dict[str, Any]]
+    next: str
+    idempotent_replay: bool | None = None
+
+
 # ---- the Decision Simulator's tools -------------------------------------------------------------
 
 
@@ -472,6 +742,8 @@ __all__ = [
     "CardView",
     "CheckDesignOut",
     "CheckSheetOut",
+    "ExportFile",
+    "ExportOut",
     "ContrastView",
     "CurveCallsOut",
     "DecideOut",
@@ -484,8 +756,10 @@ __all__ = [
     "InstrumentHistoryOut",
     "InstrumentStatusOut",
     "LookbackOut",
+    "MeltOut",
     "PlanOut",
     "PrismDiffOut",
+    "QuantitiesOut",
     "PrismPreviewOut",
     "ProposalsOut",
     "ProposeOut",
@@ -493,12 +767,19 @@ __all__ = [
     "ResponseFormat",
     "RobustnessOut",
     "RunContextOut",
+    "RepeatPlanOut",
     "RunReviewOut",
+    "SetAsideOut",
     "SimAuditOut",
     "SimDecisionsOut",
     "SimFindingsOut",
     "SimGeneOut",
     "SimWhatifOut",
+    "StudyComparisonsOut",
     "StudyOut",
     "TraceOut",
+    "UnitGroupView",
+    "UnitView",
+    "UnitWellView",
+    "UnitsOut",
 ]

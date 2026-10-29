@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from collections import Counter
 
+from qpilot.explain.sets import verdict_differs
 from qpilot.qpcr.confidence_checks import HOLDS_MIN
 from qpilot.report.context import Ctx, dim_label
 from qpilot.report.model import Limitation, ReviewCheck, ReviewFinding, ReviewView, Severity
@@ -26,6 +27,14 @@ def _names(names: list[str]) -> str:
     if len(names) <= 1:
         return "".join(names)
     return ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def _reasonable(c: Ctx) -> str | None:
+    """The audit's reasonable set, as a fact token (None without that count)."""
+    try:
+        return c.audit_num("reasonable", "summary.json", "multiverse", "defensible", "cells")
+    except (KeyError, TypeError):
+        return None
 
 
 def _holds(c: Ctx) -> str:
@@ -165,10 +174,34 @@ def reference_genes(rv: Review) -> None:
         )  # fmt: skip
 
 
+def _cq_efficiency(rv: Review) -> None:
+    """R2 for a file of Cq values only: measured from each assay's dilution series, or not."""
+    c = rv.c
+    assumed = int(c.result.facts["f_n_eff_assumed"].value) if c.has("f_n_eff_assumed") else 0
+    if not assumed:
+        rv.ok(
+            "efficiency",
+            "Efficiency measured, not assumed",
+            ["The file holds Cq values only; each assay's efficiency is from its dilution "
+             "series, used in every quantity."],
+        )  # fmt: skip
+        return
+    rv.flag(
+        "no_efficiency", "major", "Efficiency assumed",
+        ["The file holds Cq values only (no curves), and these assays have no dilution series, so "
+         f"their efficiency is assumed: {tok('f_eff_assumed_genes')}. A dilution series of each "
+         "assay on the plate would measure it."],
+        rule="R2",
+    )  # fmt: skip
+
+
 def efficiency(rv: Review) -> None:
     """R2: efficiency measured and used."""
     c = rv.c
     eff = c.result.efficiency
+    if c.has("f_cq_only"):  # a file of Cq values only: a dilution series, or assumed
+        _cq_efficiency(rv)
+        return
     if eff:
         lo = c.num("eff_min", min(eff.values()), "results.json:/efficiency@min")
         hi = c.num("eff_max", max(eff.values()), "results.json:/efficiency@max")
@@ -306,6 +339,8 @@ def disclosure(rv: Review) -> None:
             rule="R8",
         )
     if meta.n_reactions_with_curves:
+        clause = c.reactions_in_file(meta.n_reactions_with_curves, meta.n_runs)
+        where = f" ({clause})" if clause else ""
         n = c.count(
             "rdml_n_curves",
             meta.n_reactions_with_curves,
@@ -315,7 +350,7 @@ def disclosure(rv: Review) -> None:
         rv.ok(
             "raw_curves",
             "Raw curves can be deposited",
-            [f"The RDML file holds the raw fluorescence of {n} reactions."],
+            [f"The RDML file holds the raw fluorescence of {n} reactions{where}."],
         )
 
 
@@ -356,6 +391,8 @@ def headline_genes(rv: Review) -> None:
         parts.append(".")
         if verdict:
             parts += [" The audit's verdict: ", Q(_label(c, verdict)), "."]
+            if weak and verdict not in DOUBTFUL:
+                parts.append(" " + verdict_differs(_reasonable(c)))
         major = weak or verdict in DOUBTFUL
         rv.flag(
             f"headline_{s}",
@@ -453,8 +490,8 @@ def groups(rv: Review) -> None:
 def multiplicity(rv: Review) -> None:
     """No correction for multiple testing (and what the audit says about it)."""
     c = rv.c
-    if not c.has("f_n_genes"):
-        return
+    if not c.has("f_n_genes") or c.facts.value("f_n_genes") == 1:
+        return  # one gene compared: there is nothing to correct across
     audit = c.inputs.audit
     alone = (audit.summary.get("question_choices_flip_alone") or {}) if audit else {}
     alpha = f"{c.result.conclusion_rule.get('alpha', 0.05):g}"
@@ -484,6 +521,8 @@ def audit_checks(rv: Review) -> None:
     """The audit: absent, out of date, genes to check first, a clustered plate layout."""
     c = rv.c
     a = c.inputs.audit
+    if a is None and c.quantify:
+        return  # the audit compares groups; a quantification's choices are on its cards
     if a is None:
         rv.flag(
             "no_audit", "note", "No robustness audit yet",
@@ -602,8 +641,54 @@ def review(c: Ctx) -> ReviewView:
     )
 
 
+def _quantify_limitations(c: Ctx) -> list[Limitation]:
+    """The limitations of a study that quantifies samples."""
+    out: list[tuple[str, list[Part]]] = [
+        (
+            "research_use",
+            [
+                "Research use only; not for clinical or diagnostic use: a quantity here is not a "
+                "viral load reported to a patient or a regulator."
+            ],
+        ),
+        (
+            "standards",
+            [
+                "Every quantity is only as right as the standards' own quantities and their "
+                "dilution: an error there moves every number by the same factor."
+            ],
+        ),
+        (
+            "limits",
+            [
+                "The limits of detection and quantification come from the standards of this run "
+                "(a few replicates per level), not from a validation study; below them a number "
+                "is shown but not reported as a quantity."
+            ],
+        ),
+        (
+            "matrix",
+            [
+                "The standards are measured in clean template; inhibition in a sample's matrix "
+                "(wastewater, tissue) can lower its quantity, and no inhibition control is read "
+                "here."
+            ],
+        ),
+        (
+            "record",
+            [
+                "The Analysis Record is tamper-evident, not tamper-proof: verifying it shows any "
+                "change, but cannot prove who made it."
+            ],
+        ),
+    ]
+    return [Limitation(id=i, text=c.t(*parts)) for i, parts in out]
+
+
 def limitations(c: Ctx) -> list[Limitation]:
     """The study's limitations in plain words."""
+    if c.quantify:
+        return _quantify_limitations(c)
     out: list[tuple[str, list[Part]]] = [
         (
             "research_use",
@@ -623,7 +708,7 @@ def limitations(c: Ctx) -> list[Limitation]:
                 ],
             )
         )
-    if c.has("f_n_genes"):
+    if c.has("f_n_genes") and c.facts.value("f_n_genes") != 1:
         out.append(
             (
                 "multiplicity",

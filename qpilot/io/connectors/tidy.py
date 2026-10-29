@@ -11,6 +11,16 @@ takes any *wide* table whose header has a well column and at least five numeric 
 ``quantity``. Without a ``cycle`` column but with ``Cq`` it is a **Cq table** (no curves):
 the door to Cq-only mode. A Cq table without a well column gets positions in row order
 (``A1``, ``A2`` ...), and the import says so.
+
+A **person's own Cq table** (typed in Excel, one row per well: ``Sample Name``, ``Gene Name``,
+``Condition``, ``Gene Type``, ``Cq``) is read too: the header synonyms are in
+:data:`~qpilot.io.connectors.common.COLUMNS` (``Ct``, ``Cp``, ``Detector`` ...), a Cq written as
+text is a number, ``Undetermined``/``N/A``/``No Ct`` is no Cq, and a mean (``Cq Mean``) is never
+read as a well's Cq. A gene type / role column (``Reference``, ``Housekeeping`` -> ``ref``;
+``Target`` -> ``toi``) becomes each target's declared type, so Design proposes the reference
+genes the table names. A condition, group or animal column makes the table its own sample sheet
+too (``qpilot.web.intake``); a table naming those but no target is only a sample sheet. When the
+sheets of a workbook repeat one sample and target (two experiments), only the first is read.
 """
 
 from __future__ import annotations
@@ -25,7 +35,14 @@ from qpilot.io.connectors.base import (
     Source,
 )
 from qpilot.io.connectors.builder import well_name
-from qpilot.io.connectors.common import COLUMNS, LongAssembler, plate_stem, well_position
+from qpilot.io.connectors.common import (
+    COLUMNS,
+    LongAssembler,
+    plate_stem,
+    roles_not_types,
+    target_role,
+    well_position,
+)
 from qpilot.io.connectors.sample_types import map_vendor_type
 from qpilot.io.connectors.tables import (
     Grid,
@@ -196,8 +213,10 @@ class TidyConnector:
     def sniff(self, probe: Probe) -> Sniff | None:
         """A header naming a well, a cycle and a signal; or a target / sample and a Cq.
 
-        A table that also names a group, an animal or a biological replicate is a qPilot
-        sample sheet (``qpilot.io.sheets``), even with a Cq column: it is not claimed.
+        A table that also names a group, an animal or a biological replicate is a Cq table
+        only when it names a sample, a target and a Cq per row (a person's own Cq table, which
+        is then its own sample sheet too); without a target it is a qPilot sample sheet
+        (``qpilot.io.sheets``) and is not claimed.
         """
         for row in _probe_rows(probe)[:30]:
             found = match_columns(row, COLUMNS)
@@ -205,16 +224,36 @@ class TidyConnector:
                 return Sniff(50, "tidy.long")
             if "cq" in found and ("target" in found or "sample" in found) and "cycle" not in found:
                 if _design_columns(row):
+                    if "target" in found and "sample" in found:
+                        return Sniff(30, "tidy.cq.design", "cq")
                     return None
                 return Sniff(30, "tidy.cq", "cq")
         return None
 
     def read(self, sources: list[Source]) -> list[PlateData]:
-        """Every plate in every file (a ``plate`` column splits one file into plates)."""
+        """Every plate in every file (a ``plate`` column splits one file into plates).
+
+        When a later sheet of a workbook repeats a sample and target of an earlier one, it is
+        another experiment of the same samples' names: it is left out, and a note says so.
+        """
         plates: list[PlateData] = []
         for source in sources:
+            seen: set[tuple[str, str]] = set()
+            left_out = 0
             for grid in read_grids(source.path):
-                plates.extend(_read_long(grid, source))
+                found = _read_long(grid, source)
+                pairs = {(r.sample, r.target) for p in found for r in p.reactions if r.sample}
+                if seen & pairs:
+                    left_out += 1
+                    continue
+                seen |= pairs
+                plates.extend(found)
+            if left_out and plates:
+                plates[0].notes.append(
+                    f"{left_out} more sheet{'s repeat' if left_out > 1 else ' repeats'} the "
+                    "same sample and gene names (another experiment): qPilot read the first Cq "
+                    "table of the workbook only. Save each experiment as its own file to open it."
+                )
         return plates
 
 
@@ -233,6 +272,8 @@ def _read_long(grid: Grid, source: Source) -> list[PlateData]:
     assemblers: dict[str, LongAssembler] = {}
     positions_assigned = 0
     dc = grid.decimal_comma
+    # a "Type"/"Role" column of Reference / Target words is the targets' role, not sample types
+    type_is_role = table.has("type") and roles_not_types(table.get(r, "type") for r in table.rows)
     for row in table.rows:
         plate_name = table.get(row, "plate") or stem
         assembler = assemblers.setdefault(plate_name, LongAssembler(plate_name))
@@ -249,8 +290,11 @@ def _read_long(grid: Grid, source: Source) -> list[PlateData]:
             target,
             sample=table.get(row, "sample"),
             dye=table.get(row, "dye"),
-            vendor_type=table.get(row, "type"),
+            vendor_type="" if type_is_role else table.get(row, "type"),
         )
+        role = target_role(table.get(row, "type" if type_is_role else "target_type"))
+        if role and not reaction.target_type:
+            reaction.target_type = role
         cq = number(table.get(row, "cq"), decimal_comma=dc)
         if cq is not None and cq > 0 and reaction.cq is None:
             reaction.cq = cq

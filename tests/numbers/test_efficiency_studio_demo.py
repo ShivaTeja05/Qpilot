@@ -76,7 +76,8 @@ def test_results_say_what_the_grid_did_with_it(tested):
 
     store, study_id, _ = tested
     result = store.get(study_id)
-    (axis,) = rv.results_view(store, study_id).axes
+    axis, *others = rv.results_view(store, study_id).axes
+    assert axis.name == "efficiency" and [a.name for a in others] == ["normaliser", "interrun"]
     assert axis.status == "swept" and axis.card_id == "card_efficiency"
     assert not axis.can_propose and axis.command == "qpilot run --efficiency all"
     flips = {o.id: o.flips.value for o in axis.options if o.flips is not None}

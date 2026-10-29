@@ -23,6 +23,16 @@ replicates per biological unit, exclude or re-type wells, offer several amplific
 rules (the ``amp_call`` dimension, screened before it enters the grid) and adds the Studio facts:
 the usual route to Prism (:mod:`qpilot.qpcr.routes`) and the amp_call screening result.
 
+A design with several comparisons, or a paired one (:class:`~qpilot.schemas_studio.
+ComparisonPlan`), evaluates every comparison in every cell of the grid; the result's
+``contrasts``, cards and grades stay the primary comparison's (with Holm's correction their calls
+use the corrected p), and ``StudyResult.comparisons`` adds each comparison's results, corrected
+p-values, q-values, robustness and grades. Each comparison's own grid travels with the primary
+grid (:func:`comparison_grid_of`) and is written as ``grid_comparisons.csv``.
+
+A biological unit with no well of some gene is left out of that gene only (``f_not_measured_*``
+facts say which); before, it was left out of every gene.
+
 Deterministic: the same file and settings give byte-identical output, which ``qpilot rerun``
 relies on. No model is called and nothing touches the network.
 """
@@ -34,18 +44,21 @@ import logging
 import re
 import statistics
 from collections.abc import Callable, Collection, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 from qpilot.core import robustness
 from qpilot.core.confidence import Cap, grade
-from qpilot.core.decisions import CardSpec, OptionSpec, build_cards, card_impact
+from qpilot.core.decisions import CardSpec, OptionSpec, View, build_cards, card_impact
 from qpilot.core.facts import FactRegistry, slug
 from qpilot.core.store import atomic_write, dump_json
 from qpilot.io.trust import cap_for, not_measured
+from qpilot.qpcr import cq_only
+from qpilot.qpcr import interrun as irc
 from qpilot.qpcr.amp_call import (
     DEFAULT_AMP_CALLS,
     METHOD_CARD_PATH,
@@ -56,16 +69,33 @@ from qpilot.qpcr.amp_call import (
     screen_amp_call,
 )
 from qpilot.qpcr.axes import efficiency as eff_axis
+from qpilot.qpcr.axes import get_axis
+from qpilot.qpcr.axes import normaliser as norm_axis
 from qpilot.qpcr.confidence_checks import START_LEVEL, checks_for, mde_fold, upgrade_rule
-from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule
+from qpilot.qpcr.contrast import (
+    CORRECTION_WORDS,
+    DEFAULT_RULE,
+    TEST_WORDS,
+    ConclusionRule,
+    bh,
+    welch_anova,
+)
+from qpilot.qpcr.cq_only import EfficiencyPlan
 from qpilot.qpcr.curves import (
     DEMO_EXPERIMENT,
     INSTRUMENT_CQ,
     REFERENCE_TARGETS,
     CurveSettings,
     analyse_study,
+    without_curves,
 )
-from qpilot.qpcr.design import DEMO_GROUP_VAR, DEMO_MARKER, GroupSpec, design_summary
+from qpilot.qpcr.design import (
+    DEMO_GROUP_VAR,
+    DEMO_MARKER,
+    GroupSpec,
+    design_summary,
+    groups_by_cut,
+)
 from qpilot.qpcr.designs import (
     HEADLINE_GENES,
     DesignError,
@@ -73,21 +103,36 @@ from qpilot.qpcr.designs import (
     design_curves,
     design_units,
     is_legacy_design,
+    is_quantify,
+    pairs_for,
     study_key,
     unit_groups,
 )
-from qpilot.qpcr.quant import EXCLUDED, Undetermined, excluded_cells, log2_matrix
+from qpilot.qpcr.multiplicity import CORRECTIONS_POOLED
+from qpilot.qpcr.quant import EXCLUDED, Undetermined, left_out_cells, log2_matrix
+from qpilot.qpcr.quant import not_measured as units_not_measured
 from qpilot.qpcr.refgenes import RefGroupEffect, genorm, group_effect
 from qpilot.qpcr.routes import ROUTES, RouteResult, compare_routes
-from qpilot.qpcr.space import DEFAULT_CUTS, DEFAULT_UNDETERMINED, MatrixStage, QpcrSpace
+from qpilot.qpcr.space import (
+    DEFAULT_CUTS,
+    DEFAULT_UNDETERMINED,
+    ComparisonSpec,
+    MatrixStage,
+    QpcrSpace,
+    comparison_grid,
+    group_stats,
+)
 from qpilot.schemas import (
     Autonomy,
+    ComparisonOutcome,
+    ComparisonsResult,
     DecisionCard,
     DesignSummary,
     Fact,
     GeneRobustness,
     GenormResult,
     Grade,
+    Omnibus,
     StudyResult,
 )
 from qpilot.schemas_studio import StudyDesign
@@ -125,6 +170,29 @@ class NGuardError(ValueError):
     """A comparison group has fewer than two biological units, so no p-value can be given."""
 
 
+#: Where a study's per-comparison grid travels with the primary grid (``DataFrame.attrs``).
+COMPARISON_GRID_ATTR = "qpilot_comparison_grid"
+COMPARISON_GRID_FILE = "grid_comparisons.csv"
+
+
+def comparison_grid_of(grid: pd.DataFrame | None) -> pd.DataFrame | None:
+    """Every comparison's grid of a study with several comparisons (``None`` otherwise).
+
+    :func:`study_from_curves` attaches it to the primary grid it returns, so every caller that
+    stores a grid can store this one too (``grid_comparisons.csv``) without a new return value.
+    """
+    if grid is None or not isinstance(grid, pd.DataFrame):
+        return None
+    return grid.attrs.get(COMPARISON_GRID_ATTR)
+
+
+def comparison_grid_csv(frame: pd.DataFrame) -> str:
+    """CSV text of a comparison grid, written exactly as ``grid.csv`` is."""
+    return robustness.to_csv_frame(frame).to_csv(
+        index=False, float_format="%.10g", lineterminator="\n"
+    )
+
+
 @dataclass(frozen=True)
 class StudySettings:
     """Every choice that shapes a study's output; the defaults reproduce the demo analysis.
@@ -135,7 +203,9 @@ class StudySettings:
     the amp_call screening), which the legacy output does not carry. ``efficiency`` are the
     options of the efficiency-model axis, primary first (opt-in; one option: no axis, see
     :mod:`qpilot.qpcr.axes.efficiency`); ``max_cells`` caps the grid with seeded sampling
-    (:func:`qpilot.core.robustness.run_grid`; ``None``: the full product).
+    (:func:`qpilot.core.robustness.run_grid`; ``None``: the full product). ``normaliser``
+    (:mod:`qpilot.qpcr.axes.normaliser`) and ``interrun`` (:mod:`qpilot.qpcr.interrun`) are
+    the options of the normaliser and the between-plate correction axes, opt-in the same way.
     """
 
     experiment_id: str | None = DEMO_EXPERIMENT
@@ -154,6 +224,8 @@ class StudySettings:
     studio_facts: bool = False
     efficiency: tuple[str, ...] = (eff_axis.PRIMARY,)
     max_cells: int | None = None
+    normaliser: tuple[str, ...] = (norm_axis.PRIMARY,)
+    interrun: tuple[str, ...] = (irc.PRIMARY,)
 
     @property
     def marker_label(self) -> str:
@@ -172,7 +244,8 @@ class StudySettings:
         The demo preset (:func:`qpilot.qpcr.designs.vermeulen_design`) gives exactly
         ``StudySettings()``, so its output is the legacy output byte for byte. Any other design
         is carried in ``design`` and switches the Studio facts on; its ``axes`` give the options
-        of the opt-in axes a person asked to test (``efficiency``). Control-gene candidates are
+        of the opt-in axes a person asked to test (``efficiency``, ``normaliser``,
+        ``interrun``). Control-gene candidates are
         ``reference_candidates``, or (when that is empty) the targets whose role is ``ref``,
         sorted by name.
 
@@ -193,6 +266,8 @@ class StudySettings:
             "design": None if legacy else design,
             "studio_facts": not legacy,
             "efficiency": tuple((design.axes or {}).get("efficiency", (eff_axis.PRIMARY,))),
+            "normaliser": tuple((design.axes or {}).get("normaliser", (norm_axis.PRIMARY,))),
+            "interrun": tuple((design.axes or {}).get("interrun", (irc.PRIMARY,))),
         }
         trust = design.import_trust
         if trust is not None and trust.analysis == "cq_only":  # the Import Trust card's Cq only
@@ -227,6 +302,10 @@ def run_study(
     curves = analyse_study(
         path, settings.experiment_id, settings.candidates, settings.curves, cache_dir=cache_dir
     )
+    if is_quantify(settings.design):  # quantify samples: no groups compared
+        from qpilot.qpcr.quantify_study import quantify_study
+
+        return quantify_study(path, curves, _sha256(path), settings)
     return study_from_curves(curves, _sha256(path), settings)
 
 
@@ -239,8 +318,9 @@ class _Inputs:
     units: dict[str, str] | None
     matrix: pd.DataFrame
     alternatives: dict[str, pd.DataFrame]
-    excluded: pd.DataFrame | None
+    excluded: pd.DataFrame | None  # values left out under every option (excluded / not measured)
     not_amplified: dict[str, int]  # study wells without a value, per amplification rule
+    not_measured: dict[str, list[str]] = field(default_factory=dict)  # gene -> units without it
 
 
 def _inputs(
@@ -248,9 +328,13 @@ def _inputs(
 ) -> _Inputs:
     design = settings.design
     legacy = design is None and settings.amp_calls == DEFAULT_AMP_CALLS
-    if legacy and not extra_excluded:  # the legacy path, untouched
+    if design is None and without_curves(curves):  # Cq values only, no design: names' series
+        curves = cq_only.with_efficiency(curves, cq_only.efficiency_plan(curves))
+    if legacy and not extra_excluded:  # the legacy path (the demo: every unit has every gene)
         matrix = log2_matrix(curves)
-        return _Inputs(curves, curves, None, matrix, {}, None, {})
+        missing = units_not_measured(curves)
+        left_out = left_out_cells(curves) if missing else None
+        return _Inputs(curves, curves, None, matrix, {}, left_out, {}, missing)
     table = design_curves(curves, design) if design is not None else curves
     if extra_excluded:
         table = _with_excluded(table, extra_excluded)
@@ -258,15 +342,15 @@ def _inputs(
     calls = dict(design.well_calls) if design is not None else {}
     tables = {rule_id: apply_rule(table, rule_id, calls) for rule_id in settings.amp_calls}
     primary, *others = settings.amp_calls
-    has_exclusions = EXCLUDED in table.columns
     return _Inputs(
         table=table,
         primary_table=tables[primary],
         units=units,
         matrix=log2_matrix(tables[primary], units),
         alternatives={rule_id: log2_matrix(tables[rule_id], units) for rule_id in others},
-        excluded=excluded_cells(table, units) if has_exclusions else None,
+        excluded=left_out_cells(table, units),
         not_amplified={rule_id: _counts(t)["n_undetermined"] for rule_id, t in tables.items()},
+        not_measured=units_not_measured(table, units),
     )
 
 
@@ -306,14 +390,21 @@ def _stability(matrix: pd.DataFrame, candidates: tuple[str, ...]) -> GenormResul
 def _design_groups(
     design: StudyDesign, table: pd.DataFrame, matrix: pd.DataFrame
 ) -> tuple[tuple[frozenset[str], frozenset[str]], tuple[str, str]]:
-    """The compared units of a groups design, measured for every gene.
+    """The compared units of a groups design's primary comparison (see :func:`_units_of`)."""
+    comparison = design.comparison
+    names = (comparison.group_a, comparison.group_b)
+    return _units_of(design, table, matrix, names), names
+
+
+def _units_of(
+    design: StudyDesign, table: pd.DataFrame, matrix: pd.DataFrame, names: Sequence[str]
+) -> tuple[frozenset[str], ...]:
+    """The units of each named group that are study units of the matrix, in ``names`` order.
 
     ``table`` is the per-well table as the design says (:func:`design_curves`). A sample of the
     groups with no study well there (the file types it otherwise, and no accepted decision
     re-typed it) is not a study sample, so it is left out of n; the log names it and its type.
     """
-    comparison = design.comparison
-    names = (comparison.group_a, comparison.group_b)
     by_unit = unit_groups(design)
     compared = {s for s, d in design.samples.items() if d.group in names}
     absent = sorted(compared - set(table["sample"]))
@@ -328,10 +419,63 @@ def _design_groups(
             "; ".join(left_out),
         )
     present = set(matrix.index)
-    group_a, group_b = (
+    return tuple(
         frozenset(u for u, g in by_unit.items() if g == name and u in present) for name in names
     )
-    return (group_a, group_b), names
+
+
+def _design_comparisons(
+    design: StudyDesign, table: pd.DataFrame, matrix: pd.DataFrame
+) -> tuple[ComparisonSpec, ...]:
+    """Every comparison of a design with a :class:`ComparisonPlan`, primary first.
+
+    Each group needs two biological units; a paired plan needs every compared unit to have its
+    pair key and each pair one unit in each group of a comparison (:func:`pairs_for`).
+
+    Raises:
+        NGuardError: A group has fewer than two units, or a comparison fewer than two pairs.
+        DesignError: A paired comparison whose units do not pair up.
+    """
+    plan = design.comparisons
+    assert plan is not None
+    names = plan.groups()
+    units = dict(zip(names, _units_of(design, table, matrix, names), strict=True))
+    specs = []
+    for comparison in plan.comparisons:
+        a, b = comparison.group_a, comparison.group_b
+        _n_guard((units[a], units[b]), (a, b))
+        pairs = keys = None
+        if plan.pair_by is not None:
+            pairs, keys = pairs_for(design, units[a], units[b], (a, b), plan.pair_by)
+            if len(pairs) < 2:
+                raise NGuardError(
+                    f"the p-value of {comparison.title()} is withheld: it has "
+                    f"{len(pairs)} complete pair(s) of {plan.pair_by}; a paired test needs two"
+                )
+        specs.append(
+            ComparisonSpec(
+                id=comparison.key(),
+                labels=(a, b),
+                group_a=units[a],
+                group_b=units[b],
+                pairs=pairs,
+                pair_keys=keys or (),
+            )
+        )
+    return tuple(specs)
+
+
+def comparison_units(model: StudyModel) -> dict[str, tuple[frozenset, frozenset, tuple | None]]:
+    """Per comparison id: ``(units of A, units of B, pairs or None)``, the primary first.
+
+    One entry (the primary, ``"primary"`` for a study without a plan) when the study has one
+    comparison. Pairs are ``(unit in A, unit in B)`` in pair-key order, for per-unit tables.
+    """
+    if model.space.comparisons:
+        return {s.id: (s.group_a, s.group_b, s.pairs) for s in model.space.comparisons}
+    design = model.settings.design
+    key = design.comparison.key() if design is not None and design.comparison else "primary"
+    return {key: (model.high, model.rest, None)}
 
 
 def _n_guard(groups: tuple[frozenset[str], frozenset[str]], labels: tuple[str, str]) -> None:
@@ -367,6 +511,7 @@ class StudyModel:
     screens: dict[str, robustness.AxisScreen] = field(default_factory=dict)
     axis_notes: dict[str, dict] = field(default_factory=dict)  # per opt-in axis, for facts
     tables: CellTables | None = None
+    cq_only: EfficiencyPlan | None = None  # a file of Cq values only: each assay's E
 
     def cell_table(self, cell: Mapping[str, Any]) -> pd.DataFrame:
         """The per-well table a cell's matrix is built from (see :class:`CellTables`)."""
@@ -398,20 +543,26 @@ class CellTables:
     curves: Mapping[tuple[str, str], eff_axis.StdCurve]
 
     def table(self, cell: Mapping[str, Any]) -> pd.DataFrame:
-        """The per-well table under the cell's amplification rule and efficiency model."""
+        """The per-well table under the cell's rule, efficiency model and plate correction.
+
+        The correction between plates (:mod:`qpilot.qpcr.interrun`) comes last, on the wells
+        the rule counts as amplified.
+        """
         amp = str(cell.get("amp_call", self.amp_primary))
         efficiency = str(cell.get("efficiency", eff_axis.PRIMARY))
+        between = str(cell.get("interrun", irc.PRIMARY))
         if efficiency == eff_axis.PRIMARY and amp == self.amp_primary:
-            return self.inputs.primary_table
-        table = eff_axis.universe(self.inputs.table, efficiency, self.curves).table
-        return table if self.legacy else apply_rule(table, amp, self.calls)
+            table = self.inputs.primary_table
+        else:
+            table = eff_axis.universe(self.inputs.table, efficiency, self.curves).table
+            table = table if self.legacy else apply_rule(table, amp, self.calls)
+        return table if between == irc.PRIMARY else irc.correct(table, between).table
 
     def stage(self, cell: Mapping[str, Any]) -> MatrixStage:
         """Units x genes ``log2 N0`` of the cell's table, and the values left out entirely."""
         table = self.table(cell)
         units = self.inputs.units
-        excluded = excluded_cells(table, units) if EXCLUDED in table.columns else None
-        return MatrixStage(log2_matrix(table, units), excluded)
+        return MatrixStage(log2_matrix(table, units), left_out_cells(table, units))
 
 
 def build_model(
@@ -435,11 +586,21 @@ def build_model(
         raise DesignError("no control genes: set reference_candidates or mark targets as ref")
     inputs = _inputs(curves, settings, extra_excluded)
     matrix = inputs.matrix
+    unmeasured = [gene for gene in settings.candidates if gene not in matrix.columns]
+    if unmeasured:  # e.g. the target of a LightCycler 96's "no target" wells, accepted as ref
+        raise DesignError(
+            f"the reference gene {', '.join(repr(g) for g in unmeasured)} has no value in any "
+            "study sample (no study well measures it), so it cannot normalise them: keep as "
+            "reference genes only targets measured in the study samples"
+        )
     stability = _stability(matrix, settings.candidates)
     groups = labels = None
+    specs: tuple[ComparisonSpec, ...] = ()
     if settings.groups_mode:
         groups, labels = _design_groups(settings.design, inputs.table, matrix)
         _n_guard(groups, labels)
+        if settings.design.comparisons is not None:
+            specs = _design_comparisons(settings.design, inputs.table, matrix)
     spec = None
     if groups is None:
         spec = GroupSpec(settings.marker, settings.cut, settings.candidates, settings.group_var)
@@ -453,25 +614,60 @@ def build_model(
         excluded=inputs.excluded,
         group_labels=labels,
     )
+    if specs:
+        plan = settings.design.comparisons
+        options.update(comparisons=specs, correction=plan.correction, control=plan.control)
     efficiency, eff_notes, tables = _efficiency_axis(inputs, settings)
+    between, irc_notes = _interrun_axis(inputs, settings, tables)
+    if between:
+        efficiency = {
+            "matrix_axes": {**efficiency.get("matrix_axes", {}), **between["matrix_axes"]},
+            "matrix_source": tables.stage,
+            "unavailable": {**efficiency.get("unavailable", {}), **between["unavailable"]},
+        }
+    normalisers, norm_notes = _normaliser_axis(
+        matrix, stability, settings, inputs, groups, specs, spec
+    )
+    if normalisers:
+        unavailable = {**efficiency.get("unavailable", {}), **normalisers.pop("unavailable")}
+        efficiency = {**efficiency, "unavailable": unavailable}
     space = QpcrSpace(
-        matrix, stability, spec, amp_alternatives=inputs.alternatives, **options, **efficiency
+        matrix,
+        stability,
+        spec,
+        amp_alternatives=inputs.alternatives,
+        **options,
+        **efficiency,
+        **normalisers,
     )
     screen = None
     if inputs.alternatives:
         dims = space.dimensions["amp_call"]
         screen = screen_amp_call(space.evaluate, space.primary, dims, space.items)
+        if not screen.admitted and _admitted_elsewhere(space, "amp_call"):
+            screen = replace(screen, admitted=True)  # it matters in another comparison
         if not screen.admitted:  # the choice changes nothing that matters: no axis in the grid
             space.hold("amp_call", "screened_out", SCREENED_REASON)
     screens = {}
-    if "efficiency" in space.dimensions:
-        screens["efficiency"] = robustness.screen_axis(space, "efficiency")
-        if not screens["efficiency"].admitted:
-            space.hold("efficiency", "screened_out", SCREENED_REASON)
+    for name in ("efficiency", "normaliser"):
+        if name in space.dimensions:
+            screens[name] = _screen_every(space, name)
+            if not screens[name].admitted:
+                space.hold(name, "screened_out", SCREENED_REASON)
+    if "interrun" in space.dimensions:  # a card only when a correction flips a call
+        screen = _screen_every(space, "interrun")
+        screens["interrun"] = replace(screen, admitted=any(screen.flipped.values()))
+        if not screens["interrun"].admitted:
+            space.hold("interrun", "screened_out", INTERRUN_SCREENED_REASON)
     high, rest = space.groups(settings.cut)
     if groups is None:
         _n_guard((high, rest), (settings.group_var, "rest"))
     notes = {"efficiency": eff_notes} if eff_notes else {}
+    if norm_notes:
+        notes["normaliser"] = norm_notes
+    if irc_notes:
+        notes["interrun"] = irc_notes
+    plan = cq_only.efficiency_plan(inputs.table, settings.design)
     return StudyModel(
         settings,
         inputs,
@@ -485,12 +681,144 @@ def build_model(
         screens,
         notes,
         tables,
+        plan if plan.assays else None,
     )
 
 
 SCREENED_REASON = (
     "no option, changed alone, flips a conclusion or moves a log2 fold change by more than 0.5"
 )
+INTERRUN_SCREENED_REASON = "no correction between plates, changed alone, flips a conclusion"
+
+
+def _interrun_axis(
+    inputs: _Inputs, settings: StudySettings, tables: CellTables
+) -> tuple[dict, dict]:
+    """``QpcrSpace`` keywords and notes for the correction between plates (opt-in).
+
+    Nothing when only ``none`` is offered. An option that cannot change anything here (every
+    gene on one plate, no calibrator on each plate of a split gene, no measurement two plates
+    share) is not offered and is reported, asked for or not. The corrected matrices come from
+    the study's :class:`CellTables` (the correction follows the rule and the efficiency model).
+    """
+    offered = tuple(settings.interrun)
+    if offered == (irc.PRIMARY,):
+        return {}, {}
+    if not offered or offered[0] != irc.PRIMARY:
+        raise DesignError(f"the inter-run options must start with {irc.PRIMARY!r}")
+    for option in offered:
+        if option not in irc.OPTIONS:
+            raise DesignError(f"unknown inter-run option {option!r}")
+    table = inputs.primary_table
+    every = irc.unavailable(table)
+    missing = {k: v for k, v in every.items() if k in offered}
+    kept = [o for o in offered if o not in missing]
+    notes: dict = {"unavailable": missing, **irc.summary(table)}
+    if "calibrator" in kept:
+        notes["calibrator_uncorrected"] = list(irc.calibrate(table).uncorrected)
+    if "factor" in kept:
+        factors, unlinked = irc.plate_factors(table)
+        notes["plate_factors"] = {run: round(value, 6) for run, value in factors.items()}
+        notes["factor_uncorrected"] = list(unlinked)
+    keywords = {
+        "matrix_axes": {"interrun": kept},
+        "matrix_source": tables.stage,
+        "unavailable": {"interrun": every},
+    }
+    return keywords, notes
+
+
+def _normaliser_groups(
+    settings: StudySettings,
+    matrix: pd.DataFrame,
+    groups: tuple[frozenset[str], frozenset[str]] | None,
+    spec: GroupSpec | None,
+    refs: tuple[str, ...],
+) -> tuple[dict[str, str | None], frozenset[str], frozenset[str]]:
+    """Unit -> group for NormFinder, and the primary comparison's two groups.
+
+    A design's groups are every group of the design (several comparisons share them); the
+    demo's expression-defined split is the primary cut-off's high group and the rest.
+    """
+    if groups is None:
+        assert spec is not None
+        primary = GroupSpec(spec.marker, spec.cut, refs, spec.group_var)
+        high, rest = groups_by_cut(matrix, primary, [spec.cut])[spec.cut]
+        label = {**{u: "high" for u in high}, **{u: "rest" for u in rest}}
+        return {u: label.get(u) for u in matrix.index}, high, rest
+    by_unit = unit_groups(settings.design) if settings.design is not None else {}
+    return {u: by_unit.get(u) for u in matrix.index}, groups[0], groups[1]
+
+
+def _normaliser_axis(
+    matrix: pd.DataFrame,
+    stability: GenormResult,
+    settings: StudySettings,
+    inputs: _Inputs,
+    groups: tuple[frozenset[str], frozenset[str]] | None,
+    specs: tuple[ComparisonSpec, ...],
+    spec: GroupSpec | None,
+) -> tuple[dict, dict]:
+    """``QpcrSpace`` keywords and notes for the normaliser axis (opt-in).
+
+    Nothing when only ``planned`` is offered. The best pairs (NormFinder with the study's
+    groups, geNorm) and the global mean's genes come from the primary matrix and stay fixed
+    across the grid; each cell reads their values from its own matrix.
+    """
+    offered = tuple(settings.normaliser)
+    if offered == (norm_axis.PRIMARY,):
+        return {}, {}
+    if not offered or offered[0] != norm_axis.PRIMARY:
+        raise DesignError(f"the normaliser options must start with {norm_axis.PRIMARY!r}")
+    for option in offered:
+        if option not in norm_axis.OPTIONS:
+            raise DesignError(f"unknown normaliser option {option!r}")
+    candidates = settings.candidates
+    refs = tuple(g for g in candidates if g in set(stability.recommended))
+    labels, high, rest = _normaliser_groups(settings, matrix, groups, spec, refs)
+    plan = norm_axis.plan(matrix, candidates, stability, refs, labels, offered, high, rest)
+    missing = {k: v for k, v in plan.unavailable.items() if k in offered}
+    notes: dict = {"unavailable": missing, **plan.evidence}
+
+    def source(option: str, block: pd.DataFrame) -> np.ndarray:
+        return norm_axis.normaliser_values(option, refs, block, plan)
+
+    keywords = {
+        "normaliser": list(plan.options),
+        "normaliser_source": source,
+        "unavailable": {"normaliser": plan.unavailable},
+    }
+    return keywords, notes
+
+
+def _screen_every(space: QpcrSpace, name: str) -> robustness.AxisScreen:
+    """:func:`robustness.screen_axis` over every comparison of the study (the first alone else).
+
+    An axis enters the grid when an option alone flips a call or moves a fold change in any
+    comparison, not only in the first: the choice applies to every comparison. The flipped
+    genes and the largest shift are those of every comparison together.
+    """
+    found = robustness.screen_axis(space, name)
+    if len(space.comparisons) < 2:
+        return found
+    flipped = {k: set(v) for k, v in found.flipped.items()}
+    largest = found.max_delta_log2fc
+    for spec in space.comparisons[1:]:
+        other = robustness.screen_axis(space.comparison_view(spec.id), name)
+        for option, genes in other.flipped.items():
+            flipped.setdefault(option, set()).update(genes)
+        largest = max(largest, other.max_delta_log2fc)
+    merged = {k: tuple(sorted(v)) for k, v in flipped.items()}
+    admitted = any(merged.values()) or largest > found.min_log2fc
+    return replace(found, flipped=merged, max_delta_log2fc=float(largest), admitted=admitted)
+
+
+def _admitted_elsewhere(space: QpcrSpace, name: str) -> bool:
+    """True when an option of ``name`` alone matters in a comparison other than the first."""
+    return any(
+        robustness.screen_axis(space.comparison_view(spec.id), name).admitted
+        for spec in space.comparisons[1:]
+    )
 
 
 def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> tuple[dict, dict, CellTables]:
@@ -520,6 +848,7 @@ def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> tuple[dict, di
     every = eff_axis.unavailable(inputs.table, curves)  # asked for or not: said in the facts
     trust = settings.design.import_trust if settings.design is not None else None
     every.update(not_measured(trust))
+    every.update(cq_only.not_measured(cq_only.efficiency_plan(inputs.table, settings.design)))
     missing = {k: v for k, v in every.items() if k in offered}
     kept = [o for o in offered if o not in missing]
     tables = CellTables(inputs, settings.amp_calls[0], legacy, calls, curves)
@@ -564,18 +893,47 @@ def study_from_curves(
         genorm=stability,
         contrasts=space.evaluate(space.primary),
         robustness=summary,
-        efficiency=_efficiency(curves),
+        efficiency=_efficiency(inputs.table if model.cq_only is not None else curves),
         conclusion_rule=settings.rule.as_dict(),
     )
     cap = cap_for(settings.design.import_trust if settings.design is not None else None)
-    confidence = {gene: _grade(gene, base, fragility, cap) for gene in space.items}
+    assay: dict[str, str] = {}
+    if model.cq_only is not None:
+        cap = cap or cq_only.cap_for(model.cq_only, analysed_genes(model))
+        assay = {gene: cq_only.assay_note(model.cq_only, gene) for gene in space.items}
+    confidence = {gene: _grade(gene, base, fragility, cap, assay) for gene in space.items}
+    outcomes = None
+    if space.comparisons:
+        every = comparison_grid(space, grid)
+        grid.attrs[COMPARISON_GRID_ATTR] = every
+        primary = (base.contrasts, summary, confidence)
+        outcomes = _comparison_outcomes(space, every, base, primary, settings, cap, assay)
     headline = [gene for gene in settings.headline if gene in space.items]
-    specs = _card_specs(space, stability, summary, settings, headline, counts)
+    views = _card_views(space, outcomes, grid)
+    others = [view.summary for view in views.values()]
+    specs = _card_specs(space, stability, summary, settings, headline, counts, others)
     if "amp_call" in space.dimensions:
-        specs.append(_amp_call_spec(space, grid, summary, headline, inputs.not_amplified))
+        specs.append(
+            _amp_call_spec(
+                space, grid, summary, headline, inputs.not_amplified, model.cq_only is not None
+            )
+        )
     if "efficiency" in space.dimensions:
         specs.append(_efficiency_spec(space, grid, summary, headline, model.axis_notes))
-    cards = build_cards(space, summary, specs, headline, settings.autonomy, grid=grid)
+    if "normaliser" in space.dimensions:
+        specs.append(_normaliser_spec(space, grid, summary, headline, model.axis_notes))
+    if "interrun" in space.dimensions:
+        specs.append(_interrun_spec(space, grid, summary, headline, model.axis_notes))
+    cards = build_cards(
+        space,
+        summary,
+        specs,
+        headline,
+        settings.autonomy,
+        grid=grid,
+        views=views,
+        primary_view=space.comparisons[0].id if space.comparisons else "primary",
+    )
     ref_flips = refset_flip_counts(grid, space, summary)
     ref_effect = group_effect(matrix, settings.candidates, high, rest)
     cards = [_refset_extras(card, ref_flips, ref_effect) for card in cards]
@@ -597,22 +955,233 @@ def study_from_curves(
         )
     extras = _Extras(
         withheld=space.withheld,
+        detected_only=detected_only_dcq(model),
         screen=screen if settings.studio_facts else None,
         routes=routes,
         groups=labels,
         axis_notes=model.axis_notes,
         axes=space.axes,
         screens=model.screens,
+        not_measured=_not_measured_words(inputs.not_measured, settings.candidates),
+        comparisons=outcomes,
+        dimensions=tuple(space.dimensions),
+        cq_only=model.cq_only,
+        analysed=analysed_genes(model),
     )
     facts = _facts(base, confidence, cards, space, settings, headline, counts, extras)
-    result = base.model_copy(update={"confidence": confidence, "facts": facts.as_dict()})
+    update: dict[str, Any] = {"confidence": confidence, "facts": facts.as_dict()}
+    if outcomes is not None:
+        update["comparisons"] = outcomes
+    result = base.model_copy(update=update)
     return result, cards, grid
+
+
+def _card_views(
+    space: QpcrSpace, outcomes: ComparisonsResult | None, grid: pd.DataFrame
+) -> dict[str, View]:
+    """The study's other comparisons as views of the cards (none without several).
+
+    A card's choice applies to the whole study, so it is a person's whenever it changes a call
+    in any comparison, not only in the first.
+    """
+    if outcomes is None or len(outcomes.comparisons) < 2:
+        return {}
+    every = grid.attrs[COMPARISON_GRID_ATTR]
+    return {
+        o.id: View(
+            summary=dict(o.robustness),
+            grid=every[every["comparison"] == o.id],
+            space=space.comparison_view(o.id),
+        )
+        for o in outcomes.comparisons[1:]
+    }
+
+
+def _comparison_outcomes(
+    space: QpcrSpace,
+    every: pd.DataFrame,
+    base: StudyResult,
+    primary: tuple[dict, dict, dict],
+    settings: StudySettings,
+    cap: Cap | None,
+    assay: Mapping[str, str] | None = None,
+) -> ComparisonsResult:
+    """Each comparison's results, corrected p-values, q-values, robustness and grades.
+
+    The primary's are the study's own (``primary``: contrasts, robustness, grades). A gene a
+    comparison cannot test in the primary cell (fewer than two values or pairs) is listed in
+    ``not_tested`` only.
+    """
+    plan = settings.design.comparisons  # type: ignore[union-attr]
+    arrays = space.evaluate_all_arrays(space.primary)
+    out = []
+    for i, spec in enumerate(space.comparisons):
+        a = arrays[spec.id]
+        view = space.comparison_view(spec.id)
+        p_call = a.p if a.p_call is None else a.p_call
+        tested = [g for j, g in enumerate(space.items) if np.isfinite(a.p[j])]
+        index = {g: j for j, g in enumerate(space.items)}
+        if i == 0:
+            contrasts, summary, confidence = primary
+        else:
+            rows = every[every["comparison"] == spec.id]
+            summary = robustness.summary(rows, view)
+            fragility = robustness.fragility(rows, view)
+            contrasts = a.results()
+            graded = base.model_copy(update={"contrasts": contrasts, "robustness": summary})
+            confidence = {g: _grade(g, graded, fragility, cap, assay) for g in tested}
+        q = bh(np.array([a.p[index[g]] for g in tested], dtype=float))
+        reason = (
+            "fewer than two complete pairs (a value in both groups)"
+            if spec.paired
+            else f"fewer than two biological units with a value in {spec.labels[0]} or "
+            f"{spec.labels[1]}"
+        )
+        out.append(
+            ComparisonOutcome(
+                id=spec.id,
+                group_a=spec.labels[0],
+                group_b=spec.labels[1],
+                label=_comparison_label(settings.design, spec.id),
+                primary=i == 0,
+                n_a=len(spec.group_a) if not spec.paired else len(spec.pairs or ()),
+                n_b=len(spec.group_b) if not spec.paired else len(spec.pairs or ()),
+                n_pairs=len(spec.pairs) if spec.paired else None,
+                contrasts={g: contrasts[g] for g in tested},
+                p_adjusted={g: float(p_call[index[g]]) for g in tested},
+                q_value={g: float(v) for g, v in zip(tested, q, strict=True)},
+                robustness={g: summary[g] for g in tested},
+                confidence={g: confidence[g] for g in tested if g in confidence},
+                not_tested={g: reason for g in space.items if g not in set(tested)},
+            )
+        )
+    groups, omnibus = _omnibus(space, plan.pair_by is None)
+    return ComparisonsResult(
+        test=test_of(plan.pair_by, space.correction),
+        correction=space.correction,  # type: ignore[arg-type]
+        pattern=plan.pattern,
+        control=plan.control,
+        pair_by=plan.pair_by,
+        comparisons=out,
+        omnibus_groups=groups,
+        omnibus=omnibus,
+    )
+
+
+def test_of(pair_by: str | None, correction: str) -> str:
+    """The test each comparison uses: paired, pooled-variance (Dunnett, Tukey) or Welch's."""
+    if pair_by is not None:
+        return "paired_t"
+    return "pooled_t" if correction in CORRECTIONS_POOLED else "welch"
+
+
+def _omnibus(space: QpcrSpace, unpaired: bool) -> tuple[list[str], dict[str, Omnibus]]:
+    """Welch's ANOVA per gene across the compared groups, at the planned analysis.
+
+    Only for an unpaired plan comparing three or more groups (a paired design would need a
+    repeated-measures model, which qPilot does not claim). Genes without a result (fewer than
+    two groups with two values) are left out.
+    """
+    units: dict[str, frozenset[str]] = {}
+    for spec in space.comparisons:
+        units.setdefault(spec.labels[0], spec.group_a)
+        units.setdefault(spec.labels[1], spec.group_b)
+    if not unpaired or len(units) < 3:
+        return [], {}
+    values, ref_values = space.cell_arrays(space.primary)
+    relative = values - ref_values.mean(axis=1)[:, None]
+    valid = ~np.isnan(ref_values).any(axis=1)[:, None] & ~np.isnan(relative)
+    masks = [space.units.isin(members) for members in units.values()]
+    f, df1, df2, p = welch_anova([group_stats(relative, valid & m[:, None]) for m in masks])
+    found = {
+        gene: Omnibus(f=float(f[i]), df1=float(df1[i]), df2=float(df2[i]), p=float(p[i]))
+        for i, gene in enumerate(space.items)
+        if np.isfinite(p[i])
+    }
+    return list(units), found
+
+
+def _comparison_label(design: StudyDesign | None, comparison_id: str) -> str:
+    """The comparison's words: its label, else ``"<group a> vs <group b>"``."""
+    for comparison in design.comparison_list() if design is not None else ():
+        if comparison.key() == comparison_id:
+            return comparison.title()
+    return comparison_id
+
+
+def detected_only_dcq(model: StudyModel) -> dict[str, dict[str, Any]]:
+    """Each "detected only in" gene: the group, the counts and that group's ΔCq.
+
+    ΔCq is the engine's Cq of the gene minus the mean Cq of the primary control genes, per
+    biological unit of the group it was detected in (mean Cq of the unit's wells that count as
+    amplified under the primary rule, as the spreadsheet route builds it,
+    :func:`qpilot.qpcr.routes.cq_matrix`), then the mean and SD over those units. No fold change
+    is computed: the other group has no measured amount. ``fisher_p`` is the detection counts'
+    own test, Fisher's exact test (two-sided) on detected / not detected by group (science review
+    J8: 6 of 6 against 0 of 6 is p = 0.002), so a presence/absence difference is not mistaken for
+    "nothing found"; it is orientation, never a call (no conclusion, card or grid reads it).
+    """
+    from scipy.stats import fisher_exact
+
+    from qpilot.qpcr.routes import cq_matrix
+
+    space = model.space
+    if not space.detected_only:
+        return {}
+    settings, inputs = model.settings, model.inputs
+    calls = settings.design.well_calls if settings.design is not None else None
+    cq = cq_matrix(inputs.table, inputs.units, calls, amp_call=settings.amp_calls[0])
+    refs = [r for r in space.primary["refs"] if r in cq.columns]
+    labels = model.labels or (settings.group_var, "rest")
+    groups = dict(zip(labels, (model.high, model.rest), strict=True))
+    out: dict[str, dict[str, Any]] = {}
+    for gene, only in sorted(space.detected_only.items()):
+        entry: dict[str, Any] = {
+            "group": only.group,
+            "absent": only.absent,
+            "n_detected": only.n_detected,
+            "n_group": only.n_group,
+            "n_absent": only.n_absent,
+            "dcq": None,
+            "dcq_sd": None,
+            "fisher_p": None,
+        }
+        if only.group is not None:
+            table = [[only.n_detected, only.n_group - only.n_detected], [0, only.n_absent]]
+            entry["fisher_p"] = float(fisher_exact(table, alternative="two-sided").pvalue)
+        members = groups.get(only.group) if only.group is not None else None
+        if members and gene in cq.columns and refs:
+            rows = cq.loc[cq.index.isin(members)]
+            delta = (rows[gene] - rows[refs].mean(axis=1, skipna=False)).dropna()
+            if len(delta):
+                entry["dcq"] = float(delta.mean())
+            if len(delta) >= 2:
+                entry["dcq_sd"] = float(delta.std(ddof=1))
+        out[gene] = entry
+    return out
+
+
+def _not_measured_words(
+    missing: Mapping[str, list[str]], candidates: Sequence[str]
+) -> dict[str, str]:
+    """Gene -> the units it was not measured in, in words (a control gene says what follows)."""
+    out = {}
+    for gene, units in missing.items():
+        listed = ", ".join(units[:10]) + (f" and {len(units) - 10} more" if len(units) > 10 else "")
+        if gene in candidates:
+            out[gene] = f"{listed} (a control gene: without it the unit has no normaliser)"
+        else:
+            out[gene] = listed
+    return out
 
 
 def write_outputs(
     result: StudyResult, cards: list[DecisionCard], grid: pd.DataFrame, out_dir: str | Path
 ) -> dict[str, Path]:
-    """Write ``results.json``, ``cards.json``, ``facts.json`` and ``grid.csv`` atomically."""
+    """Write ``results.json``, ``cards.json``, ``facts.json`` and ``grid.csv`` atomically.
+
+    A study with several comparisons also gets ``grid_comparisons.csv``.
+    """
     directory = Path(out_dir)
     directory.mkdir(parents=True, exist_ok=True)
     texts = {
@@ -625,6 +1194,9 @@ def write_outputs(
             index=False, float_format="%.10g", lineterminator="\n"
         ),
     }
+    every = comparison_grid_of(grid)
+    if every is not None:  # a study with several comparisons
+        texts[COMPARISON_GRID_FILE] = comparison_grid_csv(every)
     paths = {}
     for name, text in texts.items():
         paths[name] = directory / name
@@ -641,6 +1213,11 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1 << 16), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def analysed_genes(model: StudyModel) -> tuple[str, ...]:
+    """The genes a study's numbers use: its compared genes and its control genes, sorted."""
+    return tuple(sorted({*model.space.items, *model.settings.candidates}))
 
 
 def _efficiency(curves: pd.DataFrame) -> dict[str, float]:
@@ -672,9 +1249,13 @@ def _summary_of_design(
 
 
 def _grade(
-    gene: str, result: StudyResult, fragility: dict[str, int], cap: Cap | None = None
+    gene: str,
+    result: StudyResult,
+    fragility: dict[str, int],
+    cap: Cap | None = None,
+    assay: Mapping[str, str] | None = None,
 ) -> Grade:
-    checks = checks_for(gene, result, fragility)
+    checks = checks_for(gene, result, fragility, (assay or {}).get(gene))
     holds = result.robustness[gene].holds
     return grade(
         START_LEVEL,
@@ -812,10 +1393,12 @@ def _card_specs(
     settings: StudySettings,
     headline: Sequence[str],
     counts: dict[str, int],
+    others: Sequence[dict[str, GeneRobustness]] = (),
 ) -> list[CardSpec]:
     """The cards the qPCR plugin asks the core to build (the core adds impact and rank).
 
-    The cut-off card exists only when the groups are defined from the data.
+    The cut-off card exists only when the groups are defined from the data. ``others`` are
+    the robustness summaries of the study's other comparisons (a flip there counts too).
     """
 
     def option_facts(contexts: list[str]) -> list[str]:
@@ -833,7 +1416,9 @@ def _card_specs(
     refset_facts += option_facts([ctx for _, ctx in ref_options])
 
     cut_ids = [f"cut_{_pct(cut)}" for cut in settings.cuts]
-    undetermined_flips = card_impact(summary, "undetermined")["flips"]
+    undetermined_flips = any(
+        card_impact(s, "undetermined")["flips"] for s in (summary, *others) if s
+    )
     specs = [
         CardSpec(
             card_id="card_refset",
@@ -959,25 +1544,145 @@ def _efficiency_spec(
     )
 
 
+NORMALISER_WORDING = (
+    "The answer depends on what each gene is divided by: the reference genes chosen for this "
+    "study, the pair NormFinder or geNorm ranks steadiest, or the mean of every gene measured. "
+    "The reference genes in use stay a person's choice."
+)
+INTERRUN_WORDING = (
+    "The answer depends on whether differences between plates are corrected, and how: with "
+    "the calibrator sample measured on every plate, or with the measurements plates share."
+)
+
+
+def _axis_card(
+    space: QpcrSpace,
+    grid: pd.DataFrame,
+    summary: dict[str, GeneRobustness],
+    headline: Sequence[str],
+    notes: Mapping[str, dict],
+    name: str,
+    prefix: str,
+    wording: str,
+    method_card: str,
+) -> CardSpec:
+    """The card of an opt-in axis whose options are the axis's own ids (one per option)."""
+    axis = space.axes[name]
+    options = list(space.dimensions[name])
+    by_value = {o.value: o for o in axis.options}
+    own = dict(notes.get(name, {}))
+    slugs = [slug(str(o)) for o in options]
+    return CardSpec(
+        card_id=f"card_{name}",
+        kind=get_axis(name).card_kind,
+        dimension=name,
+        options=[OptionSpec(id=str(o), label=by_value[o].label, value=o) for o in options],
+        recommended=str(space.primary[name]),
+        rationale_template=f"{name}_v1",
+        evidence={
+            "title": axis.title,
+            "wording": wording,
+            "n_flipped_by_option": flip_counts(grid, space, summary, name),
+            "unavailable": dict(axis.unavailable),
+            **{k: v for k, v in own.items() if k != "unavailable"},
+            "method_card": method_card,
+        },
+        facts=[
+            f"f_n_flipped_{name}",
+            "f_n_genes",
+            *[f"f_{prefix}_label_{s}" for s in slugs],
+            *[f"f_n_flipped_{prefix}_{s}" for s in slugs],
+            *_option_facts(headline, [str(o) for o in options]),
+        ],
+    )
+
+
+def _normaliser_spec(
+    space: QpcrSpace,
+    grid: pd.DataFrame,
+    summary: dict[str, GeneRobustness],
+    headline: Sequence[str],
+    notes: Mapping[str, dict],
+) -> CardSpec:
+    """The "What to normalise each gene to" card (only when the axis is in the grid)."""
+    card = _axis_card(
+        space,
+        grid,
+        summary,
+        headline,
+        notes,
+        "normaliser",
+        "norm",
+        NORMALISER_WORDING,
+        norm_axis.METHOD_CARD_PATH,
+    )
+    own = notes.get("normaliser", {})
+    pairs = own.get("refs") or {}
+    options = [
+        o.model_copy(update={"label": f"{o.label} ({', '.join(pairs[o.id])})"})
+        if o.id in pairs
+        else o
+        for o in card.options
+    ]
+    card = card.model_copy(update={"options": options})
+    extra = [
+        *(["f_nf_best_pair", "f_nf_pair_stability"] if own.get("normfinder") else []),
+        *(["f_genorm_best_pair"] if own.get("genorm_pair") else []),
+        *(["f_nf_agreement"] if own.get("agreement") else []),
+        *(["f_gm_n_genes", "f_gm_min_genes"] if own.get("global_mean") else []),
+    ]
+    return card.model_copy(update={"facts": list(dict.fromkeys([*card.facts, *extra]))})
+
+
+def _interrun_spec(
+    space: QpcrSpace,
+    grid: pd.DataFrame,
+    summary: dict[str, GeneRobustness],
+    headline: Sequence[str],
+    notes: Mapping[str, dict],
+) -> CardSpec:
+    """The "How to correct differences between plates" card (only when one flips a call)."""
+    return _axis_card(
+        space,
+        grid,
+        summary,
+        headline,
+        notes,
+        "interrun",
+        "irc",
+        INTERRUN_WORDING,
+        irc.METHOD_CARD_PATH,
+    )
+
+
 def _amp_call_spec(
     space: QpcrSpace,
     grid: pd.DataFrame,
     summary: dict[str, GeneRobustness],
     headline: Sequence[str],
     not_amplified: Mapping[str, int],
+    cq_values: bool = False,
 ) -> CardSpec:
     """The "Which curves count as amplified" card (only when the dimension is in the grid).
 
     The recommended option is the primary rule (``linregpcr`` unless a person chose another).
+    In a file of Cq values only (``cq_values``) that rule reads the file's own Cq, and its label
+    says so (:data:`qpilot.qpcr.cq_only.CQ_RULE_LABEL`).
     """
     options = list(space.dimensions["amp_call"])
     flips = amp_flip_counts(grid, space, summary)
     slugs = [slug(rule_id) for rule_id in options]
+
+    def label(rule_id: str) -> str:
+        if cq_values and rule_id == RECOMMENDED:
+            return cq_only.CQ_RULE_LABEL
+        return RULES[rule_id].label
+
     return CardSpec(
         card_id="card_amp_call",
         kind="amp_call",
         dimension="amp_call",
-        options=[OptionSpec(id=r, label=RULES[r].label, value=r) for r in options],
+        options=[OptionSpec(id=r, label=label(r), value=r) for r in options],
         recommended=space.primary["amp_call"],
         rationale_template="ampcall_v1",
         evidence={
@@ -1005,12 +1710,22 @@ class _Extras:
     """Facts beyond the legacy set: withheld genes, the Studio facts, the design's groups."""
 
     withheld: Mapping[str, str]
+    detected_only: Mapping[str, Mapping[str, Any]]
     screen: AmpScreen | None
     routes: Mapping[str, RouteResult] | None
     groups: tuple[str, str] | None
     axis_notes: Mapping[str, dict] = field(default_factory=dict)
     axes: Mapping[str, object] = field(default_factory=dict)
     screens: Mapping[str, robustness.AxisScreen] = field(default_factory=dict)
+    not_measured: Mapping[str, str] = field(default_factory=dict)
+    comparisons: ComparisonsResult | None = None
+    dimensions: tuple[str, ...] = ()
+    cq_only: EfficiencyPlan | None = None
+    analysed: tuple[str, ...] = ()  # the study's genes and its control genes
+
+
+#: A grid dimension's name in the flip-count fact ids (``f_n_flipped_refset``, ...).
+FLIP_SUFFIX = {"refs": "refset", "cut": "cutoff"}
 
 
 def _facts(
@@ -1052,6 +1767,11 @@ def _facts(
             if "efficiency" in flipped
             else {}
         ),
+        **{
+            f"f_n_flipped_{name}": len(flipped[name])
+            for name in ("normaliser", "interrun")
+            if name in flipped
+        },
         "f_n_hold_lt_80": sum(result.robustness[gene].holds < HOLDS_LOW for gene in items),
         **{f"f_{key}": value for key, value in counts.items()},
     }
@@ -1106,6 +1826,8 @@ def _facts(
             _amp_call_facts(add, card)
         if card.id == "card_efficiency":
             _efficiency_card_facts(add, card)
+        if card.id in ("card_normaliser", "card_interrun"):
+            _axis_card_facts(add, card, "norm" if card.id == "card_normaliser" else "irc")
     worst = slug(stability.order[-1])
     for gene in headline:
         source = f"f_fc_{slug(gene)}_{worst}"
@@ -1114,7 +1836,53 @@ def _facts(
             add(f"f_fc_{slug(gene)}_worst", registry.get(source).value, FC_FMT, TIMES, path)
     _extra_facts(add, extras, settings)
     _axis_facts(add, extras)
+    _comparison_facts(add, extras)
     return registry
+
+
+def _comparison_facts(add: Callable[..., None], extras: _Extras) -> None:
+    """Facts for units not measured for a gene and for a study's several comparisons.
+
+    None exist in a study where every unit has every gene and the design has one comparison
+    (every existing study). Comparison facts are numbered ``f_cmp<i>_*`` in the plan's order
+    (1 = the primary), so a gene or group name can never collide with another fact.
+    """
+    if extras.not_measured:
+        add("f_n_not_measured", len(extras.not_measured), path="not_measured")
+        for gene, words in extras.not_measured.items():
+            add(f"f_not_measured_{slug(gene)}", words, path=f"not_measured.{gene}")
+    found = extras.comparisons
+    if found is None:
+        return
+    add("f_n_comparisons", len(found.comparisons), path="comparisons.comparisons")
+    for gene, result in found.omnibus.items():
+        add(f"f_anova_p_{slug(gene)}", result.p, "{:.2g}", "", f"comparisons.omnibus.{gene}.p")
+    add("f_cmp_test", TEST_WORDS[found.test], path="comparisons.test")
+    add("f_cmp_correction", CORRECTION_WORDS[found.correction], path="comparisons.correction")
+    if found.pair_by is not None:
+        add("f_cmp_pair_by", found.pair_by, path="comparisons.pair_by")
+    for i, outcome in enumerate(found.comparisons, start=1):
+        root = f"comparisons.{outcome.id}"
+        add(f"f_cmp{i}_label", outcome.label, path=f"{root}.label")
+        add(f"f_cmp{i}_n_a", outcome.n_a, path=f"{root}.n_a")
+        add(f"f_cmp{i}_n_b", outcome.n_b, path=f"{root}.n_b")
+        calls = [c.conclusion for c in outcome.contrasts.values()]
+        add(f"f_cmp{i}_n_up", calls.count("up"), path=f"{root}.contrasts")
+        add(f"f_cmp{i}_n_down", calls.count("down"), path=f"{root}.contrasts")
+        add(f"f_cmp{i}_n_tested", len(outcome.contrasts), path=f"{root}.contrasts")
+        for dim in extras.dimensions:
+            flipped = robustness.flipped_by(outcome.robustness, dim)
+            fid = f"f_cmp{i}_n_flipped_{FLIP_SUFFIX.get(dim, slug(dim))}"
+            add(fid, len(flipped), path=f"{root}.robustness")
+        for gene, contrast in outcome.contrasts.items():
+            s, path = slug(gene), f"{root}.contrasts.{gene}"
+            add(f"f_cmp{i}_fc_{s}", contrast.fc, FC_FMT, TIMES, f"{path}.fc")
+            add(f"f_cmp{i}_p_{s}", contrast.p, "{:.2g}", "", f"{path}.p")
+            padj = outcome.p_adjusted[gene]
+            add(f"f_cmp{i}_padj_{s}", padj, "{:.2g}", "", f"{root}.p_adjusted.{gene}")
+            add(f"f_cmp{i}_q_{s}", outcome.q_value[gene], "{:.2g}", "", f"{root}.q_value.{gene}")
+            holds = outcome.robustness[gene].holds
+            add(f"f_cmp{i}_holds_{s}", holds, "{:.0%}", "", f"{root}.robustness.{gene}.holds")
 
 
 def _refset_facts(add: Callable[..., None], card: DecisionCard) -> None:
@@ -1150,7 +1918,9 @@ def _amp_call_facts(add: Callable[..., None], card: DecisionCard) -> None:
     """Facts for the amplification-call card, read from the card itself."""
     root = f"cards.{card.id}.evidence"
     evidence = card.evidence
-    add("f_amp_primary", RULES[card.recommended].label, path=f"{root}.rules.{card.recommended}")
+    primary = next((o.label for o in card.options if o.id == card.recommended), None)
+    label = primary or RULES[card.recommended].label
+    add("f_amp_primary", label, path=f"{root}.rules.{card.recommended}")
     for option in card.options:
         s = slug(option.id)
         add(f"f_amp_label_{s}", option.label, path=f"{root}.rules.{option.id}.label")
@@ -1174,6 +1944,60 @@ def _efficiency_card_facts(add: Callable[..., None], card: DecisionCard) -> None
         add(f"f_n_flipped_eff_{s}", flips, path=f"{root}.evidence.n_flipped_by_option.{option.id}")
 
 
+def _axis_card_facts(add: Callable[..., None], card: DecisionCard, prefix: str) -> None:
+    """Facts for the normaliser or inter-run card, read from the card itself."""
+    root = f"cards.{card.id}"
+    for option in card.options:
+        s = slug(option.id)
+        label = option.label  # inside a sentence; a name such as "NormFinder's" keeps its case
+        if label.split(" ", 1)[0][1:].islower():
+            label = label[:1].lower() + label[1:]
+        add(f"f_{prefix}_label_{s}", label, path=f"{root}.{option.id}.label")
+        flips = int(card.evidence["n_flipped_by_option"][option.id])
+        path = f"{root}.evidence.n_flipped_by_option.{option.id}"
+        add(f"f_n_flipped_{prefix}_{s}", flips, path=path)
+
+
+def _normaliser_facts(add: Callable[..., None], notes: Mapping[str, Any]) -> None:
+    """NormFinder's and geNorm's best pairs and the global mean's gene count (when offered)."""
+    base = "axes.normaliser"
+    found = notes.get("normfinder")
+    if found:
+        add("f_nf_best", str(found["best"]), path=f"{base}.normfinder.best")
+        add("f_nf_best_pair", " and ".join(found["best_pair"]), path=f"{base}.normfinder.best_pair")
+        add(
+            "f_nf_pair_stability",
+            float(found["pair_stability"]),
+            "{:.3f}",
+            path=f"{base}.normfinder.pair_stability",
+        )
+        for gene, value in found["stability"].items():
+            add(f"f_nf_{slug(gene)}", float(value), "{:.3f}", path=f"{base}.normfinder.stability")
+    if notes.get("genorm_pair"):
+        add("f_genorm_best_pair", " and ".join(notes["genorm_pair"]), path=f"{base}.genorm_pair")
+    if notes.get("agreement"):
+        add("f_nf_agreement", str(notes["agreement"]), path=f"{base}.agreement")
+    gm = notes.get("global_mean") or {}
+    if gm:
+        add("f_gm_n_genes", int(gm["n_genes"]), path=f"{base}.global_mean.n_genes")
+        add("f_gm_min_genes", int(gm["min_genes"]), path=f"{base}.global_mean.min_genes")
+        shift = gm.get("group_shift")
+        if shift:
+            path = f"{base}.global_mean.group_shift"
+            add("f_gm_shift_fold", float(shift["fold"]), FC_FMT, TIMES, f"{path}.fold")
+            add("f_gm_shift_p", float(shift["p"]), "{:.2g}", "", f"{path}.p")
+
+
+def _interrun_facts(add: Callable[..., None], notes: Mapping[str, Any]) -> None:
+    """How many genes are split over plates and what can correct them (when offered)."""
+    base = "axes.interrun"
+    add("f_irc_n_runs", int(notes["n_runs"]), path=f"{base}.n_runs")
+    add("f_irc_n_split", int(notes["n_split_targets"]), path=f"{base}.n_split_targets")
+    n_cal = len(notes.get("calibrators") or {})
+    add("f_irc_n_calibrated", n_cal, path=f"{base}.calibrators")
+    add("f_irc_n_pairs", int(notes["n_plate_pairs_sharing"]), path=f"{base}.n_plate_pairs_sharing")
+
+
 def _axis_facts(add: Callable[..., None], extras: _Extras) -> None:
     """Facts for the opt-in axes a study offered: status, screening, what did not apply.
 
@@ -1191,6 +2015,10 @@ def _axis_facts(add: Callable[..., None], extras: _Extras) -> None:
         if "std_curve_fallback" in notes:
             genes = ", ".join(notes["std_curve_fallback"]) or "none"
             add("f_eff_std_fallback", genes, path=f"{base}.std_curve_fallback")
+        if name == "normaliser":
+            _normaliser_facts(add, notes)
+        if name == "interrun":
+            _interrun_facts(add, notes)
         screen = extras.screens.get(name)
         if screen is not None:
             add(
@@ -1218,6 +2046,19 @@ def _extra_facts(add: Callable[..., None], extras: _Extras, settings: StudySetti
         add("f_n_withheld", len(extras.withheld), path="withheld")
         for gene, reason in extras.withheld.items():
             add(f"f_withheld_{slug(gene)}", reason, path=f"withheld.{gene}")
+    for gene, only in extras.detected_only.items():
+        s, path = slug(gene), f"detected_only.{gene}"
+        add(f"f_detected_only_{s}", only["group"] or "neither group", path=f"{path}.group")
+        add(f"f_absent_only_{s}", only["absent"], path=f"{path}.absent")
+        add(f"f_n_detected_only_{s}", only["n_detected"], COUNT_FMT, path=f"{path}.n_detected")
+        add(f"f_n_units_only_{s}", only["n_group"], COUNT_FMT, path=f"{path}.n_group")
+        add(f"f_n_absent_only_{s}", only["n_absent"], COUNT_FMT, path=f"{path}.n_absent")
+        if only.get("dcq") is not None:
+            add(f"f_dcq_only_{s}", only["dcq"], "{:.2f}", path=f"{path}.dcq")
+        if only.get("dcq_sd") is not None:
+            add(f"f_dcq_sd_only_{s}", only["dcq_sd"], "{:.2f}", path=f"{path}.dcq_sd")
+        if only.get("fisher_p") is not None:
+            add(f"f_fisher_p_only_{s}", only["fisher_p"], "{:.2g}", path=f"{path}.fisher_p")
     if extras.groups is not None:
         add("f_group_a", extras.groups[0], path="design.comparison.group_a")
         add("f_group_b", extras.groups[1], path="design.comparison.group_b")
@@ -1237,3 +2078,24 @@ def _extra_facts(add: Callable[..., None], extras: _Extras, settings: StudySetti
             add(f"f_screen_amp_flips_{s}", rule.n_flipped, path=f"{path}.flipped")
             delta = rule.max_delta_log2fc
             add(f"f_screen_amp_dlog2fc_{s}", delta, "{:.2f}", path=f"{path}.max_delta_log2fc")
+    if extras.cq_only is not None:
+        _cq_only_facts(add, extras.cq_only, extras.analysed)
+
+
+def _cq_only_facts(add: Callable[..., None], plan: EfficiencyPlan, analysed: Sequence[str]) -> None:
+    """A file of Cq values only: that it is, and where each analysed gene's efficiency is from.
+
+    None exist for a study with curves (``f_cq_only`` marks a Cq-only study for every view).
+    """
+    add("f_cq_only", "Cq values only", path="cq_only")
+    genes = [g for g in analysed if g in plan.assays]
+    assumed = [g for g in genes if plan.assays[g].source == "assumed"]
+    add("f_n_eff_assumed", len(assumed), path="cq_only.assumed")
+    add("f_n_eff_series", len(genes) - len(assumed), path="cq_only.measured")
+    add("f_eff_assumed_genes", ", ".join(assumed) or "none", path="cq_only.assumed")
+    add("f_eff_assumed_value", cq_only.ASSUMED_EFFICIENCY, "{:.1f}", path="cq_only.assumed_e")
+    for gene in genes:
+        assay, s = plan.assays[gene], slug(gene)
+        source = "dilution series" if assay.source == "dilution_series" else "assumed"
+        add(f"f_eff_source_{s}", source, path=f"cq_only.{gene}.source")
+        add(f"f_eff_words_{s}", cq_only.efficiency_words(assay), path=f"cq_only.{gene}.words")

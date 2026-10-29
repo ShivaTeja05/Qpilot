@@ -24,6 +24,7 @@ import {
   PageHeader,
   Skeleton,
 } from "@/ui";
+import { RepeatOffer } from "@/features/report/RepeatPlan";
 import { scopeOf, useGate, loadingJob, type GateScope, type GateView } from "./api";
 import { GateCards } from "./Cards";
 import { ClassChip, PlateStrip, VerdictCounts } from "./Pieces";
@@ -237,11 +238,17 @@ export function GatePage({
             onFilter={setFilter}
             focusId={focus}
             onLinkRun={view.runs.length ? linkRun : undefined}
+            curvesHref={
+              workspace.kind === "session"
+                ? (plate, wells) => sectionPath(workspace, "curves", plate, wells.join(","))
+                : undefined
+            }
           />
           <Consequences view={view} onOpen={open} />
         </div>
         <div className="flex min-w-0 flex-col gap-5">
           <GateCards view={view} workspace={workspace} scope={scope} />
+          <RepeatOffer workspace={workspace} studyId={view.study_id} />
           <RunFiles
             view={view}
             scope={scope ?? scopeOf(workspace)}

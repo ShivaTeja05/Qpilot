@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, File, Form, UploadFile
+from fastapi.concurrency import run_in_threadpool
 
 from qpilot.core.store import StudyNotFound
 from qpilot.io.connectors import CaptureError
@@ -98,42 +99,9 @@ async def _keep(ctx: AppContext, upload: UploadFile, kind: str, limit: int) -> P
         tmp.unlink(missing_ok=True)
 
 
-def _declares_entities(path: Path) -> bool:
-    """True when a plain XML file declares entities (the hardened parser refuses those)."""
-    try:
-        with path.open("rb") as fh:
-            head = fh.read(64 * 1024)
-    except OSError:
-        return False
-    return b"<!ENTITY" in head
-
-
-def _unreadable(name: str, why: str, path: Path | None = None) -> str:
-    """Why a dropped file cannot be read, in the person's words (the loader's reason kept)."""
-    if path is not None and "not a valid RDML or XML" in why and _declares_entities(path):
-        return (
-            f"{name} could not be read: it declares XML entities, which qPilot refuses (they "
-            "can make a file pull in other files). Export RDML again from your instrument's "
-            "software."
-        )
-    if "too large" in why:
-        detail = why.split("input too large", 1)[1].strip(" ()") if "input too large" in why else ""
-        if "compression ratio" in detail:
-            return (
-                f"{name} could not be read: it is too large when unpacked (its {detail}); qPilot "
-                "refuses it before unpacking. Export the RDML file again."
-            )
-        return f"{name} could not be read: it is too large ({detail or 'over the limit'})."
-    if "no rdml_data.xml" in why or "fails the RDML schema" in why or "unsupported RDML" in why:
-        reason = why.split(": ", 1)[1] if ": " in why else why
-        return (
-            f"{name} could not be read: {reason}. Export RDML again from your instrument's "
-            "software."
-        )
-    return (
-        f"{name} could not be read: it is not a valid RDML file. Export RDML again from your "
-        "instrument's software, then open that file."
-    )
+def _unreadable(name: str, err: Exception, path: Path | None = None) -> str:
+    """Why a dropped file cannot be read, in the person's words (``intake.unreadable``)."""
+    return intake.unreadable(name, err, path)
 
 
 def _remember_sentence(ctx: AppContext, sid: str, sentence: str) -> None:
@@ -159,7 +127,7 @@ def _open_job(
         try:
             sid = ctx.studio.open(rdml, sheet, actor="human")
         except RdmlLoadError as err:
-            raise JobError("cannot_open", _unreadable(name, str(err), rdml)) from err
+            raise JobError("cannot_open", _unreadable(name, err, rdml)) from err
         except Exception as err:  # any reader failure is a sentence about the person's file
             text = str(err).replace(str(rdml), name).replace(rdml.name, name).strip()
             raise JobError(
@@ -239,32 +207,36 @@ async def _open_dropped(
         problem = intake.suffix_problem(Path(upload.filename or "").name)
         if problem:
             raise api_error(400, "bad_file", problem)
-    dropped: list[intake.Dropped] = []
+    kept_files: list[Path] = []
     for upload in uploads:
         kept = await _keep(ctx, upload, "export", MAX_RDML_BYTES)
-        name = views.display_name(kept) or kept.name
-        if any(d.path == kept for d in dropped):
-            continue  # the same file dropped twice
+        if kept not in kept_files:  # the same file dropped twice
+            kept_files.append(kept)
+    kept_sheet = None
+    if sheet is not None and sheet.filename:
+        kept_sheet = await _keep(ctx, sheet, "sheet", MAX_SHEET_BYTES)
+
+    def sort_and_open() -> JobView:  # off the event loop: reading by content takes seconds
+        dropped: list[intake.Dropped] = []
+        for kept in kept_files:
+            try:
+                dropped.append(intake.classify(kept, views.display_name(kept) or kept.name))
+            except intake.Refused as err:
+                raise api_error(400, err.code, err.message) from err
         try:
-            dropped.append(intake.classify(kept, name))
+            found = intake.sort_dropped(dropped)
         except intake.Refused as err:
             raise api_error(400, err.code, err.message) from err
-    sheet_path = None
-    if sheet is not None and sheet.filename:
-        sheet_path = await _keep(ctx, sheet, "sheet", MAX_SHEET_BYTES)
-    try:
-        found = intake.sort_dropped(dropped)
-    except intake.Refused as err:
-        raise api_error(400, err.code, err.message) from err
-    if found.sheets:
-        if sheet_path is not None:
-            names = f"{views.display_name(sheet_path)}, {found.sheets[0].name}"
+        if found.sheets and kept_sheet is not None:
+            names = f"{views.display_name(kept_sheet)}, {found.sheets[0].name}"
             raise api_error(400, "mixed_files", f"Add one sample sheet at a time ({names}).")
-        sheet_path = found.sheets[0].path
-    if found.rdml:
-        unused = [item.name for item in found.unused]
-        return _open_job(ctx, intake.rdml_input(found.rdml[0]), sheet_path, sentence, unused)
-    return _import_job(ctx, found, sheet_path, sentence)
+        sheet_path = intake.sheet_for(ctx.store, found, kept_sheet)  # a Cq table: its columns
+        if found.rdml:
+            unused = [item.name for item in found.unused]
+            return _open_job(ctx, intake.rdml_input(found.rdml[0]), sheet_path, sentence, unused)
+        return _import_job(ctx, found, sheet_path, sentence)
+
+    return await run_in_threadpool(sort_and_open)  # RT-EX-010
 
 
 @router.post("/workspaces", response_model=JobStarted, status_code=202)
@@ -305,7 +277,10 @@ async def open_file(
     rdml_path = await _keep(ctx, rdml, "rdml", MAX_RDML_BYTES)
     sheet_path = None
     if sheet is not None and sheet.filename:
-        sheet_path = await _keep(ctx, sheet, "sheet", MAX_SHEET_BYTES)
+        kept_sheet = await _keep(ctx, sheet, "sheet", MAX_SHEET_BYTES)
+        sheet_path = await run_in_threadpool(  # a Cq table's sample columns, off the loop
+            intake.sheet_for, ctx.store, intake.Sorted(), kept_sheet
+        )
     return JobStarted(job=_open_job(ctx, rdml_path, sheet_path, sentence.strip()))
 
 

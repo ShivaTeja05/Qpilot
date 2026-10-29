@@ -246,9 +246,11 @@ def test_replicates_cannot_be_checked_without_two_amplified_wells():
     ("name", "symbol", "status"),
     [
         ("MYCN(4)", "MYCN", "consistent"),
-        ("1-Mar", "MARCHF1", "consistent"),
-        ("1-Mar", "MTARC1", "consistent"),
-        ("comp_primer", "MYCN", "consistent"),
+        # a name that does not by itself name one gene cannot confirm the symbol proposed for
+        # it (the lookup that made the proposal would confirm itself): a person confirms
+        ("1-Mar", "MARCHF1", "cannot_check"),  # Excel's date for MARCHF1, MTARC1 and RTL1
+        ("1-Mar", "MTARC1", "cannot_check"),
+        ("comp_primer", "MYCN", "cannot_check"),  # not a gene name
         ("NMYC", "NMYC", "contradicted"),  # a previous symbol, not the approved one
         ("TP53", "p53", "contradicted"),  # an alias
         ("SEPT2", "2-Sep", "contradicted"),  # a date
@@ -461,7 +463,8 @@ def test_check_proposal_on_the_synthetic_file(mini, tmp_path):
     assert series.details["r2"] > 0.99
     assert check("design.well_role", "ghost", {"role": "std"}).status == "contradicted"
     symbol = check("design.gene_symbol", "1-Mar", {"symbol": "MARCHF1"})
-    assert symbol.status == "consistent"
+    assert symbol.status == "cannot_check"  # 1-Mar is Excel's date for several genes
+    assert "MARCHF1" in symbol.details["name_candidates"]
     assert check("design.gene_symbol", "GAPDH", {"symbol": "ACTB"}).status == "contradicted"
     accepted = [
         proposal("design.group", s, {"group": g}, "accepted")

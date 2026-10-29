@@ -192,6 +192,10 @@ def write(report: Report, out_dir: str | Path) -> tuple[Path, Path]:
     out.mkdir(parents=True, exist_ok=True)
     json_path = out / f"{report.profile}.json"
     md_path = out / f"{report.profile}.md"
-    json_path.write_text(json.dumps(report.model_dump(), indent=2, sort_keys=True) + "\n")
-    md_path.write_text(markdown([report]) + details(report))
+    json_path.write_text(
+        json.dumps(report.model_dump(), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    md_path.write_text(markdown([report]) + details(report), encoding="utf-8", newline="\n")
     return json_path, md_path

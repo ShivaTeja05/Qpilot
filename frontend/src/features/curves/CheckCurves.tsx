@@ -6,7 +6,7 @@
 import { ScanLine } from "lucide-react";
 import { useRef, useState } from "react";
 import { api, unwrap, type JobView, type Schemas } from "@/api/client";
-import { count } from "@/lib/format";
+import { plural } from "@/lib/format";
 import { useFocusTarget } from "@/shell/actions";
 import { useWrite } from "@/shell/writes";
 import type { SectionProps } from "@/shell/sections";
@@ -91,20 +91,37 @@ export function CheckCurvesJob({
 }
 
 /** Before any proposal: what the check does, and the button. */
-export function CheckCurvesPanel({ state }: { state: CheckCurvesState }) {
+export function CheckCurvesPanel({
+  state,
+  cqOnly = false,
+}: {
+  state: CheckCurvesState;
+  /** A file of Cq values only: nothing to fit or judge (docs/cq-tables.md). */
+  cqOnly?: boolean;
+}) {
   return (
     <Card>
       <CardBody className="flex flex-col gap-3 pt-4">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           <div className="max-w-2xl text-[13px] text-muted">
             <p className="text-sm font-medium text-fg">Check the curves</p>
-            <p className="mt-1">
-              qPilot fits every curve with LinRegPCR and asks the Curve Judge, a local curve
-              classifier that reads only the curve’s shape, for its own call on each study well.
-              Where the two disagree in a way that could change a conclusion, each well is listed
-              here for you to decide; the others change nothing and are not listed. The
-              amplification rule is proposed too.
-            </p>
+            {cqOnly ? (
+              <p className="mt-1">
+                This file has Cq values only, so there is no curve for LinRegPCR to fit or for the
+                Curve Judge to read. The check proposes the amplification rule (a well counts when
+                the file gives it a Cq; the Cq cut-offs stay choices whose consequences are shown
+                later), and the Cq table below is what you confirm: each sample’s Cq per well, the
+                wells without a Cq and the replicates whose spread is wider than expected.
+              </p>
+            ) : (
+              <p className="mt-1">
+                qPilot fits every curve with LinRegPCR and asks the Curve Judge, a local curve
+                classifier that reads only the curve’s shape, for its own call on each study well.
+                Where the two disagree in a way that could change a conclusion, each well is listed
+                here for you to decide; the others change nothing and are not listed. The
+                amplification rule is proposed too.
+              </p>
+            )}
           </div>
           <CheckCurvesButton state={state} primary />
         </div>
@@ -114,16 +131,19 @@ export function CheckCurvesPanel({ state }: { state: CheckCurvesState }) {
   );
 }
 
+/**
+ * What the check found, said once: the server's message already holds the notes and the Curve
+ * Judge's sentence (counts included), so only a report without one is pieced together here.
+ */
 function ReportText({ report }: { report: Report }) {
+  if (report.message) return <p className="text-[13px] text-fg">{report.message}</p>;
   return (
     <div className="flex flex-col gap-1 text-[13px]">
-      {report.message ? <p className="text-fg">{report.message}</p> : null}
       {report.disagreements != null ? (
         <p className="text-muted">
-          The Curve Judge disagrees with LinRegPCR on {count(report.disagreements)} study well
-          {report.disagreements === 1 ? "" : "s"}
+          The Curve Judge disagrees with LinRegPCR on {plural(report.disagreements, "study well")}
           {report.targets_that_matter != null
-            ? `; on ${count(report.targets_that_matter)} target${report.targets_that_matter === 1 ? "" : "s"} resolving them could change a conclusion`
+            ? `; on ${plural(report.targets_that_matter, "target")} resolving them could change a conclusion`
             : ""}
           .
         </p>

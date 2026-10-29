@@ -70,8 +70,13 @@ def test_missing_file_is_refused(tmp_path):
 def test_zip_without_rdml_member_is_refused(tmp_path):
     path = tmp_path / "other.rdml"
     with zipfile.ZipFile(path, "w") as archive:
-        archive.writestr("something_else.xml", "<rdml/>")
+        archive.writestr("notes.txt", "<rdml/>")  # no XML member at all
     with pytest.raises(RdmlLoadError, match="no rdml_data.xml"):
+        load(path)
+    with zipfile.ZipFile(path, "w") as archive:  # two XML members, neither rdml_data.xml
+        archive.writestr("a.xml", "<rdml/>")
+        archive.writestr("b.xml", "<rdml/>")
+    with pytest.raises(RdmlLoadError, match="none is named rdml_data.xml"):
         load(path)
 
 

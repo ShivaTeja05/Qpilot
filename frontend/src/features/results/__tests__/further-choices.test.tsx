@@ -72,7 +72,8 @@ describe("the efficiency models, not tested yet", () => {
     wrap(<AxisPanel axis={offAxis} workspace={workspace} />);
     const panel = screen.getByRole("region", { name: "Also test efficiency models" });
     // the badge, and every model but LinRegPCR's
-    expect(within(panel).getAllByText(AXIS_STATUS.off.word)).toHaveLength(offAxis.options.length);
+    expect(within(panel).getAllByText(AXIS_STATUS.off.word)).toHaveLength(1);
+    expect(within(panel).getAllByText("Not in the grid")).toHaveLength(offAxis.options.length - 1);
     expect(panel.textContent).toContain(offAxis.text.plain);
     for (const o of offAxis.options) expect(panel.textContent).toContain(o.label);
     expect(within(panel).getByText("In use")).toBeTruthy();
@@ -166,7 +167,7 @@ describe("the efficiency models, tested", () => {
     expect(link.getAttribute("href")).toContain(`/results/card/${sweptAxis.card_id}`);
     await within(panel).findByRole("button", { name: "Propose to stop testing them" });
     fireEvent.click(within(panel).getByRole("button", { name: /Show what was decided \(1\)/ }));
-    expect(panel.textContent).toContain("Accepted by a person");
+    expect(panel.textContent).toContain("Accepted by you");
   });
 
   it("outside Studio, give the command instead of a proposal", () => {

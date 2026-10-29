@@ -1,0 +1,24 @@
+# Text is stored and checked out with LF on every system, Windows included. qPilot pins files by
+# their bytes (the Curve Judge model, the vendored RDML code, golden Prism scripts, method cards):
+# a checkout that turned LF into CRLF would make the same file a "modified" one.
+* text=auto eol=lf
+
+# Never converted: binary files, and data kept byte for byte as it was written.
+*.png binary
+*.gif binary
+*.jpg binary
+*.pdf binary
+*.mp4 binary
+*.woff2 binary
+*.zip binary
+*.xlsx binary
+*.xls binary
+*.eds binary
+*.lc96p binary
+# RDML is usually a zip archive; a plain-XML one is kept as written too.
+*.rdml -text
+# Upstream datasets (some have CRLF line ends, as their authors exported them).
+sim/data/** -text
+# Prism scripts for Windows are written with CRLF on purpose: the golden files keep it.
+tests/fixtures/prism/*_windows.pzc -text
+# tests/fixtures/corpus/.gitattributes: real instrument exports, byte-pinned in MANIFEST.yaml.

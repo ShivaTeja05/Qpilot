@@ -135,9 +135,10 @@ describe("the gate's words", () => {
   });
 
   it("names plates, wells and places the way a scientist reads them", () => {
-    expect(plateLabel("CAMTA2_20080227")).toBe("CAMTA2");
+    // one plate name everywhere: the run as the file names it (as in Curves and Trace)
+    expect(plateLabel("CAMTA2_20080227")).toBe("CAMTA2_20080227");
     expect(plateLabel("1-Mar_plate")).toBe("1-Mar_plate");
-    expect(wellText("CAMTA2_20080227/F24")).toBe("CAMTA2 · F24");
+    expect(wellText("CAMTA2_20080227/F24")).toBe("CAMTA2_20080227 · F24");
     const ntc = DEMO.evaluations.find((e) => e.rule_id === "G-NTC-1" && e.verdict === "fail")!;
     expect(whereText(ntc)).toBe(`Plate ${plateLabel(ntc.plate)}`); // the target is the plate's gene
     const rep = DEMO.evaluations.find((e) => e.level === "sample")!;
@@ -335,7 +336,7 @@ describe("the Controls page", { timeout: 30_000 }, () => {
     expect(decision.action).toBe("left_out");
     expect(conseq.options[0]!.code).toBe("already_left_out");
     const article = within(cardsRegion()).getByRole("article");
-    expect(text(article.textContent ?? "")).toContain("Decided by a person");
+    expect(text(article.textContent ?? "")).toContain("Decided by you");
     expect(text(article.textContent ?? "")).toContain(`Why: ${decision.reason}`);
     for (const w of decision.left_out) expect(article.textContent).toContain(wellText(w));
     fireEvent.click(within(article).getByRole("button", { name: "Put the wells back" }));

@@ -81,6 +81,12 @@ N_CYCLES = 40
 CYC_COLUMNS: tuple[str, ...] = tuple(f"Cyc{i}" for i in range(1, N_CYCLES + 1))
 THRESHOLD = 0.5
 MAX_MODEL_BYTES = 32 * 1024 * 1024
+#: Added to the refusal when the only change is LF turned into CRLF (a Git checkout on Windows
+#: that ignored the repository's ``.gitattributes``): the file is still refused, by its bytes.
+CRLF_HINT = (
+    " (its line ends were changed to CRLF, as a Git checkout on Windows without the repository's "
+    ".gitattributes does: check the file out again, or reinstall qPilot)"
+)
 NOT_VALIDATED = "not validated for this instrument"
 KEY_NAME = "run_id/well"
 FINGERPRINT_KEYS: tuple[str, ...] = ("instrument", "dye", "target_type", "cycles")
@@ -306,9 +312,11 @@ def load_model(
         raise ModelIntegrityError("model file is too large")
     actual = hashlib.sha256(payload).hexdigest()
     if actual != pinned:
+        # Still refused: the pin is on the bytes. Only the message says what the change was.
+        crlf = b"\r\n" in payload and hashlib.sha256(payload.replace(b"\r\n", b"\n")).hexdigest()
         raise ModelIntegrityError(
             f"model.json SHA-256 {actual[:12]}… does not match model.sha256 {pinned[:12]}…; "
-            "refusing to load a modified model"
+            "refusing to load a modified model" + (CRLF_HINT if crlf == pinned else "")
         )
     if expected_sha256 is not None and actual != expected_sha256:
         raise ModelIntegrityError(
@@ -374,7 +382,45 @@ def _curve(adps: Sequence[Sequence[str]]) -> tuple[np.ndarray, int]:
     return curve, cycles
 
 
+#: Features already read in this process, by (the file's sha256, experiment); see below.
+_FEATURES: dict[tuple[str, str], pd.DataFrame] = {}
+_FEATURES_LOCK = threading.Lock()  # one read at a time: a second asker waits, then shares it
+FEATURES_KEPT = 4  # a few files at most; the demo's are about 40 MB in memory
+
+
 def features_from_rdml(rdml_path: str | Path, experiment_id: str) -> pd.DataFrame:
+    """:func:`read_features`, kept per file contents and experiment (a fresh copy each time).
+
+    Check the curves, the curve-calls view and the Curve Judge's checks read the same file's
+    features; reading them (every curve through rdmlpython) takes ~15 s on the demo.
+    """
+    from qpilot.core.store import sha256_file
+
+    try:
+        key = (sha256_file(Path(rdml_path)), str(experiment_id))
+    except OSError:  # not readable: the reader says why, in its own words
+        return read_features(rdml_path, experiment_id)
+    with _FEATURES_LOCK:
+        found = _FEATURES.get(key)
+        if found is None:
+            found = read_features(rdml_path, experiment_id)
+            if len(_FEATURES) >= FEATURES_KEPT:
+                _FEATURES.pop(next(iter(_FEATURES)), None)
+            _FEATURES[key] = found
+    return found.copy()
+
+
+def features_kept(rdml_path: str | Path, experiment_id: str) -> bool:
+    """True when this file's features for the experiment are already in memory."""
+    from qpilot.core.store import sha256_file
+
+    try:
+        return (sha256_file(Path(rdml_path)), str(experiment_id)) in _FEATURES
+    except OSError:
+        return False
+
+
+def read_features(rdml_path: str | Path, experiment_id: str) -> pd.DataFrame:
     """The model's 40 inputs for every well of one experiment, from the raw curves.
 
     The file is opened only through :func:`qpilot.io.rdml_io.load` (hardened parser) and read

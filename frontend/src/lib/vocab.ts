@@ -5,6 +5,7 @@
  * and the record say the same thing.
  */
 import type { Schemas } from "@/api/client";
+import { count } from "./format";
 
 export type Conclusion = "up" | "down" | "none";
 export type Level = "High" | "Moderate" | "Low" | "Very low";
@@ -190,6 +191,119 @@ export function asVerdict(value: unknown): Verdict | null {
   return alias[v] ?? null;
 }
 
+// ---- the two sets of analyses behind every "holds" ------------------------------------------
+// Mirrors qpilot/explain/sets.py word for word (tests/web/test_sets_words.py checks it): the
+// page, the report, the CLI and the MCP tools say the same thing about the two counts.
+
+/** The analyses qPilot itself checks, in a count: "744 analyses qPilot checks". */
+export const GRID_COUNT = "analyses qPilot checks";
+/** qPilot's set, named when both sets are on the page. */
+export const GRID_NAME = "qPilot's choice grid";
+/** What qPilot's choice grid holds. */
+export const GRID_WHAT = "every combination of the options on the Decision Cards";
+/** The audit's set, named when both sets are on the page. */
+export const AUDIT_NAME = "the audit's reasonable set";
+/** What the audit does, without a count of decisions that goes stale (eight or nine). */
+export const AUDIT_DOES =
+  "A wider, independent re-analysis than qPilot's grid: every combination of the audit's analysis decisions, one verdict per gene.";
+
+/** The audit's decisions qPilot's grid varies too (late_cq: its Cq cut-offs; nondetect: its empty-well rule). */
+const SHARED_DECISIONS = new Set(["refs", "cut", "late_cq", "nondetect"]);
+/** The audit's decisions in plain words (qsim.decisions.PLAIN). */
+export const AUDIT_PLAIN: Record<string, string> = {
+  efficiency: "the efficiency model",
+  flagged: "how flagged wells are handled",
+  late_cq: "the late-Cq cut-off",
+  nondetect: "how non-detects are handled",
+  replicates: "how replicate wells are combined",
+  refs: "the reference genes",
+  cut: "the group cut-off",
+  test: "the statistical test",
+  multiplicity: "the multiple-testing correction",
+};
+/** The audit's decisions when nothing more is known (the demo's eight). */
+export const DEFAULT_AUDIT = [
+  "efficiency",
+  "flagged",
+  "late_cq",
+  "nondetect",
+  "refs",
+  "cut",
+  "test",
+  "multiplicity",
+];
+
+/** `a`, `a and b`, `a, b and c`. */
+export function listWords(words: string[]): string {
+  if (words.length <= 1) return words.join("");
+  return `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
+}
+
+function sentence(text: string): string {
+  return text.startsWith("qPilot") ? text : text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** The audit's decisions qPilot's grid does not vary, in words (the correction aside: the verdicts hold it as planned). */
+export function auditOnly(
+  decisions: readonly string[] = DEFAULT_AUDIT,
+  { efficiencyInGrid = false }: { efficiencyInGrid?: boolean } = {},
+): string[] {
+  return decisions
+    .filter(
+      (d) =>
+        !SHARED_DECISIONS.has(d) &&
+        d !== "multiplicity" &&
+        !(efficiencyInGrid && d === "efficiency"),
+    )
+    .map((d) => AUDIT_PLAIN[d] ?? d.replace(/_/g, " "));
+}
+
+/** How the two sets differ, in plain words (the page's "Why two counts?"). */
+export function setsBridge(
+  decisions: readonly string[] = DEFAULT_AUDIT,
+  options: { efficiencyInGrid?: boolean } = {},
+): string {
+  const only = auditOnly(decisions, options);
+  let first = "";
+  if (only.length) {
+    first = `The audit also varies ${listWords(only)}, which qPilot's grid does not`;
+    if (only.includes("the efficiency model"))
+      first += " (it tests the efficiency models only when you ask, under Results)";
+    first += "; ";
+  }
+  return sentence(
+    `${first}its verdicts leave out single and paired control genes and keep the group cut-off as planned, which qPilot's grid varies. So the same gene can hold in a different share of each.`,
+  );
+}
+
+/** Both counts and what each one is for, in two short sentences. */
+export function setsLine({
+  grid,
+  reasonable,
+  full,
+}: {
+  grid?: number | null;
+  reasonable?: number | null;
+  full?: number | null;
+}): string {
+  const parts: string[] = [];
+  if (grid)
+    parts.push(
+      `qPilot's choice grid is the ${count(grid)} ${GRID_COUNT} (${GRID_WHAT}); it sets each gene's confidence level.`,
+    );
+  if (reasonable)
+    parts.push(
+      `The robustness audit is ${full ? `a wider re-analysis of ${count(full)} analyses` : "a wider re-analysis"}; its verdicts count its ${count(reasonable)} reasonable ones.`,
+    );
+  return parts.join(" ");
+}
+
+/** Why a gene that leans on qPilot's grid can still hold in the audit (said after its verdict). */
+export function verdictDiffers(reasonable?: number | null): string {
+  const n = reasonable ? `${count(reasonable)} reasonable analyses` : "reasonable analyses";
+  return `The audit counts only its ${n}, which keep the group cut-off as planned and leave out single and paired control genes, so a call can hold there and not in qPilot's grid.`;
+}
+
 export const STAGE_LABEL: Record<StageName, string> = {
   design: "Design",
   curves: "Curves",
@@ -256,10 +370,17 @@ export const PRESET_WORDS: Record<string, string> = {
     "the published design of the Vermeulen neuroblastoma dataset: tumours compared by MYCN expression (an expression-defined split, not a clinical call), normalised to the original study's five reference genes",
 };
 
-/** An amplification-call rule id in words. */
-export function ruleWords(rule: unknown): string {
+/** `linregpcr` for a file of Cq values only (docs/cq-tables.md): the same rule, no curve. */
+export const CQ_RULE_WORDS =
+  "the file's own Cq (a well counts when the file gives it a Cq; Cq values only)";
+
+/** An amplification-call rule id in words (`cqValues`: a file of Cq values only). */
+export function ruleWords(rule: unknown, cqValues = false): string {
   const r = String(rule);
+  if (r === "linregpcr" && cqValues) return CQ_RULE_WORDS;
   if (r === "linregpcr") return "LinRegPCR's call (it found an exponential phase and a quantity)";
+  if (r === "linregpcr_call")
+    return "LinRegPCR's call, its “no amplification” respected (a flat curve given a quantity counts as not amplified)";
   if (r === "learned") return "the Curve Judge's call (a model that reads the curve's shape)";
   const m = /^cq_le_(\d+(?:\.\d+)?)$/.exec(r);
   if (m) return `a Cq cut-off: a Cq above ${m[1]} counts as not amplified`;
@@ -267,9 +388,11 @@ export function ruleWords(rule: unknown): string {
 }
 
 /** Short label of an amplification-call rule: `LinRegPCR`, `Cq ≤ 35`, `Curve Judge`. */
-export function ruleLabel(rule: unknown): string {
+export function ruleLabel(rule: unknown, cqValues = false): string {
   const r = String(rule);
+  if (r === "linregpcr" && cqValues) return "The file’s Cq";
   if (r === "linregpcr") return "LinRegPCR";
+  if (r === "linregpcr_call") return "LinRegPCR's call";
   if (r === "learned") return "Curve Judge";
   const m = /^cq_le_(\d+(?:\.\d+)?)$/.exec(r);
   return m ? `Cq ≤ ${m[1]}` : r;
@@ -290,12 +413,64 @@ export const EFFICIENCY_MODEL_WORDS: Record<string, string> = {
   assumed_2: "efficiency assumed to be 2.0 (100 %)",
   standard_curve: "efficiency from the plate's dilution series",
 };
+/** The normalisers the grid can test (qpilot/qpcr/axes/normaliser.py), inside a sentence. */
+export const NORMALISER_WORDS: Record<string, string> = {
+  planned: "the reference genes chosen for this study",
+  normfinder_pair: "NormFinder's best pair of reference genes",
+  genorm_pair: "geNorm's best pair of reference genes",
+  global_mean: "the mean of every gene measured (global mean)",
+};
+/** The corrections between plates the grid can test (qpilot/qpcr/interrun.py). */
+export const INTERRUN_WORDS: Record<string, string> = {
+  none: "no correction between plates",
+  calibrator: "inter-run calibration: the same calibrator sample on every plate",
+  factor: "factor correction from the measurements plates share",
+};
+/** Each further choice's options in words, by axis. */
+export const AXIS_OPTION_WORDS: Record<string, Record<string, string>> = {
+  efficiency: EFFICIENCY_MODEL_WORDS,
+  normaliser: NORMALISER_WORDS,
+  interrun: INTERRUN_WORDS,
+};
 const AXIS_QUESTION: Record<string, string> = {
   efficiency: "which efficiency turns Cq into quantity",
+  normaliser: "what to normalise each gene to",
+  interrun: "how to correct differences between plates",
 };
 
 type Payload = Record<string, unknown>;
 const str = (v: unknown) => String(v ?? "?");
+
+/**
+ * A comparison proposal in words: one comparison, or several (each group vs a control, every
+ * pair, or a person's list) with the correction and any pairing. Mirrors qpilot/studio_state.py.
+ */
+export function comparisonWords(d: Payload): string {
+  const a = str(d.group_a);
+  const b = str(d.group_b);
+  let text = `Compare group “${a}” with group “${b}” (fold change = ${a} relative to ${b})`;
+  const listed = Array.isArray(d.comparisons) ? (d.comparisons as Payload[]) : [];
+  const others = listed.filter((c) => c && !(c.group_a === d.group_a && c.group_b === d.group_b));
+  if (others.length) {
+    const head =
+      d.pattern === "vs_control" && d.control
+        ? `Compare each group with the control “${str(d.control)}”`
+        : d.pattern === "all_pairs"
+          ? "Compare every pair of groups"
+          : "Compare these groups";
+    const pairs = [{ group_a: a, group_b: b }, ...others]
+      .map((c) => `${str(c.group_a)} vs ${str(c.group_b)}`)
+      .join("; ");
+    text = `${head} (${others.length + 1} comparisons: ${pairs}; the first is ${a} vs ${b})`;
+    text +=
+      (d.correction ?? "holm") === "holm"
+        ? ", with Holm's correction across each gene's comparisons"
+        : ", with no correction for several comparisons";
+  }
+  if (d.pair_by)
+    text += `, paired by ${str(d.pair_by)} (a paired test within each ${str(d.pair_by)})`;
+  return text;
+}
 
 const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
   "design.preset": (_s, d) => {
@@ -307,18 +482,28 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
     const role = str(d.role);
     return `Treat sample ${s} as ${ROLE_WORDS[role] ?? `role “${role}”`}`;
   },
-  "design.group": (s, d) => `Put sample ${s} in group “${str(d.group)}”`,
+  "design.group": (s, d) =>
+    d.group == null
+      ? `Take sample ${s} out of every group (it is not compared)`
+      : `Put sample ${s} in group “${str(d.group)}”`,
   "design.bio_unit": (s, d) =>
-    `Sample ${s} belongs to biological unit “${str(d.biological_unit)}”: its wells are technical replicates of that unit and are never counted as separate n`,
+    d.biological_unit == null
+      ? `Sample ${s} is its own biological unit (its wells are technical replicates)`
+      : `Sample ${s} belongs to biological unit “${str(d.biological_unit)}”: its wells are technical replicates of that unit and are never counted as separate n`,
   "design.target_role": (s, d) =>
     d.role === "ref"
       ? `Use target ${s} as a reference gene (other genes are normalised to it)`
       : d.role === "toi"
         ? `Treat target ${s} as a gene of interest`
-        : `Give target ${s} the role “${str(d.role)}”`,
+        : d.role === "ignore"
+          ? `Leave target ${s} out of the study (none of its wells is used)`
+          : `Give target ${s} the role “${str(d.role)}”`,
   "design.gene_symbol": (s, d) => `Target ${s} is the gene with the HGNC symbol ${str(d.symbol)}`,
-  "design.comparison": (_s, d) =>
-    `Compare group “${str(d.group_a)}” with group “${str(d.group_b)}” (fold change = ${str(d.group_a)} relative to ${str(d.group_b)})`,
+  "design.comparison": (_s, d) => comparisonWords(d),
+  "design.pair": (s, d) =>
+    d.pair
+      ? `Sample ${s} belongs to ${str(d.by ?? "pair")} “${str(d.pair)}”: it is paired with that ${str(d.by ?? "pair")}'s samples in the other groups`
+      : `Sample ${s} is not paired with samples of the other groups`,
   "design.dilution_series": (s, d) => {
     const samples =
       d.samples && typeof d.samples === "object" ? (d.samples as Record<string, unknown>) : {};
@@ -332,14 +517,30 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
     const quantities = q.length ? `, quantities ${q[0]} to ${q[q.length - 1]}` : "";
     return `Samples ${span} (${names.length} in all, experiment ${str(d.experiment_id)}) form a dilution series ${s}${quantities}`;
   },
-  "curve.call_rule": (_s, d) => `Count a well as amplified by ${ruleWords(d.rule)}`,
+  "design.purpose": (_s, d) => {
+    if (d.purpose === "quantify")
+      return "This study quantifies samples from a standard curve (how much of each target is there); no groups are compared and no reference gene is needed";
+    if (d.purpose === "compare")
+      return "This study compares groups (fold changes between them, normalised to reference genes)";
+    throw new Error("not a purpose");
+  },
+  "curve.call_rule": (_s, d) =>
+    `Count a well as amplified by ${ruleWords(d.rule, d.basis === "cq")}`,
   "choice.axis": (s, d) => {
     const question = AXIS_QUESTION[s];
     if (!question || !Array.isArray(d.options) || !d.options.length) throw new Error("not an axis");
-    const words = (o: unknown) => EFFICIENCY_MODEL_WORDS[String(o)] ?? String(o);
+    const named = AXIS_OPTION_WORDS[s] ?? {};
+    const words = (o: unknown) => named[String(o)] ?? String(o);
     const [primary, ...others] = d.options;
     if (!others.length) return `Stop testing ${question}; keep ${words(primary)} only`;
     return `Also test ${question}: ${others.map(words).join("; ")} (besides ${words(primary)}, the analysis in use)`;
+  },
+  "choice.reaction_input": (_s, d) => {
+    const parts: string[] = [];
+    if (typeof d.template_ul === "number") parts.push(`${d.template_ul} µL of template`);
+    if (typeof d.input_ng === "number") parts.push(`${d.input_ng} ng of input`);
+    if (!parts.length) return "Give absolute quantities per reaction only";
+    return `Each reaction held ${parts.join(" and ")}: quantities per µL and per ng`;
   },
   "curve.well_call": (s, d) => {
     if (typeof d.amplified !== "boolean") throw new Error("amplified must be boolean");
@@ -370,7 +571,7 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
     const sample = d.sample ? str(d.sample) : "an unknown sample";
     return d.action === "restore"
       ? `Keep sample ${sample} in ${str(d.gene)} (restore it in the analysis)`
-      : `Exclude sample ${sample} from ${str(d.gene)}, as it is in the table Prism sent back`;
+      : `Exclude sample ${sample} from ${str(d.gene)}, as it is excluded in Prism`;
   },
   "prism.value_edit": (_s, d) => {
     const sample = d.sample ? str(d.sample) : "an unknown sample";
@@ -422,12 +623,15 @@ export const KIND_TITLE: Record<Proposal["kind"], string> = {
   "design.target_role": "Target role",
   "design.gene_symbol": "Gene symbol",
   "design.comparison": "Comparison",
+  "design.pair": "Pairing",
   "design.dilution_series": "Dilution series",
+  "design.purpose": "What the study is for",
   "curve.call_rule": "Amplification rule",
   "curve.well_call": "Well call",
   "curve.exclude_well": "Well exclusion",
   "curve.import_trust": "Import Trust",
   "choice.axis": "Further choice to test",
+  "choice.reaction_input": "Reaction input",
   "prism.project": "Prism project",
   "prism.exclusion_reason": "Exclusion in Prism",
   "prism.value_edit": "Value changed in Prism",
@@ -440,6 +644,8 @@ export const CURVE_JUDGE = "qpilot-curve-judge";
 export function makerText(m: Schemas["MadeBy"]): string {
   if (m.kind === "rule") return "Made by a fixed rule in qPilot (no model).";
   if (m.kind === "agent") return `Proposed by an agent over MCP (${m.agent || "unnamed"}).`;
+  if (m.kind === "person")
+    return "Set by a person on the Design page (and accepted in the same act).";
   if (m.provider === CURVE_JUDGE)
     return `Made by the Curve Judge, a local curve classifier (model ${m.model ?? "?"}); it reads only the curve's fluorescence values.`;
   return `Made by the model ${m.provider || "?"} · ${m.model || "?"}${m.prompt_sha256 ? ` · prompt sha256 ${m.prompt_sha256.slice(0, 12)}` : ""}.`;
@@ -455,6 +661,27 @@ export const BLIND_TEXT =
 export function isBlindKind(p: Pick<Proposal, "kind" | "subject">): boolean {
   if (p.kind === "stage.confirm") return p.subject === "design" || p.subject === "curves";
   return p.kind.startsWith("design.") || p.kind.startsWith("curve.");
+}
+
+/**
+ * Who decided a card or a proposal, as the page says it to the person using it ("Decided by
+ * you"): one wording everywhere (Results, Gene, Controls, Curves, Record), the same as
+ * `qpilot/app_state.py` `decider_words`.
+ */
+export const DECIDER_WORDS: Record<string, string> = {
+  human: "you",
+  agent: "an agent",
+  system: "qPilot",
+};
+
+/** "you", "an agent", "qPilot" (or "someone" for an actor qPilot does not know). */
+export function deciderWords(actor: string | null | undefined): string {
+  return DECIDER_WORDS[actor ?? ""] ?? "someone";
+}
+
+/** "Decided by you". */
+export function decidedBy(actor: string | null | undefined): string {
+  return `Decided by ${deciderWords(actor)}`;
 }
 
 /** Actor in words. */

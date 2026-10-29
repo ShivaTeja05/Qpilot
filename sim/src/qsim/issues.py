@@ -135,7 +135,8 @@ def build_queue(
             else:
                 scen = engine.evaluate(base_cell, drop=mask)
                 table = compare(engine, base, scen)
-                remedy = f"drop {int(mask.sum())} well(s) and re-run the baseline analysis"
+                n = int(mask.sum())
+                remedy = f"drop {n} well{'s' * (n != 1)} and re-run the baseline analysis"
         impact, changed, head, move = _summarise(engine, table, outputs)
         if obs.kind == "ntc" and obs.evidence.get("share_within_5_cycles", 0) >= INVALIDATE_SHARE:
             impact = "invalidates"
@@ -190,7 +191,7 @@ def build_queue(
                 Issue(
                     issue_id=f"D-{d}",
                     kind="decision",
-                    title=f"{PLAIN[d][0].upper()}{PLAIN[d][1:]}: changing only this changes {len(flipped)} call(s)",
+                    title=f"{PLAIN[d][0].upper()}{PLAIN[d][1:]}: changing only this changes {len(flipped)} call{'s' * (len(flipped) != 1)}",
                     loci={"decision": d},
                     evidence={
                         "genes_flipped_alone": flipped,
@@ -209,7 +210,23 @@ def build_queue(
     return sorted(issues, key=Issue.sort_key)
 
 
+QUEUE_COLUMNS = (
+    "rank",
+    "id",
+    "kind",
+    "title",
+    "impact",
+    "headline_changed",
+    "calls_changed",
+    "max_abs_d_in_se",
+    "outputs_affected",
+    "action",
+    "status",
+)
+
+
 def queue_frame(issues: list[Issue]) -> pd.DataFrame:
+    """The queue as a table (its columns even when nothing was found)."""
     return pd.DataFrame(
         [
             {
@@ -226,5 +243,6 @@ def queue_frame(issues: list[Issue]) -> pd.DataFrame:
                 "status": x.status,
             }
             for i, x in enumerate(issues)
-        ]
+        ],
+        columns=list(QUEUE_COLUMNS),
     )

@@ -47,12 +47,21 @@ def _refused(err: Exception) -> Exception:
     return err
 
 
+ComparisonQuery = Annotated[
+    str | None,
+    Query(description="A study with several comparisons: the one replayed (its id; the first)."),
+]
+
+
 @router.get("/studies/{study_id}/history", response_model=HistoryView)
-def get_history(study_id: str, ctx: Ctx) -> HistoryView:
+def get_history(study_id: str, ctx: Ctx, comparison: ComparisonQuery = None) -> HistoryView:
     """Every step of the decision chain: the choices in force, the calls, what each changed."""
+    from qpilot.web.routers.results import comparison_ok, known_comparison
+
     sid = visible(ctx, study_id)
     try:
-        return history_view(ctx.store, study_id, sid)
+        with known_comparison():
+            return history_view(ctx.store, study_id, sid, comparison_ok(comparison))
     except (StudyNotFound, HistoryError) as err:
         raise _refused(err) from err
 
@@ -68,13 +77,17 @@ def get_history_diff(
     to_seq: Annotated[
         int | None, Query(alias="to", ge=0, le=MAX_STEP, description="The later step.")
     ] = None,
+    comparison: ComparisonQuery = None,
 ) -> HistoryDiff:
     """What changed between two steps: calls, the largest fold and holds moves, the choices."""
     visible(ctx, study_id)  # the gate answers first: a blind study says only that
     if from_seq is None or to_seq is None:
         raise api_error(422, "bad_request", "Say which two steps to compare (from and to).")
+    from qpilot.web.routers.results import comparison_ok, known_comparison
+
     try:
-        return diff_steps(ctx.store, study_id, from_seq, to_seq)
+        with known_comparison():
+            return diff_steps(ctx.store, study_id, from_seq, to_seq, comparison_ok(comparison))
     except (StudyNotFound, HistoryError) as err:
         raise _refused(err) from err
 

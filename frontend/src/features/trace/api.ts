@@ -4,12 +4,14 @@
  * call recomputed with samples set aside; one plate's wells; and (Studio sessions) one well's
  * curve. Every number comes from the engine through these routes; nothing is computed here.
  * "Where to look" (`qpilot/web/routers/where.py`) goes from a gene, a sample or a well to the
- * places to look at the analysis in use, and a person's Decide… opens one as a Decision Card.
+ * places to look at the analysis in use. In a Studio session a person's Decide… leaves the
+ * place's wells out of the analysis (or puts them back) and the study is analysed again; for a
+ * study analysed outside Studio it opens the place as a Decision Card (recorded only).
  *
  * Query keys start with `["w", workspace key, study id, "trace", …]`, so a live event about the
  * session or the study (a decision, the end of the `trace.load` job) re-reads them.
  */
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError, unwrap, type JobView, type Schemas } from "@/api/client";
 
 export interface TraceScope {
@@ -18,34 +20,51 @@ export interface TraceScope {
   /** The study traced (null until a session's results exist). */
   studyId: string | null;
   kind: Schemas["WorkspaceView"]["kind"];
+  /** A study with several comparisons: the one traced (null: the first). */
+  comparison?: string | null;
 }
 
-export function scopeOf(workspace: Schemas["WorkspaceView"]): TraceScope {
+export function scopeOf(
+  workspace: Schemas["WorkspaceView"],
+  comparison: string | null = null,
+): TraceScope {
   return {
     key: workspace.key,
     studyId: workspace.study_id ?? (workspace.kind === "study" ? workspace.key : null),
     kind: workspace.kind,
+    comparison,
   };
 }
 
 const wkey = (s: TraceScope, ...rest: unknown[]) =>
-  ["w", s.key, s.studyId, "trace", ...rest] as const;
+  ["w", s.key, s.studyId, "trace", s.comparison ?? null, ...rest] as const;
 const studyPath = (studyId: string) => ({ params: { path: { study_id: studyId } } });
+/** The comparison traced, as the routes' `?comparison=` (none: the first). */
+const shown = (comparison: string | null | undefined) => (comparison ? { comparison } : {});
 
-function fetchStudy(studyId: string) {
-  return unwrap(api.GET("/api/studies/{study_id}/trace", studyPath(studyId)));
-}
-function fetchGene(studyId: string, gene: string) {
+function fetchStudy(studyId: string, comparison?: string | null) {
   return unwrap(
-    api.GET("/api/studies/{study_id}/trace/{gene}", {
-      params: { path: { study_id: studyId, gene } },
+    api.GET("/api/studies/{study_id}/trace", {
+      params: { path: { study_id: studyId }, query: shown(comparison) },
     }),
   );
 }
-function fetchWithout(studyId: string, gene: string, samples: string[]) {
+function fetchGene(studyId: string, gene: string, comparison?: string | null) {
+  return unwrap(
+    api.GET("/api/studies/{study_id}/trace/{gene}", {
+      params: { path: { study_id: studyId, gene }, query: shown(comparison) },
+    }),
+  );
+}
+function fetchWithout(
+  studyId: string,
+  gene: string,
+  samples: string[],
+  comparison?: string | null,
+) {
   return unwrap(
     api.POST("/api/studies/{study_id}/trace/{gene}/without", {
-      params: { path: { study_id: studyId, gene } },
+      params: { path: { study_id: studyId, gene }, query: shown(comparison) },
       body: { samples },
     }),
   );
@@ -64,7 +83,7 @@ export interface WhereRoot {
   id: string;
 }
 
-function fetchWhere(studyId: string, root: WhereRoot, top: number) {
+function fetchWhere(studyId: string, root: WhereRoot, top: number, comparison?: string | null) {
   return unwrap(
     api.GET("/api/studies/{study_id}/where-to-look", {
       params: {
@@ -74,6 +93,7 @@ function fetchWhere(studyId: string, root: WhereRoot, top: number) {
           sample: root.kind === "sample" ? root.id : undefined,
           well: root.kind === "well" ? root.id : undefined,
           top,
+          ...shown(comparison),
         },
       },
     }),
@@ -83,7 +103,13 @@ function fetchWhere(studyId: string, root: WhereRoot, top: number) {
 /** A person's Decide…: the place at `rank` opens as a Decision Card (sent with the view's head). */
 export function openPlace(
   studyId: string,
-  body: { kind: WhereKind; id: string; rank: number; expected_head: string },
+  body: {
+    kind: WhereKind;
+    id: string;
+    rank: number;
+    expected_head: string;
+    comparison?: string | null;
+  },
 ) {
   return unwrap(
     api.POST("/api/studies/{study_id}/where-to-look/open", {
@@ -91,6 +117,49 @@ export function openPlace(
       body,
     }),
   );
+}
+
+/**
+ * A person's Decide… in a Studio session: the option at the place at `rank` leaves wells out of
+ * the analysis (or puts them back); the study is analysed again (`job`). Sent with the heads the
+ * view was read at, so a decision made since answers 409 `stale`.
+ */
+export function decidePlace(
+  studyId: string,
+  body: {
+    kind: WhereKind;
+    id: string;
+    rank: number;
+    option: string;
+    reason: string;
+    expected_head: string;
+    expected_inbox: string | null;
+    comparison?: string | null;
+  },
+) {
+  return unwrap(
+    api.POST("/api/studies/{study_id}/where-to-look/decide", {
+      params: { path: { study_id: studyId } },
+      body,
+    }),
+  );
+}
+
+/** A person puts back the wells they set aside at one place (a Studio session only). */
+export function putBack(
+  studyId: string,
+  body: { card_id: string; reason: string; expected_inbox: string | null },
+) {
+  return unwrap(
+    api.POST("/api/studies/{study_id}/where-to-look/put-back", {
+      params: { path: { study_id: studyId } },
+      body,
+    }),
+  );
+}
+
+function fetchSetAside(studyId: string) {
+  return unwrap(api.GET("/api/studies/{study_id}/where-to-look/set-aside", studyPath(studyId)));
 }
 
 function fetchCurve(sid: string, well: string, target: string | null) {
@@ -125,6 +194,9 @@ export type WhereView = Awaited<ReturnType<typeof fetchWhere>>;
 export type WherePlace = WhereView["places"][number];
 export type WhereOption = WherePlace["options"][number];
 export type PlaceOpened = Awaited<ReturnType<typeof openPlace>>;
+export type TraceDecided = Awaited<ReturnType<typeof decidePlace>>;
+export type SetAsideView = Awaited<ReturnType<typeof fetchSetAside>>;
+export type SetAside = SetAsideView["set_aside"][number];
 
 /** The `trace.load` job a 409 `loading` names (the study's model is being read). */
 export function loadingJob(error: unknown): JobView | null {
@@ -148,7 +220,7 @@ export function useTraceStudy(s: TraceScope) {
   return useQuery({
     queryKey: wkey(s, "study"),
     enabled: Boolean(s.studyId),
-    queryFn: () => fetchStudy(s.studyId!),
+    queryFn: () => fetchStudy(s.studyId!, s.comparison),
     refetchInterval: whileLoading,
     retry,
   });
@@ -158,7 +230,7 @@ export function useTraceGene(s: TraceScope, gene: string | null) {
   return useQuery({
     queryKey: wkey(s, "gene", gene),
     enabled: Boolean(s.studyId && gene),
-    queryFn: () => fetchGene(s.studyId!, gene!),
+    queryFn: () => fetchGene(s.studyId!, gene!, s.comparison),
     placeholderData: keepPreviousData,
     refetchInterval: whileLoading,
     retry,
@@ -171,7 +243,7 @@ export function useWithout(s: TraceScope, gene: string | null, samples: readonly
   return useQuery({
     queryKey: wkey(s, "without", gene, sorted),
     enabled: Boolean(s.studyId && gene && sorted.length),
-    queryFn: () => fetchWithout(s.studyId!, gene!, sorted),
+    queryFn: () => fetchWithout(s.studyId!, gene!, sorted, s.comparison),
     placeholderData: keepPreviousData,
     staleTime: 60_000,
     retry,
@@ -193,7 +265,7 @@ export function useWhere(s: TraceScope, root: WhereRoot | null, top: number) {
   return useQuery({
     queryKey: wkey(s, "where", root?.kind ?? null, root?.id ?? null, top),
     enabled: Boolean(s.studyId && root),
-    queryFn: () => fetchWhere(s.studyId!, root!, top),
+    queryFn: () => fetchWhere(s.studyId!, root!, top, s.comparison),
     // asking for more places keeps the shown ones until the answer comes; another root does not
     placeholderData: (prev) => (prev && root && sameRoot(prev.root, root) ? prev : undefined),
     refetchInterval: whileLoading,
@@ -215,5 +287,26 @@ export function useWellCurve(s: TraceScope, key: string | null, target: string |
     enabled: Boolean(sid && key),
     queryFn: () => fetchCurve(sid!, key!, target),
     staleTime: Infinity,
+  });
+}
+
+/** What a person set aside from Trace in this session (to put back), whatever is traced. */
+export function useSetAside(s: TraceScope) {
+  return useQuery({
+    queryKey: wkey(s, "set-aside"),
+    enabled: Boolean(s.studyId && s.kind === "session"),
+    queryFn: () => fetchSetAside(s.studyId!),
+    refetchInterval: whileLoading,
+    retry,
+  });
+}
+
+/** Put back the wells set aside at one place; every query of the workspace is read again. */
+export function usePutBack(s: TraceScope) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { card_id: string; reason: string; expected_inbox: string | null }) =>
+      putBack(s.studyId!, b),
+    onSettled: () => void qc.invalidateQueries({ queryKey: ["w", s.key] }),
   });
 }

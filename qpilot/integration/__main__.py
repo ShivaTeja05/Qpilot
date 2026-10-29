@@ -68,6 +68,9 @@ def _audit(args: argparse.Namespace) -> int:
     m = result.manifest
     print(f"audited {m['analyses']:,} analyses of study {args.study} in {result.seconds:.0f} s")
     print(f"verdicts: {m['verdict_counts']}")
+    replicates = m["scope"].get("technical_replicates")
+    if replicates:
+        print(f"technical replicates: {replicates['words']}")
     print(f"your choices against the prespecified analysis: {m['your_choices']}")
     print(f"written to {out} (lock {m['lock_sha256'][:12]})")
     return 0

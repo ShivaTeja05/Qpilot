@@ -48,6 +48,12 @@ log = logging.getLogger(__name__)
 
 #: Columns of :attr:`FileFacts.wells`: the curve table plus the experiment it belongs to.
 WELL_COLUMNS = ("experiment_id", *curves.COLUMN_ORDER)
+#: The summary's note for an experiment of Cq values only (``docs/cq-tables.md``).
+CQ_ONLY_NOTE = (
+    "Experiment {experiment} holds Cq values only (no amplification curves), so there is no "
+    "curve to fit: qPilot analyses those Cq values, with each assay's efficiency from its "
+    "dilution series when the design has one, else assumed to be 2.0."
+)
 
 
 @dataclass
@@ -68,6 +74,9 @@ class FileFacts:
         sample_text_ids: Safe sample id -> ``text_id`` of its original id.
         target_text_ids: Engine target name -> ``text_id`` of its original id.
         sheet: The sample sheet as read, or ``None``.
+        target_dyes: Engine target name -> the dye it is read in (RDML ``dyeId``, as a safe
+            identifier; absent when the file names none): the curves of a multiplex well differ
+            by dye.
     """
 
     path: Path
@@ -81,6 +90,7 @@ class FileFacts:
     sample_text_ids: dict[str, str] = field(default_factory=dict)
     target_text_ids: dict[str, str] = field(default_factory=dict)
     sheet: SheetRead | None = None
+    target_dyes: dict[str, str] = field(default_factory=dict)
 
     def quarantined(self, text_id: str) -> str | None:
         """The original text behind a ``text_id`` (for deterministic rules, never for prompts)."""
@@ -212,12 +222,17 @@ def _build(
 ) -> FileFacts:
     doc = rdml_io.load(path)
     names = _Names()
-    notes: list[str] = []
+    loaded = rdml_io.load_notes(doc)
+    notes: list[str] = list(loaded.notes)  # what the loader repaired (none for a clean file)
+    for kind, renamed in sorted(loaded.renamed.items()):
+        for original in renamed:  # the file's own ids, quarantined like every name in it
+            names.quarantine(f"rdml:{kind}.id", original)
 
     target_names: dict[str, str] = {}  # original target id -> engine target name
     target_types: dict[str, str] = {}
     target_text_ids: dict[str, str] = {}
     target_order: list[tuple[str, str]] = []  # (engine name, original id)
+    target_dyes: dict[str, str] = {}
     for target in doc.targets():
         original = str(target["id"])
         safe, text_id = names.name("target", "rdml:target.id", original)
@@ -227,6 +242,9 @@ def _build(
         target_types.setdefault(engine, str(target["type"] or "toi"))
         target_text_ids.setdefault(engine, text_id)
         target_order.append((engine, original))
+        dye = str(target["dyeId"] or "").strip()
+        if dye:
+            target_dyes.setdefault(engine, curves.safe_name(dye, "dye"))
 
     sample_types: dict[str, tuple[tuple[str, str], ...]] = {}
     sample_quantities: dict[str, tuple[tuple[float, str, str], ...]] = {}
@@ -281,6 +299,9 @@ def _build(
                 "without Cq or efficiency."
             )
             table = _wells_without_curves(runs, sample_types, target_names)
+        else:
+            if curves.without_curves(table):  # a Cq table or a Cq-only RDML: nothing failed
+                notes.append(CQ_ONLY_NOTE.format(experiment=exp_text_id))
         table = table.copy()
         table.insert(0, "experiment_id", exp_safe)
         tables.append(table)
@@ -345,6 +366,7 @@ def _build(
         sample_text_ids=sample_text_ids,
         target_text_ids=target_text_ids,
         sheet=sheet,
+        target_dyes=target_dyes,
     )
 
 

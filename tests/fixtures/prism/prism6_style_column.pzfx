@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GraphPadPrismFile PrismXMLVersion="5.00">
+<Created>
+<OriginalVersion CreatedByProgram="GraphPad Prism" CreatedByVersion="6.0f.254" Login="lab" DateTime="2018-07-22T22:42:50-07:00"/>
+<MostRecentVersion CreatedByProgram="GraphPad Prism" CreatedByVersion="6.0f.254" Login="lab" DateTime="2018-07-24T21:22:21-07:00"/>
+</Created>
+<InfoSequence><Ref ID="Info0" Selected="1"/></InfoSequence>
+<Info ID="Info0"><Title>Project info 1</Title><Notes/>
+<Constant><Name>Experiment Date</Name><Value>2018-07-23</Value></Constant>
+</Info>
+<TableSequence Selected="1"><Ref ID="Table0" Selected="1"/></TableSequence>
+<Table ID="Table0" XFormat="none" TableType="OneWay" EVFormat="AsteriskAfterNumber">
+<Title>Data 1</Title>
+<RowTitlesColumn Width="89"><Subcolumn><d>u1</d><d><TextAlign align="Left">u2</TextAlign></d><d>u3</d></Subcolumn></RowTitlesColumn>
+<YColumn Width="89" Decimals="0" Subcolumns="1"><Title><TextAlign align="Center">Aa</TextAlign></Title>
+<Subcolumn><d>1.</d><d Excluded="1">2.</d><d/></Subcolumn></YColumn>
+<YColumn Width="89" Decimals="0" Subcolumns="1"><Title>Bb</Title>
+<Subcolumn><d>100</d><d>90</d><d>80</d></Subcolumn></YColumn>
+</Table>
+<!--Analyses, graphs and layouts as compressed binary. Don't edit this part of the file.-->
+<Template dt:dt="bin.base64" xmlns:dt="urn:schemas-microsoft-com:datatypes">QUJDREVGR0g=</Template>
+</GraphPadPrismFile>

@@ -3,6 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { Proposal } from "@/lib/vocab";
 import recorded from "./recorded/demo-session.json";
+import redecided from "./recorded/qs3-redecided-design.json";
 import untergasser from "./recorded/untergasser-design-proposals.json";
 import { StageSummary } from "./summary";
 
@@ -32,6 +33,24 @@ describe("StageSummary", () => {
     expect(screen.getByText("Sample types").nextElementSibling!.textContent).toContain(
       `Standard ${std}`,
     );
+  });
+
+  it("says the design in force when a person changed the groups and the comparison", () => {
+    // A real QuantStudio 3 export decided twice: DNI vs DSI first, then five groups of the
+    // lab's own names against "IL-6/ctrl". The engine reads the latest decision of each item.
+    const all = redecided.proposals as unknown as Proposal[];
+    expect(
+      all.filter((p) => p.kind === "design.comparison" && p.status === "accepted").length,
+    ).toBe(2);
+    render(<StageSummary stage="design" proposals={all} />);
+    expect(screen.getByText("Comparison").nextElementSibling!.textContent).toBe(
+      "“LPS + inhibitor” compared with “IL-6/ctrl” (fold change = LPS + inhibitor relative to IL-6/ctrl)",
+    );
+    const groups = screen.getByText("Groups").nextElementSibling!.textContent!;
+    for (const g of ["LPS + inhibitor", "IL-6/ctrl", "Day 3 (50 µM)", "KO#2", "α-syn"]) {
+      expect(groups).toContain(`“${g}”: 4 samples`);
+    }
+    expect(groups).not.toContain("DNI");
   });
 
   it("says which rule calls a well amplified", () => {

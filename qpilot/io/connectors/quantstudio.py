@@ -17,6 +17,11 @@ read by header name:
 * **Results** / **Sample Setup** (``Sample Name``, ``Target Name``, ``Task``, ``Reporter``,
   ``CT``/``Cт``/``Cq``, ``Quantity``, ``Omit``): names, sample types, the vendor's Cq.
 * **Melt Curve Raw Data** (``Temperature``, ``Fluorescence``): melt curves.
+* **Melt Region Temperature Data** and **Melt Region Normalized Data** (StepOne / StepOnePlus
+  section files: ``Well``, ``Well Location``, ``Target``, ``Reporter Dye``, then ``Reading 1``
+  ... ``Reading N``): the same well's temperatures and fluorescence, paired reading by reading
+  into its melt curve (:func:`_melt_region`). **Melt Region Derivative Data** (the software's
+  own derivative) is recognised and passed over.
 
 Wells are named by ``Well Position`` (``A1``) or, without it, by the ``Well`` number on the
 plate the ``Block Type`` line describes. Several files of one plate (one per section) are
@@ -25,6 +30,7 @@ grouped by their file stem with the section name removed.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 from qpilot.io.connectors.base import CaptureError, PlateData, Probe, Sniff, Source
@@ -72,6 +78,9 @@ _SECTION_NAMES = {
     "multicomponent": "multicomponent",
     "raw data": "raw",
     "melt curve raw data": "melt",
+    "melt region temperature data": "melt_temperature",
+    "melt region normalized data": "melt_fluorescence",
+    "melt region derivative data": "ignored",
     "melt region normalization data": "ignored",
     "melt curve result": "ignored",
     "replicate group result": "ignored",
@@ -89,6 +98,10 @@ _HEADER_HINTS = {
     "quantificationcyclemethod",
 }
 _BLOCKS = (("1536", (32, 48)), ("384", (16, 24)), ("96", (8, 12)), ("48", (6, 8)))
+#: A StepOne melt-region column: ``Reading 1`` ... (the reading's number).
+_READING = re.compile(r"^reading\s*(\d+)$", re.IGNORECASE)
+#: The two melt-region section files that make a melt curve, by kind.
+_MELT_REGION = ("melt_temperature", "melt_fluorescence")
 _NO_PASSIVE = {"", "null", "none", "na", "nopassivereference"}
 
 
@@ -157,11 +170,21 @@ def _group_key(stem: str) -> str:
     return plate_stem(stem).lower()
 
 
-def _split(grid: Grid) -> _Parsed:
+def _stem_kind(stem: str) -> str:
+    """A StepOne melt-region section file's kind from its name (``melt_region_temperature_data``).
+
+    Only the melt-region kinds: their temperature and fluorescence files have the same columns,
+    so the name is what tells them apart.
+    """
+    kind = _section_kind(stem.replace("_", " "))
+    return kind if kind in _MELT_REGION else ""
+
+
+def _split(grid: Grid, stem_kind: str = "") -> _Parsed:
     """Header pairs and sections of one text file or sheet."""
     parsed = _Parsed()
     current: _Section | None = None
-    default_kind = _section_kind(grid.name) if grid.name else ""
+    default_kind = _section_kind(grid.name) if grid.name else stem_kind
     for row in grid.rows:
         first = row[0].strip() if row else ""
         if first.startswith("*") and current is None:
@@ -223,6 +246,9 @@ class QuantStudioConnector:
             if len(starred & _HEADER_HINTS) >= 2 or sections - {"ignored"}:
                 return Sniff(95, "quantstudio.txt")
             rows = [next(csv.reader([line], delimiter=delimiter), []) for line in lines]
+            region = _melt_region_sniff(probe, rows)
+            if region is not None:
+                return region
         else:
             return None
         for row in rows[:60]:
@@ -258,7 +284,7 @@ def _read_plate(members: list[Source], *, named: bool = True) -> PlateData:
     parsed = _Parsed()
     for source in members:
         for grid in read_grids(source.path):
-            part = _split(grid)
+            part = _split(grid, _stem_kind(source.path.stem))
             parsed.header.extend(p for p in part.header if p not in parsed.header)
             parsed.sections.extend(part.sections)
     rows, columns = _block(parsed.header)
@@ -282,6 +308,7 @@ def _read_plate(members: list[Source], *, named: bool = True) -> PlateData:
                 value_kind = "fluorescence"
     for section in by_kind.get("melt", []):
         _melt(section, width, assembler, info)
+    _melt_region(by_kind, width, assembler, info)
     for (row, column), entries in info.items():  # wells with a Cq but no curve
         for entry in entries:
             if not (entry.get("sample") or entry.get("target") or entry.get("cq")):
@@ -482,6 +509,77 @@ def _melt(section: _Section, width: int, assembler: LongAssembler, info: dict) -
         y = number(table.get(row, "fluorescence"), decimal_comma=dc)
         if x is not None and y is not None:
             assembler.point(*position, target, x, y, melt=True)
+
+
+def _melt_region_sniff(probe: Probe, rows: list[list[str]]) -> Sniff | None:
+    """A StepOne melt-region section file: a ``Well`` column and ``Reading 1`` ... columns.
+
+    Which of the three it is comes from the file's name (their columns are the same): the
+    temperatures and the normalized fluorescence make the melt curve; the derivative is the
+    software's own and is passed over.
+    """
+    for row in rows[:5]:
+        found = match_columns(row, QS_COLUMNS)
+        readings = [c for c in row if _READING.match(c.strip())]
+        if "well_index" not in found or "target" not in found or len(readings) < 2:
+            continue
+        name = squash(probe.path.stem)
+        if "derivative" in name:
+            return Sniff(80, "quantstudio.melt_region_derivative", "ignored")
+        if "temperature" in name:
+            return Sniff(80, "quantstudio.melt_region_temperature", "melt")
+        if "normalized" in name or "normalised" in name or "fluorescence" in name:
+            return Sniff(80, "quantstudio.melt_region_fluorescence", "melt")
+        return None
+    return None
+
+
+def _region_values(section: _Section, width: int) -> dict[tuple[int, int, str], dict[int, float]]:
+    """One melt-region table: (row, column, target) -> reading number -> value."""
+    table = _table(section)
+    out: dict[tuple[int, int, str], dict[int, float]] = {}
+    if table is None:
+        return out
+    columns = [
+        (i, int(m.group(1)))
+        for i, h in enumerate(table.headers)
+        if (m := _READING.match(str(h).strip())) is not None
+    ]
+    dc = section.decimal_comma
+    for row in table.rows:
+        position = _position(table, row, width)
+        if position is None:
+            continue
+        values = out.setdefault((*position, table.get(row, "target")), {})
+        for index, reading in columns:
+            value = number(row[index], decimal_comma=dc) if index < len(row) else None
+            if value is not None:
+                values[reading] = value
+    return out
+
+
+def _melt_region(by_kind: dict, width: int, assembler: LongAssembler, info: dict) -> None:
+    """StepOne melt curves: each well's temperatures and normalized fluorescence, by reading.
+
+    A reading counts only when both files give it a value; a well in one file only has no melt
+    curve. The target is the file's, else the only target the plate's setup gives the well.
+    """
+    temperature: dict[tuple[int, int, str], dict[int, float]] = {}
+    fluorescence: dict[tuple[int, int, str], dict[int, float]] = {}
+    for section in by_kind.get("melt_temperature", []):
+        temperature.update(_region_values(section, width))
+    for section in by_kind.get("melt_fluorescence", []):
+        fluorescence.update(_region_values(section, width))
+    for key in sorted(temperature.keys() & fluorescence.keys()):
+        row, column, target = key
+        target = target or _target_for(info, (row, column), "")
+        temps, values = temperature[key], fluorescence[key]
+        readings = sorted(temps.keys() & values.keys())
+        if not readings:
+            continue
+        assembler.reaction(row, column, target)
+        for reading in readings:
+            assembler.point(row, column, target, temps[reading], values[reading], melt=True)
 
 
 CONNECTOR = QuantStudioConnector()

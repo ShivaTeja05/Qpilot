@@ -99,7 +99,7 @@ describe("Decision Cards", { timeout: 30_000 }, () => {
       ...cutoff,
       card: { ...cutoff.card, status: "decided", decision: "cut_15", decided_by: "human" },
       status_line:
-        "Decided by human: Top 15 %, carried from the earlier analysis cf49ccd72052. Reason: protocol",
+        "Decided by you: Top 15 %, carried over from your decision on the earlier analysis of these data. Reason: protocol",
       carried: {
         study_id: "cf49ccd72052",
         entry_hash: "ab".repeat(32),
@@ -121,10 +121,12 @@ describe("Decision Cards", { timeout: 30_000 }, () => {
     render(wrap(<DecisionCards view={view} workspaceKey="w" studyId={results.study_id} />));
     const done = screen.getByRole("article", { name: new RegExp(cutoff.title) });
     expect(within(done).getByText("Carried")).toBeTruthy();
-    expect(done.textContent).toContain("carried from the earlier analysis cf49ccd72052");
+    expect(done.textContent).toContain(
+      "carried over from your decision on the earlier analysis of these data",
+    );
     const open = screen.getByRole("article", { name: new RegExp(refset.title) });
     expect(open.textContent).toContain(
-      "In the earlier analysis cf49ccd72052 a person chose The three most stable. It was not carried here: in this analysis the choice can change a conclusion. Decide it again.",
+      "In the earlier analysis of these data you chose The three most stable. It was not carried here: in this analysis the choice can change a conclusion. Decide it again.",
     );
     expect(within(open).queryByText("Carried")).toBeNull();
   });

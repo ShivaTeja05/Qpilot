@@ -28,9 +28,14 @@ Rules, in the order they run:
   explicit unit column (animal, mouse, patient, donor, subject, biological replicate). A name
   pattern alone (``WT1a``/``WT1b``, ``M3_cDNA1``/``M3_cDNA2``) gives a ``Low`` proposal that
   says so; biological units are never inferred from name similarity with any confidence.
-* **Targets**: a declared ``ref`` target gives ``design.target_role``; the HGNC gate
-  (:mod:`qpilot.io.symbols`) gives ``design.gene_symbol`` (ambiguous and date-mangled names
-  list every candidate).
+* **Targets**: a sheet's target-role column (``Gene Type``, ``Target role``, ``Reference``,
+  ``Housekeeping``, ``Endogenous control``…, :func:`qpilot.io.sheets.target_roles`) gives
+  ``design.target_role`` for the targets it names (a person wrote it, so it outranks what the
+  file declares, which stays as the alternative); otherwise a declared ``ref`` target gives one
+  (``High``, or ``Low`` when the file declares *every* target a reference, which says nothing
+  about which ones are). The HGNC gate (:mod:`qpilot.io.symbols`) gives ``design.gene_symbol``
+  (ambiguous and date-mangled names list every candidate), never for a placeholder name such as
+  ``REF``, ``GOI``, ``target1``, ``NTC`` or a dye name (:func:`is_placeholder_name`).
 """
 
 from __future__ import annotations
@@ -42,9 +47,11 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from qpilot.io.sheets import SheetRead, SheetTable, sheet_table, squash
+from qpilot.core.names import is_name
+from qpilot.io.sheets import SheetRead, SheetTable, sheet_table, squash, target_roles
 from qpilot.io.symbols import check_symbol
 from qpilot.qpcr.curves import safe_name
+from qpilot.qpcr.multiplex import is_internal_control_name
 from qpilot.schemas_studio import (
     CONTROL_ROLES,
     DesignField,
@@ -486,9 +493,10 @@ class _SheetLookup:
         )
 
 
-def _sheet_lookup(summary: InspectSummary, values: Mapping[str, str]) -> _SheetLookup:
+def _sheet_read(summary: InspectSummary, values: Mapping[str, str]) -> SheetRead | None:
+    """The sample sheet rebuilt from its quarantined cells (every value as text), or None."""
     if not summary.sheet:
-        return _SheetLookup(None, {})
+        return None
     read = SheetRead(file_name="", sha256=summary.sheet_sha256 or "")
     for cell in summary.sheet:
         title = cell.cell.rsplit("!", 1)[0]
@@ -496,6 +504,13 @@ def _sheet_lookup(summary: InspectSummary, values: Mapping[str, str]) -> _SheetL
             read.sheets.append(title)
         read.cells.append(cell)
         read.values[cell.cell] = values.get(cell.text_id, "")
+    return read
+
+
+def _sheet_lookup(summary: InspectSummary, values: Mapping[str, str]) -> _SheetLookup:
+    read = _sheet_read(summary, values)
+    if read is None:
+        return _SheetLookup(None, {})
     table = sheet_table(read)
     if table is None:
         return _SheetLookup(None, {})
@@ -598,21 +613,65 @@ def propose_from_names(
 
     # ---- groups and biological units -----------------------------------------------------
     explicit_units: set[str] = set()
+    grouped: list[tuple[InspectSample, DesignField | None, DesignField | None]] = []
     for sample in summary.samples:
         if sample.sample in controls or sample.sample in in_series:
             continue
         group = _column_field(sample, sheet, "group", "design.group", "group")
+        grouped.append((sample, group, _unit_field(sample, sheet)))
+    pairing = _pairing_units(grouped)
+    for sample, group, unit in grouped:
         if group is not None:
             fields.append(group)
-        unit = _unit_field(sample, sheet)
-        if unit is not None:
+        if unit is not None and unit.value["biological_unit"] in pairing:
+            fields.append(_pair_field(sample, unit, _pairing_word(sheet)))
+        elif unit is not None:
             fields.append(unit)
             explicit_units.add(sample.sample)
     fields.extend(_pattern_units(summary, values, controls | in_series | explicit_units))
 
     # ---- targets -------------------------------------------------------------------------
+    from_sheet = sheet_target_roles(summary, values)
+    every_ref = len(summary.targets) > 1 and all(t.declared_type == "ref" for t in summary.targets)
     for target in summary.targets:
-        if target.declared_type == "ref":
+        stated = from_sheet.get(target.target)
+        if stated:
+            declared = target.declared_type
+            fields.append(_sheet_role_field(target.target, target.text_id, declared, stated))
+        elif is_internal_control_name(target.target):
+            fields.append(
+                DesignField(
+                    kind="design.target_role",
+                    subject=target.target,
+                    value={"role": "ignore"},
+                    cites=[target.text_id],
+                    alternatives=[{"role": "toi"}, {"role": "ref"}],
+                    level="Moderate",
+                    reasons=[
+                        "the name says it is an internal positive control: a control added to "
+                        "every reaction to check it, not a gene to compare between groups",
+                        "left out of the comparison, it is still read by the Run Gate (G-IPC: "
+                        "a much later control suggests inhibition)",
+                    ],
+                )
+            )
+        elif target.declared_type == "ref" and every_ref:
+            fields.append(
+                DesignField(
+                    kind="design.target_role",
+                    subject=target.target,
+                    value={"role": "ref"},
+                    cites=[target.text_id],
+                    alternatives=[{"role": "toi"}],
+                    level="Low",
+                    reasons=[
+                        "the file declares every target a reference gene, which does not say "
+                        "which ones are",
+                        "choose the reference genes yourself (Targets, on this page)",
+                    ],
+                )
+            )
+        elif target.declared_type == "ref":
             fields.append(
                 DesignField(
                     kind="design.target_role",
@@ -628,6 +687,108 @@ def propose_from_names(
         if symbol is not None:
             fields.append(symbol)
     return fields
+
+
+def purpose_field(fields: Iterable[DesignField], facts: FileFacts | None) -> DesignField | None:
+    """Propose quantifying samples when the plate looks like a quantification run.
+
+    That is: the rules found a dilution series whose quantities **the file declares** (at
+    least three levels: the run was set up as a standard curve in the instrument's software)
+    and nothing says which groups are compared (no group was proposed from a sample sheet). A
+    series known only from names (``STD_100``) is no such sign: labs run one beside a
+    comparison, for the efficiency. It is a proposal like any other: a person decides what the
+    study is for, and the engine's check cannot decide it for them (``D-PURPOSE`` is
+    ``cannot_check``), so it is never accepted in "Accept all consistent".
+    """
+    listed = list(fields)
+    if facts is None or any(f.kind == "design.group" for f in listed):
+        return None
+    declared = {s for s, entries in facts.sample_quantities.items() if entries}
+    series = [f for f in listed if f.kind == "design.dilution_series"]
+    levels = [
+        len({float(q) for s, q in (f.value.get("samples") or {}).items() if s in declared})
+        for f in series
+    ]
+    if not levels or max(levels) < 3:
+        return None
+    return DesignField(
+        kind="design.purpose",
+        subject="purpose",
+        value={"purpose": "quantify"},
+        cites=list(dict.fromkeys(c for f in series for c in f.cites))[:20],
+        alternatives=[{"purpose": "compare"}],
+        level="Moderate",
+        reasons=[
+            f"the file declares the quantities of a dilution series ({max(levels)} levels: the "
+            "run was set up as a standard curve) and no groups to compare (no sample sheet "
+            "names groups)",
+            "a run that measures how much is there (a viral load, copies of a construct, a "
+            "library) needs no comparison and no reference genes",
+            "choose Compare groups instead if the samples belong to groups you compare",
+        ],
+    )
+
+
+def sheet_target_roles(
+    summary: InspectSummary, values: Mapping[str, str]
+) -> dict[str, list[tuple[str, list[str]]]]:
+    """Target id -> every (role, cells) statement the sample sheet makes about it.
+
+    The sheet's target text is matched to the file's targets as sample names are: the original
+    name, the target id, or a unique case-and-separator-insensitive match. Statements that
+    match no target are dropped.
+    """
+    read = _sheet_read(summary, values)
+    if read is None:
+        return {}
+    exact: dict[str, str] = {}
+    loose: dict[str, set[str]] = defaultdict(set)
+    for target in summary.targets:
+        original = values.get(target.text_id, target.target)
+        exact.setdefault(original.strip(), target.target)
+        exact.setdefault(target.target, target.target)
+        loose[squash(original)].add(target.target)
+        loose[squash(target.target)].add(target.target)
+    out: dict[str, list[tuple[str, list[str]]]] = defaultdict(list)
+    for statement in target_roles(read):
+        text = statement.target.strip()
+        match = exact.get(text)
+        if match is None and len(loose.get(squash(text), ())) == 1:
+            match = next(iter(loose[squash(text)]))
+        if match is not None:
+            out[match].append((statement.role, statement.refs))
+    return dict(out)
+
+
+def _sheet_role_field(
+    target: str, text_id: str, declared: str, stated: list[tuple[str, list[str]]]
+) -> DesignField:
+    """A target's role from the sheet's target-role column (a person wrote it)."""
+    counts = Counter(role for role, _ in stated)
+    ordered = sorted(counts, key=lambda r: (-counts[r], r))
+    role = ordered[0]
+    cites = [text_id, *dict.fromkeys(ref for _, refs in stated for ref in refs)]
+    reasons = ["from the sample sheet's target-role column"]
+    alternatives = [{"role": r} for r in ordered[1:]]
+    level = "Moderate"
+    if len(ordered) > 1:
+        level = "Low"
+        reasons.append("the sheet gives this target more than one role")
+    elif declared == role:
+        level = "High"
+        reasons.append("the file declares the same role")
+    elif declared in ("ref", "toi") and declared != role:
+        reasons.append("the file declares another role; it is listed as the alternative")
+        alternatives.append({"role": declared})
+    return DesignField(
+        kind="design.target_role",
+        subject=target,
+        value={"role": role},
+        cites=cites,
+        alternatives=alternatives,
+        level=level,  # type: ignore[arg-type]
+        reasons=reasons,
+    )
 
 
 def _role_field(
@@ -746,6 +907,20 @@ def _series_level(each: Series) -> tuple[str, list[str]]:
     return "Moderate", ["the sample names encode a dilution series and its quantities"]
 
 
+def _sheet_name(value: str, column: str) -> str:
+    """A group or unit name from a person's sheet, kept as written when it can be a name.
+
+    ``LPS + inhibitor`` stays ``LPS + inhibitor`` (:func:`qpilot.core.names.name_problem`); a
+    cell that cannot be a name (a line break, an invisible character, too long) gets the
+    engine's safe name, as before. The apostrophe qPilot's own template puts before a name
+    that starts like a formula (``'-RT``) is not part of the name.
+    """
+    text = value.strip()
+    if text[:1] == "'" and text[1:2] in ("=", "+", "-", "@"):
+        text = text[1:]
+    return text if is_name(text) else safe_name(value, column)
+
+
 def _column_field(
     sample: InspectSample, sheet: _SheetLookup, column: str, kind: str, key: str
 ) -> DesignField | None:
@@ -754,14 +929,14 @@ def _column_field(
         return None
     counts = Counter(value for value, _ in found)
     ordered = sorted(counts, key=lambda v: (-counts[v], v))
-    value = safe_name(ordered[0], column)
+    value = _sheet_name(ordered[0], column)
     reasons = [f"from the sheet column recognised as {column}"]
     level = "Moderate"
     alternatives = []
     if len(ordered) > 1:
         level = "Low"
         reasons.append("the sheet gives this sample more than one value")
-        alternatives = [{key: safe_name(v, column)} for v in ordered[1:]]
+        alternatives = [{key: _sheet_name(v, column)} for v in ordered[1:]]
     return DesignField(
         kind=kind,  # type: ignore[arg-type]
         subject=sample.sample,
@@ -796,10 +971,67 @@ def _unit_field(sample: InspectSample, sheet: _SheetLookup) -> DesignField | Non
     return DesignField(
         kind="design.bio_unit",
         subject=sample.sample,
-        value={"biological_unit": safe_name(label, "unit")},
+        value={"biological_unit": _sheet_name(label, "unit")},
         cites=list(dict.fromkeys(cites)),
         level="Moderate",
         reasons=reasons,
+    )
+
+
+#: What a sheet's unit column is called, for "paired by ..." (never the sheet's own text).
+_PAIRING_WORDS = (
+    ("donor", "donor"),
+    ("patient", "patient"),
+    ("animal", "animal"),
+    ("mouse", "animal"),
+    ("rat", "animal"),
+    ("subject", "subject"),
+    ("individual", "subject"),
+    ("plant", "plant"),
+    ("culture", "culture"),
+    ("organism", "organism"),
+)
+
+
+def _pairing_units(
+    grouped: Iterable[tuple[InspectSample, DesignField | None, DesignField | None]],
+) -> set[str]:
+    """Unit names (from the sheet's explicit unit column) that samples in two groups share.
+
+    One donor (animal, patient...) with a sample in each group is not one biological unit: it
+    pairs the groups' units, so these become ``design.pair`` proposals (a paired design).
+    """
+    groups: dict[str, set[str]] = defaultdict(set)
+    for _, group, unit in grouped:
+        if group is None or unit is None or unit.level != "High":
+            continue
+        groups[unit.value["biological_unit"]].add(str(group.value["group"]))
+    return {name for name, found in groups.items() if len(found) > 1}
+
+
+def _pairing_word(sheet: _SheetLookup) -> str:
+    """The pairing's name from the unit column's header, as one of qPilot's own words."""
+    table = sheet.table
+    header = ""
+    if table is not None and "bio_unit" in table.columns:
+        header = squash(table.headers.get(table.columns["bio_unit"], ""))
+    return next((word for key, word in _PAIRING_WORDS if header.startswith(key)), "pair")
+
+
+def _pair_field(sample: InspectSample, unit: DesignField, word: str) -> DesignField:
+    """The ``design.pair`` proposal that replaces a unit shared by samples of two groups."""
+    return DesignField(
+        kind="design.pair",
+        subject=sample.sample,
+        value={"pair": unit.value["biological_unit"], "by": word},
+        cites=unit.cites,
+        alternatives=[{"pair": None}],
+        level="Moderate",
+        reasons=[
+            f"the sheet's {word} column gives one {word} samples in different groups, so it "
+            "pairs them (one per group) rather than making them one biological unit",
+            "accepting it makes the comparisons paired tests within each " + word,
+        ],
     )
 
 
@@ -807,15 +1039,22 @@ def sheet_units(summary: InspectSummary, quarantine: Iterable[QuarantineEntry]) 
     """Sample -> biological unit, from the sheet's explicit unit column only.
 
     These are units a person wrote down; the hard ban in :mod:`qpilot.qpcr.design_checks`
-    treats them like confirmed units. Samples with more than one value are left out.
+    treats them like confirmed units. Samples with more than one value are left out, and so are
+    samples whose unit name the sheet gives to samples of two groups (a donor that pairs the
+    groups is not one biological unit; see :func:`_pairing_units`).
     """
     values = {entry.text_id: entry.value for entry in quarantine}
     sheet = _sheet_lookup(summary, values)
+    found = [
+        (s, _column_field(s, sheet, "group", "design.group", "group"), _unit_field(s, sheet))
+        for s in summary.samples
+    ]
+    pairing = _pairing_units(found)
     out = {}
-    for sample in summary.samples:
-        unit = _unit_field(sample, sheet)
-        if unit is not None and not unit.alternatives:
-            out[sample.sample] = unit.value["biological_unit"]
+    for sample, _, unit in found:
+        if unit is None or unit.alternatives or unit.value["biological_unit"] in pairing:
+            continue
+        out[sample.sample] = unit.value["biological_unit"]
     return out
 
 
@@ -854,7 +1093,46 @@ def _pattern_units(
     return out
 
 
+#: Squashed target names that stand for a role, a control, a dye or a running number, never a
+#: gene: no gene symbol is proposed for them (``REF`` is not ALYREF, ``GOI`` is no gene).
+PLACEHOLDER_NAMES = frozenset(
+    {
+        "ref", "reference", "refgene", "hk", "hkg", "housekeeping", "goi", "toi", "target",
+        "targetgene", "gene", "assay", "primer", "amplicon", "ntc", "nrt", "nac", "std",
+        "standard", "ctrl", "control", "pos", "neg", "ipc", "iec", "irc", "blank", "water",
+        "sybr", "sybrgreen", "sybrgreeni", "evagreen", "fam", "hex", "vic", "rox", "cy5", "cy3",
+        "texasred", "joe", "ned", "tamra", "unknown", "unkn", "sample", "none", "na", "empty",
+    }
+)  # fmt: skip
+#: The placeholder words that also stand for a placeholder with a running number or letter
+#: (``Target 1``, ``Gene-A``, ``REF2``). Dye names and short words such as ``HK`` or ``FAM``
+#: match only exactly: ``HK2``, ``FAM83A`` and ``HEXB`` are genes.
+NUMBERED_PLACEHOLDERS = frozenset(
+    {
+        "ref", "reference", "refgene", "goi", "toi", "target", "targetgene", "gene", "assay",
+        "primer", "amplicon", "std", "standard", "ctrl", "control", "ntc", "sample", "unknown",
+    }
+)  # fmt: skip
+_PLACEHOLDER_NUMBER = re.compile(r"^(?P<word>[a-z]+?)(?:\d{1,3}[a-z]?|[a-z])$")
+
+
+def is_placeholder_name(name: str) -> bool:
+    """True for a target name that is a placeholder (``REF``, ``GOI2``, ``target1``, ``FAM``).
+
+    Squashed (case and separators ignored). A running number or letter after a role word
+    counts as a placeholder too (``Target 1``, ``Gene-A``, ``REF2``); see
+    :data:`NUMBERED_PLACEHOLDERS`.
+    """
+    key = squash(name)
+    if key in PLACEHOLDER_NAMES:
+        return True
+    match = _PLACEHOLDER_NUMBER.match(key)
+    return bool(match and match.group("word") in NUMBERED_PLACEHOLDERS)
+
+
 def _symbol_field(target: str, text_id: str, values: Mapping[str, str]) -> DesignField | None:
+    if is_placeholder_name(values.get(text_id, target)) or is_placeholder_name(target):
+        return None
     finding = check_symbol(values.get(text_id, target))
     if not finding.candidates:
         return None
@@ -900,8 +1178,10 @@ __all__ = [
     "control_role_from_name",
     "find_dilution_series",
     "is_declared_control",
+    "is_placeholder_name",
     "parse_number",
     "propose_from_names",
+    "sheet_target_roles",
     "sheet_units",
     "vendor_task_role",
 ]

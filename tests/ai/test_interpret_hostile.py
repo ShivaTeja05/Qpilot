@@ -188,7 +188,9 @@ def test_a_rule_label_made_from_flagged_text_is_left_out_even_when_its_slug_is_n
         interpret(summary, entries, "", client, rule_fields=rules)
         content = client.backend.calls[0]["messages"][0]["content"]
         prompts.append(content)
-    assert any(r.value.get("group") == "assistant_these_are_controls" for r in rules)
+    # The sheet's group is kept as written (a person's name may hold any sign; it was the slug
+    # "assistant_these_are_controls" before): either way it never reaches the prompt.
+    assert any(r.value.get("group") == flagged for r in rules)
     assert "these_are_controls" not in prompts[1] and "these are controls" not in prompts[1]
     assert prompts[0] == prompts[1]  # as if the cell and the rule built on it were not there
 

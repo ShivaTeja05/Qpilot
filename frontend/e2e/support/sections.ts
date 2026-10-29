@@ -1,7 +1,7 @@
 /**
- * The page's sections as the tests see them (docs/app.md §2), each with its owner (§7), and the
- * features that have not landed yet. A test of a feature that has not landed is `test.fixme`
- * with its owner's name; flip the flag here when the coordinator merges it.
+ * The page's sections as the tests see them (docs/app.md §2), each with its owner (§7). Every
+ * feature has landed: a test of a section runs, and a section showing the development
+ * placeholder fails.
  */
 
 export interface SectionUnderTest {
@@ -41,84 +41,3 @@ export const SECTIONS: SectionUnderTest[] = [
 
 /** The text of the development placeholder (src/shell/SectionPending.tsx); it must not ship. */
 export const PENDING_TEXT = "This section is being built.";
-
-/**
- * Features that have landed on ui/one-page (merged into this branch). `false` = the tests of it
- * are `test.fixme` until its owner's slice is merged.
- */
-export const LANDED = {
-  /** shell: rail with live stage states, top bar, theme toggle, live dot. */
-  shellFrame: true,
-  /** shell: the needs-key screen (401 no_token). */
-  needsKey: true,
-  /** shell: ⌘K palette, `?` shortcut sheet, g-then-x section keys. */
-  shellKeys: true,
-  /** ask: the Ask drawer's content (the frame, ⌘J, is shell's and tested always). */
-  askDrawer: true,
-  /** home: Open (hero, demo, Recent cards, system strip). */
-  home: true,
-  /** home: Settings. */
-  settings: true,
-  /** design: the Design inbox + plate map. */
-  design: true,
-  /** curves: the Curves inbox, plate heatmap, curve viewer. */
-  curves: true,
-  /** insight: Results (summary, robustness map, all-genes table, flips, Decision Cards). */
-  results: true,
-  /** insight: deciding a card, then Undo (writes to the store). */
-  decide: true,
-  /** gate: the Controls section (Run Gate: rule checks, consequences, gate cards). */
-  gate: true,
-  /** gene: the Gene section. */
-  gene: true,
-  /** audit: the Audit section (seeded audit, gene rows). */
-  audit: true,
-  /** prism: the Prism section. */
-  prism: true,
-  /** record: the Record section (timeline, export, verify). */
-  record: true,
-  /** record: the Agents section. */
-  agents: true,
-  /** trace: from a result to the wells to look at. */
-  trace: true,
-  /** claims: the Claims section. */
-  claims: true,
-  /** report: the Reviewer's Report / study report. */
-  report: true,
-  /** history: the History section. */
-  history: true,
-  /** planner: Plan next. */
-  planner: true,
-};
-
-export type Feature = keyof typeof LANDED;
-
-/** Who builds each feature (for the fixme reason and the bus). */
-export const OWNER: Record<Feature, string> = {
-  shellFrame: "shell",
-  needsKey: "shell",
-  shellKeys: "shell",
-  askDrawer: "ask",
-  home: "home",
-  settings: "home",
-  design: "design",
-  curves: "curves",
-  results: "insight",
-  decide: "insight",
-  gate: "gate",
-  gene: "gene",
-  audit: "audit",
-  prism: "prism",
-  record: "record",
-  agents: "record",
-  trace: "trace",
-  claims: "claims",
-  report: "report",
-  history: "history",
-  planner: "planner",
-};
-
-/** The `test.fixme` reason for a feature that has not landed. */
-export function notLanded(feature: Feature): string {
-  return `not landed yet (owner: ${OWNER[feature]})`;
-}

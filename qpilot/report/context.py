@@ -23,6 +23,8 @@ DIM_LABELS = {
     "undetermined": "how wells without a quantity are handled",
     "amp_call": "which curves count as amplified",
     "efficiency": "which efficiency turns Cq into quantity",
+    "normaliser": "what each gene is normalised to",
+    "interrun": "how differences between plates are corrected",
 }
 #: The choice each Decision Card kind decides.
 KIND_DIMENSION = {
@@ -31,9 +33,13 @@ KIND_DIMENSION = {
     "undetermined": "undetermined",
     "amp_call": "amp_call",
     "numbers.efficiency_model": "efficiency",
+    "numbers.normaliser": "normaliser",
+    "numbers.interrun": "interrun",
 }
 #: Method names with digits that prose may quote (they name a method, not a result).
 METHOD_NAMES = {"MIQE 2.0", "SHA-256", "log2", "N0", "TD0", "RFC 6901"}
+#: How absolute quantities are computed (``report/methods.py`` quantities): method, not data.
+METHOD_NAMES |= {"log10", "10^(−1/slope) − 1", "95 % prediction interval", "R²"}
 
 
 def dim_label(dim: str) -> str:
@@ -76,21 +82,45 @@ class Ctx:
         """A derived string's token (a version, a hash: text with digits that is not prose)."""
         return tok(self.facts.derive(name, value, path))
 
+    def reactions_in_file(self, n_in_file: int, n_runs: int) -> str:
+        """Why the file's reaction count differs from the study's (a clause), or "" when equal.
+
+        The RDML file can hold runs the study does not analyse (the demo: 25,491 reactions on
+        67 runs, of which the study analyses the 24,576 on its 64 plates), so a count of the
+        file's curves next to the study's reactions says which is which.
+        """
+        r = self.result
+        if not self.has("f_n_reactions") or n_in_file == r.n_reactions:
+            return ""
+        runs = self.count("rdml_n_runs", n_runs, "input.rdml:/run@len")
+        plates = self.count("n_plates", r.n_plates, "results.json:/n_plates")
+        return (
+            f"on all {runs} runs of the file; this study analyses the {tok('f_n_reactions')} "
+            f"on its {plates} plates"
+        )
+
     # ---- the study ---------------------------------------------------------------------------
 
     @cached_property
     def marker_mode(self) -> bool:
         """Groups split by a marker gene's expression (not from a confirmed design's groups)."""
-        return "f_group_a" not in self.facts
+        return "f_group_a" not in self.facts and not self.quantify
+
+    @cached_property
+    def quantify(self) -> bool:
+        """A study that quantifies samples: no groups compared (``qpcr.quantify_study``)."""
+        from qpilot.qpcr.quantify_study import is_quantify_result
+
+        return is_quantify_result(self.result)
 
     @cached_property
     def group_names(self) -> tuple[str, str]:
         """The compared group's name and the reference group's."""
         if not self.marker_mode:
             return str(self.facts.value("f_group_a")), str(self.facts.value("f_group_b"))
-        var = self.result.design.group_var
-        marker = var.removesuffix("_high") or var
-        return f"{marker}-high", "rest"
+        from qpilot.qpcr.design import marker_group_names
+
+        return marker_group_names(self.result.design.group_var)
 
     @cached_property
     def marker(self) -> str | None:

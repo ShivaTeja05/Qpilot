@@ -10,7 +10,8 @@ It asks the real server (in process) for:
   study's own facts);
 * ``report.json`` -- ``POST /api/studies/{id}/claims`` on that example paragraph followed by
   the sentences in ``EXTRA`` (claims about a normaliser the study checks but did not plan,
-  group sizes, and a list read "respectively"), so every verdict and span kind appears.
+  group sizes, a list read "respectively", and a claim about groups the study does not compare),
+  so every verdict and span kind appears.
 
 The sentences in ``EXTRA`` name the study's genes and groups only; every number in the answers
 is the server's.
@@ -33,7 +34,8 @@ HERE = Path(__file__).resolve().parent
 BASE = "http://127.0.0.1:7860"
 EXTRA = (
     "Expression was normalised to UBC. ODC1 and BIRC5 were up-regulated (4.1- and 6-fold, "
-    "respectively). n = 53 vs 294 tumours. GAPDH was unchanged."
+    "respectively). n = 53 vs 294 tumours. GAPDH was unchanged. Survivin was 4-fold higher in "
+    "MYCN-amplified tumours (p < 0.001)."
 )
 
 

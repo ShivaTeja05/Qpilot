@@ -26,7 +26,7 @@ from qpilot.qpcr.gate_rules import OPTION_LABELS, resolve_pack
 from qpilot.web.context import make_context
 from qpilot.web.routers import gate as gate_router
 from qpilot.web.server import create_app
-from tests.web.conftest import BASE, TOKEN, wait_job, walk_mini
+from tests.web.conftest import BASE, TOKEN, get_settled, wait_job, walk_mini
 from tests.web.test_parity_studio import decision_files
 from tests.web.test_studio_flow import no_html
 
@@ -42,14 +42,12 @@ def fresh_gate_cache():
 
 
 def ready(c: TestClient, study: str):
-    """GET the gate, following the ``gate.run`` job the first answer may name."""
-    url = f"/api/studies/{study}/gate"
-    r = c.get(url)
-    if r.status_code == 409 and r.json()["error"]["code"] == "loading":
-        job = wait_job(c, r.json()["error"]["details"]["job"])
-        assert job["status"] == "done", job
+    """GET the gate, following every ``gate.run`` job an answer names until it answers."""
+    jobs: list[dict] = []
+    r = get_settled(c, f"/api/studies/{study}/gate", jobs=jobs)
+    # a run that failed is answered by the route's own refusal, returned as it is
+    for job in (j for j in jobs if j["status"] == "done"):
         assert job["result_type"] == "GateLoaded" and job["result"]["study_id"] == study
-        r = c.get(url)
     return r
 
 
@@ -368,8 +366,9 @@ def test_the_demo_gate_route(tmp_path):
     check_texts(body)
     same_as_report(body, gate_router.compute(store, study, None))
     expected = gate_file(rdml)
-    # the seven rules of research-default 1.0.0 as before; G-RT (no RT replicates marked) and
-    # G-INSTR (the RDML says nothing about the runs) add 1 + 64 "not applicable"
+    # the seven rules of research-default 1.0.0 as before; G-RT (no RT replicates marked),
+    # G-INSTR (the RDML says nothing about the runs), G-MELT (no melt curves in the file) and
+    # G-IPC (no internal positive control, pack 1.3.0) add 1 + 64 + 1 + 1 "not applicable"
     assert (
         body["counts"]
         == expected.counts
@@ -377,13 +376,15 @@ def test_the_demo_gate_route(tmp_path):
             "pass": 491,
             "warn": 8,
             "fail": 14,
-            "not_applicable": 192 + 1 + 64,
+            "not_applicable": 192 + 1 + 64 + 1 + 1,
         }
     )
-    new = [e for e in body["evaluations"] if e["rule_id"] in ("G-RT", "G-INSTR")]
+    new = [e for e in body["evaluations"] if e["rule_id"] in ("G-RT", "G-INSTR", "G-MELT", "G-IPC")]
     assert {(e["rule_id"], e["verdict"]) for e in new} == {
         ("G-RT", "not_applicable"),
         ("G-INSTR", "not_applicable"),
+        ("G-MELT", "not_applicable"),
+        ("G-IPC", "not_applicable"),
     }
     assert len(body["runs"]) == 64 and {r["source"] for r in body["runs"]} == {"study_file"}
     assert body["n_gated"] == 64 and len(body["consequences"]) == 10

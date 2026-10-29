@@ -1,34 +1,47 @@
 /**
- * What the design still needs before it can be confirmed (the stage's blockers, in the
- * engine's words), and where the missing proposals can come from when none is waiting.
+ * What the design still needs before it can be confirmed, each with the control on this page
+ * that gives it (the target list, the sample table, the comparison, the inbox). A model is
+ * optional: the person can set everything here, or attach a sample sheet.
  */
 import { ListChecks } from "lucide-react";
-import type { Proposal } from "@/lib/vocab";
+import type { Schemas } from "@/api/client";
 import { Button } from "@/ui";
 
-const sentence = (s: string) => (s ? s[0]!.toUpperCase() + s.slice(1) : s);
+export type Need = Schemas["DesignNeed"];
+export type NeedPlace = Need["where"] | "sheet";
+
+const sentence = (s: string) => {
+  const t = s ? s[0]!.toUpperCase() + s.slice(1) : s;
+  return /[.!?]$/.test(t) ? t : `${t}.`;
+};
+
+const GO: Record<string, { label: string; to: NeedPlace }> = {
+  reference: { label: "Choose the reference genes", to: "targets" },
+  gene: { label: "Mark the genes of interest", to: "targets" },
+  groups: { label: "Set the groups", to: "samples" },
+  comparison: { label: "Choose the comparison", to: "comparison" },
+  standards: { label: "Give the standards their quantities", to: "samples" },
+  waiting: { label: "Show the waiting proposals", to: "inbox" },
+};
 
 export function DesignNeeds({
+  needs,
   blockers,
-  proposals,
-  onOpen,
-  onSettings,
+  onGo,
+  unrecorded = 0,
 }: {
+  /** From the editor's view (each with where it is fixed); `undefined` while it loads. */
+  needs: Need[] | undefined;
+  /** The design stage's blockers, in the engine's words (shown while the editor loads). */
   blockers: string[];
-  proposals: Proposal[];
-  /** Go to Open (to open the file again with a sample sheet). */
-  onOpen: () => void;
-  /** Go to Settings (to connect a model). */
-  onSettings: () => void;
+  onGo: (where: NeedPlace) => void;
+  /** Changes in the editor's draft: they count once they are recorded. */
+  unrecorded?: number;
 }) {
-  if (!blockers.length) return null;
-  const waiting = (kinds: Proposal["kind"][]) =>
-    proposals.some((p) => p.status === "proposed" && kinds.includes(p.kind));
-  const groupsMissing =
-    blockers.some((b) => /comparison|group/i.test(b)) &&
-    !waiting(["design.group", "design.comparison", "design.preset"]);
-  const refsMissing =
-    blockers.some((b) => /reference/i.test(b)) && !waiting(["design.target_role", "design.preset"]);
+  const list: Need[] =
+    needs ?? blockers.map((b) => ({ code: "engine", words: b, where: "engine" as const }));
+  if (!list.length) return null;
+  const fixable = list.some((n) => n.where !== "engine" && n.where !== "inbox");
   return (
     <section
       aria-labelledby="design-needs"
@@ -39,33 +52,44 @@ export function DesignNeeds({
         <h2 id="design-needs" className="text-sm font-semibold text-fg">
           What the design still needs before it can be confirmed
         </h2>
-        <ul className="mt-1 list-disc pl-5 text-[13px] text-fg">
-          {blockers.map((b) => (
-            <li key={b}>{sentence(b)}.</li>
-          ))}
+        {unrecorded ? (
+          <p className="mt-1 text-[13px] text-muted">
+            Your {unrecorded} change{unrecorded === 1 ? " is" : "s are"} not recorded yet, so
+            {unrecorded === 1 ? " it is" : " they are"} not counted here: review and record{" "}
+            {unrecorded === 1 ? "it" : "them"} below.
+          </p>
+        ) : null}
+        <ul className="mt-2 flex flex-col gap-2 text-[13px] text-fg">
+          {list.map((n) => {
+            const go = GO[n.code];
+            return (
+              <li
+                key={`${n.code}:${n.words}`}
+                className="flex flex-wrap items-center gap-x-3 gap-y-1"
+              >
+                <span className="min-w-0 flex-1">{sentence(n.words)}</span>
+                {go ? (
+                  <Button size="sm" variant="secondary" onClick={() => onGo(go.to)}>
+                    {go.label}
+                  </Button>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
-        {groupsMissing || refsMissing ? (
-          <>
-            <p className="mt-2 text-[13px] text-muted">
-              No proposal for{" "}
-              {groupsMissing && refsMissing
-                ? "the groups or the reference genes"
-                : groupsMissing
-                  ? "the groups"
-                  : "the reference genes"}{" "}
-              is waiting. qPilot's rules read groups from a sample sheet's group column, and a model
-              can read them from the names; neither had them for this file. Open the file again with
-              a sample sheet, or connect a model, then propose again.
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button size="sm" variant="secondary" onClick={onOpen}>
-                Open with a sample sheet
-              </Button>
-              <Button size="sm" variant="ghost" onClick={onSettings}>
-                Model settings
-              </Button>
-            </div>
-          </>
+        {fixable ? (
+          <p className="mt-3 text-[13px] text-muted">
+            A model is optional: you can set all of this on this page (below), or fill the sample
+            sheet template and attach it.{" "}
+            <Button
+              size="sm"
+              variant="link"
+              className="h-auto p-0 align-baseline"
+              onClick={() => onGo("sheet")}
+            >
+              Use a sample sheet
+            </Button>
+          </p>
         ) : null}
       </div>
     </section>

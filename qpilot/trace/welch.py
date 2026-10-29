@@ -18,6 +18,13 @@ Group statistics are kept as ``(n, mean, sum of squared deviations)`` and update
 numerically stable one-point formulas (Welford), so "this unit set aside" equals the comparison
 computed without it to rounding error; the tests check that against a brute-force re-run.
 
+A study with several comparisons (:class:`Family`): the statistics are kept per *group*, every
+comparison of the study is computed from them after each change (a unit set aside leaves its
+group, so every comparison of that group moves), and the call of the traced comparison uses the
+corrected p-value (Holm across the gene's comparisons, or Dunnett's or Tukey's single-step p of
+a pooled-variance test), exactly as the engine calls it. ``WelchArrays.p`` stays the p before
+correction and ``p_adj`` is the corrected one.
+
 Ported from the WIP branch ``agents/trace`` (``qpilot/qpcr/influence.py``, 19 Oct 2026), with the
 pair search, the margin to the call's line and the greedy flip search added. The maths mirrors
 the simulator's ``qsim.influence``; it is written again because the engine never imports the
@@ -28,6 +35,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
+from functools import partial
 
 import numpy as np
 from scipy import stats
@@ -40,11 +48,17 @@ CALL_NAMES = {UP: "up", NONE: "none", DOWN: "down"}
 
 @dataclass(frozen=True)
 class GroupStats:
-    """Per-gene count, mean and sum of squared deviations of one group (arrays broadcast)."""
+    """Per-gene count, mean and sum of squared deviations of one group (arrays broadcast).
+
+    ``nd`` counts the values that were detected (not filled in by a non-detect rule): a group
+    with values but none detected is not compared, as the decision space does (``None``: every
+    value counts as detected).
+    """
 
     n: np.ndarray
     mean: np.ndarray
     ss: np.ndarray
+    nd: np.ndarray | None = None
 
 
 @dataclass(frozen=True)
@@ -61,25 +75,46 @@ class WelchArrays:
     df: np.ndarray
     t_crit: np.ndarray
     call: np.ndarray
+    p_adj: np.ndarray | None = None  # the corrected p the call used (None: no correction)
 
     def half_width(self) -> np.ndarray:
         """Half the width of the 95 % confidence interval of the log2 fold change."""
         return self.t_crit * self.se
 
+    @property
+    def p_call(self) -> np.ndarray:
+        """The p-value the call used: the corrected one when there is a correction."""
+        return self.p if self.p_adj is None else self.p_adj
+
     def row(self, i: int) -> WelchArrays:
         """One row of a (perturbations x genes) result."""
-        return WelchArrays(*(np.asarray(v)[i] for v in self.__dict__.values()))
+        return WelchArrays(
+            *(None if v is None else np.asarray(v)[i] for v in self.__dict__.values())
+        )
 
 
-def group_stats(values: np.ndarray, mask: np.ndarray) -> GroupStats:
-    """Column-wise statistics of ``values`` where ``mask`` is true (two-pass, as the space)."""
+def group_stats(
+    values: np.ndarray, mask: np.ndarray, detected: np.ndarray | None = None
+) -> GroupStats:
+    """Column-wise statistics of ``values`` where ``mask`` is true (two-pass, as the space).
+
+    ``detected`` (same shape): the values not filled in by a non-detect rule, counted in ``nd``.
+    """
     n = mask.sum(axis=0)
     filled = np.where(mask, values, 0.0)
     with np.errstate(divide="ignore", invalid="ignore"):  # n < 2 is reported as p = NaN
         mean = filled.sum(axis=0) / n
         deviations = np.where(mask, values - mean, 0.0)
         ss = (deviations**2).sum(axis=0)
-    return GroupStats(n=n.astype(float), mean=mean, ss=ss)
+    nd = None if detected is None else (mask & detected).sum(axis=0).astype(float)
+    return GroupStats(n=n.astype(float), mean=mean, ss=ss, nd=nd)
+
+
+def none_detected(a: GroupStats, b: GroupStats) -> np.ndarray | None:
+    """Where group A or B has values but none detected: not compared (``None``: not tracked)."""
+    if a.nd is None or b.nd is None:
+        return None
+    return ((a.n > 0) & (a.nd == 0)) | ((b.n > 0) & (b.nd == 0))
 
 
 def calls(diff: np.ndarray, p: np.ndarray, rule: ConclusionRule = DEFAULT_RULE) -> np.ndarray:
@@ -101,6 +136,9 @@ def welch(a: GroupStats, b: GroupStats, rule: ConclusionRule = DEFAULT_RULE) -> 
         t = diff / se
         df = (sa + sb) ** 2 / (sa**2 / (a.n - 1) + sb**2 / (b.n - 1))
         short = (a.n < 2) | (b.n < 2)
+        untested = none_detected(a, b)
+        if untested is not None:
+            short = short | untested
         p = np.where(short, np.nan, 2 * stats.t.sf(np.abs(t), df))
         t_crit = np.where(short, np.nan, stats.t.ppf(0.975, df))
     return WelchArrays(diff=diff, se=se, p=p, df=df, t_crit=t_crit, call=calls(diff, p, rule))
@@ -124,6 +162,9 @@ def fast_calls(
         t = np.abs(diff / se)
         df = (sa + sb) ** 2 / (sa**2 / (a.n - 1) + sb**2 / (b.n - 1))
         short = (a.n < 2) | (b.n < 2) | ~np.isfinite(t) | ~np.isfinite(df)
+        untested = none_detected(a, b)
+        if untested is not None:
+            short = short | untested
     significant = np.zeros(np.shape(diff), dtype=bool)
     ok = ~short
     if ok.any():
@@ -161,22 +202,37 @@ def margin(after: WelchArrays, base_call: np.ndarray, rule: ConclusionRule) -> n
     return np.where(np.isfinite(out), out, np.inf)
 
 
+def _map(s: GroupStats, fn) -> GroupStats:  # noqa: ANN001
+    """``fn`` applied to every field of ``s`` (``nd`` too, when it is tracked)."""
+    return GroupStats(fn(s.n), fn(s.mean), fn(s.ss), None if s.nd is None else fn(s.nd))
+
+
 def _tile(s: GroupStats, shape: tuple[int, ...]) -> GroupStats:
     """The same per-gene statistics repeated for every row of a (rows, genes) perturbation."""
-    return GroupStats(*(np.broadcast_to(v, shape) for v in (s.n, s.mean, s.ss)))
+    return _map(s, lambda v: np.broadcast_to(v, shape))
 
 
-def _remove(s: GroupStats, x: np.ndarray, member: np.ndarray) -> GroupStats:
-    """Statistics after taking ``x`` out where ``member``; unchanged elsewhere."""
+def _remove(
+    s: GroupStats, x: np.ndarray, member: np.ndarray, detected: np.ndarray | None = None
+) -> GroupStats:
+    """Statistics after taking ``x`` out where ``member``; unchanged elsewhere.
+
+    ``detected``: whether the value taken out was detected (``nd`` falls by one where so).
+    """
     with np.errstate(divide="ignore", invalid="ignore"):
         n = s.n - 1
         mean = s.mean - (x - s.mean) / n
         ss = np.maximum(s.ss - (x - s.mean) * (x - mean), 0.0)
     keep = ~member
+    nd = None
+    if s.nd is not None:
+        gone = member if detected is None else member & detected
+        nd = np.where(gone, s.nd - 1, s.nd)
     return GroupStats(
         n=np.where(keep, s.n, n),
         mean=np.where(keep, s.mean, mean),
         ss=np.where(keep, s.ss, ss),
+        nd=nd,
     )
 
 
@@ -191,6 +247,7 @@ def _shift(s: GroupStats, x: np.ndarray, delta: np.ndarray, member: np.ndarray) 
         n=np.broadcast_to(s.n, mean.shape),
         mean=np.where(keep, s.mean, mean),
         ss=np.where(keep, s.ss, ss),
+        nd=None if s.nd is None else np.broadcast_to(s.nd, mean.shape),
     )
 
 
@@ -205,6 +262,7 @@ def _add(s: GroupStats, y: np.ndarray, joining: np.ndarray) -> GroupStats:
         n=np.where(keep, s.n, n),
         mean=np.where(keep, s.mean, mean),
         ss=np.where(keep, s.ss, ss),
+        nd=None if s.nd is None else np.where(keep, s.nd, s.nd + 1),
     )
 
 
@@ -250,6 +308,10 @@ class Comparison:
         in_a: Per unit, True for the first group (the high group, or group A).
         in_b: Per unit, True for the second group (the rest, or group B).
         rule: The conclusion rule.
+        family: The study's comparisons when it has several (:class:`Family`); ``in_a`` and
+            ``in_b`` must then be the traced comparison's groups. Every update moves the
+            statistics of the unit's group, every comparison is recomputed and the traced
+            call uses the corrected p-value. ``None``: one comparison, Welch's test.
     """
 
     def __init__(
@@ -259,18 +321,40 @@ class Comparison:
         in_a: np.ndarray,
         in_b: np.ndarray,
         rule: ConclusionRule = DEFAULT_RULE,
+        family: Family | None = None,
+        capped: np.ndarray | None = None,
     ) -> None:
         relative = np.asarray(relative, dtype=float)
         valid = np.asarray(valid, dtype=bool) & ~np.isnan(relative)
-        if np.any(np.asarray(in_a, dtype=bool) & np.asarray(in_b, dtype=bool)):
+        in_a, in_b = np.asarray(in_a, dtype=bool), np.asarray(in_b, dtype=bool)
+        if np.any(in_a & in_b):
             raise ValueError("a unit cannot be in both groups")
         self.rule = rule
+        self.family = family
+        if family is None:
+            masks = [in_a, in_b]
+            self._ia, self._ib = 0, 1
+        else:
+            fa, fb = family.masks()
+            if not (np.array_equal(fa, in_a) and np.array_equal(fb, in_b)):
+                raise ValueError("the traced groups are not the family's traced comparison")
+            masks = list(family.groups)
+            self._ia, self._ib = family.pairs[family.chosen]
         self.x = np.where(valid, relative, 0.0)
-        self.a = valid & np.asarray(in_a, dtype=bool)[:, None]
-        self.b = valid & np.asarray(in_b, dtype=bool)[:, None]
-        self.stats_a = group_stats(relative, self.a)
-        self.stats_b = group_stats(relative, self.b)
-        self.base = welch(self.stats_a, self.stats_b, rule)
+        self.members = [valid & m[:, None] for m in masks]
+        self.a, self.b = self.members[self._ia], self.members[self._ib]
+        self.capped = None if capped is None else np.asarray(capped, dtype=bool)
+        detected = None if self.capped is None else ~self.capped
+        self.detected = detected
+        self.stats = [group_stats(relative, m, detected) for m in self.members]
+        self.stats_a, self.stats_b = self.stats[self._ia], self.stats[self._ib]
+        self.base = self._test(self.stats, exact=True)
+
+    def _test(self, stats_by_group: list[GroupStats], *, exact: bool = False) -> WelchArrays:
+        """The traced comparison from every group's statistics (corrected with a family)."""
+        if self.family is None:
+            return welch(stats_by_group[self._ia], stats_by_group[self._ib], self.rule)
+        return self.family.test(stats_by_group, self.rule, exact=exact)
 
     @property
     def used(self) -> np.ndarray:
@@ -279,18 +363,26 @@ class Comparison:
 
     def leave_one_out(self) -> Effect:
         """Each unit set aside from each gene's comparison, one at a time."""
-        a = _remove(_tile(self.stats_a, self.x.shape), self.x, self.a)
-        b = _remove(_tile(self.stats_b, self.x.shape), self.x, self.b)
-        return Effect(after=welch(a, b, self.rule), base=self.base, touched=self.used)
+        shape = self.x.shape
+        stats = [
+            _remove(_tile(s, shape), self.x, m, self.detected)
+            for s, m in zip(self.stats, self.members, strict=True)
+        ]
+        return Effect(after=self._test(stats), base=self.base, touched=self.used)
 
     def without(self, rows: list[int] | tuple[int, ...], j: int) -> WelchArrays:
         """Gene ``j`` with the units ``rows`` set aside together (exact, sequential updates)."""
-        a = GroupStats(*(np.asarray(v[j], dtype=float) for v in self.stats_a.__dict__.values()))
-        b = GroupStats(*(np.asarray(v[j], dtype=float) for v in self.stats_b.__dict__.values()))
+        stats = [_column_of(s, j) for s in self.stats]
         for i in rows:
-            a = _remove(a, self.x[i, j], np.asarray(self.a[i, j]))
-            b = _remove(b, self.x[i, j], np.asarray(self.b[i, j]))
-        return welch(a, b, self.rule)
+            stats = [
+                _remove(s, self.x[i, j], np.asarray(m[i, j]), self._det(i, j))
+                for s, m in zip(stats, self.members, strict=True)
+            ]
+        return self._test(stats, exact=True)
+
+    def _det(self, i: int | np.ndarray, j: int) -> np.ndarray | None:
+        """Whether unit(s) ``i``'s value of gene ``j`` was detected (``None``: not tracked)."""
+        return None if self.detected is None else np.asarray(self.detected[i, j])
 
     def pairs(self, j: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Every pair of the units used for gene ``j`` set aside together (calls only).
@@ -299,32 +391,39 @@ class Comparison:
             ``(rows, diff, call)``: the used unit rows (``n``) and ``(n, n)`` arrays whose cell
             ``[u, v]`` is gene ``j`` without units ``rows[u]`` and ``rows[v]`` (the diagonal
             removes one unit only; only ``u < v`` are pairs). Calls are exact
-            (:func:`fast_calls`).
+            (:func:`fast_calls`, or every comparison and the correction with a family).
         """
         rows = np.flatnonzero(self.used[:, j])
         x = self.x[rows, j]
-        in_a = self.a[rows, j]
-        in_b = self.b[rows, j]
-        sa = _repeat(self.stats_a, j, len(rows))
-        sb = _repeat(self.stats_b, j, len(rows))
-        one_a, one_b = _remove(sa, x, in_a), _remove(sb, x, in_b)
         shape = (len(rows), len(rows))
         col = np.broadcast_to(x[None, :], shape)
-        two_a = _remove(_column(one_a, shape), col, np.broadcast_to(in_a[None, :], shape))
-        two_b = _remove(_column(one_b, shape), col, np.broadcast_to(in_b[None, :], shape))
         diagonal = np.eye(len(rows), dtype=bool)  # the same unit twice is one removal
-        two_a = _keep_where(two_a, _column(one_a, shape), diagonal)
-        two_b = _keep_where(two_b, _column(one_b, shape), diagonal)
-        diff, _, _, call = fast_calls(two_a, two_b, self.rule)
-        return rows, diff, call
+        two = []
+        for s, m in zip(self.stats, self.members, strict=True):
+            inside = m[rows, j]
+            det = self._det(rows, j)
+            one = _remove(_repeat(s, j, len(rows)), x, inside, det)
+            det_col = None if det is None else np.broadcast_to(det[None, :], shape)
+            both = _remove(
+                _column(one, shape), col, np.broadcast_to(inside[None, :], shape), det_col
+            )
+            two.append(_keep_where(both, _column(one, shape), diagonal))
+        if self.family is None:
+            diff, _, _, call = fast_calls(two[self._ia], two[self._ib], self.rule)
+            return rows, diff, call
+        after = self._test(two)
+        return rows, after.diff, after.call
 
     def shift(self, delta: np.ndarray) -> Effect:
         """Each unit ``i`` alone moved by ``delta[i]`` on every gene it is used for."""
         d = np.broadcast_to(np.nan_to_num(np.asarray(delta, dtype=float))[:, None], self.x.shape)
         touched = self.used & (d != 0)
-        a = _shift(_tile(self.stats_a, self.x.shape), self.x, d, self.a & touched)
-        b = _shift(_tile(self.stats_b, self.x.shape), self.x, d, self.b & touched)
-        return Effect(after=welch(a, b, self.rule), base=self.base, touched=touched)
+        everywhere = (np.any(self.members, axis=0) if self.family else self.used) & (d != 0)
+        stats = [
+            _shift(_tile(s, self.x.shape), self.x, d, m & everywhere)
+            for s, m in zip(self.stats, self.members, strict=True)
+        ]
+        return Effect(after=self._test(stats), base=self.base, touched=touched)
 
     def bring_back(self, values: np.ndarray, to_a: np.ndarray, to_b: np.ndarray) -> Effect:
         """Each row ``j`` of ``values`` (a unit not used today) joining alone, in its group.
@@ -339,15 +438,23 @@ class Comparison:
         join_a = ok & np.asarray(to_a, dtype=bool)[:, None]
         join_b = ok & np.asarray(to_b, dtype=bool)[:, None]
         filled = np.where(ok, y, 0.0)
-        a = _add(_tile(self.stats_a, y.shape), filled, join_a)
-        b = _add(_tile(self.stats_b, y.shape), filled, join_b)
-        return Effect(after=welch(a, b, self.rule), base=self.base, touched=join_a | join_b)
+        stats = []
+        for g, s in enumerate(self.stats):
+            tiled = _tile(s, y.shape)
+            joining = join_a if g == self._ia else join_b if g == self._ib else None
+            stats.append(tiled if joining is None else _add(tiled, filled, joining))
+        return Effect(after=self._test(stats), base=self.base, touched=join_a | join_b)
 
     def evaluate(
         self, relative: np.ndarray, valid: np.ndarray, in_a: np.ndarray, in_b: np.ndarray
     ) -> WelchArrays:
         """Any other values and groups (several units changed at once), in full."""
-        return Comparison(relative, valid, in_a, in_b, self.rule).base
+        family = self.family
+        if family is not None:
+            fa, fb = family.masks()
+            if not (np.array_equal(fa, in_a) and np.array_equal(fb, in_b)):
+                family = None  # regrouped (a marker split): no family there
+        return Comparison(relative, valid, in_a, in_b, self.rule, family, self.capped).base
 
     def smallest_flip(self, j: int, loo: Effect, limit: int = 20) -> FlipSet:
         """The fewest units whose removal together changes gene ``j``'s call.
@@ -382,40 +489,45 @@ class Comparison:
 
     def _greedy(self, j: int, limit: int) -> FlipSet:
         base_call = np.asarray(self.base.call[j])
-        a = GroupStats(*(np.asarray(v[j], dtype=float) for v in self.stats_a.__dict__.values()))
-        b = GroupStats(*(np.asarray(v[j], dtype=float) for v in self.stats_b.__dict__.values()))
+        stats = [_column_of(s, j) for s in self.stats]
         left = self.used[:, j].copy()
         chosen: list[int] = []
         steps = min(limit, int(left.sum()) - 4)
         for _ in range(max(steps, 0)):
             rows = np.flatnonzero(left)
             x = self.x[rows, j]
-            in_a, in_b = self.a[rows, j], self.b[rows, j]
-            ta = _remove(GroupStats(*(np.full(len(rows), v) for v in (a.n, a.mean, a.ss))), x, in_a)
-            tb = _remove(GroupStats(*(np.full(len(rows), v) for v in (b.n, b.mean, b.ss))), x, in_b)
-            after = welch(ta, tb, self.rule)
+            trial = [
+                _remove(_map(s, partial(np.full, len(rows))), x, m[rows, j], self._det(rows, j))
+                for s, m in zip(stats, self.members, strict=True)
+            ]
+            after = self._test(trial)
             m = margin(after, np.full(len(rows), base_call), self.rule)
             pick = int(np.argmin(np.where(after.call != base_call, -np.inf, m)))
             i = int(rows[pick])
             chosen.append(i)
             left[i] = False
-            a = _remove(a, self.x[i, j], np.asarray(self.a[i, j]))
-            b = _remove(b, self.x[i, j], np.asarray(self.b[i, j]))
+            stats = [
+                _remove(s, self.x[i, j], np.asarray(mm[i, j]), self._det(i, j))
+                for s, mm in zip(stats, self.members, strict=True)
+            ]
             if after.call[pick] != base_call:
                 return FlipSet(tuple(chosen), False, len(chosen), self.without(tuple(chosen), j))
         return FlipSet((), False, len(chosen), None)
 
 
+def _column_of(s: GroupStats, j: int) -> GroupStats:
+    """Gene ``j``'s statistics of one group (0-d arrays)."""
+    return _map(s, lambda v: np.asarray(v[j], dtype=float))
+
+
 def _repeat(s: GroupStats, j: int, n: int) -> GroupStats:
     """Gene ``j``'s statistics repeated ``n`` times (one copy per unit to remove)."""
-    return GroupStats(*(np.full(n, np.asarray(v)[j], dtype=float) for v in (s.n, s.mean, s.ss)))
+    return _map(s, lambda v: np.full(n, np.asarray(v)[j], dtype=float))
 
 
 def _column(s: GroupStats, shape: tuple[int, int]) -> GroupStats:
     """Per-row statistics (one per first removed unit) repeated along the second axis."""
-    return GroupStats(
-        *(np.broadcast_to(np.asarray(v)[:, None], shape) for v in (s.n, s.mean, s.ss))
-    )
+    return _map(s, lambda v: np.broadcast_to(np.asarray(v)[:, None], shape))
 
 
 def _keep_where(s: GroupStats, other: GroupStats, where: np.ndarray) -> GroupStats:
@@ -423,6 +535,7 @@ def _keep_where(s: GroupStats, other: GroupStats, where: np.ndarray) -> GroupSta
         n=np.where(where, other.n, s.n),
         mean=np.where(where, other.mean, s.mean),
         ss=np.where(where, other.ss, s.ss),
+        nd=None if s.nd is None or other.nd is None else np.where(where, other.nd, s.nd),
     )
 
 
@@ -435,3 +548,131 @@ def robust_z(values: np.ndarray, axis: int = 0) -> np.ndarray:
         mad = 1.4826 * np.nanmedian(np.abs(x - median), axis=axis, keepdims=True)
         z = (x - median) / mad
     return np.where(mad > 0, z, np.nan)
+
+
+# ---- several comparisons -------------------------------------------------------------------
+
+
+@dataclass(frozen=True, eq=False)
+class Family:
+    """A study's comparisons as pairs of groups over the units, and how they are corrected.
+
+    ``groups`` is groups x units (a unit is in at most one group), ``pairs`` each comparison's
+    ``(group a, group b)``, ``chosen`` the traced comparison's position in ``pairs``,
+    ``correction`` ``holm``, ``dunnett``, ``tukey`` or ``none`` and ``control`` the control
+    group's position (Dunnett). ``correction`` ``none`` with Welch tests is the uncorrected study.
+    """
+
+    groups: np.ndarray
+    pairs: tuple[tuple[int, int], ...]
+    chosen: int
+    correction: str = "none"
+    control: int | None = None
+
+    @property
+    def pooled(self) -> bool:
+        """Dunnett and Tukey pool one variance per gene over every group."""
+        return self.correction in ("dunnett", "tukey")
+
+    def masks(self) -> tuple[np.ndarray, np.ndarray]:
+        """The traced comparison's ``(in_a, in_b)`` unit masks."""
+        a, b = self.pairs[self.chosen]
+        return self.groups[a], self.groups[b]
+
+    def test(
+        self, stats_by_group: list[GroupStats], rule: ConclusionRule, *, exact: bool = True
+    ) -> WelchArrays:
+        """Every comparison from the groups' statistics; the traced one, with its corrected call.
+
+        Works on any common shape of the statistics (genes, or perturbations x genes). With
+        ``exact=False`` (many perturbations at once) Dunnett's and Tukey's integrals are
+        computed only where the call depends on them: where the change is past the rule's line
+        and ``p <= alpha < m p`` (the corrected p lies between the uncorrected one and
+        Bonferroni's ``m p``); elsewhere ``p_adj`` holds the bound that decides the call, and
+        the calls are exact everywhere.
+        """
+        if self.pooled:
+            tests = self._pooled(stats_by_group, rule)
+        else:
+            tests = [welch(stats_by_group[a], stats_by_group[b], rule) for a, b in self.pairs]
+        mine = tests[self.chosen]
+        if self.correction == "none" or len(tests) < 2 and not self.pooled:
+            return mine
+        p_adj = self._adjusted(tests, stats_by_group, None if exact else rule)
+        call = calls(mine.diff, p_adj, rule)
+        return WelchArrays(mine.diff, mine.se, mine.p, mine.df, mine.t_crit, call, p_adj)
+
+    def _pooled(self, stats_by_group: list[GroupStats], rule: ConclusionRule) -> list[WelchArrays]:
+        shape = np.broadcast_shapes(*(np.shape(s.mean) for s in stats_by_group))
+        ss = np.zeros(shape)
+        dof = np.zeros(shape)
+        for s in stats_by_group:
+            n = np.broadcast_to(s.n, shape)
+            ok = n >= 2
+            ss = ss + np.where(ok, np.broadcast_to(s.ss, shape), 0.0)
+            dof = dof + np.where(ok, n - 1.0, 0.0)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            var = np.where(dof > 0, ss / dof, np.nan)
+        out = []
+        for a, b in self.pairs:
+            sa, sb = stats_by_group[a], stats_by_group[b]
+            with np.errstate(divide="ignore", invalid="ignore"):
+                se = np.sqrt(var * (1 / sa.n + 1 / sb.n))
+                diff = sa.mean - sb.mean
+                t = diff / se
+                short = (sa.n < 2) | (sb.n < 2) | ~(dof > 0) | ~np.isfinite(t)
+                untested = none_detected(sa, sb)
+                if untested is not None:
+                    short = short | untested
+                p = np.where(short, np.nan, 2 * stats.t.sf(np.abs(t), dof))
+                t_crit = np.where(short, np.nan, stats.t.ppf(0.975, dof))
+            diff = np.broadcast_to(diff, shape)
+            out.append(
+                WelchArrays(diff, np.broadcast_to(se, shape), p, dof, t_crit, calls(diff, p, rule))
+            )
+        return out
+
+    def _adjusted(
+        self,
+        tests: list[WelchArrays],
+        stats_by_group: list[GroupStats],
+        calls_only: ConclusionRule | None = None,
+    ) -> np.ndarray:
+        """The traced comparison's corrected p (any shape; NaN where it is not tested)."""
+        from qpilot.qpcr.contrast import holm
+        from qpilot.qpcr.multiplicity import dunnett_adjusted, tukey_adjusted
+
+        shape = np.shape(tests[self.chosen].p)
+        p = np.stack([np.broadcast_to(t.p, shape) for t in tests])
+        if self.correction == "holm":
+            return holm(p, axis=0)[self.chosen]
+        flat = p.reshape(len(tests), -1)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            t = np.stack([np.broadcast_to(x.diff / x.se, shape) for x in tests])
+        t = np.where(np.isfinite(flat), t.reshape(len(tests), -1), np.nan)
+        df = np.broadcast_to(tests[self.chosen].df, shape).reshape(-1)
+        n = [np.broadcast_to(s.n, shape).reshape(-1) for s in stats_by_group]
+        mine = flat[self.chosen]
+        need = np.isfinite(mine)
+        out = np.full(mine.shape, np.nan)
+        if calls_only is not None:  # decide the call from the bounds where they suffice
+            m = np.isfinite(flat).sum(axis=0)
+            upper = np.minimum(1.0, m * mine)
+            diff = np.broadcast_to(tests[self.chosen].diff, shape).reshape(-1)
+            with np.errstate(invalid="ignore"):
+                past = np.abs(diff) >= calls_only.min_log2fc
+                sure_yes = past & (upper < calls_only.alpha)
+                sure_no = ~past | (mine >= calls_only.alpha)
+            out = np.where(need & sure_yes, upper, np.where(need & sure_no, mine, np.nan))
+            need = need & ~sure_yes & ~sure_no
+        cols = np.flatnonzero(need)
+        if len(cols):
+            if self.correction == "dunnett":
+                n_treated = np.stack([n[a][cols] for a, _ in self.pairs])
+                n0 = n[self.control][cols]  # type: ignore[index]
+                exact = dunnett_adjusted(t[:, cols], n_treated, n0, df[cols])
+            else:
+                k = sum((x[cols] >= 2).astype(float) for x in n)
+                exact = tukey_adjusted(t[:, cols], k, df[cols])
+            out[cols] = exact[self.chosen]
+        return out.reshape(shape)

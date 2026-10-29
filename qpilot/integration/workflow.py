@@ -7,7 +7,7 @@ Stages, in the fixed order of qPilot Studio plus the simulator and the record::
     3 curves      blind: the Curve Judge vs LinRegPCR, disagreements that matter, a person decides
     4 choices     results appear: the engine's analysis, robustness grid and Decision Cards
     5 simulator   the Decision Simulator audits the confirmed analysis (every combination of
-                  eight decisions), bound to the study; refused if it does not reproduce qPilot
+                  its decisions), bound to the study; refused if it does not reproduce qPilot
     6 prism       the Prism draft, a person accepts it, Send to Prism writes the bundle
     7 roundtrip   what changed in Prism comes back as questions; an accepted exclusion re-runs
                   the analysis (and the audit)
@@ -35,6 +35,8 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
+
+from qpilot.explain.words import plural
 
 HUMAN = "human"
 STAGES = (
@@ -346,7 +348,7 @@ def exclude_demo_sample(sent_back: Path) -> dict[str, str]:
     odc1 = sent_back / "ODC1.csv"
     lines = odc1.read_text(encoding="utf-8").split("\n")
     lines = [",".join([ln.split(",")[0], "", ""]) if ln.startswith("1496,") else ln for ln in lines]
-    odc1.write_text("\n".join(lines), encoding="utf-8")
+    odc1.write_text("\n".join(lines), encoding="utf-8", newline="\n")
     return {"gene": "ODC1", "row": "1496", "edit": "value removed in Prism"}
 
 
@@ -608,7 +610,7 @@ def _stages(  # noqa: PLR0915 (one function per stage would hide the order)
     rec.begin(
         "simulator",
         "Decision Simulator: audit the confirmed analysis under every "
-        "combination of eight decisions",
+        "combination of its analysis decisions",
     )
     audit_dir = out_dir / "simulator_audit"
     first_audit = _run_audit(rec, sim, studio.store, study, audit_dir, options, want)
@@ -715,7 +717,7 @@ def _stages(  # noqa: PLR0915 (one function per stage would hide the order)
                     }
                     rec.note("roundtrip", verdicts_changed_by_the_exclusion=changes)
                     rec.step(
-                        f"the exclusion changes {len(changes)} simulator verdict(s)",
+                        f"the exclusion changes {plural(len(changes), 'simulator verdict')}",
                         "system",
                         changes=changes,
                     )
@@ -984,9 +986,9 @@ def _agents_stage(rec: Recorder, store: Any, study: str, report: WorkflowReport)
 
 def _write_report(report: WorkflowReport, out_dir: Path) -> None:
     (out_dir / "workflow.json").write_text(
-        json.dumps(report.as_dict(), indent=1, default=str), encoding="utf-8"
+        json.dumps(report.as_dict(), indent=1, default=str), encoding="utf-8", newline="\n"
     )
-    (out_dir / "WORKFLOW.md").write_text(render_markdown(report), encoding="utf-8")
+    (out_dir / "WORKFLOW.md").write_text(render_markdown(report), encoding="utf-8", newline="\n")
 
 
 def render_markdown(report: WorkflowReport) -> str:

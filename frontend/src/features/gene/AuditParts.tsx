@@ -21,7 +21,16 @@ import {
 import type { JobView, Schemas } from "@/api/client";
 import { useJob } from "@/api/jobs";
 import { sectionPath } from "@/shell/sections";
-import { Button, EmptyState, ErrorPanel, JobCard, LoadingBlock, SegmentedControl } from "@/ui";
+import {
+  Button,
+  EmptyState,
+  ErrorPanel,
+  JobCard,
+  LoadingBlock,
+  SegmentedControl,
+  SetsNote,
+} from "@/ui";
+import { AUDIT_NAME, GRID_NAME, GRID_WHAT, setsBridge, setsLine } from "@/lib/vocab";
 import { cn } from "@/lib/cn";
 import { count, ofTotal, percent } from "@/lib/format";
 import {
@@ -83,20 +92,16 @@ function LoadJob({ job, onDone }: { job: JobView; onDone: () => void }) {
 
 export type Source = "qpilot" | "audit";
 
-/** What qPilot's choice grid holds (docs/app.md wording, #0254). */
-export const QPILOT_GRID =
-  "Every control-gene set, cut-off, empty-well rule and amplification-call rule";
-/** What the audit's reasonable set holds. */
-export const AUDIT_SET =
-  "No shortcuts such as single or paired control genes; groups and multiplicity as planned";
-
 /** qPilot's choice grid or the audit's reasonable set (shown when both exist). */
 export function SourceSwitch({
   value,
   onChange,
+  nCells,
 }: {
   value: Source;
   onChange: (v: Source) => void;
+  /** The size of qPilot's choice grid, for its title. */
+  nCells?: number | null;
 }) {
   return (
     <SegmentedControl
@@ -105,8 +110,12 @@ export function SourceSwitch({
       value={value}
       onValueChange={onChange}
       options={[
-        { value: "audit", label: "The audit's reasonable set", title: AUDIT_SET },
-        { value: "qpilot", label: "qPilot's choice grid", title: QPILOT_GRID },
+        {
+          value: "audit",
+          label: AUDIT_NAME.charAt(0).toUpperCase() + AUDIT_NAME.slice(1),
+          title: setsBridge(),
+        },
+        { value: "qpilot", label: GRID_NAME, title: setsLine({ grid: nCells }) || GRID_WHAT },
       ]}
     />
   );
@@ -157,7 +166,9 @@ export function WhatHolds({
       title="What holds"
       hint="How often the same call comes out when the analysis is done another way. Each share says which analyses it counts."
       actions={
-        analyses && dots.length ? <SourceSwitch value={source} onChange={onSource} /> : undefined
+        analyses && dots.length ? (
+          <SourceSwitch value={source} onChange={onSource} nCells={nCells} />
+        ) : undefined
       }
     >
       <div className="grid gap-3 sm:grid-cols-2">
@@ -165,7 +176,7 @@ export function WhatHolds({
           <Stat
             label="Same call, qPilot's choice grid"
             value={percent(holds)}
-            sub={`of the ${nCells ? `${count(nCells)} ` : ""}analyses qPilot checks (${QPILOT_GRID.toLowerCase()})`}
+            sub={`of the ${nCells ? `${count(nCells)} ` : ""}analyses qPilot checks (${GRID_WHAT})`}
           />
           <HoldsBar share={holds ?? null} />
         </div>
@@ -175,7 +186,7 @@ export function WhatHolds({
               <Stat
                 label="Same call, the audit's reasonable set"
                 value={percent(a.n ? a.n_same / a.n : null)}
-                sub={`${ofTotal(a.n_same, a.n)} of the audit's reasonable analyses (${AUDIT_SET.charAt(0).toLowerCase()}${AUDIT_SET.slice(1)})`}
+                sub={`${ofTotal(a.n_same, a.n)} of the audit's reasonable analyses`}
               />
               <HoldsBar share={a.n ? a.n_same / a.n : null} />
             </>
@@ -192,6 +203,7 @@ export function WhatHolds({
           )}
         </div>
       </div>
+      {a ? <SetsNote grid={nCells} reasonable={a.n} className="mt-3" /> : null}
       {a ? (
         <p className="mt-2 text-xs text-muted">
           The two shares count different analyses: qPilot's choice grid includes shortcuts such as a
@@ -537,10 +549,9 @@ export function AuditInvite({
         </>
       }
     >
-      The robustness audit re-runs your confirmed study under every combination of eight analysis
+      The robustness audit re-runs your confirmed study under every combination of its analysis
       decisions (about 50 s on the demo) and gives each gene a verdict. Here it adds its reasonable
-      analyses (no shortcuts), one choice at a time across eight decisions, each sample's value and
-      what to do.
+      analyses (no shortcuts), one choice at a time, which samples carry the call and what to do.
       {error ? <ErrorPanel compact className="mt-3 text-left" error={error} /> : null}
     </EmptyState>
   );

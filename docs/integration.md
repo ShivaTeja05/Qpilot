@@ -8,7 +8,7 @@ Research use only.
 
 The audit is part of the one page: its **Audit** section runs it (a job with stages), shows the
 verdicts, the what-if lab and the checks, and writes to the same place as the command line below
-(`<study store>/simulator_audits/<study id>/`). [user-guide.md](user-guide.md#9-audit) describes the
+(`<study store>/simulator_audits/<study id>/`). [user-guide.md](user-guide.md#13-audit) describes the
 section; this document describes what runs behind it.
 
 ```bash
@@ -48,8 +48,8 @@ flowchart TB
   RDML --> UI
   SHEET --> UI
   SCI --> UI
-  PRISM -. CSV + run.pzc .-> GP[GraphPad Prism, the scientist's licence]
-  GP -. CSV back .-> PRISM
+  PRISM -. project .pzfx + CSV .-> GP[GraphPad Prism, the scientist's licence]
+  GP -. saved project or CSV back .-> PRISM
   AGENT[AI agent] <-->|stdio| MCP
   LLM -. opt-in, pseudonymised .-> REMOTE[remote model]
 ```
@@ -63,7 +63,7 @@ flowchart TB
 | 3 | Curves, blind | Curve Judge: 166 disagreements, 110 that matter | LinRegPCR contradicts each (`D-CURVE`) | keeps LinRegPCR, confirms | the design's call rule |
 | 4 | Choices | — | 744 analyses; ODC1 3.590× up; the Excel route changes 14 of 58 | decides each card | `results.json`, `decisions.jsonl` |
 | 5 | Simulator (the page's Audit section) | — | 90,396 analyses; baseline = qPilot to 5e-15 | reads verdicts | `simulator_audits/<study id>/` |
-| 6 | Prism | the draft | log2 per unit; provenance | accepts, Send to Prism | CSVs, `run.pzc`, `send_back.pzc` |
+| 6 | Prism | the draft | log2 per unit; provenance | accepts, Send to Prism | the `.pzfx` project, CSVs, provenance |
 | 7 | Round trip | — | ODC1 #1496 missing: 3.590× → 3.319×, 0 of 58 change | gives the reason, decides again | new study, re-audit |
 | 8 | Record | — | export, verify, bind the audit | — | Analysis Record |
 | 9 | Agents | an agent asks over MCP | `qpcr_decide` → `pending_human` | answers in the app | the request in the chain |
@@ -82,7 +82,8 @@ flowchart LR
   S[stored study] --> R[rebuild read-only: study_inputs + build_model]
   R -->|re-analysis differs| X1[refused]
   R --> Q[simulator study: table after design and rule, groups, control genes, exclusion mask]
-  Q -->|technical replicates| X2[not applicable]
+  Q -->|technical replicates| W[every well kept; samples named by their biological unit]
+  W --> C
   Q --> C{baseline = qPilot? every gene: fold change, p, call within 1e-9}
   C -->|no| X3[refused, nothing written]
   C -->|yes| RUN[run_all: lock.json first, 90,396 analyses]
@@ -97,6 +98,22 @@ flowchart LR
   rule removed is undetermined in both tools (its Cq is cleared).
 * **Two named groups.** The simulator's cut-off decision becomes one option, the design's
   comparison (30,132 analyses).
+* **Technical replicates.** A design with several wells per biological unit and gene (replicate
+  wells, or several samples of one animal or patient) is audited the way qPilot analysed it. Each
+  study sample is named by its biological unit; the simulator keeps every well
+  (`qsim.data.Replicates`, samples × genes × wells), applies each choice to each well (efficiency
+  model, flagged wells, late Cq, a person's exclusion) and then combines a unit's wells with
+  qPilot's own rule: the mean `log2 N0` of the wells that have a quantity, undetermined only when
+  every well is, left out (never filled in) when every well is excluded or flagged. So the
+  baseline still reproduces qPilot (tested on the LightCycler 96 hmuY triplicate plate of the
+  corpus, max |Δ log2 FC| 3.6e-15, and on the demo with units of two preparations, 5.3e-15), and
+  replicates are never counted as n. With three or more wells per value the audit varies a ninth
+  decision, `replicates`: the mean (planned), the median well, or the mean after leaving out the
+  one well outside G-REP's expected Cq range (`q95(n) × 0.15 / ln E`, at least 2 cycles from
+  Cq 30 to 35, not judged above Cq 35; the Run Gate flags the same well on the hmuY plate). With
+  at most two wells per value the median is the mean and no well is an outlier, so it is not
+  varied. The manifest's `scope.technical_replicates` says what was done; the page and
+  `python -m qpilot.integration audit` print it.
 * **The person's choices** on the Decision Cards are mapped to simulator options and compared
   with the prespecified analysis (`your_choices.csv`): control genes → `refs`, cut-off → `cut`,
   empty wells → `nondetect`, Cq ≤ 35 / 38 → `late_cq`. Cq ≤ 40 and the learned call have no
@@ -111,7 +128,7 @@ flowchart LR
 ```mermaid
 flowchart TB
   IN[qPilot adapter or an RDML file] --> ST[study as arrays: Cq, log2 N0, log2 Nq, efficiencies, flags, plate, well]
-  SP[8 decisions: efficiency 4, flagged 3, late Cq 3, non-detects 3, control genes 31, cut-off 3, test 3, multiple testing 3] --> LK[lock.json, before any alternative]
+  SP[8 decisions: efficiency 4, flagged 3, late Cq 3, non-detects 3, control genes 31, cut-off 3, test 3, multiple testing 3; with 3+ replicate wells a 9th, replicates 3] --> LK[lock.json, before any alternative]
   ST --> E1
   LK --> E1
   subgraph engine[staged engine, prefix cache]
@@ -133,9 +150,9 @@ sequenceDiagram
   participant Q as Simulator
   P->>St: Send to Prism
   St->>St: rebuild; refuse if numbers differ
-  St->>Pr: one CSV per gene, run.pzc, send_back.pzc, provenance
+  St->>Pr: the .pzfx project, one CSV per gene, provenance
   P->>Pr: leaves out ODC1 sample 1496
-  Pr->>St: send_back.pzc exports the tables as CSV
+  Pr->>St: the saved project (or the tables as CSV)
   St-->>P: "Reason?" ODC1 3.590× → 3.319×, 0 of 58 change
   P->>St: "failed RNA extraction"
   St->>St: new design → new study; cards reopen
@@ -152,8 +169,10 @@ sequenceDiagram
 * `test_engines_agree.py`: qPilot's grid and the simulator agree on all 558 shared analyses
   (31 control-gene sets × 3 cut-offs × 2 empty-well rules × 3 amplification rules), for every gene,
   before and after the Prism exclusion.
-* `test_simulator_adapter.py`: two named groups, technical replicates (not applicable), a
-  person's Cq ≤ 35 choice, a refused audit writes nothing.
+* `test_simulator_adapter.py`: two named groups, biological units of two preparations (audited,
+  reproduces qPilot), a person's Cq ≤ 35 choice, a refused audit writes nothing.
+* `test_replicate_audit.py` (no demo data): the real LightCycler 96 triplicate plate end to end
+  (reproduction, the `replicates` decision, a person's excluded well, the command line).
 * `test_mcp_tools.py`: the tools are read-only, serve verified audits only, and return errors as
   data; `sim_findings` pages, filters by gene, and refuses a changed, linked or oversized file.
 * `test_mcp_stdio.py`: an agent over a real stdio connection, through `python -m qpilot.integration
@@ -164,9 +183,9 @@ sequenceDiagram
 ## Agents: one MCP server
 
 `qpilot serve` (and `python -m qpilot.mcp_server`, `claude mcp add qpilot -- qpilot serve`) registers
-qPilot's twelve `qpcr_*` tools and, when the Decision Simulator (`qsim`) imports, its five read-only
+qPilot's `qpcr_*` tools (listed in [`agents.md`](agents.md)) and, when the Decision Simulator (`qsim`) imports, its five read-only
 tools: `sim_audit`, `sim_gene`, `sim_decisions`, `sim_whatif` and `sim_findings`. Without `qsim` the
-server lists the twelve tools, does not fail, and prints on stderr that the `sim_*` tools are off;
+server lists the `qpcr_*` tools only, does not fail, and prints on stderr that the `sim_*` tools are off;
 `qpilot serve --list-tools` prints what this install serves. `python -m qpilot.integration serve`
 is the same server with the `sim_*` tools always on (the audit readers need only the saved files).
 
@@ -187,6 +206,7 @@ folder, refuses a file over 4 MB, and returns at most 200 rows per call.
 ## Not yet integrated
 
 * The simulator's validation branches (dPCR truth, null plate, efficiency calibration).
-* Designs with technical replicates (the simulator needs one well per sample and gene).
+* G-REP's Poisson term in the audit's outlier option: it uses the high-copy tolerance, as G-REP
+  does on a plate without a standard curve.
 * `qpilot workflow` in the frozen CLI registry (it runs as `python -m qpilot.integration`).
 * Prism on a real seat (plan step 0.1).

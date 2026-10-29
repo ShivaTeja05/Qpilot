@@ -86,6 +86,19 @@ def test_modified_model_is_refused(model_copy):
         cj.load_model(model, sha)
 
 
+def test_a_crlf_checkout_is_refused_and_named(model_copy):
+    """LF turned into CRLF (Git on Windows without .gitattributes): refused, and the reason said."""
+    model, sha = model_copy
+    model.write_bytes(model.read_bytes().replace(b"\n", b"\r\n"))
+    with pytest.raises(cj.ModelIntegrityError, match="does not match") as err:
+        cj.load_model(model, sha)
+    assert cj.CRLF_HINT in str(err.value)
+    model.write_bytes(model.read_bytes().replace(b'"split_conditions":[', b'"split_conditions":[9'))
+    with pytest.raises(cj.ModelIntegrityError) as err:  # CRLF and an edit: no such excuse
+        cj.load_model(model, sha)
+    assert cj.CRLF_HINT not in str(err.value)
+
+
 @pytest.mark.parametrize("pin", ["", "not-a-digest\n", "ABC" * 30])
 def test_bad_or_missing_pin_is_refused(model_copy, pin):
     model, sha = model_copy
@@ -650,3 +663,28 @@ def test_curve_judge_imports_nothing_from_ai_or_xgboost():
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=60)
     assert out.returncode == 0, out.stderr
     assert out.stdout.strip() == "ok"
+
+
+def test_features_are_read_once_per_file_contents(tmp_path, monkeypatch):
+    """perf: Check the curves and the curve-calls view share one read of the file's curves."""
+    import shutil
+
+    import qpilot.qpcr.curve_judge as cj
+
+    calls = []
+    frame = pd.DataFrame({"Cyc1": [1.0]})
+    monkeypatch.setattr(cj, "_FEATURES", {})
+    path = tmp_path / "a.rdml"
+    path.write_bytes(b"not read")
+    monkeypatch.setattr(cj, "read_features", lambda *a: calls.append(a) or frame)
+    first = cj.features_from_rdml(path, "exp")
+    first.loc[0, "Cyc1"] = 99.0  # a caller's change stays its own
+    again = cj.features_from_rdml(path, "exp")
+    assert len(calls) == 1 and again.loc[0, "Cyc1"] == 1.0
+    cj.features_from_rdml(path, "other")
+    shutil.copy(path, tmp_path / "b.rdml")
+    cj.features_from_rdml(tmp_path / "b.rdml", "exp")  # same bytes elsewhere: kept
+    assert len(calls) == 2
+    path.write_bytes(b"other bytes")
+    cj.features_from_rdml(path, "exp")
+    assert len(calls) == 3

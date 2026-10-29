@@ -54,7 +54,7 @@ def read_rdml_tools_n0(path: str | Path) -> WellValues:
     The first row names the genes from the third column on; each following row is one standard
     well (column 2 is its input copies, e.g. ``15``) until the first row without a concentration.
     """
-    with Path(path).open(newline="") as handle:
+    with Path(path).open(newline="", encoding="utf-8") as handle:
         rows = list(csv.reader(handle, delimiter="\t"))
     genes = rows[0][2:]
     out: WellValues = {}
@@ -76,7 +76,7 @@ def read_methods_cq(path: str | Path, method: str = CQ_METHOD) -> WellValues:
     out: WellValues = {}
     genes: list[str] = []
     current = None
-    with Path(path).open() as handle:
+    with Path(path).open(encoding="utf-8") as handle:
         for line in handle:
             cells = line.rstrip("\r\n").split(";")
             if cells[0] == "method":
@@ -97,7 +97,7 @@ def read_methods_results(
     method. Only the first ``method`` row after the ``block`` header is read.
     """
     genes: list[str] | None = None
-    with Path(path).open(newline="") as handle:
+    with Path(path).open(newline="", encoding="utf-8") as handle:
         for cells in csv.reader(handle, delimiter="\t"):
             if not cells:
                 continue
@@ -429,6 +429,6 @@ def write_report(report: ValidationReport, out_dir: str | Path) -> tuple[Path, P
     directory.mkdir(parents=True, exist_ok=True)
     markdown = directory / "validation_table.md"
     data = directory / "validation.json"
-    markdown.write_text(report.to_markdown())
-    data.write_text(report.to_json())
+    markdown.write_text(report.to_markdown(), encoding="utf-8", newline="\n")
+    data.write_text(report.to_json(), encoding="utf-8", newline="\n")
     return markdown, data

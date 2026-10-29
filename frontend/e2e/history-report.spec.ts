@@ -7,7 +7,6 @@ import type { APIRequestContext } from "@playwright/test";
 import { demoSession, route } from "./support/data";
 import { E2E } from "./support/env";
 import { expect, test } from "./support/fixtures";
-import { LANDED, notLanded } from "./support/sections";
 
 interface HistoryView {
   chain_intact: boolean;
@@ -30,8 +29,6 @@ async function getJson<T>(api: APIRequestContext, path: string): Promise<T> {
 }
 
 test.describe("History", () => {
-  test.beforeEach(() => test.fixme(!LANDED.history, notLanded("history")));
-
   test("the timeline, the Studio log and the chain state are the server's", async ({
     app,
     api,
@@ -55,8 +52,6 @@ test.describe("History", () => {
 });
 
 test.describe("Report", () => {
-  test.beforeEach(() => test.fixme(!LANDED.report, notLanded("report")));
-
   test("summary, reviewer's findings, methods and MIQE come from /report", async ({ app, api }) => {
     const demo = await demoSession(api);
     const r = await getJson<ReportView>(api, `/api/studies/${demo.study_id}/report`);
@@ -78,7 +73,7 @@ test.describe("Report", () => {
     test.setTimeout(300_000);
     const demo = await demoSession(api);
     await app.open(route(demo, "report"));
-    const panel = app.page.getByRole("region", { name: "Write the report as a file" });
+    const panel = app.page.getByRole("region", { name: "Export: numbers, figures and the report" });
     await panel.getByRole("button", { name: "Write the passport" }).click();
     const link = panel.getByRole("link", { name: /download/i }).first();
     await expect(link).toBeVisible({ timeout: 240_000 });

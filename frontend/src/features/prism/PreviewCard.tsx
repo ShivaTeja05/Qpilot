@@ -29,6 +29,12 @@ import { log2Text, PrismFigure } from "./PrismFigure";
 import { cellNumber } from "./tables";
 import { cardWords } from "./words";
 
+const TABLE_KIND: Record<string, string> = {
+  column: "Column",
+  grouped: "Grouped",
+  nested: "Nested",
+};
+
 export function PreviewCard({ workspace }: { workspace: Workspace }) {
   const [gene, setGene] = useState<string | null>(null);
   const preview = usePrismPreview(workspace.key);
@@ -106,8 +112,13 @@ export function PreviewBody({
           />
         )}
         <p className="text-[12px] text-muted">
-          {plural(genes.length, "table")}, one per gene · template{" "}
-          <span className="font-mono text-fg">{template.file || preview.bundle.template_id}</span>
+          {plural(genes.length, "table")}, one per gene
+          {preview.project_file ? (
+            <>
+              {" "}
+              · in <span className="font-mono text-fg">{preview.project_file}</span>
+            </>
+          ) : null}
         </p>
       </div>
 
@@ -146,16 +157,21 @@ export function PreviewBody({
               .filter(([, v]) => Boolean(v))
               .map(([k, v]) => [k, v])}
           />
-          {template.available === false ? (
+          {preview.needs_template && template.available === false ? (
             <p className="mt-3 flex items-start gap-2 rounded-lg border border-warn/30 bg-warn-soft p-2.5 text-[12.5px] text-fg">
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden />
               <span>
-                The Prism template <span className="font-mono">{template.file}</span> has not been
-                made in Prism yet. The bundle is still written; its README says how to build the
-                template, and Prism then applies this test and graph.
+                This bundle needs a Prism template made by hand (
+                <span className="font-mono">{template.file}</span>), which is not here.
               </span>
             </p>
-          ) : null}
+          ) : (
+            <p className="mt-3 text-[12.5px] text-muted">
+              Prism runs the test and draws the graph when you click Analyze and New Graph on a
+              gene&rsquo;s table; the README in the bundle lists the clicks. qPilot writes the
+              tables and the provenance, not Prism&rsquo;s analyses.
+            </p>
+          )}
         </section>
 
         <section aria-labelledby="prism-choices-title">
@@ -175,6 +191,36 @@ export function PreviewBody({
           <p className="mt-1 text-[12px] text-muted">
             Every number in it is a fact of this study, filled in by qPilot.
           </p>
+        </section>
+      ) : null}
+
+      {preview.project_tables.length ? (
+        <section aria-labelledby="prism-project-tables-title">
+          <h3 id="prism-project-tables-title" className="mb-1.5 text-[13px] font-semibold text-fg">
+            In the Prism project
+          </h3>
+          <ul className="flex flex-col gap-1 text-[12.5px] text-fg">
+            <li>
+              Info sheet <span className="text-muted">“qPilot provenance”</span>: the study, the
+              decision record, the settings and who decided each choice.
+            </li>
+            {preview.project_tables.map((t) => (
+              <li key={t.name}>
+                {TABLE_KIND[t.kind] ?? t.kind} table{" "}
+                <span className="text-muted">
+                  {t.kind === "grouped"
+                    ? `of all ${count(t.n_rows)} genes, one subcolumn per biological unit`
+                    : `${t.gene}, ${count(t.n_rows)} biological units`}
+                </span>
+              </li>
+            ))}
+            {preview.replicates_file ? (
+              <li>
+                Nested tables by technical replicate, in{" "}
+                <span className="font-mono">{preview.replicates_file}</span>
+              </li>
+            ) : null}
+          </ul>
         </section>
       ) : null}
 

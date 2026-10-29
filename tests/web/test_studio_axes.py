@@ -81,7 +81,8 @@ def test_the_rule_proposes_the_models_that_apply_and_the_engine_checks_them(walk
 def test_accepting_analyses_again_with_the_axis_and_results_say_what_it_did(walked):
     c, sid, store = walked["client"], walked["sid"], walked["store"]
     before = c.get(f"/api/studies/{walked['study']}/results").json()["axes"]
-    assert [a["status"] for a in before] == ["off"] and before[0]["can_propose"]
+    assert [a["name"] for a in before] == ["efficiency", "normaliser", "interrun"]
+    assert [a["status"] for a in before] == ["off"] * 3 and before[0]["can_propose"]
     assert before[0]["command"] is None
     proposal = _propose(c, sid)["outcome"]["proposal"]
     decided = _accept(c, sid, proposal["id"], "test them before deciding the cards")
@@ -94,7 +95,8 @@ def test_accepting_analyses_again_with_the_axis_and_results_say_what_it_did(walk
     assert stages["design"]["confirmed"] and stages["curves"]["confirmed"]  # never re-opened
     assert not stages["choices"]["confirmed"] and stages["choices"]["pending"] == 0
     view = c.get(f"/api/studies/{study}/results").json()
-    (axis,) = view["axes"]
+    axis, *others = view["axes"]
+    assert axis["name"] == "efficiency" and [a["status"] for a in others] == ["off", "off"]
     result = store.get(study)
     assert axis["status"] == result.facts["f_axis_efficiency"].value == "screened_out"
     assert axis["card_id"] is None  # screened out: no card, the grid is as before

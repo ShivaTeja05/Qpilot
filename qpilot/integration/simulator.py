@@ -15,9 +15,27 @@ reproduce qPilot's stored result for every gene (the same genes, fold change and
 :data:`TOLERANCE`, the same conclusion). If it does not, :class:`AuditRefused` is raised and
 nothing is written: the audit never describes numbers other than the study's.
 
-**What does not fit.** A study whose design has technical replicates (several wells per
-biological unit and gene) is refused with :class:`NotApplicable`: the simulator needs one well
-per sample and gene. So is a marker split whose cut-offs are not the simulator's 10/15/20 %.
+**Technical replicates** (several wells per biological unit and gene: triplicate wells, or
+several samples of one animal or patient) are audited the way qPilot analysed them. Each sample
+is renamed to its biological unit, the simulator keeps every well
+(:class:`qsim.data.Replicates`), applies each choice to each well and then combines a unit's
+wells with qPilot's rule, the mean ``log2 N0`` of the wells that have a quantity; so the
+baseline reproduces qPilot's result exactly, replicates are never counted as n, and the audit
+also asks whether the call depends on that rule (the ``replicates`` decision: the mean, the
+median well, or the mean after leaving out a well outside G-REP's expected spread).
+
+**Several comparisons.** A study with a comparison plan is audited on its **first comparison**,
+alone (:func:`comparisons_scope`): the simulator varies one comparison of two groups, with its own
+Welch test in every analysis, and its permutations, influence and verdicts are built on that one
+comparison; re-deriving each of them for a family of comparisons and its correction is not a
+cheap addition. The scope says so (``scope["comparisons"]``) and the Audit page shows it. The
+invariant holds for the comparison audited: the audit runs only when the study's correction
+changes none of that comparison's calls at the planned analysis (so the simulator's baseline
+reproduces qPilot's stored calls exactly); a paired comparison or a pooled-variance correction
+(Dunnett, Tukey: another test) is refused in words with :class:`NotApplicable`.
+
+**What does not fit.** A marker split whose cut-offs are not the simulator's 10/15/20 % is
+refused with :class:`NotApplicable`.
 
 **What is written** (all inside ``out_dir``): the simulator's own results folder
 (``lock.json`` first, then ``genes.csv``, ``explain.json``, ``summary.json``, ``REPORT.md``, ...),
@@ -36,7 +54,7 @@ import hashlib
 import json
 import math
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -45,6 +63,7 @@ import numpy as np
 import pandas as pd
 
 from qpilot.core.store import StudyStore
+from qpilot.io.inputs import input_label
 
 TOLERANCE = 1e-9  # |log2 fold change| and |p| differences allowed between qsim and qPilot
 AUDIT_DIR_FILES = ("lock.json", "summary.json", "genes.csv", "explain.json", "REPORT.md")
@@ -160,7 +179,67 @@ class Prepared:
     scope: dict[str, Any] = field(default_factory=dict)
 
 
+COMPARISONS_NOTE = (
+    "This study has {n} comparisons; the audit audits the first, {label}, alone: each analysis "
+    "calls a gene from that comparison's own p{how}. The other comparisons' calls are on "
+    "Results, Trace and each gene's page."
+)
+COMPARISONS_HOW = {
+    "holm": ", without Holm's correction across each gene's comparisons (at the planned "
+    "analysis it changes none of this comparison's calls)",
+    "none": ", as qPilot does (no correction for the several comparisons was chosen)",
+}
+
+
+def comparisons_scope(result: Any, rule: Any) -> dict[str, Any] | None:
+    """What the audit audits of a study with several comparisons (``None`` without a plan).
+
+    Raises:
+        NotApplicable: The first comparison is paired, the correction pools a variance over the
+            groups (another test than the simulator's), or the correction changes one of the
+            first comparison's calls at the planned analysis (the simulator would not
+            reproduce it).
+    """
+    from qpilot.qpcr.contrast import CORRECTION_WORDS, conclude
+
+    found = getattr(result, "comparisons", None)
+    if found is None:
+        return None
+    first = found.comparisons[0]
+    n = len(found.comparisons)
+    if found.pair_by is not None:
+        raise NotApplicable(
+            f"{first.label} is a paired comparison (by {found.pair_by}); the audit re-runs "
+            "unpaired comparisons of two groups only"
+        )
+    if found.test == "pooled_t":
+        raise NotApplicable(
+            f"this study's calls use {CORRECTION_WORDS[found.correction]}, a test with one "
+            "variance pooled over every group; the audit re-runs one comparison with its own "
+            "Welch test, so it would describe other numbers"
+        )
+    moved = sorted(
+        g for g, c in result.contrasts.items() if conclude(c.log2fc, c.p, rule) != c.conclusion
+    )
+    if moved:
+        genes = ", ".join(moved[:5]) + (f" and {len(moved) - 5} more" if len(moved) > 5 else "")
+        raise NotApplicable(
+            f"{CORRECTION_WORDS[found.correction]} changes the call of {genes} in {first.label} "
+            f"(the study compares {n} pairs of groups); the audit re-runs {first.label} alone, "
+            "without that correction, so it would describe other calls"
+        )
+    how = COMPARISONS_HOW.get(found.correction, "") if n > 1 else ""
+    return {
+        "audited": first.id,
+        "audited_label": first.label,
+        "n_comparisons": n,
+        "correction": found.correction,
+        "note": COMPARISONS_NOTE.format(n=n, label=first.label, how=how),
+    }
+
+
 def _technical_replicates(table: pd.DataFrame, units: Mapping[str, str] | None) -> bool:
+    """Several wells per biological unit and gene (replicate wells, or samples of one unit)."""
     unknown = table[table["sample_type"] == "unkn"]
     if unknown.duplicated(["sample", "target"]).any():
         return True
@@ -168,6 +247,53 @@ def _technical_replicates(table: pd.DataFrame, units: Mapping[str, str] | None) 
         counts = pd.Series([units.get(s, s) for s in unknown["sample"].unique()]).value_counts()
         return bool((counts > 1).any())
     return False
+
+
+def _unit_table(table: pd.DataFrame, units: Mapping[str, str] | None) -> pd.DataFrame:
+    """The per-well table with each study sample named by its biological unit.
+
+    ``log2_matrix`` of it is qPilot's ``log2_matrix(table, units)``: the same units and, with
+    the original sample names kept in ``sample_name`` (the audit's ``Replicates.sub``), the same
+    per-unit value: the mean over the unit's samples of each sample's mean over its wells that
+    have a quantity.
+    """
+    out = table.copy()
+    out["sample_name"] = out["sample"]
+    if units:
+        study = out["sample_type"] == "unkn"
+        out.loc[study, "sample"] = out.loc[study, "sample"].map(lambda s: units.get(s, s))
+    return out
+
+
+def _replicate_scope(study: Any, space: Any) -> dict[str, Any]:
+    """How many wells stand behind each unit's value and how they are combined (manifest, page)."""
+    wells = study.replicates.present.sum(axis=2)
+    varied = "replicates" in space.names
+    words = (
+        "Each biological unit's value is the mean of its wells' log2 starting amounts (wells "
+        "without a value are left out; a unit of several samples takes the mean of its samples' "
+        "means), exactly as qPilot computes it; replicate wells are never counted as samples."
+    )
+    if varied:
+        words += (
+            " The audit also tries the middle well (the median) and leaving out one well that is "
+            "outside the expected replicate spread (qPilot's G-REP rule), to show whether a call "
+            "depends on how the replicates are combined."
+        )
+    else:
+        words += (
+            " With at most two wells per value the median is the mean and neither well can be "
+            "called the outlier, so how replicates are combined is not varied."
+        )
+    return {
+        "most_wells_per_value": int(wells.max()),
+        "values_with_several_wells": int((wells > 1).sum()),
+        "values": int(wells.size),
+        "wells": int(wells.sum()),
+        "rule": "mean",
+        "varied": varied,
+        "words": words,
+    }
 
 
 def _aligned_table(table: pd.DataFrame) -> tuple[pd.DataFrame, int]:
@@ -183,9 +309,13 @@ def _aligned_table(table: pd.DataFrame) -> tuple[pd.DataFrame, int]:
     return out, int(mask.sum())
 
 
-def _exclusion_mask(table: pd.DataFrame, samples: list[str], genes: list[str]) -> np.ndarray:
+def _exclusion_mask(table: pd.DataFrame, study: Any) -> np.ndarray:
+    """Wells a person excluded: samples x genes, or per well (x wells) with replicates."""
     from qpilot.qpcr.quant import EXCLUDED
 
+    if study.replicates is not None:
+        return study.replicates.excluded & study.replicates.present
+    samples, genes = study.samples, study.genes
     if EXCLUDED not in table.columns:
         return np.zeros((len(samples), len(genes)), dtype=bool)
     unknown = table[table["sample_type"] == "unkn"]
@@ -200,31 +330,15 @@ def _groups_study(table: pd.DataFrame, digest: str, candidates: tuple[str, ...],
     The arrays are built the way :func:`qsim.data.study_from_curves` builds them; only the
     groups come from the design instead of a marker split.
     """
-    from qsim.data import EFFICIENCY_NOTES, LOW_COPY_NOTE, Study, standard_curve_efficiency
+    from qsim.data import Study, study_arrays
 
     from qpilot.qpcr.quant import log2_matrix
     from qpilot.qpcr.refgenes import genorm
 
     matrix = log2_matrix(table)
     samples, genes = list(matrix.index), list(matrix.columns)
-    unknown = table[table["sample_type"] == "unkn"]
-    unknown = unknown[unknown["sample"].isin(samples)]
-
-    def grid(column: str, fill: object = np.nan, dtype: object = float) -> np.ndarray:
-        pivot = unknown.pivot(index="sample", columns="target", values=column)
-        return pivot.reindex(index=samples, columns=genes).fillna(fill).to_numpy(dtype=dtype)
-
-    cq, n0 = grid("cq"), grid("n0")
-    eff_assay, eff_well = grid("eff_target"), grid("eff_indiv")
-    notes = grid("note", "", object)
     with np.errstate(divide="ignore", invalid="ignore"):
-        log2_n0 = np.log2(n0)
-    log2_nq = log2_n0 + cq * np.log2(eff_assay)
-    flag_eff = np.vectorize(lambda s: any(k in str(s) for k in EFFICIENCY_NOTES))(notes)
-    flag_low = np.vectorize(lambda s: LOW_COPY_NOTE in str(s))(notes)
-    eff_std = standard_curve_efficiency(table)
-    runs = grid("run_id", "", object)
-    eff_std_grid = np.vectorize(lambda r: eff_std.get(r, np.nan))(runs).astype(float)
+        arrays, replicates = study_arrays(table, matrix)
     stability = genorm(matrix, list(candidates)) if len(candidates) >= 3 else None
     primary = (
         tuple(g for g in candidates if g in set(stability.recommended))
@@ -240,17 +354,9 @@ def _groups_study(table: pd.DataFrame, digest: str, candidates: tuple[str, ...],
         primary_refs=primary,
         marker="",
         items=[g for g in genes if g not in set(candidates)],
-        cq=cq,
-        log2_n0=log2_n0,
-        log2_nq=log2_nq,
-        eff_well=eff_well,
-        eff_assay=eff_assay,
-        eff_std=eff_std_grid,
-        flag_eff=flag_eff.astype(bool),
-        flag_low=flag_low.astype(bool),
-        run=runs,
-        well=grid("well", "", object),
         groups={PRESPECIFIED_CUT: groups},
+        replicates=replicates,
+        **arrays,
     )
 
 
@@ -271,10 +377,12 @@ def _excluding_engine_class() -> type:
             else:
                 super().__init__(study, space, rule)
 
-        def matrix(self, efficiency, flagged, nondetect, drop=None, late=None):
+        def matrix(self, efficiency, flagged, nondetect, drop=None, late=None, combine=None):
             if self.excluded.any():
+                if drop is not None and drop.ndim < self.excluded.ndim:
+                    drop = drop[:, :, None]  # a whole value: every one of its wells
                 drop = self.excluded if drop is None else (drop | self.excluded)
-            return super().matrix(efficiency, flagged, nondetect, drop, late)
+            return super().matrix(efficiency, flagged, nondetect, drop, late, combine)
 
     return ExcludingEngine
 
@@ -308,8 +416,11 @@ def _groups_space(space, labels: tuple[str, str]):
 def prepare(analysis: Analysis) -> Prepared:
     """The simulator's study, space and engine for this analysis (nothing written).
 
+    With technical replicates each study sample is named by its biological unit first
+    (:func:`_unit_table`), so the simulator combines a unit's wells as qPilot does.
+
     Raises:
-        NotApplicable: Technical replicates, or a marker split the simulator cannot vary.
+        NotApplicable: A marker split the simulator cannot vary.
     """
     _require_qsim()
     from qsim.data import study_from_curves
@@ -320,11 +431,9 @@ def prepare(analysis: Analysis) -> Prepared:
     model, settings = analysis.model, analysis.settings
     table = model.inputs.primary_table
     units = model.inputs.units
-    if _technical_replicates(table, units):
-        raise NotApplicable(
-            "the design has technical replicates (several wells per biological unit and gene); "
-            "the simulator needs one well per sample and gene"
-        )
+    replicated = _technical_replicates(table, units)
+    if replicated:
+        table = _unit_table(table, units)
     table, aligned = _aligned_table(table)
     candidates = tuple(settings.candidates)
     if analysis.mode == "marker_split":
@@ -343,7 +452,7 @@ def prepare(analysis: Analysis) -> Prepared:
         space, info = space_for(study)
         labels = (f"{settings.marker_label}-high", "rest")
     else:
-        unit_of = units or {}
+        unit_of = {} if replicated else (units or {})  # replicated: samples are units already
         to_samples = {}
         for sample in table.loc[table["sample_type"] == "unkn", "sample"].unique():
             to_samples.setdefault(unit_of.get(sample, sample), sample)
@@ -364,7 +473,7 @@ def prepare(analysis: Analysis) -> Prepared:
             f"qPilot's {sorted(primary_refs)}"
         )
     rule = settings.rule if settings.rule != DEFAULT_RULE else None
-    excluded = _exclusion_mask(table, study.samples, study.genes)
+    excluded = _exclusion_mask(table, study)
     engine = _excluding_engine_class()(study, space, excluded, rule)
     scope = {
         "mode": analysis.mode,
@@ -384,6 +493,11 @@ def prepare(analysis: Analysis) -> Prepared:
         "reference_sets": len(space.decision("refs").options),
         "analyses_in_full_grid": int(np.prod(space.levels)),
     }
+    if study.replicates is not None:  # absent for one well per unit and gene (the demo)
+        scope["technical_replicates"] = _replicate_scope(study, space)
+    several = comparisons_scope(analysis.result, settings.rule)
+    if several is not None:  # absent for a study with one comparison (the demo)
+        scope["comparisons"] = several
     return Prepared(study, space, info, engine, scope)
 
 
@@ -503,7 +617,7 @@ def _write_checksums(out_dir: Path) -> str:
         if p.is_file() and p.name != CHECKSUMS
     ]
     text = "\n".join(lines) + "\n"
-    (out_dir / CHECKSUMS).write_text(text, encoding="utf-8")
+    (out_dir / CHECKSUMS).write_text(text, encoding="utf-8", newline="\n")
     return hashlib.sha256(text.encode()).hexdigest()
 
 
@@ -517,8 +631,12 @@ def audit(
     bench_trials: int = 0,
     design_draws: int = 0,
     explorer: bool = False,
+    progress: Callable[[int, int], None] | None = None,
 ) -> AuditResult:
     """Audit one stored study with the Decision Simulator and write the bound audit folder.
+
+    ``progress(done, total)``, when given, is told as the full grid's analyses run (its longest
+    stage; the simulator has no hook, so the engine's evaluations are counted).
 
     ``bench_trials`` (planted faults), ``design_draws`` (small-experiment draws) and
     ``explorer`` (cheaper-search check) are the simulator's method checks; they are off by
@@ -550,6 +668,8 @@ def audit(
     if out.exists() and any(out.iterdir()):
         raise FileExistsError(f"{out} is not empty; give a new folder for the audit")
     out.mkdir(parents=True, exist_ok=True)
+    if progress is not None:
+        _count_grid(prepared.engine, int(np.prod(prepared.space.levels)), progress)
     summary = run_all(
         str(analysis.source),
         out,
@@ -558,12 +678,12 @@ def audit(
         seed=seed,
         design_draws=design_draws,
         explorer=explorer,
-        source=f"{analysis.source.name} (qPilot study {study_id})",
+        source=f"{input_label(analysis.source) or analysis.source.name} (qPilot study {study_id})",
         prepared=(prepared.study, prepared.space, prepared.space_info, prepared.engine),
     )
     changes, unmapped = chosen_changes(prepared, analysis.inputs.choices)
     table = whatif(prepared.engine, changes)
-    table.to_csv(out / "your_choices.csv", index=False)
+    table.to_csv(out / "your_choices.csv", index=False, lineterminator="\n")
     flipped = table[table["call"] != table["base_call"]]
     genes = pd.read_csv(out / "genes.csv").set_index("gene")
     verdicts = genes["verdict"].astype(str).to_dict()
@@ -574,7 +694,7 @@ def audit(
         "input_sha256": analysis.input_sha256,
         "chain_head": analysis.inputs.chain_head,
         "design_hash": analysis.inputs.design_hash,
-        "source_file": analysis.source.name,
+        "source_file": input_label(analysis.source) or analysis.source.name,  # the person's names
         "scope": prepared.scope,
         "reproduces_qpilot": check,
         "lock_sha256": summary.get("lock_sha256"),
@@ -595,7 +715,9 @@ def audit(
         },
         "versions": {"qsim": qsim.__version__, "qpilot": _qpilot_version()},
     }
-    (out / MANIFEST).write_text(json.dumps(manifest, indent=1, default=str), encoding="utf-8")
+    (out / MANIFEST).write_text(
+        json.dumps(manifest, indent=1, default=str), encoding="utf-8", newline="\n"
+    )
     manifest["checksums_sha256"] = _write_checksums(out)
     return AuditResult(
         out_dir=out,
@@ -606,6 +728,28 @@ def audit(
         your_choices=table,
         seconds=time.perf_counter() - started,
     )
+
+
+def _count_grid(engine: Any, total: int, progress: Callable[[int, int], None]) -> None:
+    """Tell ``progress(done, total)`` about every hundredth analysis of the full grid.
+
+    Wraps this engine's ``evaluate`` (this audit's own engine only); evaluations with dropped
+    wells (the later single-sample stage) and any past ``total`` are not counted.
+    """
+    inner = engine.evaluate
+    every = max(1, total // 100)
+    done = 0
+
+    def counted(cell: tuple[int, ...], drop: Any = None) -> Any:
+        nonlocal done
+        result = inner(cell, drop)
+        if drop is None and done < total:
+            done += 1
+            if done % every == 0 or done == total:
+                progress(done, total)
+        return result
+
+    engine.evaluate = counted
 
 
 def _qpilot_version() -> str:
@@ -664,7 +808,11 @@ def verify_audit(audit_dir: str | Path, record_dir: str | Path | None = None) ->
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if not manifest.get("reproduces_qpilot", {}).get("ok"):
         problems.append("the audit does not record that it reproduces qPilot's result")
-    lock = json.loads((root / "lock.json").read_text()) if (root / "lock.json").exists() else {}
+    lock = (
+        json.loads((root / "lock.json").read_text(encoding="utf-8"))
+        if (root / "lock.json").exists()
+        else {}
+    )
     if lock.get("sha256") != manifest.get("lock_sha256"):
         problems.append("lock.json does not match the manifest")
     if lock.get("input_sha256") != manifest.get("input_sha256"):
@@ -691,7 +839,11 @@ def _record_binding(record_dir: Path, manifest: dict[str, Any]) -> list[str]:
     log = record_dir / "decisions.jsonl"
     head = manifest.get("chain_head")
     if head and log.exists():
-        hashes = {json.loads(line).get("hash") for line in log.read_text().splitlines() if line}
+        hashes = {
+            json.loads(line).get("hash")
+            for line in log.read_text(encoding="utf-8").splitlines()
+            if line
+        }
         if head not in hashes:
             problems.append("the audited decision chain head is not in the record's chain")
     return problems

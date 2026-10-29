@@ -72,10 +72,19 @@ def test_the_agents_page_access_words_match_the_annotations(served):
         "qpcr_propose",
         "qpcr_inspect",
         "qpcr_incident_log",  # an incident proposed in an instrument's logbook
+        "qpcr_export",  # a new file from the engine's output; decides nothing
+        "qpcr_request_set_aside",  # wells asked for; a person sets them aside
     }
     repeats_log = {n for n, t in tools.items() if not t.annotations.idempotent_hint}
-    # qpcr_decide and qpcr_propose unless an idempotency_key is given
-    assert repeats_log == {"qpcr_decide", "qpcr_propose", "qpcr_incident_log"}
+    # qpcr_decide, qpcr_propose, qpcr_export and qpcr_request_set_aside unless an idempotency_key
+    # is given
+    assert repeats_log == {
+        "qpcr_decide",
+        "qpcr_propose",
+        "qpcr_incident_log",
+        "qpcr_export",
+        "qpcr_request_set_aside",
+    }
 
 
 def test_every_refusal_shares_one_schema():

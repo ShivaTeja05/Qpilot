@@ -112,7 +112,7 @@ class Cell:
         v, ids = engine.values_of(cell), engine.ids_of(cell)
         if v["multiplicity"] != "none":
             raise ValueError("moves are searched with the multiple-testing rule at 'none'")
-        matrix = engine.matrix(v["efficiency"], v["flagged"], v["nondetect"], late=v.get("late_cq"))
+        matrix = engine.matrix_of(v)
         rel, valid = engine.relative(matrix, ids["refs"])
         hi, lo = engine._masks[v["cut"]]
         self.rel, self.a, self.b = rel, valid & hi[:, None], valid & lo[:, None]

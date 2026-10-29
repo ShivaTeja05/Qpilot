@@ -24,6 +24,8 @@ export default function RecordSection({ workspace }: SectionProps) {
   const records = useRecords(key, readable);
   // An export started here, or one still running (started in another tab, say).
   const [startedId, setStartedId] = useState<string | null>(null);
+  // the file dropped on "Verify a record": the terminal commands name it
+  const [dropped, setDropped] = useState<string | null>(null);
   const running = workspace?.active_jobs.find((j) => j.kind === "record.export")?.id ?? null;
   const jobId = startedId ?? running;
   const latest = records.data?.records[0] ?? null;
@@ -129,8 +131,8 @@ export default function RecordSection({ workspace }: SectionProps) {
             records={records.data?.records ?? []}
             disabledReason={notYet}
           />
-          <VerifyCard />
-          <CommandsCard commands={latest?.commands} />
+          <VerifyCard onFile={setDropped} />
+          <CommandsCard commands={latest?.commands} dropped={dropped} />
         </aside>
       </div>
     </div>

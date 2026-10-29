@@ -32,6 +32,7 @@ PLAIN = {
     "flagged": "how flagged wells are handled",
     "late_cq": "the late-Cq cut-off",
     "nondetect": "how non-detects are handled",
+    "replicates": "how replicate wells are combined",
     "refs": "the reference genes",
     "cut": "the group cut-off",
     "test": "the statistical test",
@@ -118,6 +119,37 @@ class Space:
         if "defensible" in tiers:
             return "defensible"
         return "prespecified"
+
+
+#: Only in a study with technical replicates (several wells per sample and gene); it joins the
+#: matrix stage after the non-detect rule. The mean is qPilot's rule (``qpcr/quant.py``).
+REPLICATES = Decision(
+    "replicates",
+    "matrix",
+    "U",
+    "How are a sample's replicate wells combined into one value?",
+    (
+        Option("mean", "mean", "prespecified", "the mean of the replicate wells"),
+        Option("median", "median", "defensible", "the middle replicate well (the median)"),
+        Option(
+            "drop_outlier",
+            "outlier",
+            "defensible",
+            "leave out a well outside the expected replicate spread, then the mean",
+        ),
+    ),
+    ("Ruiz-Villalba et al. 2021 Life (replicate Cq spread; qPilot's G-REP rule)",),
+)
+
+
+def with_replicates(space: Space) -> Space:
+    """``space`` with the :data:`REPLICATES` decision after the other matrix-stage decisions."""
+    if "replicates" in space.names:
+        return space
+    decisions = list(space.decisions)
+    at = next(i for i, d in enumerate(decisions) if d.stage != "matrix")
+    decisions.insert(at, REPLICATES)
+    return Space(tuple(decisions), {**space.baseline, "replicates": "mean"}, notes=space.notes)
 
 
 def ref_label(subset: tuple[str, ...]) -> str:

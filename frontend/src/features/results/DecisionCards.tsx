@@ -1,8 +1,10 @@
 /**
  * The Decision Cards: the choices that can change a conclusion, ranked by impact. A person picks
  * an option, says why, and decides; an agent's request waits here for Approve or Turn down.
- * A card opened from Trace (Where to look → Decide…) says so, names its place (sample · plate ·
- * well) and what to check there, and its options show only the calls they change.
+ * A card opened from Trace (Where to look → Decide…, for a study analysed outside Studio) says so,
+ * names its place (sample · plate · well) and what to check there, and its options show only the
+ * calls they change; deciding it records the choice. In a Studio session the wells are left out
+ * of the analysis from Trace itself, so the card links there.
  * `j`/`k` move between cards, `Enter` goes to the reason, `⌘Enter` decides.
  */
 import {
@@ -18,6 +20,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { Link } from "wouter";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { ApiError, type Schemas } from "@/api/client";
 import { useJob } from "@/api/jobs";
@@ -25,7 +28,8 @@ import { CALLS, Glyph, type CallKey } from "@/charts";
 import { cn } from "@/lib/cn";
 import { count, fold } from "@/lib/format";
 import { MOD, useHotkeys } from "@/lib/hooks";
-import { Badge, Button, Card, Kbd, Textarea, toast } from "@/ui";
+import { sectionPath } from "@/shell/sections";
+import { Badge, Button, Card, Kbd, KeyHint, Textarea, toast } from "@/ui";
 import {
   useCardWrite,
   useExplain,
@@ -35,6 +39,7 @@ import {
   type CardsView,
   type DecisionDone,
 } from "./api";
+import { QuantityChanges } from "./quantities/QuantityChanges";
 import { FactSource, FactText } from "./FactText";
 
 const MAX_REASON = 500;
@@ -118,7 +123,7 @@ export function DecisionCards({
               : ""}
           </p>
         </div>
-        <p className="hidden text-[12px] text-faint xl:block">
+        <p className="hidden text-[12px] text-faint xl:block pointer-coarse:hidden">
           <Kbd>j</Kbd> <Kbd>k</Kbd> move · <Kbd>{MOD}</Kbd>
           <Kbd>Enter</Kbd> decide
         </p>
@@ -177,9 +182,21 @@ export function placeAddress(place: Pick<CardPlace, "sample" | "plate" | "well">
     .join(" · ");
 }
 
-/** What to check at the place, and what deciding does (the study's numbers stay as analysed). */
-function TracePlace({ place }: { place: CardPlace }) {
+/**
+ * What to check at the place, and what deciding does: recorded here, the numbers stay as
+ * analysed. In a Studio session the wells are left out from Trace (it analyses the study again).
+ */
+function TracePlace({
+  place,
+  workspaceKey,
+  studyId,
+}: {
+  place: CardPlace;
+  workspaceKey: string;
+  studyId: string;
+}) {
   const checks = place.what_to_check ?? [];
+  const session = workspaceKey !== studyId;
   return (
     <div className="space-y-2 rounded-lg border border-line bg-sunken/60 p-3 text-[13px]">
       {checks.length > 0 && (
@@ -193,6 +210,16 @@ function TracePlace({ place }: { place: CardPlace }) {
         </div>
       )}
       <p className="text-[12px] leading-relaxed text-muted">{place.note}</p>
+      {session ? (
+        <p className="text-[12px]">
+          <Link
+            href={sectionPath({ key: workspaceKey, kind: "session" }, "trace")}
+            className="font-medium text-accent underline-offset-4 hover:underline"
+          >
+            Leave the wells out from Trace&rsquo;s Where to look
+          </Link>
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -262,6 +289,9 @@ function DecisionCardItem({
     [card.recommended, chosen, request?.option, option].filter(Boolean) as string[],
   );
   const many = view.options.length > 5;
+  // A study with several comparisons: each option's effects are given per comparison.
+  const several = (view.comparisons ?? []).length > 1;
+  const firstLabel = several ? view.comparisons.find((c) => c.primary)?.label : undefined;
   const visible = many && !showAll ? view.options.filter((o) => keyIds.has(o.id)) : view.options;
   const flips = view.needs_human;
 
@@ -399,15 +429,19 @@ function DecisionCardItem({
                 <p className="flex items-start gap-2 rounded-lg border border-line bg-sunken p-3 text-[13px] text-fg">
                   <History className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden />
                   <span>
-                    In the earlier analysis{" "}
-                    <span className="font-mono text-[12px]">{view.asked_again.study_id}</span> a
-                    person chose{" "}
+                    <span title={`Earlier analysis ${view.asked_again.study_id}`}>
+                      In the earlier analysis of these data
+                    </span>{" "}
+                    you chose{" "}
                     <strong>{view.asked_again.option_label ?? view.asked_again.option}</strong>. It
                     was not carried here: {view.asked_again.why}. Decide it again.
                   </span>
                 </p>
               )}
-              {view.place && <TracePlace place={view.place} />}
+              {view.place && (
+                <TracePlace place={view.place} workspaceKey={workspaceKey} studyId={studyId} />
+              )}
+              {several && <ComparisonsLine view={view} />}
               {request && (
                 <div className="flex items-start gap-2 rounded-lg border border-warn/40 bg-warn-soft p-3 text-[13px] text-fg">
                   <Bot className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden />
@@ -467,34 +501,30 @@ function DecisionCardItem({
                           </span>
                         </span>
                         {effectsOf(o).length > 0 && (
-                          <span className="flex flex-wrap gap-x-3 gap-y-1 pl-6">
-                            {effectsOf(o).map((e) => {
-                              const c =
-                                (e.conclusion as CallKey) in CALLS
-                                  ? (e.conclusion as CallKey)
-                                  : "none";
-                              return (
-                                <span
-                                  key={e.gene}
-                                  className={cn(
-                                    "tabular inline-flex items-center gap-1 text-[12px]",
-                                    e.changes_call ? "font-semibold text-fg" : "text-muted",
-                                  )}
-                                >
-                                  <span>{e.gene}</span>
-                                  <span>{fold(e.fc)}</span>
-                                  <Glyph mark={CALLS[c]} size={9} />
-                                  <span className={e.changes_call ? "" : "sr-only"}>
-                                    {CALLS[c].short}
-                                  </span>
-                                  {e.changes_call && (
-                                    <span className="font-normal text-warn">(changes)</span>
-                                  )}
-                                </span>
-                              );
-                            })}
+                          <span className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-6">
+                            {firstLabel && (
+                              <span className="text-[11.5px] font-medium text-muted">
+                                {firstLabel}:
+                              </span>
+                            )}
+                            <EffectChips effects={effectsOf(o)} />
                           </span>
                         )}
+                        <QuantityChanges option={o} />
+                        {(o.by_comparison ?? [])
+                          .filter((b) => b.effects.length > 0)
+                          .map((b) => (
+                            <span
+                              key={b.comparison}
+                              className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-6"
+                              data-comparison={b.comparison}
+                            >
+                              <span className="text-[11.5px] font-medium text-muted">
+                                {b.label}:
+                              </span>
+                              <EffectChips effects={b.effects} />
+                            </span>
+                          ))}
                       </label>
                     );
                   })}
@@ -608,10 +638,7 @@ function DecisionCardItem({
                         )}
                       </>
                     )}
-                    <span className="text-[12px] text-faint">
-                      <Kbd>{MOD}</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </span>
+                    <KeyHint keys={[MOD, "Enter"]} />
                   </div>
                 </div>
               )}
@@ -692,5 +719,57 @@ function DecisionCardItem({
         )}
       </AnimatePresence>
     </Card>
+  );
+}
+
+/** One option's consequence per gene: fold change and call, the changed calls in bold. */
+function EffectChips({ effects }: { effects: CardView["options"][number]["effects"] }) {
+  return (
+    <>
+      {effects.map((e) => {
+        const c = (e.conclusion as CallKey) in CALLS ? (e.conclusion as CallKey) : "none";
+        return (
+          <span
+            key={e.gene}
+            className={cn(
+              "tabular inline-flex items-center gap-1 text-[12px]",
+              e.changes_call ? "font-semibold text-fg" : "text-muted",
+            )}
+          >
+            <span>{e.gene}</span>
+            <span>{fold(e.fc)}</span>
+            <Glyph mark={CALLS[c]} size={9} />
+            <span className={e.changes_call ? "" : "sr-only"}>{CALLS[c].short}</span>
+            {e.changes_call && <span className="font-normal text-warn">(changes)</span>}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
+/** What the choice does in each comparison, and that deciding it applies to all of them. */
+export function ComparisonsLine({ view }: { view: CardView }) {
+  return (
+    <div
+      className="rounded-lg border border-line bg-sunken/60 p-3 text-[13px]"
+      data-testid="card-comparisons"
+    >
+      <p className="font-medium text-fg">In each comparison</p>
+      <ul className="mt-1 space-y-0.5 text-muted">
+        {view.comparisons.map((c) => (
+          <li key={c.id}>
+            <span className="font-medium text-fg">{c.label}</span>
+            {c.primary ? " (the first)" : ""}:{" "}
+            {c.flips
+              ? `this choice alone changes the call of ${c.genes.join(", ")}`
+              : c.flips_elsewhere
+                ? "it changes no call at the planned settings, but can at other settings"
+                : "it changes no call"}
+          </li>
+        ))}
+      </ul>
+      {view.study_wide && <p className="mt-1.5 text-fg">{view.study_wide}</p>}
+    </div>
   );
 }

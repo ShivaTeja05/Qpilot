@@ -9,9 +9,9 @@ are read from the files by the tests, never written here. The demo RDML test is 
 
 import io
 import json
+import os
 import random
 import re
-import time
 import zipfile
 from pathlib import Path
 
@@ -31,6 +31,7 @@ from qpilot.qpcr.instrument_context import (
     run_contexts_from_rdml,
 )
 from tests.engine import instrument_files as F
+from tests.timing import work_time
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 CORPUS = FIXTURES / "corpus"
@@ -191,8 +192,11 @@ def test_personal_data_is_never_copied(tmp_path):
 
 def test_7500_layout_from_the_real_file(tmp_path):
     path = F.like_7500(tmp_path / "7500.eds")
+    # The name as stored (Python on Windows lists it with "/", so look at the bytes).
+    assert b"APLDBIO\\SDS\\CALIBRATIONS/background.ini" in path.read_bytes()
     with zipfile.ZipFile(path) as archive:
-        assert "APLDBIO\\SDS\\CALIBRATIONS/background.ini" in archive.namelist()
+        listed = "APLDBIO/SDS/CALIBRATIONS/background.ini" if os.name == "nt" else None
+        assert (listed or "APLDBIO\\SDS\\CALIBRATIONS/background.ini") in archive.namelist()
     ctx = read_run_context(path)
     assert ctx.run["start"] == "2007-11-10T01:46:54Z" and ctx.run["end"] == "2007-11-10T03:10:59Z"
     assert ctx.identity["model"] == "7500 Fast" and ctx.identity["software"] == "7500 Software v2.3"
@@ -398,15 +402,15 @@ def test_events_are_capped(monkeypatch):
 def test_six_megabyte_log_parses_quickly(tmp_path):
     text = F.messages_log(cycles=40, noise_per_cycle=2_400, pause_at=23)
     assert len(text.encode()) >= 6_000_000
-    started = time.perf_counter()
-    log = ic._parse_log(text, "messages.log")
-    elapsed = time.perf_counter() - started
-    assert elapsed < 2.0, elapsed
+    with work_time() as parse:
+        log = ic._parse_log(text, "messages.log")
+    assert parse.seconds < 2.0, parse
     assert [e["kind"] for e in log.events] == ["pause", "resume"]
     members = {"experiment.xml": F.experiment_xml(), "messages.log": text}
-    started = time.perf_counter()
-    ctx = read_run_context(F.write_eds(tmp_path / "big.eds", members))
-    assert time.perf_counter() - started < 2.0
+    eds = F.write_eds(tmp_path / "big.eds", members)
+    with work_time() as read:
+        ctx = read_run_context(eds)
+    assert read.seconds < 2.0, read
     assert ctx.events[0]["cycles"] == [23, 24]
 
 
@@ -490,7 +494,7 @@ def test_xml_entities_are_never_resolved(tmp_path):
     canary.write_text("CANARY-7f3a", encoding="utf-8")
     xml = (
         '<?xml version="1.0"?>\n'
-        f'<!DOCTYPE Experiment [<!ENTITY x SYSTEM "file://{canary}">]>\n'
+        f'<!DOCTYPE Experiment [<!ENTITY x SYSTEM "{canary.as_uri()}">]>\n'
         "<Experiment><RunState>&x;</RunState><InstrumentTypeId>paragon</InstrumentTypeId>"
         "</Experiment>"
     )
@@ -914,9 +918,9 @@ def test_ci_fixture_run_name_dates():
 
 @pytest.mark.demo_data
 def test_demo_rdml_has_no_instrument_fields(demo_rdml_path):
-    started = time.perf_counter()
-    contexts = run_contexts_from_rdml(demo_rdml_path)
-    assert time.perf_counter() - started < 10
+    with work_time() as spent:
+        contexts = run_contexts_from_rdml(demo_rdml_path)
+    assert spent.seconds < 10, spent
     assert len(contexts) == 67
     assert sum(1 for c in contexts if any(c.identity.values())) == 0  # 0 of 67 name it
     named = [c for c in contexts if c.run["date_source"] == "run name"]
@@ -948,3 +952,24 @@ def test_method_card_lists_real_tests():
     for test in METHOD_CARD["acceptance_tests"]:
         file, _, name = test.partition("::")
         assert f"def {name}(" in (root / file).read_text(encoding="utf-8"), test
+
+
+def test_rdml_run_contexts_are_parsed_once_per_xml_and_handed_out_as_copies(tmp_path):
+    """perf: the analysis, the gate and the evidence read the same file's runs; parse once."""
+    runs = [{"id": "a", "instrument": "LC96SN90001", "runDate": "2014-08-19T11:30:20"}]
+    path = F.write_rdml(tmp_path / "x.rdml", runs)
+    ic._CONTEXTS.clear()
+    calls = []
+    real = ic._parse_rdml_contexts
+    try:
+        ic._parse_rdml_contexts = lambda *a, **k: calls.append(1) or real(*a, **k)
+        first = run_contexts_from_rdml(path)
+        again = run_contexts_from_rdml(path)
+        other = run_contexts_from_rdml(path, source_file="y.rdml")
+    finally:
+        ic._parse_rdml_contexts = real
+    assert len(calls) == 2  # x.rdml once, y.rdml once
+    assert again == first and again[0] is not first[0]
+    again[0].notes.append("changed by a caller")
+    assert run_contexts_from_rdml(path) == first  # a caller's change never reaches the next
+    assert len(other) == len(first) and other != first  # the file's name is part of each
