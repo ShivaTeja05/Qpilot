@@ -274,15 +274,15 @@ Wells LinRegPCR calls "no amplification" never enter a standard curve, even when
 
 ## 11. Controls: the Run Gate and melt curves
 
-**Controls** says what the controls on each plate say, and whether any of it changes a call. The shipped rule pack (`research-default` 1.3.0; every threshold and its source in `packs/research-default.yaml`) checks every plate:
+**Controls** says what the controls on each plate say, and whether any of it changes a call. The shipped rule pack (`research-default` 1.4.0; every threshold and its source in `packs/research-default.yaml`) checks every plate:
 
 | Rule | What it checks |
 |---|---|
 | G-TYPED | that the plate has wells typed as controls |
-| G-NTC-1 | amplification in a no-template control near the study samples (a primer-dimer in an NTC is a warning, from its melt; an internal positive control is not judged, it is meant to amplify there) |
+| G-NTC-1 | amplification in a no-template control near the study samples (a primer-dimer in an NTC is a warning, from its melt: a peak at least 3 °C below the product; an internal positive control is not judged, it is meant to amplify there) |
 | G-NAC, G-NRT | amplification in a no-amplification control; the genomic DNA share from the no-RT control |
 | G-POS, G-STD | a positive control inside its window; the standard curve |
-| G-REP | the spread of technical replicates |
+| G-REP | the spread of technical replicates (it proposes leaving out the well farthest from the others, or the sample; when two wells are equally far, as with duplicates, it proposes the sample only: the spread is not one well's) |
 | G-RT | the spread of reverse-transcription replicates (when the sheet's `rt_replicate` column marks them) |
 | G-INSTR | what the run file says about the run: completed, paused, lid opened, calibrations past expiry, holds off their setpoint |
 | G-MELT | one product at the assay's melting temperature |
@@ -293,7 +293,7 @@ Rules label; a person decides. For every rule that warns or fails and points at 
 * **In one line**: the headline, the verdict counts (Fail / Warn / Pass / Not applicable) and what to do.
 * **Plates**: one button per plate with its worst verdict; pressing one filters the checks to it. A plate with no wells typed as controls is "ungated".
 * **Rule checks**: warn and fail first (filter by verdict, rule and plate); each row opens to the reason in words, the wells it points at and what leaving them out changes.
-* **Melt curves (G-MELT).** For SYBR Green or EvaGreen assays exported with their melt curves, G-MELT checks that every amplified well melts as one product within 1 °C of its assay's Tm (the Tm the file declares, else the median of its study wells), counts extra peaks, and says what melted in the no-template controls. Open a G-MELT check to see the wells' −dF/dT; the shaded band is the expected Tm ± tolerance. A single peak does not prove the intended amplicon (MIQE 2.0). `qpilot melt FILE…` prints the same from the terminal. *On the hmuY LightCycler 96 plate of the corpus*, HmuYPe melts at 82.0 °C and 16S rRNA at 87.1 °C, and every judged well melts as expected.
+* **Melt curves (G-MELT).** For SYBR Green or EvaGreen assays exported with their melt curves, G-MELT checks that every amplified well melts as one product within 1 °C of its assay's Tm (the Tm the file declares, else the median of its study wells), counts extra peaks, and says what melted in the no-template controls: a peak at the product's Tm is a contamination candidate, a peak at least 3 °C below it a primer-dimer candidate (usually harmless there), and a peak closer below, or above, another product (a shorter product or a variant amplicon can melt a degree or two below the intended one). The 3 °C is a lab-editable default (`dimer_min_below_c`). Open a G-MELT check to see the wells' −dF/dT; the shaded band is the expected Tm ± tolerance. A single peak does not prove the intended amplicon (MIQE 2.0). `qpilot melt FILE…` prints the same from the terminal. *On the hmuY LightCycler 96 plate of the corpus*, HmuYPe melts at 82.0 °C and 16S rRNA at 87.1 °C, and every judged well melts as expected.
 * **Internal positive controls (G-IPC).** On a multiplex plate with an IPC, G-IPC flags the samples whose control came up 3 or more cycles late (possible inhibition), priced like every other warning. An IPC that did not amplify beside a target that did is not inhibition (a strong target can use up the reaction first). The 3-cycle delay is a lab-editable default. *On the QuantStudio 7 Pro eDNA plate of the corpus*, sample M22's wells come up 3.5 to 4.2 cycles late.
 * **Decision Cards from the controls**: a card exists only when leaving a rule's wells out can change a conclusion. **In a Studio session you decide it here**: choose an option and say why. Leaving wells out writes one entry per well to the session's record, analyses the study again and carries your Decision Card choices; **Put the wells back** undoes it, with a reason. An agent can only ask. A study analysed outside Studio is read-only here: open its file in Studio to leave wells out.
 * **What to repeat**: how many sample × gene items are worth a look, how many change a call, and the repeat plate (download as CSV); the full list is in the Run Review ([section 17](#17-report-methods-miqe-the-run-review-and-exports)).

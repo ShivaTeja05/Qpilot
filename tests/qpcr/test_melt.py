@@ -213,7 +213,11 @@ def test_a_declared_melting_temperature_comes_before_the_median():
     assert (a.expected_tm, a.expected_source) == (85.6, "file")
     calls = {w.well: w.status for w in a.wells}
     assert calls["A5"] == "one_product" and calls["A1"] == "tm_off"
-    assert calls["H3"] == "dimer"  # 84.0 is now 1.6 °C below the product
+    # 84.0 is now 1.6 °C below the product: closer than a primer-dimer melts (J5, 3 °C), so
+    # another product; with a lab's 1.5 °C line it is a primer-dimer again
+    assert calls["H3"] == "other_product"
+    lab = _assay(rows, curves, declared={"T": 85.6}, params=M.MeltParams(dimer_min_below_c=1.5))
+    assert {w.well: w.status for w in lab.wells}["H3"] == "dimer"
 
 
 def test_the_tolerance_and_the_extra_peak_share_are_the_packs():

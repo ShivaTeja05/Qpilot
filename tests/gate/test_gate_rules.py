@@ -348,6 +348,22 @@ def test_an_outlying_replicate_warns_and_offers_the_well_or_the_sample():
     assert value(ctx, ev, "nrep") == 3
 
 
+def test_a_tie_for_the_farthest_well_proposes_no_single_well():
+    """Science review J10: 20.0, 20.5, 21.0 (and any duplicate pair) is not one well's spread;
+    the first well in plate order used to be proposed. Pack 1.4.0."""
+    from qpilot.qpcr.gate_rules import outlier_well
+
+    evals, ctx = run(rep_plate({"S1": [20.0, 20.5, 21.0], "S2": [22.0, 23.5]}), "G-REP")
+    for sample, wells in (("S1", ["P1/A1", "P1/A2", "P1/A3"]), ("S2", ["P1/B1", "P1/B2"])):
+        ev = only(evals, sample=sample)
+        assert ev.verdict == "warn" and ev.flagged == wells
+        assert ev.options == {"drop_sample": wells}
+        assert "The spread is not one well's" in ev.reason
+    assert outlier_well(["a", "b", "c"], np.array([24.0, 24.1, 26.0])) == "c"
+    assert outlier_well(["a", "b", "c"], np.array([20.0, 20.5, 21.0])) is None
+    assert outlier_well(["a", "b"], np.array([20.0, 21.0])) is None
+
+
 def test_late_replicates_get_the_two_cycle_floor_and_very_late_ones_are_not_evaluated():
     evals, ctx = run(rep_plate({"S1": [32.0, 33.5], "S2": [36.0, 36.5]}), "G-REP")
     s1 = only(evals, sample="S1")

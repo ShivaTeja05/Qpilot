@@ -294,7 +294,7 @@ consistent"; it is outside both blind confirmations (they never re-open for it).
 
 ### Controls (`features/gate`) — Run Gate
 What the controls on each plate say, and whether any of it changes a call. The shipped rule pack
-(`research-default` 1.3.0: G-TYPED, G-NTC-1, G-NAC, G-NRT, G-POS, G-STD, G-REP, G-RT, G-INSTR,
+(`research-default` 1.4.0: G-TYPED, G-NTC-1, G-NAC, G-NRT, G-POS, G-STD, G-REP, G-RT, G-INSTR,
 G-MELT, G-IPC;
 thresholds and sources in `packs/research-default.yaml`, science in
 `agent-bus/contracts/scientist-spec-gate.md`) is evaluated on the study's wells; every rule that
@@ -373,8 +373,9 @@ one elsewhere).
   its file in Studio (Trace follows its calls down to their wells).
 * **G-MELT** (since pack 1.2.0, `qpcr/melt.py`, `GET /api/studies/{id}/melt`): for dye assays with melt
   curves, each amplified study well's call (one product within the tolerance of the assay's Tm,
-  extra peak, Tm off, no peak) and each NTC's (nothing, the product, a primer-dimer, another
-  product; G-NTC-1 grades a dimer as a warning). A G-MELT row opens its wells' melt curves
+  extra peak, Tm off, no peak) and each NTC's (nothing, the product, a primer-dimer at least
+  `dimer_min_below_c` (3 °C, pack 1.4.0) below the product, another product; G-NTC-1 grades a
+  dimer as a warning). A G-MELT row opens its wells' melt curves
   (`gate/Melt.tsx`, the shaded band = expected Tm ± tolerance) with **Open these wells in
   Curves**. Method card: `methods/melt_curve.md`.
 * **G-IPC** (pack 1.3.0, `qpcr/multiplex.py`, [`multiplex.md`](multiplex.md)): a study well whose

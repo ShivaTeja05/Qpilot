@@ -26,8 +26,10 @@ another product. This module computes, deterministically and from the study's ow
   carrying at least ``extra_peak_share`` of its summed peak prominences (``extra_peak``), has no
   peak within the tolerance (``tm_off``) or shows no peak at all (``no_peak``); a no-template
   control shows no peak (``no_product``), a peak at the product's Tm (``product``: a
-  contamination candidate), only lower peaks (``dimer``: a primer-dimer candidate) or a higher
-  one (``other_product``).
+  contamination candidate), only peaks at least ``dimer_min_below_c`` below it (``dimer``: a
+  primer-dimer candidate; primer-dimers melt well below most products, Ririe et al. 1997) or a
+  peak elsewhere: higher, or lower but closer than that, as a shorter non-specific product or a
+  variant amplicon would (``other_product``; science review J5).
 * **per target** across plates (:func:`target_summaries`): the median product Tm and its range.
 
 The thresholds are the Run Gate pack's (rule G-MELT, ``packs/research-default.yaml``), passed in
@@ -117,12 +119,16 @@ class MeltParams:
     extra_peak_share: float = 0.05
     noise_share: float = 0.05
     min_wells: int = 3
+    #: A no-template control's peak counts as a primer-dimer only this far below the product's Tm
+    #: (lab-editable; science review J5): closer, it may be a shorter product or a variant.
+    dimer_min_below_c: float = 3.0
 
     @classmethod
     def from_rule(cls, params: Mapping[str, Any]) -> MeltParams:
         """The thresholds a pack rule's ``params`` set (unknown keys ignored, the rest checked)."""
         out = cls()
-        for name in ("tm_tolerance_c", "extra_peak_share", "noise_share", "min_wells"):
+        names = ("tm_tolerance_c", "extra_peak_share", "noise_share", "min_wells")
+        for name in (*names, "dimer_min_below_c"):
             if name not in params:
                 continue
             value = params[name]
@@ -710,7 +716,7 @@ def _call(
         weighty = [main, *extra]
         if any(abs(p.tm - expected) <= tol for p in weighty):
             return replace(base, status="product")
-        if main.tm < expected:
+        if all(p.tm <= expected - params.dimer_min_below_c for p in weighty):
             return replace(base, status="dimer")
         return replace(base, status="other_product")
     return replace(base, status="not_judged")

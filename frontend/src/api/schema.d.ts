@@ -10135,6 +10135,12 @@ export type components = {
          */
         MeltParamsView: {
             /**
+             * Dimer Min Below C
+             * @description A no-template control's peak is a primer-dimer candidate only this far (°C) or more below the product's Tm; closer, it is another product.
+             * @default 3
+             */
+            dimer_min_below_c: number;
+            /**
              * Extra Peak Share
              * @description An extra peak counts when it carries at least this share of the peaks.
              */

@@ -22,8 +22,17 @@
 # no-template wells suggests inhibition. G-NTC-1 no longer judges an internal positive control
 # (it is meant to amplify in the no-template wells); it is unchanged for every other target. The
 # rules of 1.2.0 are otherwise unchanged.
+#
+# 1.4.0 (29 Oct 2026, docs/science-review-2026-10.md J0, J5, J10): G-MELT's new parameter
+# dimer_min_below_c (3 C): a no-template control's peak is a primer-dimer candidate only when it
+# melts at least that far below the product (closer, it is another product: warn, and G-NTC-1
+# then treats the control's amplification as possible contamination); until 1.3.0 any distance
+# counted. G-REP proposes no single outlier well when the wells farthest from the median are
+# equally far (a tie: duplicates, or three wells spread symmetrically); it proposes the sample.
+# G-STD cites Taylor et al. 2010 for its 90-110 % and R2 0.98 lines (MIQE asks for them to be
+# reported, not for these limits). The rules of 1.3.0 are otherwise unchanged.
 pack: research-default
-version: 1.3.0
+version: 1.4.0
 label: >-
   Research use only. Rules are lab-editable examples with sources; they are not clinical
   run-validity rules.
@@ -59,6 +68,13 @@ sources:
     url: https://doi.org/10.1093/nar/gkr1259
   biorad_5279:
     citation: Bio-Rad. Real-Time PCR Applications Guide, Bulletin 5279 (R2 > 0.980).
+  taylor_2010:
+    citation: >-
+      Taylor S, Wakem M, Dijkman G, Alsarraj M, Nguyen M. A practical approach to RT-qPCR:
+      publishing data that conform to the MIQE guidelines. Methods 2010;50(4):S1-S5: an
+      efficiency of 90-110 % and R2 above 0.98 for the standard curve. MIQE (2009) asks for the
+      efficiency and R2 to be reported, not for these limits.
+    url: https://doi.org/10.1016/j.ymeth.2010.01.005
   primepcr_6262:
     citation: >-
       Hellemans J, Vandesompele J, et al. PrimePCR assays: meeting the MIQE guidelines by full
@@ -186,7 +202,7 @@ rules:
       min_replicates: 3
     severity: {ok: pass, few_replicates: warn, efficiency_out: fail, r2_low: fail}
     default_action: log
-    sources: [ma_2021, primepcr_6262, biorad_5279, miqe2]
+    sources: [taylor_2010, ma_2021, primepcr_6262, biorad_5279, miqe2]
   - id: G-REP
     name: Technical replicate spread
     check: replicate_spread
@@ -195,7 +211,10 @@ rules:
       normal values whose SD combines pipetting (CV c) and Poisson sampling (1/N copies):
       sqrt(c^2 + 1/N) / ln(E). Copies come from a standard curve on the plate; without one, only
       pipetting counts up to Cq 30, a two-cycle floor applies up to Cq 35, and later groups are
-      not evaluated. Outside the range is a warning; the consequence test decides.
+      not evaluated. Outside the range is a warning; the consequence test decides, leaving out
+      the replicate farthest from the median, or the sample. When the farthest wells are equally
+      far from the median (duplicates, or three wells spread symmetrically) the spread is not one
+      well's and no single well is proposed.
     applies_to: {sample_types: [unkn, pos, std], per: [plate, target, sample]}
     needs: [cq, eff_target]
     params:
@@ -267,8 +286,10 @@ rules:
       expected temperature (fail); an extra peak carrying at least extra_peak_share of the well's
       summed peak heights means a mixture, such as a primer-dimer beside the product (warn); the
       consequence test leaves the flagged wells out. In a no-template control, a peak at the
-      product's temperature is a contamination candidate and a higher one another product
-      (warn); only lower peaks are a primer-dimer candidate, usually harmless there (pass);
+      product's temperature is a contamination candidate and a higher one, or a lower one closer
+      than dimer_min_below_c, another product such as a shorter non-specific product or a variant
+      amplicon (warn); only peaks at least dimer_min_below_c below the product are a primer-dimer
+      candidate, usually harmless there (pass; primer-dimers melt well below most products);
       G-NTC-1 grades the control's amplification with this class. A single peak at the expected
       temperature does not guarantee the intended amplicon (MIQE 2.0). Without melt curves, or
       for a probe chemistry, the rule is not applicable.
@@ -277,7 +298,12 @@ rules:
       per: [plate, target, sample]
       chemistry: [dna_binding_dye]
     needs: [melt_curve, engine_call]
-    params: {tm_tolerance_c: 1.0, extra_peak_share: 0.05, noise_share: 0.05, min_wells: 3}
+    params:
+      tm_tolerance_c: 1.0
+      extra_peak_share: 0.05
+      noise_share: 0.05
+      min_wells: 3
+      dimer_min_below_c: 3.0
     severity:
       one_product: pass
       extra_peak: warn
