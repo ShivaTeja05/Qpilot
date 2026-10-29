@@ -7,6 +7,15 @@ the robustness grid (:class:`qpilot.qpcr.space.QpcrSpace`), with these rules:
 
 * ``linregpcr`` (recommended, the default): a well counts when LinRegPCR gives it a quantity.
   This is exactly what the engine did before the dimension existed.
+* ``linregpcr_call`` (opt-in; science review J1): a well counts when LinRegPCR *calls* it
+  amplified. rdmlpython's LinRegPCR returns a quantity and a Cq for some wells it marks "no
+  amplification" (a flat curve: "no amplification; baseline error"); this rule counts those as
+  undetermined. Negative controls are left as they are (a quantity there is what the Run Gate's
+  no-template rule weighs). A table without LinRegPCR's call (a file of Cq values only) falls
+  back on the quantity, so the rule is then the same as ``linregpcr``. It is offered, not the
+  default: on the demo it changes no call (11 of 24 576 wells; the largest fold-change move 0.069
+  log2), and the locked demo numbers stay as they are until a planned regeneration (the
+  review's option b).
 * ``cq_le_40``, ``cq_le_38``, ``cq_le_35``: a well whose engine Cq (LinRegPCR's TD0) is greater
   than the cut-off becomes undetermined (``n0`` = NaN) for every target, control genes included;
   the analysis then runs unchanged. The 35-cycle line is common and not recommended: a dilution
@@ -39,6 +48,8 @@ METHOD_CARD_PATH = "methods/amp_call.md"
 DEFAULT_AMP_CALLS: tuple[str, ...] = ("linregpcr",)  # the legacy default: no amp_call dimension
 STUDIO_AMP_CALLS: tuple[str, ...] = ("linregpcr", "cq_le_40", "cq_le_38", "cq_le_35")
 RECOMMENDED = "linregpcr"
+#: The opt-in rule that respects LinRegPCR's "no amplification" (science review J1).
+STRICT = "linregpcr_call"
 SCREEN_MIN_LOG2FC = 0.5  # W3 §4.2: a dimension enters the grid if it flips or moves log2fc > 0.5
 
 RULES: dict[str, AmpCallRule] = {
@@ -48,6 +59,16 @@ RULES: dict[str, AmpCallRule] = {
         kind="linregpcr",
         recommended=True,
         note="Every well with a LinRegPCR starting quantity counts; the engine's default.",
+        method_card=METHOD_CARD_PATH,
+    ),
+    STRICT: AmpCallRule(
+        id=STRICT,
+        label='LinRegPCR\'s call, its "no amplification" respected',
+        kind="linregpcr_call",
+        note=(
+            "A well counts when LinRegPCR calls it amplified; a well it calls 'no amplification' "
+            "is undetermined even when it was given a quantity (a flat curve)."
+        ),
         method_card=METHOD_CARD_PATH,
     ),
     "cq_le_40": AmpCallRule(
@@ -100,6 +121,9 @@ METHOD_CARD: dict[str, Any] = {
         "tests/engine/test_amp_call.py::test_rules_on_a_toy_table",
         "tests/engine/test_amp_call.py::test_demo_amp_call_oracle",
         "tests/engine/test_amp_call.py::test_demo_std15_late_wells",
+        "tests/engine/test_amp_call.py::test_the_strict_rule_follows_linregpcrs_call",
+        "tests/engine/test_amp_call.py::test_strict_rule_on_the_edna_sample_plate",
+        "tests/engine/test_amp_call.py::test_demo_strict_rule_changes_no_call",
     ],
     "licence": "Apache-2.0",
     "card": METHOD_CARD_PATH,
@@ -168,6 +192,8 @@ def amplified(
     has_quantity = curves["n0"].notna()
     if rule.kind == "linregpcr":
         called = has_quantity
+    elif rule.kind == "linregpcr_call":
+        called = has_quantity & linregpcr_called(curves)
     elif rule.kind == "cq_max":
         if "cq" not in curves.columns:
             raise AmpCallError(f"rule {rule_id!r} needs the per-well Cq column 'cq'")
@@ -181,6 +207,37 @@ def amplified(
         override = well_keys(curves).map(well_calls)
         called = called.where(override.isna(), has_quantity & override.eq(True))
     return called.astype(bool)
+
+
+#: Negative controls: LinRegPCR's "no amplification" there means something else (it notes "TD0
+#: found in negative control" for a curve with a quantity), and their signal must stay visible.
+NEGATIVE_TYPES = ("ntc", "nac", "ntp", "nrt")
+
+
+def linregpcr_called(curves: pd.DataFrame) -> pd.Series:
+    """LinRegPCR's own call (``amplification``) where it made one, else ``True``.
+
+    Study wells, standards and positive controls follow the call: those it calls not amplified
+    are the ones it notes "no amplification" (unknowns) or excludes as "no amplification in
+    positive control" (standards, positives). A negative control always counts as called (its
+    quantity, when it has one, is the contamination signal the Run Gate weighs), and so does
+    every well of a table with no call (a file of Cq values only, an instrument's own Cq), so
+    :data:`STRICT` is then the quantity rule.
+    """
+    if "amplification" not in curves.columns:
+        return pd.Series(True, index=curves.index)
+    call = curves["amplification"]
+    negative = (
+        curves["sample_type"].astype(str).isin(NEGATIVE_TYPES)
+        if "sample_type" in curves.columns
+        else pd.Series(False, index=curves.index)
+    )
+    return (call.isna() | call.eq(True) | negative).astype(bool)
+
+
+def no_amplification_with_quantity(curves: pd.DataFrame) -> pd.Series:
+    """Wells LinRegPCR calls "no amplification" although it gave them a quantity (J1)."""
+    return (curves["n0"].notna() & ~linregpcr_called(curves)).astype(bool)
 
 
 def apply_rule(

@@ -115,6 +115,16 @@ def test_the_curve_judge_blind_spot_reaches_the_scientist_as_contradicted(walk):
     assert all(p.consequence == {"matters": True} for p in calls)  # blind: no gene, no number
 
 
+def test_the_strict_rule_is_offered_where_linregpcr_called_no_amplification(walk):
+    """Science review J1: 11 demo wells LinRegPCR calls no amplification have a quantity; the
+    curves stage offers the strict rule beside the Cq lines, never as the proposal itself."""
+    rule = next(p for p in walk["curves_inbox"] if p.kind == "curve.call_rule")
+    assert rule.payload["rule"] == "linregpcr"
+    assert {"rule": "linregpcr_call"} in rule.alternatives
+    (note,) = [e.note for e in rule.evidence if e.ref == "linregpcr_call"]
+    assert note.startswith("LinRegPCR calls 11 wells of this file 'no amplification'")
+
+
 def test_the_analysis_is_the_engines(walk):
     result = walk["studio"].store.get(walk["study"])
     assert math.isclose(result.contrasts["ODC1"].fc, 3.5899, rel_tol=1e-4)
