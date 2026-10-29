@@ -11,7 +11,7 @@ workbook alone), over a throwaway study store with no model, lets qPilot's rules
 design, and prints what it found. Re-run it after changing a reader and paste its output here.
 `tests/web/test_intake_corpus.py` checks the same plates and wells on every test run.
 
-Last generated on 28 Oct 2026 (qPilot 0.2.0).
+Last generated on 29 Oct 2026 (qPilot 0.2.0).
 
 ## How to read the tables
 
@@ -33,7 +33,7 @@ Last generated on 28 Oct 2026 (qPilot 0.2.0).
 * **Melt curves**: wells whose melt curve `qpilot melt` reads (G-MELT in Controls, the melt panel
   in Curves). "none in the files" means the files hold no melt data.
 * **Design proposals**: how many design proposals qPilot's rules made with no model and no sample
-  sheet. A file that names its samples and types gives the rules something to read; one that
+  sheet (what the study is for counts as one where the rules propose it). A file that names its samples and types gives the rules something to read; one that
   does not (`0`) is set on the page by a person instead ([design-editor.md](design-editor.md)).
 
 ## Every set, dropped as a folder
@@ -50,13 +50,13 @@ Last generated on 28 Oct 2026 (qPilot 0.2.0).
 | `rdml/linregpcr-rdml-1.3-lc480-kphaffii` | LightCycler 480 II; LinRegPCR (RDML 1.3 with LinRegPCR result elements) | RDML (opened as it is) | 6 · 432 · 24 · 6 | not checked (RDML) | 432 wells | 4 |
 | `rdml/quantstudio7pro-rdml-1.2-edna` | QuantStudio 7 Pro System; not stated in the RDML | refused: Open one RDML file at a time (SupplementaryMaterials2_qPCR_ConcentrationStandardCurve.rdml, SupplementaryMaterials2_qPCR_Plate1.rdml); one RDML file can hold many plates. | — | — | — | — |
 | `rdml/rdml-1.2-cq-only-soybean` | not stated; not stated | RDML (opened as it is) | 17 · 1428 · 60 · 10 | not checked (RDML) | none in the files | 13 |
-| `rdml/stepone-2.3-rdml-1.0` | StepOne; StepOne Software v2.3 | RDML (opened as it is) | 1 · 24 · 8 · 1 | not checked (RDML) | none in the files | 7 |
+| `rdml/stepone-2.3-rdml-1.0` | StepOne; StepOne Software v2.3 | RDML (opened as it is) | 1 · 24 · 8 · 1 | not checked (RDML) | none in the files | 8 |
 | `roche/mendeley-diras2-lc480-raw-and-cp` | LightCycler 480 (instrument named '29892'), 384-well; LightCycler 480 Software 1.5.1.62 | Roche LightCycler 480 text export | 1 · 384 · 4 · 1 | raw | none in the files | 0 |
 | `roche/nomads-lc480-raw-isothermal-not-pcr` | LightCycler 480; LCS480 1.5.1.62 | refused: The export could not be read: evIC50_1_plate1_07APRIL2026.txt: every reading was taken at about 37 °C, with no heating step, so this is not a PCR run (it looks like an isothermal plate read); qPilot reads qPCR runs only. | — | — | — | — |
-| `roche/sanger-lc480-cp-table` | LightCycler 480 (384-well); LightCycler 480 Software (version not in file) | Roche LightCycler 480 text export | 1 · 384 · 176 · 1 | Cq values only | none in the files | 8 |
-| `synthetic/cfx-manager-raw-vs-baseline-subtracted` (synthetic) | none (synthetic); none; CFX Manager 3.x export layout | Bio-Rad CFX Manager / Maestro export | 2 · 160 · 95 · 3 | baseline-subtracted: Import Trust card | none in the files | 8 |
-| `synthetic/quantstudio-design-analysis-rn-drn` (synthetic) | none (synthetic; header says QuantStudio 5 and SYNTHETIC); none; Design & Analysis 2.7 CSV layout | Thermo Fisher QuantStudio / Applied Biosystems export | 1 · 80 · 15 · 2 | normalised to a passive reference (Rn) | none in the files | 8 |
-| `thermofisher/allotropy-quantstudio-rtpcr-txt` | QuantStudio 6 Flex, QuantStudio 7 Flex, ViiA 7 (per file header); QuantStudio Real-Time PCR Software 1.x / ViiA 7 Software (version not in header) | Thermo Fisher QuantStudio / Applied Biosystems export | 6 · 216 · 79 · 8 | Cq values only | none in the files | 52 |
+| `roche/sanger-lc480-cp-table` | LightCycler 480 (384-well); LightCycler 480 Software (version not in file) | Roche LightCycler 480 text export | 1 · 384 · 176 · 1 | Cq values only | none in the files | 9 |
+| `synthetic/cfx-manager-raw-vs-baseline-subtracted` (synthetic) | none (synthetic); none; CFX Manager 3.x export layout | Bio-Rad CFX Manager / Maestro export | 2 · 160 · 95 · 3 | baseline-subtracted: Import Trust card | none in the files | 9 |
+| `synthetic/quantstudio-design-analysis-rn-drn` (synthetic) | none (synthetic; header says QuantStudio 5 and SYNTHETIC); none; Design & Analysis 2.7 CSV layout | Thermo Fisher QuantStudio / Applied Biosystems export | 1 · 80 · 15 · 2 | normalised to a passive reference (Rn) | none in the files | 9 |
+| `thermofisher/allotropy-quantstudio-rtpcr-txt` | QuantStudio 6 Flex, QuantStudio 7 Flex, ViiA 7 (per file header); QuantStudio Real-Time PCR Software 1.x / ViiA 7 Software (version not in header) | Thermo Fisher QuantStudio / Applied Biosystems export | 6 · 216 · 79 · 8 | Cq values only | none in the files | 54 |
 | `thermofisher/opentrons-7500-design-analysis-csv` | 7500 System, 96-well 0.2 mL block; QuantStudio-family CSV export (software name/version not in header; Amp Score/Cq Confidence columns as in Design & Analysis) | Thermo Fisher QuantStudio / Applied Biosystems export | 1 · 51 · 10 · 3 | raw | none in the files | 1 |
 | `thermofisher/securebio-qs3-design-analysis-2.7` | QuantStudio 3 System, 96-well 0.1 mL block; Design & Analysis Software v2.7.0 (Primary Analysis v1.8.0, Standard Curve v1.7.0) | Thermo Fisher QuantStudio / Applied Biosystems export | 2 · 186 · 36 · 2 | normalised to a passive reference (Rn) | none in the files | 9 |
 | `thermofisher/zamanian-stepone-plus-sybr-sections` | StepOnePlus (inferred: 4 raw filters named BLUE/GREEN/YELLOW/RED, StepOne result flags AMPNC/HIGHSD); StepOne Software v2.x (inferred; the per-section exports carry no '*' header) | Thermo Fisher QuantStudio / Applied Biosystems export | 1 · 57 · 6 · 3 | normalised to a passive reference (Rn) | 57 wells | 4 |
@@ -83,6 +83,9 @@ Last generated on 28 Oct 2026 (qPilot 0.2.0).
 * **Cq values only.** A file without curves (a Cq table, `rdml-1.2-cq-only-soybean`, the
   QuantStudio `.txt` results) is analysed from its Cq values, with an efficiency from the plate's
   dilution series or assumed, and a confidence cap ([cq-tables.md](cq-tables.md)).
+* **Multiplex plates** (the CFX 4-plex, the LightCycler 96 `lc96_bACTXY`, the QuantStudio 7 Pro
+  eDNA plate, the 7500 export) are analysed one dye at a time, so every dye of a well has its own
+  N0 ([multiplex.md](multiplex.md)); an internal positive control is checked by G-IPC.
 * **Truncated and simulated sources.** The allotropy QuantStudio files are truncated parser
   fixtures (few wells or 3 cycles), the CFX Maestro set comes from Bio-Rad's instrument
   simulator, and the two `synthetic/` sets are generated from the vendors' documented layouts

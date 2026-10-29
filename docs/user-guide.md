@@ -14,6 +14,8 @@ The page runs on your computer. It sends nothing anywhere unless you press a but
 | say which genes are references and which samples are in which group, with no model | [6. Set the design yourself](#6-set-the-design-yourself) |
 | compare more than two groups, or paired samples | [9. Comparisons](#9-comparisons) |
 | get copies per reaction from my standard curve | [10. Quantities](#10-quantities) |
+| quantify samples with no groups to compare (a viral load, wastewater, a library) | [6. Set the design yourself](#6-set-the-design-yourself), [10. Quantities](#10-quantities) |
+| work with a multiplex plate (several dyes per well) | [7. Curves](#7-curves-blind), [11. Controls](#11-controls-the-run-gate-and-melt-curves), [multiplex.md](multiplex.md) |
 | check my controls and melt curves | [11. Controls](#11-controls-the-run-gate-and-melt-curves) |
 | decide the choices that could change a conclusion | [8. Results](#8-results) |
 | find the well behind a surprising result, and leave it out | [14. Trace](#14-trace-where-to-look) |
@@ -158,12 +160,14 @@ Then **Accept**, **Edit** (change the fields; the engine checks the edit, then y
 
 No model? Use **Set the design on this page** on the Design screen. You choose what each target and sample is; the engine checks every choice; each change is recorded as your decision, with your reason. Nothing changes until you record it. Details: [design-editor.md](design-editor.md).
 
+* **What is this study for?** **Compare groups** (the default) or **Quantify samples**, when the run only measures how much is there (a viral load, a wastewater sample, a construct's copy number, a library). A quantification needs standards with their quantities (at least three levels), not a reference gene, groups or a comparison; *What the design still needs* asks for those instead. Groups you set then only sort and label the samples, and a comparison set earlier is kept aside and comes back if you switch back. The rules propose *Quantify samples* when the file declares the standards' quantities and no sheet names groups; it is never in "Accept all consistent".
 * **How do I mark the reference genes?** Open **Targets** and give each target a role: **Reference gene** (a housekeeping gene the others are normalised to), **Gene of interest**, or **Leave out** (an empty channel, a spike-in, an assay not part of this experiment; none of its wells is used). Some instruments (the LightCycler 96, for one) declare every target a reference gene; the page says so, and you choose.
 * **How do I put samples in groups?** Open **Samples** and select samples: click one, Shift-click a range, ⌘/Ctrl-A for all, type a name pattern such as `KO*` and **Select matching**, or click wells on the plate map (Shift-click a rectangle, a row letter or column number for a whole row or column). Then type the **Group** and press **Put in group**. Wells of one sample are its technical replicates.
 * **How do I say which samples are the same animal or donor?** Select them and press **One biological unit** (or **Each its own unit**). Samples of one biological unit are averaged and count once.
 * **How do I mark controls and standards?** Select them and choose a **Sample type** (study sample, standard, NTC, no-RT, no-amplification, positive control, no-target-present, calibrator). For **Standard**, give the highest quantity and the dilution step; the quantities follow in plate order. **From ng to copies…** works the highest quantity out from a mass and the amplicon's length (dsDNA, ssDNA or RNA).
 * **How do I paste my sample list?** Open **Paste a list** and paste two columns copied from Excel (sample, group; a third column is the biological unit). The names are matched to the file's.
 * **How do I choose what is compared?** Open **Comparison**. **One comparison**: choose the compared group and the reference group (the baseline the fold change is relative to). **Several comparisons** (three or more groups): each group against a control, every pair of groups, or your own list, and the correction; see [section 9](#9-comparisons).
+* **What names can I use?** Your own: a group, unit or gene name may use any letters, digits, spaces and signs (`LPS + inhibitor`, `IL-6/ctrl`, `Day 3 (50 µM)`, `α-syn`), at most 64 characters, and keeps it in every table, figure, report and export. For the Prism project a group or unit cannot start with `=`, `+` or `@` (Prism would read it as a formula).
 * **Can I fill in a sheet instead?** **Sample sheet** downloads a template pre-filled with this plate's sample and target names; fill it in Excel and attach it to this session (no need to open the files again). A target-role column (Gene Type, Reference, Housekeeping, …) is read too. The rules then propose from it.
 
 Changes collect in a draft ("3 changes not recorded yet"). **Review and record…** shows, before anything is written, what each change does and the engine's check of it, which waiting proposals it settles, and what is refused. One reason covers the act and is kept with every item. A waiting proposal that says what you set is accepted (so who proposed it stays on record); one that says something else is rejected with your reason. A declared control (NTC, no-RT, no-amplification) never gets another type or a group: such a change is refused in words and nothing is written. A whole 96-well plate records in about a second.
@@ -176,6 +180,8 @@ Opens when the design is confirmed (until then it is locked: "Confirm the design
 * **The plate** shows every well of one plate. Choose the **Gene** and the **Plate** (`[` and `]` step through the plates), and colour the wells by *Amplification call*, *Cq*, *Efficiency*, *R²* or *Sample type*. Pick one well, or several (⌘/Ctrl-click or Shift-click).
 * **The curve** shows the raw fluorescence by cycle of the wells you picked, with a linear/log switch, and for one well its Cq, efficiency, R² and baseline and how it is called under each amplification rule.
 * **Melt curve** (files with melt curves, such as SYBR Green assays): the −dF/dT of the wells you picked, each peak's Tm, and per assay where its product melts (the Tm the file declares, else the median of its study wells) with the wells the Run Gate's G-MELT rule points at ([section 11](#11-controls-the-run-gate-and-melt-curves)). A single peak at the expected temperature does not guarantee that it is the intended amplicon.
+
+**A multiplex plate** (several dyes per well, such as a gene in FAM and its reference in HEX, or an internal positive control) shows a **Target** picker on the plate: pick a gene to see its curves. Each dye is analysed on its own, with its own baseline, efficiency, Cq and N0; a gene is normalised to the reference measured in the same well. Leaving a multiplex well out leaves out all its curves, so each gene keeps the reference measured beside it. The Curve Judge does not run on multiplex plates. Details: [multiplex.md](multiplex.md).
 
 **A file without curves** (a Cq table) has nothing to fit: **Check the curves** proposes the amplification rule ("a well counts when the file gives it a Cq"), and **Your Cq table** shows each sample's Cq per well and plate, the wells without a Cq, the replicate sets wider than G-REP expects and each assay's efficiency, for you to confirm instead of curves.
 
@@ -260,24 +266,27 @@ How the numbers work:
 * **Every biological unit**: wells detected, mean Cq, the quantity per reaction with its **95 % prediction interval**, and notes in words when it is extrapolated, below the LOQ or LOD, or not detected. **Flagged** lists only those.
 * **Per µL or per ng**: **Set the reaction input…** records what one reaction held (µL of template, ng of input), with a reason. No fold change, call or Decision Card changes.
 
-**Check the standard curve's wells.** A standard well counts when it has a quantity, even if LinRegPCR calls it "no amplification". On one real eDNA standard curve three flat wells gave 154 % efficiency (87 % without them): if the efficiency or R² looks wrong, open the standards in Curves and leave the flat wells out, with a reason ([science review](science-review-2026-10.md), J1).
+Wells LinRegPCR calls "no amplification" never enter a standard curve, even when they carry a Cq.
 
-*On a real QuantStudio 3 export* of the corpus (SARS-CoV-2 in wastewater, five ten-fold standards): slope −3.327, efficiency 99.8 % (95 % CI 94.4–105.8 %), R² 0.9954. `qpilot quantify FILE…` gives the same from the terminal, for a plate with no groups too (such a plate cannot reach Results on the page yet), and `qpilot copies --ng 1 --length 3000` converts a mass to copies. Method card: [methods/absolute_quantification.md](../methods/absolute_quantification.md).
+**A run that only quantifies** (*Quantify samples* on Design, [section 6](#6-set-the-design-yourself)): the quantities are the result. Results shows how many sample results are *quantified*, *below the limit of quantification*, *below the limit of detection*, *not detected* or extrapolated, the standard curve, and each sample's quantity with its 95 % prediction interval and what is reported for it; click a sample to see its wells (plate, Cq, detected or not, what each well alone reads as, the one more than 2-fold from the others named). Two Decision Cards hold the choices that can change what is reported: *which wells count as detected* (LinRegPCR's call, or a Cq cut-off at 40, 38 or 35) and *how precise a quantity must be to be reported* (the LOQ line at CV 35 % or 25 %). A card waits for you only when another option changes what is reported for at least one sample, and lists those samples. Controls asks whether leaving a rule's wells out changes what is reported; the report and the exports speak of quantities; the record verifies and re-runs like any other. Gene, Audit, Trace, Claims, Prism and Plan next compare groups, so they are locked with the reason. MCP `qpcr_quantities` reads the same numbers for an agent.
+
+*On a real QuantStudio 3 export* of the corpus (SARS-CoV-2 in wastewater, five ten-fold standards): slope −3.327, efficiency 99.8 % (95 % CI 94.4–105.8 %), R² 0.9954. `qpilot quantify FILE…` gives the same from the terminal, for a plate with no groups too, and `qpilot copies --ng 1 --length 3000` converts a mass to copies. Method card: [methods/absolute_quantification.md](../methods/absolute_quantification.md).
 
 ## 11. Controls: the Run Gate and melt curves
 
-**Controls** says what the controls on each plate say, and whether any of it changes a call. The shipped rule pack (`research-default` 1.2.0; every threshold and its source in `packs/research-default.yaml`) checks every plate:
+**Controls** says what the controls on each plate say, and whether any of it changes a call. The shipped rule pack (`research-default` 1.3.0; every threshold and its source in `packs/research-default.yaml`) checks every plate:
 
 | Rule | What it checks |
 |---|---|
 | G-TYPED | that the plate has wells typed as controls |
-| G-NTC-1 | amplification in a no-template control near the study samples (a primer-dimer in an NTC is a warning, from its melt) |
+| G-NTC-1 | amplification in a no-template control near the study samples (a primer-dimer in an NTC is a warning, from its melt; an internal positive control is not judged, it is meant to amplify there) |
 | G-NAC, G-NRT | amplification in a no-amplification control; the genomic DNA share from the no-RT control |
 | G-POS, G-STD | a positive control inside its window; the standard curve |
 | G-REP | the spread of technical replicates |
 | G-RT | the spread of reverse-transcription replicates (when the sheet's `rt_replicate` column marks them) |
 | G-INSTR | what the run file says about the run: completed, paused, lid opened, calibrations past expiry, holds off their setpoint |
 | G-MELT | one product at the assay's melting temperature |
+| G-IPC | inhibition: a study well whose internal positive control (a target named IPC or IAC) comes up 3 or more cycles later than in the no-template wells, or where nothing amplified |
 
 Rules label; a person decides. For every rule that warns or fails and points at wells, qPilot re-runs the whole analysis without those wells and says whether a call changes ("Leaving these 2 wells out changes no call").
 
@@ -285,12 +294,13 @@ Rules label; a person decides. For every rule that warns or fails and points at 
 * **Plates**: one button per plate with its worst verdict; pressing one filters the checks to it. A plate with no wells typed as controls is "ungated".
 * **Rule checks**: warn and fail first (filter by verdict, rule and plate); each row opens to the reason in words, the wells it points at and what leaving them out changes.
 * **Melt curves (G-MELT).** For SYBR Green or EvaGreen assays exported with their melt curves, G-MELT checks that every amplified well melts as one product within 1 °C of its assay's Tm (the Tm the file declares, else the median of its study wells), counts extra peaks, and says what melted in the no-template controls. Open a G-MELT check to see the wells' −dF/dT; the shaded band is the expected Tm ± tolerance. A single peak does not prove the intended amplicon (MIQE 2.0). `qpilot melt FILE…` prints the same from the terminal. *On the hmuY LightCycler 96 plate of the corpus*, HmuYPe melts at 82.0 °C and 16S rRNA at 87.1 °C, and every judged well melts as expected.
+* **Internal positive controls (G-IPC).** On a multiplex plate with an IPC, G-IPC flags the samples whose control came up 3 or more cycles late (possible inhibition), priced like every other warning. An IPC that did not amplify beside a target that did is not inhibition (a strong target can use up the reaction first). The 3-cycle delay is a lab-editable default. *On the QuantStudio 7 Pro eDNA plate of the corpus*, sample M22's wells come up 3.5 to 4.2 cycles late.
 * **Decision Cards from the controls**: a card exists only when leaving a rule's wells out can change a conclusion. **In a Studio session you decide it here**: choose an option and say why. Leaving wells out writes one entry per well to the session's record, analyses the study again and carries your Decision Card choices; **Put the wells back** undoes it, with a reason. An agent can only ask. A study analysed outside Studio is read-only here: open its file in Studio to leave wells out.
 * **What to repeat**: how many sample × gene items are worth a look, how many change a call, and the repeat plate (download as CSV); the full list is in the Run Review ([section 17](#17-report-methods-miqe-the-run-review-and-exports)).
 * **Run files.** An RDML file names the instrument and the run date at most, so G-INSTR is "not applicable" until it reads a run file. Link the file your instrument wrote (an `.eds`, a QuantStudio results export or CFX run information) to its plate on the **Run files** card, or from the plate's G-INSTR check. The link is kept for every analysis of the file; **Unlink** removes it. If you opened your instrument's export and it carries the run's own record, G-INSTR reads it without a link. Linking changes no number, and serial numbers never leave your computer.
 * **RT replicates (G-RT).** When your sample sheet's `rt_replicate` column marks samples of one biological unit reverse-transcribed separately, each unit and gene gets a verdict: a range of one cycle or more between the RT replicates' mean Cq is a warning, priced like every other.
 
-*On the demo:* no RT replicates are marked, the file is RDML and the demo has no melt curves, so G-RT, G-INSTR and G-MELT are "not applicable", each saying what would let it check.
+*On the demo:* no RT replicates are marked, the file is RDML and the demo has no melt curves, and the plates have no internal positive control, so G-RT, G-INSTR, G-MELT and G-IPC are "not applicable", each saying what would let it check.
 
 ## 12. Gene
 
@@ -417,7 +427,7 @@ claude mcp add qpilot -- qpilot serve
 ```
 
 * **Connect an agent** shows this command with a copy button, and the rules qPilot's code enforces whatever an agent or its model says.
-* **The tools** (32: 27 `qpcr_*` and 5 read-only `sim_*`) are grouped by what they can change: **Read** (studies, genes, comparisons, per-unit values, melt curves, the repeat plan, the audit; they change nothing), **Open** (open a file as a study or a Studio session; they decide nothing), **Propose** (add a proposal to a Studio inbox; only a person accepts it), **Request a decision** (ask for a choice on a Decision Card, or ask you to set wells aside; one that can change a conclusion always waits for you) and **Write a file** (`qpcr_export`: new export files only; it decides nothing).
+* **The tools** (33: 28 `qpcr_*` and 5 read-only `sim_*`) are grouped by what they can change: **Read** (studies, genes, comparisons, per-unit values, quantities, melt curves, the repeat plan, the audit; they change nothing), **Open** (open a file as a study or a Studio session; they decide nothing), **Propose** (add a proposal to a Studio inbox; only a person accepts it), **Request a decision** (ask for a choice on a Decision Card, or ask you to set wells aside; one that can change a conclusion always waits for you) and **Write a file** (`qpcr_export`: new export files only; it decides nothing).
 * **Requests waiting for a person** lists every agent request in every study, oldest first, with the agent's reason and what it asks about (a card, or which wells and where). Choose **Approve** or **Turn down** and say why. A request to set wells aside is also shown in Trace, at its place ([section 14](#14-trace-where-to-look)). The agent bell in the top bar counts them.
 * **Recent agent activity**, newest first: the requests and choices agents made on Decision Cards, and the proposals they made in Studio inboxes. For a study whose design and curves are not confirmed yet, requests and entries are counted but not listed: every tool that reads results answers "results hidden" until you confirm both.
 
@@ -475,7 +485,8 @@ Everything can also be done with the Tab key, and every control shows where the 
 | Every gene is capped at Moderate | The export's curves were most likely baseline-subtracted (or qPilot could not tell) | Decide the Import Trust card on Results |
 | "The demo study is not downloaded yet" | The demo is not on this computer | Click **Download 7.0 MB and open** on Open, or run `qpilot fetch-demo` |
 | The audit is refused | Its baseline does not reproduce qPilot, or the comparison is one it cannot audit yet (paired, Dunnett or Tukey, or a correction that changes a call) | The page gives the reason in words |
-| An export or Send to Prism is refused: "unsafe group name" | A group name holds a character other than letters, digits, spaces and `_ - . ( )` (for example "LPS + inhibitor") | Give the group a plain name on the Design page ("LPS with inhibitor") |
+| Send to Prism refuses a group name | A group or unit name starts with `=`, `+` or `@`, which Prism would read as a formula | Rename it on the Design page (any other letters, digits and signs are fine) |
+| Gene, Audit, Trace, Claims, Prism or Plan next is locked in a quantification | Those sections compare groups; a *Quantify samples* study has none | Its result is on Results → Quantities |
 | No Quantities on Results | The plate's standards have no quantity yet | Give them on Design → Samples (Standard, top quantity, dilution step) |
 | The model chip says "not answering" | The model is configured but does not answer; hover for the reason | Rules answer alone meanwhile; check the endpoint and name |
 | The live dot is not green | The page lost its connection to qPilot | It reconnects by itself; if not, is `qpilot app` still running? |
