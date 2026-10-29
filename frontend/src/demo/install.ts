@@ -196,6 +196,61 @@ if (!recording) {
   window.EventSource = QuietEventSource as unknown as typeof EventSource;
 }
 
+// Images the API serves (the Gene figure is an <img src="/api/...">): the browser would ask the
+// static host for them, so a source under /api/ is answered through the recordings as well, and
+// the picture is shown from a blob. (React sets `src` with setAttribute; a script may set the
+// property: both are covered.) While recording, the same path files the answer under its key.
+const setAttribute = Element.prototype.setAttribute;
+const imageBlobs = new WeakMap<HTMLImageElement, string>();
+const imageAsked = new WeakMap<HTMLImageElement, string>();
+
+function apiImage(value: unknown): URL | null {
+  if (typeof value !== "string" || !value.startsWith("/api/")) return null;
+  const url = new URL(value, location.href);
+  return url.origin === location.origin ? url : null;
+}
+
+/**
+ * A response's bytes as a blob. Read with `arrayBuffer()`, not `blob()`: the recorder's browser
+ * (Playwright) cannot give the body of a response the page consumed as a blob, and the recording
+ * of every file download and picture was empty (the files of the 21 Oct 2026 site were 0 bytes).
+ */
+async function asBlob(response: Response): Promise<Blob> {
+  const bytes = await response.arrayBuffer();
+  return new Blob([bytes], { type: response.headers.get("content-type") ?? "" });
+}
+
+async function showImage(img: HTMLImageElement, url: URL): Promise<void> {
+  imageAsked.set(img, url.href);
+  const response = await demoFetch(url.toString());
+  // The page asked for another picture meanwhile, or this one was not recorded: no picture
+  // (the alternative text stands in; a miss is listed for the checks).
+  if (imageAsked.get(img) !== url.href || !response.ok) return;
+  const href = URL.createObjectURL(await asBlob(response));
+  const old = imageBlobs.get(img);
+  imageBlobs.set(img, href);
+  setAttribute.call(img, "src", href);
+  if (old) setTimeout(() => URL.revokeObjectURL(old), 10_000);
+}
+
+Element.prototype.setAttribute = function (this: Element, name: string, value: string): void {
+  const url =
+    this instanceof HTMLImageElement && name.toLowerCase() === "src" ? apiImage(value) : null;
+  if (url) void showImage(this as HTMLImageElement, url);
+  else setAttribute.call(this, name, value);
+};
+const imageSrc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
+if (imageSrc?.set) {
+  Object.defineProperty(HTMLImageElement.prototype, "src", {
+    ...imageSrc,
+    set(this: HTMLImageElement, value: string) {
+      const url = apiImage(value);
+      if (url) void showImage(this, url);
+      else imageSrc.set!.call(this, value);
+    },
+  });
+}
+
 // Downloads are links to /api/...: fetch them through the recordings and save the file.
 document.addEventListener(
   "click",
@@ -216,8 +271,7 @@ document.addEventListener(
         toast.error("Not in the online demo", { description: body?.error?.message ?? READ_ONLY });
         return;
       }
-      const blob = await response.blob();
-      const href = URL.createObjectURL(blob);
+      const href = URL.createObjectURL(await asBlob(response));
       const save = document.createElement("a");
       save.href = href;
       save.download = name;
