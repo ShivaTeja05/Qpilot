@@ -67,8 +67,8 @@
  ],
  "results_visible": true,
  "study_id": "035292c88520",
- "proposals_head": "e5267fcb7ad88b8602bca6e729a374ac8b134d2ff2f428b7be538600302d11ba",
- "decisions_head": "b058d603f4d5176651a058e953c5f4d3cc2304b7a528a6a95e1999ff5b5bbde4",
+ "proposals_head": "ada8ec1e61d2823d475fdaee5b0690306a5a1a1f964bccdf2cf48892938a0267",
+ "decisions_head": "bdbbafcb03be9961b3688a1cebc414f750fc5df301860d0b81c226372ed391d6",
  "next_step": {
   "title": "Decide 1 analysis choice",
   "detail": "Each card shows what every option would change; you give the reason.",

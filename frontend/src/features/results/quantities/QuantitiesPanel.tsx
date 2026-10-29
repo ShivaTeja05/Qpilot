@@ -156,8 +156,9 @@ function Suspects({
   return (
     <div className="space-y-1.5 text-[12.5px] text-fg" data-testid="standards-suspect">
       <p className="font-medium">
-        {curve.suspects.length} standard well{curve.suspects.length === 1 ? "" : "s"} that look
-        wrong:
+        {curve.suspects.length === 1
+          ? "1 standard well that looks wrong:"
+          : `${curve.suspects.length} standard wells that look wrong:`}
       </p>
       <ul className="space-y-1 text-muted">
         {curve.suspects.map((s) => (

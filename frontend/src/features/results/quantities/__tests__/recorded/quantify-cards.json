@@ -1,6 +1,6 @@
 {
  "study_id": "035292c88520",
- "head": "b058d603f4d5176651a058e953c5f4d3cc2304b7a528a6a95e1999ff5b5bbde4",
+ "head": "bdbbafcb03be9961b3688a1cebc414f750fc5df301860d0b81c226372ed391d6",
  "cards": [
   {
    "card": {
@@ -475,7 +475,7 @@
     "decision": "loq_cv_35",
     "reason": "Decided automatically: no option on this card changes what is reported for any sample (its class, or its number by more than 2-fold).",
     "decided_by": "system",
-    "decided_at": "2026-10-29T00:47:37Z"
+    "decided_at": "2026-10-29T13:24:56Z"
    },
    "title": "How precise a quantity must be to be reported",
    "status_line": "Decided automatically: no option on this card changes what is reported for any sample (its class, or its number by more than 2-fold).",

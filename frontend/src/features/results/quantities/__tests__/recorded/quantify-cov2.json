@@ -33,7 +33,7 @@
    "lod": {
     "quantity": 10.0,
     "method": "lowest_standard",
-    "words": "every standard level was detected in at least 95 % of its wells: the limit of detection is at or below the lowest standard",
+    "words": "every standard level was detected in at least 95 % of its wells: the limit of detection is at or below the lowest standard; with 3 wells per level, 95 % of a level's wells means all of them, so this is the lowest level where no well failed (the modelled limit, when shown, is the better estimate). Run at least 10 replicates at the levels around the limit (Forootan et al. 2017; Klymus et al. 2020)",
     "at_most": true
    },
    "lod_model": null,
@@ -46,6 +46,9 @@
    "quantity_source": "design",
    "warnings": [],
    "n_unknowns": 21,
+   "g": 0.0016662263086938108,
+   "exact_interval": false,
+   "suspects": [],
    "points": [
     {
      "run_id": "2023-11-14_Cov2_Copy",
