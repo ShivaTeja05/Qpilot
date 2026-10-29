@@ -37,7 +37,7 @@ from __future__ import annotations
 import hashlib
 import math
 import re
-from collections.abc import Collection, Iterator, Mapping
+from collections.abc import Collection, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -771,6 +771,22 @@ def range_quantile(n: int) -> float:
     return float(stats.studentized_range.ppf(0.95, n, np.inf))
 
 
+#: Two Cq deviations this close (cycles) are a tie: no one well is farther than the other.
+TIE_CYCLES = 1e-6
+
+
+def outlier_well(keys: Sequence[str], cqs: np.ndarray) -> str | None:
+    """The replicate farthest from the replicates' median, or ``None`` when that is a tie.
+
+    With duplicates the two wells are always equally far from their median, and with three wells
+    spread symmetrically (20.0, 20.5, 21.0) the two outer ones are: the spread is then not one
+    well's, and proposing the first in well order would be arbitrary (science review J10).
+    """
+    dev = np.abs(np.asarray(cqs, dtype=float) - float(np.median(cqs)))
+    farthest = np.flatnonzero(dev >= dev.max() - TIE_CYCLES)
+    return str(keys[int(farthest[0])]) if len(farthest) == 1 else None
+
+
 def replicate_spread(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
     """Technical-replicate Cq range against a Poisson + pipetting tolerance (G-REP)."""
     c = _param(rule, "pipetting_cv", 0.15)
@@ -846,9 +862,15 @@ def replicate_spread(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
                 f_u = ctx.fact(rule, scope, "nundet", undetermined)
                 facts.append(f_u)
                 reason += f" {{{{{f_u}}}}} more replicate wells did not amplify."
-            median = float(np.median(cqs))
-            far = amp.iloc[int(np.argmax(np.abs(cqs - median)))]["key"]
-            options = {"drop_outlier_well": [far], "drop_sample": sorted(g["key"])}
+            far = outlier_well(amp["key"].tolist(), cqs)
+            options = {"drop_sample": sorted(g["key"])}
+            if far is not None:
+                options = {"drop_outlier_well": [far], **options}
+            elif outside:  # science review J10: a tie is not one well's spread
+                reason += (
+                    " The spread is not one well's: the wells farthest from the others' median "
+                    "are equally far from it, so no single well is proposed to leave out."
+                )
             yield Finding(
                 scope=scope,
                 outcome="outside" if outside else "within",
@@ -864,7 +886,7 @@ def replicate_spread(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
                     "flags": ",".join(flags),
                     "notes": ";".join(sorted({n for n in amp["note"] if n})),
                 },
-                flagged=[far] if outside else [],
+                flagged=([far] if far is not None else sorted(amp["key"])) if outside else [],
                 options=options if outside else {},
             )
         if evaluated and flagged_groups / evaluated > share_max:
@@ -1449,7 +1471,15 @@ def _ntc_finding(
             main = w.main
             assert main is not None and w.offset is not None
             tm, off = say.tm(f"tm{i}", main.tm), say.delta(f"off{i}", w.offset)
-            if w.status == "other_product":
+            if w.status == "other_product" and w.offset < 0:
+                # below the product but closer than a primer-dimer melts (science review J5)
+                gap = say.tm("dimergap", assay.params.dimer_min_below_c)
+                sentences.append(
+                    f"Well {well} melts at {tm}, {off} below this assay's product ({exp}), "
+                    f"closer than the {gap} a primer-dimer is expected to melt below it: a "
+                    f"shorter product or a variant amplicon may have formed in it{amp}."
+                )
+            elif w.status == "other_product":
                 sentences.append(
                     f"Well {well} melts at {tm}, {off} above this assay's product ({exp}): "
                     f"another product formed in it{amp}."

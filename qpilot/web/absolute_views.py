@@ -36,6 +36,7 @@ from qpilot.web.contract_absolute import (
     QuantitiesView,
     ReactionView,
     StandardPointView,
+    SuspectView,
     UnitQuantity,
     UnknownWellView,
 )
@@ -102,6 +103,9 @@ def _summary(curve: ab.StandardCurve, n_unknowns: int) -> dict[str, Any]:
         "top": _num(curve.top),
         "lowest": _num(curve.lowest),
         "n_unknowns": n_unknowns,
+        "g": _num(curve.g),
+        "exact_interval": curve.exact_interval,
+        "suspects": [_suspect(s) for s in curve.suspects],
     }
     if fit is not None:
         low, high = fit.efficiency_ci
@@ -116,6 +120,27 @@ def _summary(curve: ab.StandardCurve, n_unknowns: int) -> dict[str, Any]:
             n_wells=fit.n,
         )
     return out
+
+
+def _suspect(s: ab.Suspect) -> SuspectView:
+    low, high = s.efficiency_ci if s.efficiency_ci is not None else (None, None)
+    return SuspectView(
+        key=s.key,
+        run_id=s.run_id,
+        well=s.well,
+        sample=s.sample,
+        quantity=s.quantity,
+        cq=s.cq,
+        why=list(s.why),  # type: ignore[arg-type]
+        words=s.words,
+        residual_z=_num(s.residual_z),
+        efficiency=_num(s.efficiency),
+        efficiency_low=_num(low),
+        efficiency_high=_num(high),
+        r2=_num(s.r2),
+        lod=_num(s.lod),
+        loq=_num(s.loq),
+    )
 
 
 def _readers(result: ab.Absolute) -> dict[str, int]:
@@ -319,6 +344,101 @@ def assay_view(store: StudyStore, study_id: str, target: str) -> AssayQuantities
 
 REACTION_KIND = "choice.reaction_input"
 REACTION_REASON = "set by a person on the Results page (Quantities), with the reason recorded"
+
+
+#: Who files the proposal to leave a suspect standard out (a rule; a person decides).
+STANDARD_MAKER = "qpilot-standard-curve"
+
+
+def waiting_standards(studio: Any, sid: str) -> set[str]:
+    """Wells whose rule-made proposal to leave a suspect standard out waits for a person."""
+    from qpilot.studio_service import EXCLUDE_KIND
+
+    return {
+        p.subject
+        for p in studio.store.proposals(sid).proposals(kind_prefix=EXCLUDE_KIND)
+        if p.status == "proposed" and p.made_by.provider == STANDARD_MAKER
+    }
+
+
+def propose_standards(studio: Any, store: StudyStore, study_id: str, sid: str) -> Any:
+    """File one rule-made ``curve.exclude_well`` per suspect standard (science review J2).
+
+    A standard whose Cq breaks the order of its series, or whose studentized residual is beyond
+    ±3.5, is pointed at with what leaving it out does to its curve (efficiency and its interval,
+    R², LOD, LOQ). Nothing is left out here: each proposal waits in the session's inbox (Curves)
+    for a person to accept or reject, with a reason. A well already proposed is not filed again.
+
+    Returns:
+        ``(status, head, proposed, waiting)``.
+    """
+    from qpilot.schemas_studio import Evidence, MadeBy, Proposal
+    from qpilot.studio_service import EXCLUDE_KIND
+
+    result = computed(store, study_id).result
+    waiting = waiting_standards(studio, sid)
+    inbox = studio.store.proposals(sid)
+    filed: list[str] = []
+    head = studio.head(sid)
+    for curve in result.curves:
+        if curve.scope != "plate" or curve.fit is None:
+            continue
+        for s in curve.suspects:
+            if s.key in waiting:
+                continue
+            noun = f" {curve.unit}" if curve.unit else ""
+            before = _limits_words(curve.fit.efficiency, curve.fit.r2, curve.loq.quantity, noun)
+            after = _limits_words(s.efficiency, s.r2, s.loq, noun)
+            proposal = Proposal(
+                study_id=sid,
+                kind=EXCLUDE_KIND,
+                subject=s.key,
+                payload={"excluded": True},
+                evidence=[
+                    Evidence(kind="rule", ref="standard_curve", note=f"standard curve {curve.id}"),
+                    Evidence(kind="well", ref=s.key, note="a standard that looks wrong"),
+                ],
+                alternatives=[{"excluded": False}],
+                consequence={
+                    "standard_curve": {
+                        "curve": curve.id,
+                        "why": list(s.why),
+                        "efficiency_before": _num(curve.fit.efficiency),
+                        "efficiency_after": _num(s.efficiency),
+                        "r2_before": _num(curve.fit.r2),
+                        "r2_after": _num(s.r2),
+                        "lod_before": _num(curve.lod.quantity),
+                        "lod_after": _num(s.lod),
+                        "loq_before": _num(curve.loq.quantity),
+                        "loq_after": _num(s.loq),
+                    }
+                },
+                level="Moderate",
+                reasons=[
+                    f"Standard {s.sample} ({s.well}): {s.words}. Leaving it out of curve "
+                    f"{curve.id}: {before} becomes {after}. qPilot never leaves a standard out; "
+                    "you decide."
+                ],
+                made_by=MadeBy(kind="rule", provider=STANDARD_MAKER),
+            )
+            outcome = inbox.propose(proposal, "system")
+            if outcome.status == "refused":
+                raise ValueError(outcome.reason or "the proposal was refused")
+            head = outcome.head
+            filed.append(s.key)
+            waiting.add(s.key)
+    return ("proposed" if filed else "nothing"), head, filed, sorted(waiting - set(filed))
+
+
+def _limits_words(eff: float | None, r2: float | None, loq: float | None, noun: str) -> str:
+    """``efficiency 154.0 %, R² 0.412, LOQ 96.5 copies`` (what is known)."""
+    parts = []
+    if eff is not None and math.isfinite(eff):
+        parts.append(f"efficiency {100 * eff:.1f} %")
+    if r2 is not None and math.isfinite(r2):
+        parts.append(f"R² {r2:.3f}")
+    parts.append(f"LOQ {loq:.3g}{noun}" if loq is not None else "no LOQ")
+    return ", ".join(parts)
 
 
 def record_reaction(

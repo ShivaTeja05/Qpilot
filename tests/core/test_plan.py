@@ -15,6 +15,7 @@ from qpilot.qpcr.plan import (
     group_mean_se,
     mde_fold,
     n_needed,
+    n_needed_normal,
     plan,
     simulate_calls,
 )
@@ -26,10 +27,28 @@ def test_mde_three_per_group(sd, expected):
 
 
 def test_n_needed_matches_the_formula():
-    # 2 (z.975 + z.80)^2 sigma^2 / delta^2 + 1, rounded up; the planning table's rows.
-    assert [n_needed(2, s) for s in (0.3, 0.5, 1.0, 2.0)] == [3, 5, 17, 64]
+    # The exact two-sample t test (non-central t; science review J4); the planning table's rows.
+    assert [n_needed(2, s) for s in (0.3, 0.5, 1.0, 2.0)] == [3, 6, 17, 64]
+    # the normal approximation plus one, the former headline, is one short at 2-fold, SD 0.5
+    assert [n_needed_normal(2, s) for s in (0.3, 0.5, 1.0, 2.0)] == [3, 5, 17, 64]
     # Vermeulen-like sigma 1.95 needs 61 per group (64 is the sigma = 2.0 row).
     assert n_needed(2, 1.95) == 61
+
+
+def test_n_needed_is_the_smallest_n_whose_t_test_reaches_the_power():
+    """Against an independent non-central t computation over 24 settings."""
+    from scipy import stats
+
+    def power(n, fc, sd):
+        df, nc = 2 * n - 2, abs(math.log2(fc)) / (sd * math.sqrt(2 / n))
+        crit = stats.t.ppf(0.975, df)
+        return stats.nct.sf(crit, df, nc) + stats.nct.cdf(-crit, df, nc)
+
+    for fc in (1.5, 2.0, 2.5, 4.0):
+        for sd in (0.25, 0.5, 0.75, 1.0, 1.5, 2.0):
+            n = n_needed(fc, sd)
+            assert power(n, fc, sd) >= 0.80 and (n == 2 or power(n - 1, fc, sd) < 0.80)
+            assert n - n_needed_normal(fc, sd) in (0, 1)  # never more than one apart here
 
 
 def test_down_regulation_is_symmetric():
@@ -300,32 +319,30 @@ def test_bustin_2025_six_technical_replicates_closest_reading():
 
 def test_the_cost_optimiser_picks_the_hand_checked_cheapest_design():
     # sigma_bio = sigma_well = 0.5, no RT SD (one RT per subject), 100 per subject, 10 per well.
-    # Subjects needed are ceil(2 * 2.8016^2 * sd^2 + 1) for a 2-fold change:
+    # Subjects needed (the exact t test) for a 2-fold change:
     #   wells 1: sd^2 0.5    -> 9 subjects, 9 * 110 = 990
     #   wells 2: sd^2 0.375  -> 7 subjects, 7 * 120 = 840
     #   wells 3: sd^2 0.333  -> 7 subjects, 7 * 130 = 910
-    #   wells 4: sd^2 0.3125 -> 6 subjects, 6 * 140 = 840  (ties with wells 2; detects 1.87-fold)
+    #   wells 4: sd^2 0.3125 -> 7 subjects, 7 * 140 = 980 (the normal approximation said 6)
     #   wells 5: sd^2 0.3    -> 6 subjects, 6 * 150 = 900, and more wells only cost more.
     best = cheapest_design(2, 0.5, sd_well=0.5, cost_subject=100, cost_rt=0, cost_well=10)
-    assert (best["n_bio"], best["n_rt"], best["n_tech"]) == (6, 1, 4)
+    assert (best["n_bio"], best["n_rt"], best["n_tech"]) == (7, 1, 2)
     assert best["cost_per_group"] == 840 and best["cost_both_groups"] == 1680
-    assert best["wells_per_group"] == 24 and best["n_designs"] == MAX_REPLICATES
-    tied = mde_fold(7, effective_sd(0.5, None, 0.5, 1, 2))
-    assert best["mde_fold"] == pytest.approx(1.87, abs=0.005)
-    assert best["mde_fold"] < tied  # the tie goes to the smaller detectable fold
-    # Three levels (100 per subject, 5 per RT, 2 per well): six subjects is the fewest possible;
-    # among six-subject designs that reach the target, 3 RT x 2 wells (762) beats 4 x 1 (768).
+    assert best["wells_per_group"] == 14 and best["n_designs"] == MAX_REPLICATES
+    assert best["mde_fold"] == pytest.approx(1.888, abs=0.005)
+    # Three levels (100 per subject, 5 per RT, 2 per well): seven subjects with two RT reactions
+    # of one well (798) beat six with five RT reactions (810) and six with 4 x 2 (816).
     three = cheapest_design(
         2, 0.5, sd_rt=0.4, sd_well=0.3, cost_subject=100, cost_rt=5, cost_well=2
     )
     assert (three["n_bio"], three["n_rt"], three["n_tech"], three["cost_per_group"]) == (
-        6,
-        3,
+        7,
         2,
-        762,
+        1,
+        798,
     )
     assert three["n_designs"] == MAX_REPLICATES**2
-    assert design_cost(6, 4, 1, 100, 5, 2) == 768
+    assert design_cost(6, 5, 1, 100, 5, 2) == 810 and design_cost(6, 4, 2, 100, 5, 2) == 816
 
 
 def test_the_optimiser_is_the_minimum_of_an_independent_enumeration():
@@ -346,12 +363,13 @@ def test_the_optimiser_is_the_minimum_of_an_independent_enumeration():
 
 
 def test_equal_costs_tie_as_written_and_break_by_rule():
-    # 0.3 per subject, 0.7 per RT, 0.1 per well: n (1.0 + 0.1 wells). Six subjects with four
-    # wells and seven with two both cost 8.4; binary floats would see two different costs.
-    assert design_cost(6, 1, 4, 0.3, 0.7, 0.1) == design_cost(7, 1, 2, 0.3, 0.7, 0.1) == 8.4
+    # 0.9 per subject, 0.7 per RT, 0.1 per well: n (1.6 + 0.1 wells). Six subjects with five
+    # wells and seven with two both cost 12.6; binary floats would see two different costs.
+    assert design_cost(6, 1, 5, 0.9, 0.7, 0.1) == design_cost(7, 1, 2, 0.9, 0.7, 0.1) == 12.6
     assert design_cost(1, 3, 1, 0, 0.1, 0) == design_cost(1, 1, 1, 0.3, 0, 0)
-    best = cheapest_design(2, 0.5, sd_well=0.5, cost_subject=0.3, cost_rt=0.7, cost_well=0.1)
-    assert (best["n_bio"], best["n_tech"]) == (6, 4)  # the smaller detectable fold wins the tie
+    best = cheapest_design(2, 0.5, sd_well=0.5, cost_subject=0.9, cost_rt=0.7, cost_well=0.1)
+    assert best["cost_per_group"] == 12.6
+    assert (best["n_bio"], best["n_tech"]) == (6, 5)  # the smaller detectable fold wins the tie
     runs = {
         json.dumps(
             cheapest_design(
@@ -377,10 +395,10 @@ def test_the_budget_states_costs_and_the_planned_design():
     assert budget["planned"]["cost_per_group"] == 6 * (100 + 1 * (5 + 1 * 2))
     assert (
         budget["cheapest"]["simulated_significant"]
-        == simulate_calls(2, budget["cheapest"]["sd_effective"], 6)[0]
+        == simulate_calls(2, budget["cheapest"]["sd_effective"], 7)[0]
     )
     text = " ".join(budget["sentences"])
-    assert "Cheapest design (of 100 compared)" in text and "costing 762 per group" in text
+    assert "Cheapest design (of 100 compared)" in text and "costing 798 per group" in text
     assert "The planned design costs 642 per group and does not reach the target." in text
     json.dumps(out.model_dump(mode="json"), allow_nan=False)
 
@@ -495,7 +513,7 @@ def test_plan_cli_budget_flags(capsys):
     )
     data = json.loads(capsys.readouterr().out)
     # at Cq 25 a well holds about 1000 copies: their sampling noise is below the 0.3 given
-    assert data["budget"]["cheapest"]["cost_per_group"] == 762
+    assert data["budget"]["cheapest"]["cost_per_group"] == 798
     assert data["budget"]["cq_noise"]["sd_well_used"] == 0.3
     assert main([*args, "--expected-cq", "33", "--cq-one-copy", "35"]) == 0
     assert "a well holds about 4 copies" in capsys.readouterr().out
@@ -543,3 +561,43 @@ def test_demo_has_no_replicates_and_quant_averages_planted_ones_as_the_formula_s
     expected = effective_sd(0.0, sd_rt, sd_well, n_rt, n_tech) ** 2
     assert left.var(ddof=1) == pytest.approx(expected, rel=0.03)
     assert left.mean() == pytest.approx(0.0, abs=0.01)
+
+
+# ---- science review J4 and J0: the call as the headline; the one-copy Cq from a curve ----
+
+
+def test_the_plan_headlines_the_samples_for_a_call_and_gives_the_test_only_n_beside_it():
+    """At 2.5×, SD 1 log2: 14 per group give qPilot's call in 80 % of studies; a t test alone
+    needs 11 (the normal approximation said 10)."""
+    out = plan(2.5, 1.0)
+    assert (out.n_for_call, out.n_needed, n_needed_normal(2.5, 1.0)) == (14, 11, 10)
+    assert out.message.startswith(
+        "For qPilot to call a 2.5-fold change in 80% of studies (p < 0.05 and at least 2-fold) "
+        "you need 14 per group; for p < 0.05 alone (the usual power calculation: a two-sided t "
+        "test, exact) 11 per group."
+    )
+    at_the_line = plan(2.0, 1.0)  # a true 2-fold change is called about half the time
+    assert (
+        at_the_line.n_for_call is None and "No group size lets qPilot call" in at_the_line.message
+    )
+    assert plan(2, None).n_for_call is None
+
+
+def test_the_one_copy_cq_comes_from_a_standard_curve():
+    from pathlib import Path
+
+    from qpilot.qpcr.absolute_study import quantify_file
+    from qpilot.qpcr.plan import cq_one_copy_from
+
+    rdml = Path(__file__).parents[1] / "fixtures/corpus/rdml/stepone-2.3-rdml-1.0/stepone_std.rdml"
+    curves = quantify_file(rdml).curves
+    value, words = cq_one_copy_from(curves)
+    assert value == pytest.approx(curves[0].fit.intercept) == pytest.approx(40.37, abs=0.01)
+    assert "RNase P @ Run001" in words and "read as copies" in words  # its unit is not stated
+    out = plan(2, 0.5, 6, expected_cq=33, cq_one_copy=value, cq_one_copy_source=words)
+    noise = out.budget["cq_noise"]
+    assert noise["copies_per_well"] == pytest.approx(2 ** (value - 33))
+    assert f"one copy crosses at Cq 40.4: {words}" in out.budget["sentences"][0]
+    assert cq_one_copy_from([]) is None
+    low = plan(2, 0.5, 6, expected_cq=34).budget["sentences"][0]  # 2 copies: a lower bound
+    assert "a lower bound: below about three copies many wells hold none" in low

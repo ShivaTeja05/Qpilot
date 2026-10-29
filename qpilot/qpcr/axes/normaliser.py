@@ -9,17 +9,22 @@ another normalisation *strategy*? Its options (ids are stable):
 * ``normfinder_pair``: NormFinder's best pair of the candidates (:mod:`qpilot.qpcr.normfinder`,
   with the study's groups);
 * ``genorm_pair``: geNorm's best pair (its last two genes, :mod:`qpilot.qpcr.refgenes`);
-* ``global_mean``: the mean of every gene measured in the unit (Mestdagh et al., Genome Biol
-  2009; 10:R64), with each gene weighted equally (D'haene et al., Methods Mol Biol 2012;
-  822:261-272): each gene's ``log2 N0`` is first centred on its own mean over the units, then
-  a unit's normaliser is the mean of its genes that have a value. When every gene has a value in
-  every unit this is the plain mean (up to a constant that cancels in every fold change).
+* ``global_mean``: the mean of the genes measured in every compared unit (Mestdagh et al.,
+  Genome Biol 2009; 10:R64), with each gene weighted equally (D'haene et al., Methods Mol Biol
+  2012; 822:261-272): each gene's ``log2 N0`` is first centred on its own mean over the units,
+  then a unit's normaliser is the mean of those genes. Only genes with a value in **every**
+  compared unit enter (the common set; science review J7): values are not missing at random, a
+  gene is undetermined in a unit because it is low there, so leaving it out of that unit's mean
+  alone would raise the unit's normaliser (a unit missing the lowest tenth of its genes by about
+  0.2 residual SD) and lower every gene of it by as much. This is "expressed in all samples"
+  normalisation. The card says how many genes it used.
 
 An option that would repeat another (a best pair that is the set in use, geNorm's pair equal to
 NormFinder's) or that the study cannot support is not offered and the reason is reported.
 Mestdagh et al. say the global mean "is only valid if a large number of" genes are profiled (they
 profiled 366 to 448) and give no number; qPilot offers it from :data:`GLOBAL_MEAN_MIN_GENES`
-genes (its own default, not a published threshold) and says so in plain words below that.
+genes of the common set (its own default, not a published threshold; ``plan(min_genes=...)``)
+and says so in plain words below that.
 
 Choosing an option never changes which reference genes a study uses: the analysis in use stays
 ``planned`` until a person decides the card this axis raises. Deterministic.
@@ -51,9 +56,15 @@ GLOBAL_MEAN_SOURCE = (
     "Methods Mol Biol 2012; 822:261-272 (each gene weighted equally)"
 )
 GLOBAL_MEAN_THRESHOLD_NOTE = (
-    f"qPilot offers the global mean from {GLOBAL_MEAN_MIN_GENES} genes. This is qPilot's own "
-    "default, not a published number: Mestdagh et al. (2009) say the global mean is only valid "
-    "when a large number of genes is profiled (they profiled 366 to 448) and give no minimum."
+    f"qPilot offers the global mean from {GLOBAL_MEAN_MIN_GENES} genes with a value in every "
+    "compared unit. This is qPilot's own default, not a published number: Mestdagh et al. "
+    "(2009) say the global mean is only valid when a large number of genes is profiled (they "
+    "profiled 366 to 448) and give no minimum."
+)
+GLOBAL_MEAN_COMMON_NOTE = (
+    "Only genes with a value in every compared unit enter the global mean: a gene missing in a "
+    "unit is usually low there, and leaving it out of that unit's mean alone would raise the "
+    "unit's normaliser."
 )
 GLOBAL_MEAN_PANEL_NOTE = (
     "The global mean assumes the genes measured were not chosen for this comparison: a panel of "
@@ -63,10 +74,19 @@ GLOBAL_MEAN_PANEL_NOTE = (
 METHOD_CARD_PATH = "methods/normfinder.md"
 
 
-def global_mean_genes(matrix: pd.DataFrame) -> tuple[str, ...]:
-    """Genes that can enter the global mean: two or more units with a value (matrix order)."""
-    counts = matrix.notna().sum(axis=0)
-    return tuple(str(g) for g in matrix.columns if counts[g] >= 2)
+def global_mean_genes(
+    matrix: pd.DataFrame, units: Collection[str] | None = None
+) -> tuple[str, ...]:
+    """Genes that enter the global mean: a value in every compared unit (matrix order).
+
+    ``units`` are the compared units (default every row of ``matrix``); with fewer than two of
+    them in the matrix no gene can be centred, and none enters (science review J7).
+    """
+    rows = matrix if units is None else matrix[matrix.index.isin(set(units))]
+    if len(rows) < 2:
+        return ()
+    complete = rows.notna().all(axis=0)
+    return tuple(str(g) for g in matrix.columns if complete[g])
 
 
 def global_mean(matrix: pd.DataFrame, genes: Sequence[str]) -> pd.Series:
@@ -116,6 +136,7 @@ def plan(
     offered: Sequence[str] = OPTIONS,
     high: Collection[str] = (),
     rest: Collection[str] = (),
+    min_genes: int | None = None,
 ) -> NormaliserPlan:
     """What the normaliser axis offers on this study, and why an option is left out.
 
@@ -128,7 +149,11 @@ def plan(
         offered: The options asked for, primary first.
         high: The primary comparison's first group (for the global mean's group check).
         rest: Its second group.
+        min_genes: Genes of the common set the global mean needs (default
+            :data:`GLOBAL_MEAN_MIN_GENES`, read when called, so a lab's own value applies).
     """
+    if min_genes is None:
+        min_genes = GLOBAL_MEAN_MIN_GENES
     candidates = tuple(candidates)
     primary = set(primary_refs)
     unavailable: dict[str, str] = {}
@@ -166,11 +191,19 @@ def plan(
             )
         else:
             refs["genorm_pair"] = pair
-    genes = global_mean_genes(matrix)
-    if len(genes) < GLOBAL_MEAN_MIN_GENES:
+    compared = _compared(matrix, groups, high, rest)
+    genes = global_mean_genes(matrix, compared)
+    measured = int((matrix.notna().sum(axis=0) >= 2).sum())
+    if measured < min_genes:
         unavailable[GLOBAL_MEAN] = (
-            f"only {len(genes)} genes are measured; the global mean needs a large set of genes "
-            f"(qPilot asks for at least {GLOBAL_MEAN_MIN_GENES})"
+            f"only {measured} genes are measured; the global mean needs a large set of genes "
+            f"(qPilot asks for at least {min_genes})"
+        )
+    elif len(genes) < min_genes:
+        unavailable[GLOBAL_MEAN] = (
+            f"only {len(genes)} of the {measured} genes measured have a value in every compared "
+            f"unit; the global mean uses those alone (a gene missing in a unit is usually low "
+            f"there) and needs at least {min_genes} of them"
         )
     words = agreement(stability.order, found).words if found and g_pair else ""
     evidence: dict[str, Any] = {
@@ -181,7 +214,9 @@ def plan(
         "planned": list(_ordered(primary, candidates)),
         "global_mean": {
             "n_genes": len(genes),
-            "min_genes": GLOBAL_MEAN_MIN_GENES,
+            "n_measured": measured,
+            "min_genes": min_genes,
+            "common_note": GLOBAL_MEAN_COMMON_NOTE,
             "threshold_note": GLOBAL_MEAN_THRESHOLD_NOTE,
             "panel_note": GLOBAL_MEAN_PANEL_NOTE,
             "source": GLOBAL_MEAN_SOURCE,
@@ -202,6 +237,22 @@ def plan(
         words=words,
         evidence=evidence,
     )
+
+
+def _compared(
+    matrix: pd.DataFrame,
+    groups: Mapping[str, str | None] | None,
+    high: Collection[str],
+    rest: Collection[str],
+) -> tuple[str, ...]:
+    """The compared units: those with a group, else the two groups' units, else every unit."""
+    if groups:
+        found = tuple(str(u) for u, g in groups.items() if g is not None)
+        if found:
+            return found
+    if high or rest:
+        return tuple(str(u) for u in (*high, *rest))
+    return tuple(str(u) for u in matrix.index)
 
 
 def _global_shift(

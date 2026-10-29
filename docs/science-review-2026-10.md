@@ -96,8 +96,11 @@ evaluates every comparison with the correction (`Family`).
 
 ## 4. Judgement calls for you
 
-Nothing below was changed. Each says what, why it matters, the options, a recommendation and
-the sources.
+Each says what, why it matters, the options, a recommendation and the sources. The user approved
+every recommendation; each J now ends with an **Applied** line saying what was done and where
+(branch `ex/science2`). Where a recommendation would have changed the demo's locked outputs
+the opt-in form was used, as the review's own wording allows; no locked demo number, design
+hash or study id changed.
 
 ### J0. The thresholds builders set without a source, at a glance
 
@@ -114,6 +117,17 @@ the sources.
 | A group of capped values only is never compared ("detected only in X") | `qpcr/space.py` | **Keep; add the detection counts' own test as orientation** (J8) |
 | Standard curve warnings: efficiency 90–110 %, R² ≥ 0.98 "(MIQE)" | `absolute.py`, G-STD | **Cite Taylor et al. 2010** (Methods 50:S1–S5), where these numbers are; MIQE 2009 asks for them to be reported, not for these limits |
 | Trace robust z 3.5 | `qpcr/trace.py` | Keep (Iglewicz & Hoaglin 1993, cited) |
+
+**Applied (28–29 Oct 2026, agent `science2`, the user having approved every recommendation):** the 90 % share counts within the sample's own group and is lab-editable (J3, 3599ba4);
+the Poisson floor's words say "at least" and, below 3 copies, "a lower bound" (f5d83bf); the
+one-copy Cq comes from a standard curve when there is one: `qpilot plan --curve-from FILE`,
+`qpcr_plan(study_id=…)`, the median intercept of the plate curves in copies (or of unstated unit,
+said so), else 35 (f5d83bf); the planner headlines the n for a call (J4); G-MELT's
+`dimer_min_below_c` (J5, 250ee28); LOQ_CV's comment and the absolute card cite Forootan 2017 and
+Klymus 2020 (e1c5e88); the LOD's words for few wells per level (J6, e1c5e88); the global mean's
+common set (J7, e2d7935); Fisher's test for "detected only in" (J8, c29c680); the standard-curve
+warnings and G-STD cite Taylor et al. 2010, not MIQE (`absolute.CURVE_LIMITS_SOURCE`, pack
+1.4.0 source `taylor_2010`; 250ee28, e1c5e88); Trace's robust z 3.5 kept.
 
 ### J1. Wells LinRegPCR says did not amplify still count, because they have a quantity (most important)
 
@@ -148,6 +162,18 @@ curve analysis says is flat; it does not touch the demo's relative numbers), and
 relative engine; (b) at the next planned lock regeneration. In every case a person keeps the last
 word through `well_calls`.
 
+**Applied (28–29 Oct 2026, agent `science2`, the user having approved every recommendation):** (d) was a6b05fe (standards and unknowns follow LinRegPCR's call). (c), the strict rule
+for relative quantification, is f906bf5: the amplification rule `linregpcr_call` ("LinRegPCR's
+call, its 'no amplification' respected"; negative controls left as they are, since their quantity
+is G-NTC-1's contamination signal; a Cq table falls back on the quantity) is **offered, not made
+the default**: Studio's curves stage lists it as an alternative of the call-rule proposal when the
+file has such wells, with how many, and the Curves view shows each well's call under it; a person
+who chooses it makes it the primary, and the grid then tests LinRegPCR's quantity and the Cq lines
+against it. Measured: eDNA sample plate 7 wells (C9 at Cq 19.1, 2.5 × 10⁶); demo 11 of 24 576,
+no call changes, at most 0.069 log2 (CDH5), so the screen keeps the axis out of the legacy grid.
+(b), making it the default and regenerating the locks, is left to the next planned regeneration
+as recommended (`tests/engine/test_amp_call.py`, `tests/studio/test_service_demo.py`).
+
 ### J2. Standard wells outside the series, and the interval when a curve is poor
 
 **What.** The absolute module never drops a standard well ("a person does"), which is right, but
@@ -165,6 +191,19 @@ a detected standard that breaks the order of the series or whose studentized res
 g with each curve and use the exact interval when g > 0.05 (the usual rule of thumb accepts the
 approximation below g = 0.1; 0.05 keeps a margin).
 
+**Applied (28–29 Oct 2026, agent `science2`, the user having approved every recommendation)** (e1c5e88): a detected standard is pointed at when its Cq is on the wrong side of most
+standard wells ten-fold or more away (a majority rule, so one bad well cannot make the good ones
+look broken) or its externally studentized residual is beyond ±3.5, with the curve refitted
+without it (efficiency and CI, R², LOD, LOQ); on a Studio session "Propose leaving these out"
+(`POST /api/studies/{id}/quantities/standards`) files one rule-made `curve.exclude_well` per
+well (`qpilot-standard-curve`), waiting in Curves for a person. On the eDNA curve with the three
+flat wells put back by a person's calls, exactly A7, A8, D9 are pointed at (A8: earlier than 20 of
+20 wells with ten-fold more template, z −7.3; without it 114 %, R² 0.74). Every curve reports g;
+above 0.05 an unknown read from one curve gets Fieller's interval (eDNA, g 0.206, k 3: [−0.56,
+6.17], equal to the oracle's `inverse_exact`; classical [−0.20, 5.80]); g ≥ 1 gives none. A unit
+read from several curves keeps the classical combination (`tests/science/test_review_absolute.py`,
+`tests/web/test_quantify_web.py`).
+
 ### J3. "No amplification where one was expected" counts across groups
 
 **What.** `repeat.py` flags a non-amplifying sample when the gene amplified in ≥ 90 % of the
@@ -173,6 +212,11 @@ approximation below g = 0.1; 0.05 keeps a margin).
 sample of that group is put on the repeat plate as a technical failure. **Recommendation.** Count
 the share within the sample's own group (with at least three other samples there; otherwise do
 not flag), keep 90 % as a lab-editable default, and say in the reason which group's share it is.
+
+**Applied (28–29 Oct 2026, agent `science2`, the user having approved every recommendation)** (3599ba4): exactly that (`repeat.MIN_GROUP_OTHERS` 3); the reason reads "… amplified in 9
+of the 9 other compared samples of its group (WT)"; the share is `build_plan(expected_share=)`,
+`GET …/review/repeat?expected_share=`, `qpcr_repeat_plan(expected_share=)`, and the plan reports
+it (`tests/science/test_review_repeat.py`, `tests/web/test_evidence_repeat.py`).
 
 ### J4. The planner: which n to headline
 
@@ -188,6 +232,13 @@ the normal approximation. Keep 2.5× as the starting fold (no published source; 
 "aim above the line" heuristic, now explained in `fold_words`). Take `cq_one_copy` from the study's
 own standard curve when there is one (J0).
 
+**Applied (28–29 Oct 2026, agent `science2`, the user having approved every recommendation)** (f5d83bf, 8368bd1): `plan()`, `qpilot plan` and `qpcr_plan` lead with `n_for_call` ("For
+qPilot to call a 2.5-fold change in 80% of studies (p < 0.05 and at least 2-fold) you need 14 per
+group; for p < 0.05 alone … 11 per group") and `n_needed` is the exact non-central t
+(`n_needed_normal` keeps the approximation; pinned on 24 settings). The cheapest-design search
+uses the exact n, so its worked examples moved (762 → 798 per group). The page's Plan next already
+sized the plan by `n_for_call`. `cq_one_copy` as in J0 (`tests/core/test_plan.py`).
+
 ### J5. Melt: when is an NTC peak a primer-dimer?
 
 **What.** A no-template control whose peaks are all below the product's Tm is a "primer-dimer
@@ -201,6 +252,12 @@ to G-MELT: closer peaks are `other_product` (warn). The other melt thresholds ar
 sourced (rdmlpython's 1.0 °C true-peak window and 5 % cut-off; the noise floor relative to the
 assay's typical product, which avoids counting noise in an empty NTC as peaks).
 
+**Applied (28–29 Oct 2026, agent `science2`, the user having approved every recommendation)** (250ee28): G-MELT's `dimer_min_below_c` 3.0 (pack `research-default` 1.4.0): every
+counted peak at least that far below the product is a primer-dimer candidate; a closer one is
+`other_product` (warn; its reason says "closer than the 3.0 °C a primer-dimer is expected to melt
+below it: a shorter product or a variant amplicon may have formed in it"). The demo has no melt
+curves: its gate is unchanged (`tests/gate/test_gate_melt.py`, `tests/qpcr/test_melt.py`).
+
 ### J6. LOD with few replicates
 
 **What.** The empirical LOD is the lowest level detected in ≥ 95 % of its wells with every higher
@@ -210,6 +267,11 @@ the logistic LOD (Forootan 2017) is the better estimate and is shown. **Recommen
 both; say in the curve's words how many wells per level stand behind the empirical limit, and
 recommend ≥ 10 replicates at the levels around the LOD (Forootan 2017; Klymus et al. 2020). The
 log-normal CV for the LOQ is exactly Forootan's formula (checked).
+
+**Applied (28–29 Oct 2026, agent `science2`, the user having approved every recommendation)** (e1c5e88): below 20 wells per level the LOD's words add "with 3 wells per level, 95 % of a
+level's wells means all of them, so this is the lowest level where no well failed (the modelled
+limit, when shown, is the better estimate). Run at least 10 replicates at the levels around the
+limit (Forootan et al. 2017; Klymus et al. 2020)"; both LODs are kept.
 
 ### J7. The global mean's gene set
 
@@ -226,6 +288,14 @@ count of genes used in the card's words, and keep 50 genes as the lab-editable m
 minimum), as the code already says; qbase+'s documentation is often quoted as "more than about
 50 genes": verify that source before citing it.
 
+**Applied (28–29 Oct 2026, agent `science2`, the user having approved every recommendation)** (e2d7935): (b). The global mean uses only genes with a value in every compared unit; the
+card says how many; 50 genes of the common set is the minimum (`GLOBAL_MEAN_MIN_GENES`, read at
+call time, `normaliser.plan(min_genes=)`). qbase+ was not cited (not verified). The demo: 45 of
+its 64 genes are measured in every compared tumour, so the opt-in global mean is not offered there
+any more (the normaliser grid 192 analyses, not 198); with a lab minimum of 40 it flips 9 calls
+(19 before, over all 64) and moves 0.85× against the references (0.71×). No locked output uses
+this axis (`tests/numbers/test_norm_demo.py`, `tests/numbers/test_norm_studio_demo.py`).
+
 ### J8. "Detected only in X"
 
 **What.** A gene detected in no unit of one group is withheld with the group's ΔCq and no fold
@@ -234,6 +304,11 @@ tested. **This is right**: no fold change should be invented from a cap. **Recom
 and add as orientation (never a call) the detection counts' own test, Fisher's exact test on
 "detected / not detected" by group (6 of 6 against 0 of 6 is p = 0.002), so a presence/absence
 difference is not mistaken for "nothing found".
+
+**Applied (28–29 Oct 2026, agent `science2`, the user having approved every recommendation)** (c29c680): fact `f_fisher_p_only_<gene>`, `DetectedOnlyView.fisher_p` and the Results
+line ("Detected in 6 of 6 against none of 6: Fisher's exact test p = 0.0022 … orientation, not a
+call"); no card, grid or call reads it. The demo has no such gene
+(`tests/engine/test_detected_only.py`).
 
 ### J9. Several comparisons: smaller points
 
@@ -251,6 +326,13 @@ difference is not mistaken for "nothing found".
   spread to the pooled variance, which shrinks the SD of the other comparisons in those cells.
   Leave such a group out of the pooled variance too.
 
+**Applied (28–29 Oct 2026, agent `science2`, the user having approved every recommendation)** (2ea7158): BH stays per comparison and Welch per comparison (no change, as recommended);
+Welch's ANOVA says per gene when it left a group out (`omnibus_groups_used`, `omnibus_words`:
+"across 3 of the 4 groups: 1 group with fewer than two values for this gene left out"; the Results
+table shows "k of G groups"; `qpcr_comparisons`' omnibus too); a group of capped values only is
+left out of Dunnett's and Tukey's pooled variance and of Tukey's group count
+(`tests/science/test_review_comparisons.py`). The demo has one comparison: unchanged.
+
 ### J10. Technical replicates
 
 * **Several samples of one unit.** A unit's value is the flat mean over all wells of all its
@@ -265,6 +347,15 @@ difference is not mistaken for "nothing found".
   number (pipetting term only), while G-REP adds the Poisson term when the plate has a curve: at
   low copy numbers the audit may leave out a well G-REP accepts. Use G-REP's tolerance.
 
+**Applied (28–29 Oct 2026, agent `science2`, the user having approved every recommendation):** a unit's value is the mean of its samples' means (`quant.unit_means`; one sample per unit
+gives the same number bit for bit, so the demo and every one-sample-per-unit study are unchanged),
+and the audit combines them the same way (`Replicates.sub`) (95f9e10). G-REP proposes no single
+well on a tie (the farthest wells equally far: duplicates, 20.0/20.5/21.0) and says "the spread
+is not one well's" (pack 1.4.0, 250ee28); the demo's three G-REP warnings each have one farthest
+well. The audit's drop-outlier rule uses G-REP's tolerance, the Poisson term 1/N from the plate's
+standard curve (three levels, copies from the STD_ names) joining the pipetting CV, and G-REP's tie
+rule (95f9e10) (`tests/science/test_review_replicates.py`, `tests/gate/test_gate_rules.py`).
+
 ### J11. NormFinder
 
 * A candidate whose unbiased within-group variance comes out negative is counted as 0 (documented;
@@ -275,12 +366,19 @@ difference is not mistaken for "nothing found".
   equation with γ² = 0). The ranking is NormFinder's; if a lab compares the *values* with the
   NormFinder program's ungrouped output, check that program's scale first.
 
+**Applied (28–29 Oct 2026, agent `science2`, the user having approved every recommendation)** (60c1ccf): the warnings name the clamped genes ("the within-group variance of … came out
+below zero in some group … which makes them look steadier than the data show"; 4 of 6 on K.
+phaffii, `tests/science/test_oracles.py`); the ungrouped scale note is in `methods/normfinder.md`.
+
 ### J12. The "cap" rule for wells that never amplified (legacy, not new)
 
 Capping at the lowest amount detected for the gene is conservative (it shrinks a fold change
 towards none for the group with non-detects) and is one option of the grid, not the default.
 Model-based alternatives exist (McCall et al. 2014, non-detects as missing not at random); not
 needed now, worth a sentence in the method card.
+
+**Applied (28–29 Oct 2026, agent `science2`, the user having approved every recommendation)** (60c1ccf): the sentence is in `methods/contrast.md` (conservative, one grid option and
+never the default; McCall et al. 2014; the undetermined axis's opt-in `censored_mle`).
 
 ## 5. Observations for other owners
 

@@ -598,6 +598,7 @@ class CapabilityTools:
         response_format: Literal["concise", "detailed"] = "detailed",
         offset: int = 0,
         limit: int = 50,
+        expected_share: float = 0.9,
     ) -> dict[str, Any]:
         """What to repeat and why, ranked by what it does to the calls, and the repeat plate.
 
@@ -611,9 +612,11 @@ class CapabilityTools:
         items (1 to 500, default 50) come back from ``offset`` on, most consequential first
         (``n_items`` counts them all, ``next_offset`` says where the next page starts); the plate,
         the counts and the Run Gate's lines always cover the whole plan. The first call
-        reads the Run Gate and Trace (about half a minute on the demo). Re-running is a
-        person's call: nothing here decides it. Results stay hidden until a person confirms the
-        design and the curves.
+        reads the Run Gate and Trace (about half a minute on the demo). ``expected_share`` is
+        the lab's own line for "no amplification where one was expected" (above 0, at most 1;
+        default 0.9: the gene amplified in 90 % of the other samples of the sample's own group,
+        with at least three there). Re-running is a person's call: nothing here decides it.
+        Results stay hidden until a person confirms the design and the curves.
         """
         bad = check_format(response_format)
         if bad:
@@ -623,6 +626,13 @@ class CapabilityTools:
         bad = _page_refusal(offset, limit)
         if bad:
             return bad
+        share_ok = isinstance(expected_share, int | float) and not isinstance(expected_share, bool)
+        if not share_ok or not 0 < float(expected_share) <= 1:
+            return refuse(
+                Code.INVALID_ARGUMENT,
+                "expected_share is a number above 0 and at most 1 (0.9 is 90 %)",
+                field="expected_share",
+            )
         found = self._readable(study_id)
         if isinstance(found, dict):
             return found
@@ -633,7 +643,9 @@ class CapabilityTools:
         from qpilot.web.jobs import JobError
 
         try:
-            plan = repeat_plan_store(self.store, sid, include=include)
+            plan = repeat_plan_store(
+                self.store, sid, include=include, expected_share=float(expected_share)
+            )
         except StudyNotFound:
             return refuse(Code.UNKNOWN_STUDY, _srv().UNKNOWN_STUDY)
         except JobError as err:  # the input file is missing or changed, or the numbers differ

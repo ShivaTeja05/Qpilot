@@ -1223,7 +1223,7 @@ class Studio:
         well, each with the curve's evidence. Only "matters" (a boolean) is said; no gene, no
         direction, no number. Needs the design stage confirmed.
         """
-        from qpilot.qpcr.amp_call import amplified
+        from qpilot.qpcr.amp_call import amplified, no_amplification_with_quantity
         from qpilot.qpcr.cq_only import NOT_APPLICABLE
         from qpilot.qpcr.curves import analyse_study, without_curves
         from qpilot.qpcr.designs import design_curves
@@ -1247,7 +1247,8 @@ class Studio:
         keys = study["run_id"].astype(str) + "/" + study["well"].astype(str)
         linreg = amplified(study, "linregpcr", design.well_calls)
         notes: list[str] = []
-        outcomes = [self._propose_rule(session_id)]
+        flat = int(no_amplification_with_quantity(table).sum())
+        outcomes = [self._propose_rule(session_id, flat=flat)]
         disagree: list[str] = []
         learned, judge = self._judge_calls(session_id, path, settings.experiment_id)
         if learned is not None:  # an unscored well has no call, so it never disagrees
@@ -1289,13 +1290,23 @@ class Studio:
         report["targets_that_matter"] = mattering
         return report
 
-    def _propose_rule(self, session_id: str, cq_values: bool = False) -> ProposalOutcome:
+    def _propose_rule(
+        self, session_id: str, cq_values: bool = False, flat: int = 0
+    ) -> ProposalOutcome:
         """The call rule (``linregpcr``, the engine's default) as the curves stage's proposal.
 
         ``cq_values`` (a file of Cq values only) says so in the payload (``basis: "cq"``, which
         the engine does not read: the rule is the same, a well counts when it has a quantity)
-        and in the words: a well counts when the file gives it a Cq.
+        and in the words: a well counts when the file gives it a Cq. ``flat`` counts the wells
+        LinRegPCR calls "no amplification" although it gave them a quantity; when there are any,
+        the strict rule (:data:`~qpilot.qpcr.amp_call.STRICT`, LinRegPCR's call with its "no
+        amplification" respected; science review J1) is offered as an alternative and the
+        evidence says how many wells it would leave undetermined. A person who chooses it makes
+        it the analysis's rule; the grid then still shows what LinRegPCR's quantity alone and
+        the Cq cut-offs would conclude.
         """
+        from qpilot.qpcr.amp_call import STRICT
+
         payload: dict[str, Any] = {"rule": "linregpcr"}
         note, reason = (
             "the engine's default call",
@@ -1312,13 +1323,33 @@ class Studio:
                 "gives it a Cq (the instrument software's call); the Cq cut-offs are kept as "
                 "choices whose consequences are shown later"
             )
+        evidence = [Evidence(kind="rule", ref="linregpcr", note=note)]
+        alternatives: list[dict[str, Any]] = [
+            {"rule": "cq_le_40"},
+            {"rule": "cq_le_38"},
+            {"rule": "cq_le_35"},
+        ]
+        if flat and not cq_values:
+            wells = "well" if flat == 1 else "wells"
+            evidence.append(
+                Evidence(
+                    kind="rule",
+                    ref=STRICT,
+                    note=(
+                        f"LinRegPCR calls {flat} {wells} of this file 'no amplification' (a flat "
+                        "curve) although it gave them a quantity; the rule 'LinRegPCR's call, its "
+                        "no amplification respected' counts them as undetermined"
+                    ),
+                )
+            )
+            alternatives.append({"rule": STRICT})
         proposal = Proposal(
             study_id=session_id,
             kind="curve.call_rule",
             subject="amp_call",
             payload=payload,
-            evidence=[Evidence(kind="rule", ref="linregpcr", note=note)],
-            alternatives=[{"rule": "cq_le_40"}, {"rule": "cq_le_38"}, {"rule": "cq_le_35"}],
+            evidence=evidence,
+            alternatives=alternatives,
             level="High",
             reasons=[reason],
             made_by=MadeBy(kind="rule"),
@@ -1414,7 +1445,13 @@ class Studio:
         Facts about the curves, never a conclusion, so they are available in the blind curve
         stage. Uses the assembled design's experiment and well roles when there is one.
         """
-        from qpilot.qpcr.amp_call import STUDIO_AMP_CALLS, disagreements, well_calls
+        from qpilot.qpcr.amp_call import (
+            STRICT,
+            STUDIO_AMP_CALLS,
+            disagreements,
+            no_amplification_with_quantity,
+            well_calls,
+        )
         from qpilot.qpcr.curves import analyse_study
         from qpilot.qpcr.designs import design_curves
         from qpilot.qpcr.study import StudySettings
@@ -1432,7 +1469,13 @@ class Studio:
         rows = table[table["target"] == gene]
         if rows.empty:
             raise StudioError("no well of this target in the analysed experiment")
-        calls = well_calls(rows, STUDIO_AMP_CALLS, overrides)
+        rules = list(STUDIO_AMP_CALLS)
+        # the strict rule (science review J1) once the file has a well it would change, or the
+        # design uses it
+        strict = STRICT in (design.amp_calls if design is not None else ())
+        if strict or no_amplification_with_quantity(table).any():
+            rules.append(STRICT)
+        calls = well_calls(rows, rules, overrides)
         experiment = design.experiment_id if design is not None else None
         learned, judge = self._judge_calls(session_id, path, experiment)
         if learned is not None:
@@ -1444,7 +1487,7 @@ class Studio:
             ]
         return {
             "gene": gene,
-            "rules": [*STUDIO_AMP_CALLS, *(["learned"] if learned is not None else [])],
+            "rules": [*rules, *(["learned"] if learned is not None else [])],
             "curve_judge": judge,
             "wells": [c.model_dump(mode="json") for c in calls],
             "disagreements": [f"{c.run_id}/{c.well}" for c in disagreements(calls)],

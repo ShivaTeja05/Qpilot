@@ -130,6 +130,57 @@ describe("the Quantities view on a real QuantStudio 3 plate", () => {
     });
   });
 
+  it("lists a standard that looks wrong and lets the rule propose leaving it out", async () => {
+    // science review J2: the eDNA curve's A8 (Cq 9.9 at 2.4 copies) as the API reports it
+    const suspect = {
+      key: "Run 1/A8",
+      run_id: "Run 1",
+      well: "A8",
+      sample: "K",
+      quantity: 2.41,
+      cq: 9.913,
+      why: ["order", "residual"],
+      words:
+        "its Cq 9.9 at 2.41 is earlier than 20 of the 20 standard wells holding ten-fold or more template: the series' order is broken",
+      residual_z: -7.3,
+      efficiency: 1.14,
+      efficiency_low: 0.858,
+      efficiency_high: 1.677,
+      r2: 0.743,
+      lod: 9.65,
+      loq: 9.65,
+      proposed: false,
+    };
+    const withSuspect = (data: typeof cov2) => ({
+      ...data,
+      curves: data.curves.map((c, i) => (i === 0 ? { ...c, suspects: [suspect] } : c)),
+    });
+    vi.spyOn(api, "GET").mockImplementation(((route: string) => {
+      if (route === "/api/studies/{study_id}/quantities") return ok(overview);
+      if (route === "/api/studies/{study_id}/quantities/{target}") return ok(withSuspect(cov2));
+      return ok({});
+    }) as never);
+    const post = vi.spyOn(api, "POST").mockImplementation((() =>
+      ok({
+        status: "proposed",
+        head: "h",
+        proposed: ["Run 1/A8"],
+        waiting: [],
+        message: "ok",
+      })) as never);
+    wrap(<QuantitiesPanel workspaceKey="ws" studyId={STUDY} />);
+    const list = await screen.findByTestId("standards-suspect");
+    const said = plain(list.textContent ?? "");
+    expect(said).toContain("1 standard well that looks wrong:");
+    expect(said).toContain("the series' order is broken");
+    expect(said).toMatch(/Without it: efficiency 114\.0\s%/);
+    expect(said).toContain("qPilot never leaves a standard out");
+    fireEvent.click(within(list).getByRole("button", { name: /Propose leaving it out/ }));
+    await waitFor(() => expect(post).toHaveBeenCalled());
+    const [route] = post.mock.calls[0] as unknown as [string];
+    expect(route).toBe("/api/studies/{study_id}/quantities/standards");
+  });
+
   it("cannot record without the inbox head the view showed", async () => {
     vi.spyOn(api, "GET").mockImplementation(((route: string) =>
       route === "/api/studies/{study_id}/quantities"
@@ -181,6 +232,30 @@ describe("detected only in one group", () => {
     expect(text).toContain("ΔCq in present 4.21 ± 0.83 (SD)");
     expect(text).toContain("No fold change is given");
     expect(text).not.toMatch(/×/);
+  });
+
+  it("gives Fisher's exact test on the detection counts, as orientation", () => {
+    render(
+      <DetectedOnlyLine
+        gene={{
+          gene: "G",
+          reason: "detected only in KO (6 of 6 biological units)",
+          detected_only: {
+            group: "KO",
+            absent: "WT",
+            n_detected: 6,
+            n_group: 6,
+            n_absent: 6,
+            dcq: null,
+            dcq_sd: null,
+            fisher_p: 0.0021645,
+          },
+        }}
+      />,
+    );
+    const text = document.body.textContent ?? "";
+    expect(text).toContain("Fisher's exact test p = 0.0022");
+    expect(text).toContain("orientation, not a call");
   });
 });
 

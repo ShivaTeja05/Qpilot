@@ -267,7 +267,14 @@ class GateOut(_Open):
 class PlanOut(_Open):
     """``qpcr_plan``: samples per group and what a design cannot detect."""
 
-    n_needed: int | None
+    n_needed: int | None = Field(
+        description="Per group for a two-sided t test (p alone), exact (non-central t)."
+    )
+    n_for_call: int | None = Field(
+        None,
+        description="Per group for qPilot's own rule (p and the 2-fold line) to call the change "
+        "with the power asked: the headline. Null when no group size reaches it.",
+    )
     mde_fold: Num
     cannot_detect: list[str]
     rules: list[str]
@@ -624,6 +631,9 @@ class RepeatPlanOut(_Open):
     not_repeated: list[dict[str, Any]] | None = None
     wells: list[dict[str, Any]] | None = None
     csv: str | None = Field(None, description="The repeat plate as the planner's CSV.")
+    expected_share: float | None = Field(
+        None, description="The lab's line for 'no amplification where one was expected'."
+    )
     decision: str = Field(description="Re-running is a person's call; nothing here decides it.")
     saved: bool
     response_format: ResponseFormat = "detailed"

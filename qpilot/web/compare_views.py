@@ -16,6 +16,7 @@ import math
 import threading
 from collections import OrderedDict
 from collections.abc import Mapping, Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -215,6 +216,26 @@ PRIMARY_ONLY_NOTE = (
     "page and History follow the comparison you pick; the Run Review lists every one. The "
     "robustness audit audits the first comparison ({label}) only."
 )
+
+
+def omnibus_coverage(omnibus: Any, groups: Sequence[str]) -> dict[str, Any]:
+    """How many of the plan's groups one gene's Welch ANOVA used, in words (science review J9).
+
+    The ANOVA leaves out a group with fewer than two values for the gene; its numerator degrees
+    of freedom say how many it used (``df1 + 1``).
+    """
+    used = int(round(float(omnibus.df1))) + 1
+    total = len(groups)
+    words = ""
+    if used < total:
+        left = total - used
+        words = (
+            f"across {used} of the {total} groups: {left} group{'s' * (left != 1)} with fewer "
+            "than two values for this gene left out"
+        )
+    return {"n_groups_used": used, "groups_words": words}
+
+
 OMNIBUS_NOTE = (
     "“Any difference” asks whether a gene differs anywhere among {groups}: Welch's one-way "
     "ANOVA (unequal variances) at the planned analysis. It is for orientation only; the calls "
@@ -251,6 +272,11 @@ def comparisons_view(store: StudyStore, study_id: str) -> ComparisonsView:
         cells = [_cell(o, gene, at.get(o.id)) for o in outcomes]
         called = sum(1 for c in cells if c is not None and c.conclusion != "none")
         omnibus = found.omnibus.get(gene) if found is not None else None
+        coverage = (
+            omnibus_coverage(omnibus, found.omnibus_groups)
+            if omnibus is not None and found is not None
+            else {"n_groups_used": None, "groups_words": ""}
+        )
         rows.append(
             ComparisonGeneRow(
                 gene=gene,
@@ -258,6 +284,8 @@ def comparisons_view(store: StudyStore, study_id: str) -> ComparisonsView:
                 cells=cells,
                 n_called=called,
                 omnibus_p=omnibus.p if omnibus is not None else None,
+                omnibus_groups_used=coverage["n_groups_used"],
+                omnibus_words=coverage["groups_words"],
             )
         )
     test = found.test if found is not None else "welch"

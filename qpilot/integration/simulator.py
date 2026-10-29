@@ -252,9 +252,10 @@ def _technical_replicates(table: pd.DataFrame, units: Mapping[str, str] | None) 
 def _unit_table(table: pd.DataFrame, units: Mapping[str, str] | None) -> pd.DataFrame:
     """The per-well table with each study sample named by its biological unit.
 
-    ``log2_matrix`` of it is qPilot's ``log2_matrix(table, units)``: the same units, the same
-    per-unit mean over the wells that have a quantity. The original name stays in
-    ``sample_name``.
+    ``log2_matrix`` of it is qPilot's ``log2_matrix(table, units)``: the same units and, with
+    the original sample names kept in ``sample_name`` (the audit's ``Replicates.sub``), the same
+    per-unit value: the mean over the unit's samples of each sample's mean over its wells that
+    have a quantity.
     """
     out = table.copy()
     out["sample_name"] = out["sample"]
@@ -270,8 +271,8 @@ def _replicate_scope(study: Any, space: Any) -> dict[str, Any]:
     varied = "replicates" in space.names
     words = (
         "Each biological unit's value is the mean of its wells' log2 starting amounts (wells "
-        "without a value are left out), exactly as qPilot computes it; replicate wells are never "
-        "counted as samples."
+        "without a value are left out; a unit of several samples takes the mean of its samples' "
+        "means), exactly as qPilot computes it; replicate wells are never counted as samples."
     )
     if varied:
         words += (

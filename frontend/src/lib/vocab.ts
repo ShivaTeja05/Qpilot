@@ -379,6 +379,8 @@ export function ruleWords(rule: unknown, cqValues = false): string {
   const r = String(rule);
   if (r === "linregpcr" && cqValues) return CQ_RULE_WORDS;
   if (r === "linregpcr") return "LinRegPCR's call (it found an exponential phase and a quantity)";
+  if (r === "linregpcr_call")
+    return "LinRegPCR's call, its “no amplification” respected (a flat curve given a quantity counts as not amplified)";
   if (r === "learned") return "the Curve Judge's call (a model that reads the curve's shape)";
   const m = /^cq_le_(\d+(?:\.\d+)?)$/.exec(r);
   if (m) return `a Cq cut-off: a Cq above ${m[1]} counts as not amplified`;
@@ -390,6 +392,7 @@ export function ruleLabel(rule: unknown, cqValues = false): string {
   const r = String(rule);
   if (r === "linregpcr" && cqValues) return "The file’s Cq";
   if (r === "linregpcr") return "LinRegPCR";
+  if (r === "linregpcr_call") return "LinRegPCR's call";
   if (r === "learned") return "Curve Judge";
   const m = /^cq_le_(\d+(?:\.\d+)?)$/.exec(r);
   return m ? `Cq ≤ ${m[1]}` : r;

@@ -88,8 +88,8 @@ def evidence(axis: str, numbers: Mapping[str, Any]) -> list[Evidence]:
                 Evidence(
                     kind="pattern",
                     ref="the global mean",
-                    note=f"{numbers['global_mean_genes']} genes have values; "
-                    f"{numbers['global_mean_note']}",
+                    note=f"{numbers['global_mean_genes']} genes have a value in every "
+                    f"compared unit; {numbers['global_mean_note']}",
                 )
             )
         return out

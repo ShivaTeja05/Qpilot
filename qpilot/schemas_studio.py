@@ -576,9 +576,9 @@ class StudyDesign(BaseModel):
 class AmpCallRule(BaseModel):
     """One rule for which wells count as amplified (an option of the ``amp_call`` axis)."""
 
-    id: str  # "linregpcr", "cq_le_40", "cq_le_38", "cq_le_35", "learned"
+    id: str  # "linregpcr", "linregpcr_call", "cq_le_40", "cq_le_38", "cq_le_35", "learned"
     label: str
-    kind: Literal["linregpcr", "cq_max", "learned"]
+    kind: Literal["linregpcr", "linregpcr_call", "cq_max", "learned"]
     cq_max: float | None = None
     recommended: bool = False
     note: str = ""

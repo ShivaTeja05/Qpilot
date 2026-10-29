@@ -51,6 +51,34 @@ class StandardPointView(BaseModel):
     note: str = Field(default="", description="Why a well with a Cq is not used, in words.")
 
 
+class SuspectView(BaseModel):
+    """A detected standard that looks wrong, with the curve refitted without it (J2).
+
+    qPilot never leaves it out: a person does, on the ``curve.exclude_well`` proposal the rule
+    files (``POST …/quantities/standards``) or in Curves.
+    """
+
+    key: str = Field(description="run_id/well: the subject of the curve.exclude_well proposal.")
+    run_id: str
+    well: str
+    sample: str
+    quantity: float
+    cq: float
+    why: list[Literal["order", "residual"]] = Field(
+        description="order: its Cq is on the wrong side of most standard wells ten-fold or "
+        "more away; residual: its studentized residual is beyond ±3.5."
+    )
+    words: str
+    residual_z: float | None = None
+    efficiency: float | None = Field(default=None, description="The curve without this well.")
+    efficiency_low: float | None = None
+    efficiency_high: float | None = None
+    r2: float | None = None
+    lod: float | None = None
+    loq: float | None = None
+    proposed: bool = Field(default=False, description="Its proposal waits for a person.")
+
+
 class BandPoint(BaseModel):
     """The fitted line and its 95 % prediction band for one new well, at one log10 quantity."""
 
@@ -86,6 +114,17 @@ class CurveSummary(BaseModel):
     quantity_source: str = Field(description="design, file, name, or a mix joined with '+'.")
     warnings: list[str] = []
     n_unknowns: int = Field(default=0, description="Units read from this curve.")
+    g: float | None = Field(
+        default=None,
+        description="t² s² / (slope² Sxx): above 0.05 an unknown's interval is Fieller's exact "
+        "one, not the classical approximation.",
+    )
+    exact_interval: bool = Field(
+        default=False, description="Unknowns read from this curve alone get Fieller's interval."
+    )
+    suspects: list[SuspectView] = Field(
+        default=[], description="Detected standards that look wrong (never left out by qPilot)."
+    )
 
 
 class CurveDetail(CurveSummary):
@@ -243,6 +282,16 @@ class ReactionRequest(BaseModel):
         description="The session's inbox head the quantities view showed (its `inbox_head`); "
         "409 stale when something was decided since.",
     )
+
+
+class StandardsProposed(BaseModel):
+    """What asking to leave the suspect standards out filed (a person decides each)."""
+
+    status: Literal["proposed", "nothing"]
+    head: str
+    proposed: list[str] = Field(description="run_id/well of each proposal filed now.")
+    waiting: list[str] = Field(description="Already proposed and waiting for a person.")
+    message: str
 
 
 class ReactionRecorded(BaseModel):

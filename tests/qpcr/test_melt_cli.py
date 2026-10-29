@@ -11,7 +11,7 @@ from tests.qpcr.melt_curves import HSIEH, RPA
 def test_the_ten_assay_cfx_rdml_as_json(capsys):
     assert main(["melt", str(RPA), "--json"]) == 0
     out = json.loads(capsys.readouterr().out)
-    assert out["has_melt"] and out["pack"] == "research-default 1.3.0" and out["note"] == ""
+    assert out["has_melt"] and out["pack"] == "research-default 1.4.0" and out["note"] == ""
     assert len(out["assays"]) == 10
     flagged = {(a["target"], f["well"], f["call"]) for a in out["assays"] for f in a["flagged"]}
     assert flagged == {

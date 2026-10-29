@@ -16,8 +16,12 @@ always was.
 
 Technical replicates (several wells of one sample and gene) and biological units (several
 samples of one animal or patient, from a study design) are averaged before anything else: per
-unit and gene, the mean of ``log2(n0)`` over the wells that have a quantity, which is the
-geometric mean of N0. The unit is undetermined only when every replicate is. Technical
+sample and gene, the mean of ``log2(n0)`` over the wells that have a quantity (the geometric
+mean of N0); per unit, the mean of its samples' means. With one sample per unit (the common
+case, the demo) that is the mean over the unit's wells, exactly as before; with several, each
+sample weighs the same whatever its number of wells (science review J10: two RNA preparations
+of one animal are sub-replicates, and a preparation run in three wells must not count three
+times one run in one). The unit is undetermined only when every replicate is. Technical
 replicates are never counted as n; their spread is kept by :func:`replicate_sd`. A table with
 one well per sample and gene, and no units, gives exactly the matrix it always did.
 """
@@ -154,10 +158,21 @@ def _usable(unknown: pd.DataFrame, units: Mapping[str, str] | None) -> pd.DataFr
     return pd.DataFrame(
         {
             "unit": unit_map(rows["sample"], units).to_numpy(),
+            "sample": rows["sample"].astype(str).to_numpy(),
             "target": rows["target"].to_numpy(),
             "log2": np.log2(rows["n0"].to_numpy(dtype=float)),
         }
     )
+
+
+def unit_means(used: pd.DataFrame, column: str = "log2") -> pd.Series:
+    """Per ``(unit, target)``: the mean over the unit's samples of each sample's mean ``column``.
+
+    ``used`` has ``unit``, ``sample``, ``target`` and ``column``. A unit with one sample gets the
+    plain mean of its wells (the same number, bit for bit, as one flat mean).
+    """
+    per_sample = used.groupby(["unit", "sample", "target"])[column].mean()
+    return per_sample.groupby(level=["unit", "target"]).mean()
 
 
 def _aggregate(
@@ -173,7 +188,7 @@ def _aggregate(
     present = wells.groupby(["unit", "target"]).size().unstack("target")
     all_excluded = wells.groupby(["unit", "target"])["excluded"].all().unstack("target")
     used = _usable(unknown, units)
-    means = used.groupby(["unit", "target"])["log2"].mean().unstack("target")
+    means = unit_means(used).unstack("target")
     index = present.index.sort_values()
     columns = present.columns.sort_values()
     values = means.reindex(index=index, columns=columns)

@@ -264,7 +264,7 @@ consistent"; it is outside both blind confirmations (they never re-open for it).
   choices on the other cards are carried (above). A
   study analysed outside Studio shows `qpilot run --efficiency all` instead. Method card:
   `methods/efficiency_model.md`. **Also test other normalisers** (`normaliser` axis: the chosen
-  reference genes, NormFinder's or geNorm's best pair, the global mean from 50 genes;
+  reference genes, NormFinder's or geNorm's best pair, the global mean from 50 genes measured in every compared unit (science review J7);
   `qpcr/axes/normaliser.py`) and **Also test corrections between plates** (`interrun` axis:
   inter-run calibrator, factor correction; `qpcr/interrun.py`) work the same way
   (`FurtherChoices.tsx`, `web/axes_views.py`, cards `numbers.normaliser` / `numbers.interrun`,
@@ -294,7 +294,7 @@ consistent"; it is outside both blind confirmations (they never re-open for it).
 
 ### Controls (`features/gate`) — Run Gate
 What the controls on each plate say, and whether any of it changes a call. The shipped rule pack
-(`research-default` 1.3.0: G-TYPED, G-NTC-1, G-NAC, G-NRT, G-POS, G-STD, G-REP, G-RT, G-INSTR,
+(`research-default` 1.4.0: G-TYPED, G-NTC-1, G-NAC, G-NRT, G-POS, G-STD, G-REP, G-RT, G-INSTR,
 G-MELT, G-IPC;
 thresholds and sources in `packs/research-default.yaml`, science in
 `agent-bus/contracts/scientist-spec-gate.md`) is evaluated on the study's wells; every rule that
@@ -373,8 +373,9 @@ one elsewhere).
   its file in Studio (Trace follows its calls down to their wells).
 * **G-MELT** (since pack 1.2.0, `qpcr/melt.py`, `GET /api/studies/{id}/melt`): for dye assays with melt
   curves, each amplified study well's call (one product within the tolerance of the assay's Tm,
-  extra peak, Tm off, no peak) and each NTC's (nothing, the product, a primer-dimer, another
-  product; G-NTC-1 grades a dimer as a warning). A G-MELT row opens its wells' melt curves
+  extra peak, Tm off, no peak) and each NTC's (nothing, the product, a primer-dimer at least
+  `dimer_min_below_c` (3 °C, pack 1.4.0) below the product, another product; G-NTC-1 grades a
+  dimer as a warning). A G-MELT row opens its wells' melt curves
   (`gate/Melt.tsx`, the shaded band = expected Tm ± tolerance) with **Open these wells in
   Curves**. Method card: `methods/melt_curve.md`.
 * **G-IPC** (pack 1.3.0, `qpcr/multiplex.py`, [`multiplex.md`](multiplex.md)): a study well whose

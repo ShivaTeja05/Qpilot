@@ -96,6 +96,7 @@ def test_the_pack_carries_g_melt_with_its_sources_and_thresholds():
         "extra_peak_share": 0.05,
         "noise_share": 0.05,
         "min_wells": 3,
+        "dimer_min_below_c": 3.0,
     }
     assert G_MELT.sources == ["rdmlpython_melt", "ririe_1997", "miqe2", "lab_default"]
     assert set(G_MELT.severity) == set(MELT_OUTCOMES)
@@ -156,7 +157,9 @@ def test_the_declared_temperature_and_a_labs_thresholds_are_the_ones_used():
     rows, curves = plate()
     declared = {ev.scope.get("sample"): ev.outcome for ev in evals_of(
         G_MELT, ctx_of(rows, curves, declared_tm={"T": 85.6}))}  # fmt: skip
-    assert declared["S1"] == "tm_off" and declared["NTC3"] == "ntc_dimer"
+    # NTC3's peak at 84.0 °C is 1.6 °C below the declared 85.6 °C: closer than a primer-dimer
+    # melts (science review J5, pack 1.4.0), so another product, not a primer-dimer
+    assert declared["S1"] == "tm_off" and declared["NTC3"] == "ntc_other_product"
     lab = override(
         PACK,
         "1.2.0-lab.1",
@@ -282,7 +285,7 @@ def test_leaving_the_flagged_wells_out_is_priced_by_the_consequence_test():
         assert option.option == "exclude_flagged" and len(option.excluded) == 1
     evals = [ev for ev in report.evals if ev.rule_id == "G-MELT"]
     assert {ev.verdict for ev in evals if ev.scope.get("sample", "").startswith("u2")} == {"fail"}
-    assert report.pack["version"] == "1.3.0"
+    assert report.pack["version"] == "1.4.0"
 
 
 def test_the_cfx_exports_late_no_template_controls(tmp_path):
@@ -316,3 +319,23 @@ def test_every_g_melt_evaluation_is_deterministic():
     again = [ev.model_dump() for ev in evals_of(G_MELT, ctx_of(rows, curves))]
     assert first == again
     assert list(melt_products(G_MELT, GateContext(table=table(rows))))[0].code == "no_melt_data"
+
+
+def test_a_peak_just_below_the_product_is_another_product_not_a_primer_dimer():
+    """Science review J5: a no-template peak counts as a primer-dimer only 3 °C or more below
+    the product (lab-editable); 1.1 °C below, it may be a shorter product or a variant."""
+    rows, curves = plate()
+    curves = [c for c in curves if c.well not in ("H2", "H3")]
+    curves += [curve("H2", ((80.9, 0.3),)), curve("H3", ((82.9, 0.3),))]  # product 84.05 °C
+    ctx = ctx_of(rows, curves)
+    out = {ev.scope.get("sample"): ev for ev in evals_of(G_MELT, ctx)}
+    assert (out["NTC2"].outcome, out["NTC2"].verdict) == ("ntc_dimer", "pass")  # 3.15 °C below
+    assert (out["NTC3"].outcome, out["NTC3"].verdict) == ("ntc_other_product", "warn")  # 1.15
+    text = rendered(out["NTC3"].reason, ctx.facts.as_dict())
+    assert "1.1 °C below this assay's product" in text
+    assert "closer than the 3.0 °C a primer-dimer is expected to melt below it" in text
+    assert "a shorter product or a variant amplicon" in text
+    lab = override(PACK, "1.4.0-lab.1", params={"G-MELT": {"dimer_min_below_c": 1.0}})
+    ctx = ctx_of(rows, curves)
+    out = {ev.scope.get("sample"): ev for ev in evals_of(lab.rule("G-MELT"), ctx, lab)}
+    assert out["NTC3"].outcome == "ntc_dimer"  # a lab's own line

@@ -2548,6 +2548,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/quantities/standards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Standards
+         * @description The rule proposes leaving out each standard that looks wrong; a person decides each.
+         */
+        post: operations["post_standards"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/record": {
         parameters: {
             query?: never;
@@ -6308,10 +6328,21 @@ export type components = {
              */
             n_called: number;
             /**
+             * Omnibus Groups Used
+             * @description How many of omnibus_groups the ANOVA used for this gene (a group with fewer than two values is left out).
+             */
+            omnibus_groups_used?: number | null;
+            /**
              * Omnibus P
              * @description Welch's one-way ANOVA p across omnibus_groups (orientation, never a call).
              */
             omnibus_p?: number | null;
+            /**
+             * Omnibus Words
+             * @description When a group was left out: how many, in words; else empty.
+             * @default
+             */
+            omnibus_words: string;
         };
         /**
          * ComparisonInfo
@@ -6804,8 +6835,19 @@ export type components = {
             efficiency_high?: number | null;
             /** Efficiency Low */
             efficiency_low?: number | null;
+            /**
+             * Exact Interval
+             * @description Unknowns read from this curve alone get Fieller's interval.
+             * @default false
+             */
+            exact_interval: boolean;
             /** Fitted */
             fitted: boolean;
+            /**
+             * G
+             * @description t² s² / (slope² Sxx): above 0.05 an unknown's interval is Fieller's exact one, not the classical approximation.
+             */
+            g?: number | null;
             /** Id */
             id: string;
             /** Intercept */
@@ -6861,6 +6903,12 @@ export type components = {
             scope: "plate" | "pooled";
             /** Slope */
             slope?: number | null;
+            /**
+             * Suspects
+             * @description Detected standards that look wrong (never left out by qPilot).
+             * @default []
+             */
+            suspects: components["schemas"]["SuspectView"][];
             /** Target */
             target: string;
             /** Top */
@@ -6903,8 +6951,19 @@ export type components = {
             efficiency_high?: number | null;
             /** Efficiency Low */
             efficiency_low?: number | null;
+            /**
+             * Exact Interval
+             * @description Unknowns read from this curve alone get Fieller's interval.
+             * @default false
+             */
+            exact_interval: boolean;
             /** Fitted */
             fitted: boolean;
+            /**
+             * G
+             * @description t² s² / (slope² Sxx): above 0.05 an unknown's interval is Fieller's exact one, not the classical approximation.
+             */
+            g?: number | null;
             /** Id */
             id: string;
             /** Intercept */
@@ -6956,6 +7015,12 @@ export type components = {
             scope: "plate" | "pooled";
             /** Slope */
             slope?: number | null;
+            /**
+             * Suspects
+             * @description Detected standards that look wrong (never left out by qPilot).
+             * @default []
+             */
+            suspects: components["schemas"]["SuspectView"][];
             /** Target */
             target: string;
             /** Top */
@@ -7568,6 +7633,11 @@ export type components = {
             dcq?: number | null;
             /** Dcq Sd */
             dcq_sd?: number | null;
+            /**
+             * Fisher P
+             * @description Fisher's exact test (two-sided) on detected / not detected by group: orientation on the presence/absence difference, never a call.
+             */
+            fisher_p?: number | null;
             /**
              * Group
              * @description The group it was detected in; null: in neither.
@@ -10134,6 +10204,12 @@ export type components = {
          * @description The thresholds the calls were made with (the pack's G-MELT parameters).
          */
         MeltParamsView: {
+            /**
+             * Dimer Min Below C
+             * @description A no-template control's peak is a primer-dimer candidate only this far (°C) or more below the product's Tm; closer, it is another product.
+             * @default 3
+             */
+            dimer_min_below_c: number;
             /**
              * Extra Peak Share
              * @description An extra peak counts when it carries at least this share of the peaks.
@@ -13324,6 +13400,12 @@ export type components = {
                 [key: string]: number;
             };
             /**
+             * Expected Share
+             * @description A sample's missing value is a reason to repeat it when the gene amplified in at least this share of the other samples of its own group (lab-editable).
+             * @default 0.9
+             */
+            expected_share: number;
+            /**
              * Gate Lines
              * @description The Run Gate per plate (none unread).
              */
@@ -14649,6 +14731,31 @@ export type components = {
             well: string;
         };
         /**
+         * StandardsProposed
+         * @description What asking to leave the suspect standards out filed (a person decides each).
+         */
+        StandardsProposed: {
+            /** Head */
+            head: string;
+            /** Message */
+            message: string;
+            /**
+             * Proposed
+             * @description run_id/well of each proposal filed now.
+             */
+            proposed: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "proposed" | "nothing";
+            /**
+             * Waiting
+             * @description Already proposed and waiting for a person.
+             */
+            waiting: string[];
+        };
+        /**
          * StepConclusions
          * @description The calls at one step, and what changed from the step before.
          */
@@ -14737,6 +14844,60 @@ export type components = {
             stage: "design" | "curves" | "choices" | "prism" | "other";
             /** Title */
             title: string;
+        };
+        /**
+         * SuspectView
+         * @description A detected standard that looks wrong, with the curve refitted without it (J2).
+         *
+         *     qPilot never leaves it out: a person does, on the ``curve.exclude_well`` proposal the rule
+         *     files (``POST …/quantities/standards``) or in Curves.
+         */
+        SuspectView: {
+            /** Cq */
+            cq: number;
+            /**
+             * Efficiency
+             * @description The curve without this well.
+             */
+            efficiency?: number | null;
+            /** Efficiency High */
+            efficiency_high?: number | null;
+            /** Efficiency Low */
+            efficiency_low?: number | null;
+            /**
+             * Key
+             * @description run_id/well: the subject of the curve.exclude_well proposal.
+             */
+            key: string;
+            /** Lod */
+            lod?: number | null;
+            /** Loq */
+            loq?: number | null;
+            /**
+             * Proposed
+             * @description Its proposal waits for a person.
+             * @default false
+             */
+            proposed: boolean;
+            /** Quantity */
+            quantity: number;
+            /** R2 */
+            r2?: number | null;
+            /** Residual Z */
+            residual_z?: number | null;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Well */
+            well: string;
+            /**
+             * Why
+             * @description order: its Cq is on the wrong side of most standard wells ten-fold or more away; residual: its studentized residual is beyond ±3.5.
+             */
+            why: ("order" | "residual")[];
+            /** Words */
+            words: string;
         };
         /**
          * SystemView
@@ -21005,6 +21166,37 @@ export interface operations {
             };
         };
     };
+    post_standards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardsProposed"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_record: {
         parameters: {
             query?: never;
@@ -21341,6 +21533,8 @@ export interface operations {
     get_repeat: {
         parameters: {
             query?: {
+                /** @description The lab's own line for 'no amplification where one was expected': the share of the other samples of a sample's group the gene amplified in (default 0.9). */
+                expected_share?: number | null;
                 include?: string;
             };
             header?: never;
@@ -21374,6 +21568,7 @@ export interface operations {
     get_repeat_csv: {
         parameters: {
             query?: {
+                expected_share?: number | null;
                 include?: string;
             };
             header?: never;

@@ -66,6 +66,14 @@ class Replicates:
     excluded: np.ndarray
     run: np.ndarray
     well: np.ndarray
+    #: Per well, which of the unit's samples it belongs to (an integer code), when some unit has
+    #: several samples (biological sub-replicates); ``None`` otherwise. A unit's value is then
+    #: the mean of its samples' means, as qPilot's (science review J10).
+    sub: np.ndarray | None = None
+    #: Per well, the slope and intercept of its plate's standard curve for its gene (Cq on
+    #: log10 copies, at least three levels; NaN without one), for G-REP's Poisson term.
+    std_slope: np.ndarray | None = None
+    std_intercept: np.ndarray | None = None
 
     @property
     def most(self) -> int:
@@ -197,7 +205,9 @@ def study_arrays(
     unknown = curves[curves["sample_type"] == "unkn"]
     unknown = unknown[unknown["sample"].isin(samples)]
     if unknown.duplicated(["sample", "target"]).any():
-        return replicate_arrays(unknown, matrix, standard_curve_efficiency(curves))
+        return replicate_arrays(
+            unknown, matrix, standard_curve_efficiency(curves), standard_curve_lines(curves)
+        )
 
     def grid(column: str, fill: object = np.nan, dtype: object = float) -> np.ndarray:
         table = unknown.pivot(index="sample", columns="target", values=column)
@@ -231,7 +241,10 @@ def study_arrays(
 
 
 def replicate_arrays(
-    unknown: pd.DataFrame, matrix: pd.DataFrame, eff_std: dict[str, float]
+    unknown: pd.DataFrame,
+    matrix: pd.DataFrame,
+    eff_std: dict[str, float],
+    lines: dict[tuple[str, str], tuple[float, float]] | None = None,
 ) -> tuple[dict[str, np.ndarray], Replicates]:
     """Per-well arrays (samples x genes x wells) and the samples x genes summaries of them.
 
@@ -270,12 +283,21 @@ def replicate_arrays(
         excluded = cube(rows[EXCLUDED].astype(bool).to_numpy(), False, bool)
     else:
         excluded = np.zeros(shape, dtype=bool)
+    names = rows["sample_name"] if "sample_name" in rows.columns else rows["sample"]
+    codes = pd.factorize(names.astype(str))[0]
+    sub = cube(codes, -1, int)
+    per_unit = pd.DataFrame({"u": rows["sample"].astype(str), "s": codes}).groupby("u")["s"]
+    several = bool((per_unit.nunique() > 1).any())
     runs = rows["run_id"].astype(str)
     run = cube(runs.to_numpy(dtype=object), "", object)
     well = cube(rows["well"].astype(str).to_numpy(dtype=object), "", object)
     std = cube(runs.map(lambda r: eff_std.get(r, np.nan)).to_numpy(dtype=float))
     with np.errstate(invalid="ignore"):
         log2_nq = log2_n0 + cq * np.log2(eff_assay)
+    keys = list(zip(runs, rows["target"].astype(str), strict=True))
+    found = lines or {}
+    slope = cube(np.array([found.get(k, (np.nan, np.nan))[0] for k in keys], dtype=float))
+    intercept = cube(np.array([found.get(k, (np.nan, np.nan))[1] for k in keys], dtype=float))
     reps = Replicates(
         present=present,
         cq=cq,
@@ -289,6 +311,9 @@ def replicate_arrays(
         excluded=excluded,
         run=run,
         well=well,
+        sub=sub if several else None,
+        std_slope=slope if found else None,
+        std_intercept=intercept if found else None,
     )
     used = present & ~np.isnan(log2_n0) & ~excluded
 
@@ -335,6 +360,26 @@ def standard_curve_efficiency(curves: pd.DataFrame) -> dict[str, float]:
             e = float(10 ** (-1 / slope))
             if STD_E_RANGE[0] <= e <= STD_E_RANGE[1]:  # a broken curve gives no value
                 out[str(run)] = e
+    return out
+
+
+def standard_curve_lines(curves: pd.DataFrame) -> dict[tuple[str, str], tuple[float, float]]:
+    """Per plate and gene: (slope, intercept) of Cq on log10 copies, as G-REP reads copies.
+
+    Over the standards with a Cq and a copy number in the name (``STD_150000``), with at least
+    three levels and a falling line (``qpilot.qpcr.gate_rules.replicate_spread`` gives copies
+    only then); used for G-REP's Poisson term of the replicate tolerance (science review J10).
+    """
+    std = curves[(curves["sample_type"] == "std") & curves["cq"].notna()].copy()
+    std["copies"] = pd.to_numeric(
+        std["sample"].str.extract(r"(\d+(?:\.\d+)?)\s*$")[0], errors="coerce"
+    )
+    out: dict[tuple[str, str], tuple[float, float]] = {}
+    for (run, target), plate in std.dropna(subset=["copies"]).groupby(["run_id", "target"]):
+        if plate["copies"].nunique() >= 3:
+            slope, intercept = np.polyfit(np.log10(plate["copies"]), plate["cq"], 1)
+            if slope < 0:
+                out[(str(run), str(target))] = (float(slope), float(intercept))
     return out
 
 

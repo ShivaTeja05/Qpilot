@@ -7,6 +7,10 @@ import type { ResultsView } from "../api";
 
 type Withheld = ResultsView["withheld"][number];
 
+function pText(p: number): string {
+  return p < 0.001 ? p.toExponential(1) : p.toPrecision(2);
+}
+
 export function DetectedOnlyLine({ gene }: { gene: Withheld }) {
   const only = gene.detected_only;
   if (!only) return null;
@@ -26,6 +30,9 @@ export function DetectedOnlyLine({ gene }: { gene: Withheld }) {
       of {only.absent}
       {only.dcq != null ? `; ΔCq in ${only.group} ${fixed(only.dcq, 2)}${sd}` : ""}. No fold change
       is given: the other group has no measured amount.
+      {only.fisher_p != null
+        ? ` Detected in ${only.n_detected} of ${only.n_group} against none of ${only.n_absent}: Fisher's exact test p = ${pText(only.fisher_p)} (how often a split this uneven arises by chance; orientation, not a call).`
+        : ""}
     </span>
   );
 }

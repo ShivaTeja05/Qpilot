@@ -20,12 +20,42 @@ def curves():
     return analyse_study(DEMO_RDML, "biomarker_set")
 
 
+#: A lab's own, smaller minimum for the global mean's common set (qPilot's default is 50): the
+#: demo's 64-gene panel has 45 genes with a value in every compared tumour.
+LAB_MIN = 40
+
+
 @pytest.fixture(scope="module")
-def study(curves):
+def lab_minimum():
+    from qpilot.qpcr.axes import normaliser as norm_axis
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(norm_axis, "GLOBAL_MEAN_MIN_GENES", LAB_MIN)
+        yield LAB_MIN
+
+
+@pytest.fixture(scope="module")
+def study(curves, lab_minimum):
     return study_from_curves(curves, "0" * 64, StudySettings(normaliser=NORM))
 
 
-def test_normaliser_axis_on_the_demo(curves):
+def test_the_global_mean_needs_fifty_genes_measured_in_every_tumour(curves):
+    """Science review J7: only genes with a value in every compared unit enter the global mean;
+    45 of the demo's 64 do, below qPilot's 50, so it is not offered (it was, over all 64)."""
+    model = build_model(curves, StudySettings(normaliser=NORM))
+    assert model.space.dimensions["normaliser"] == ["planned", "normfinder_pair"]
+    notes = model.axis_notes["normaliser"]
+    assert (notes["global_mean"]["n_genes"], notes["global_mean"]["n_measured"]) == (45, 64)
+    assert notes["unavailable"]["global_mean"] == (
+        "only 45 of the 64 genes measured have a value in every compared unit; the global mean "
+        "uses those alone (a gene missing in a unit is usually low there) and needs at least 50 "
+        "of them"
+    )
+    result, _, _ = study_from_curves(curves, "0" * 64, StudySettings(normaliser=NORM))
+    assert result.facts["f_n_cells"].value == 186 + 6  # NormFinder's pair only
+
+
+def test_normaliser_axis_on_the_demo(curves, lab_minimum):
     model = build_model(curves, StudySettings(normaliser=NORM))
     space = model.space
     assert list(space.dimensions) == ["refs", "cut", "undetermined", "normaliser"]
@@ -35,12 +65,14 @@ def test_normaliser_axis_on_the_demo(curves):
     assert notes["genorm_pair"] == ["ALUsq(Eurogentec)", "HPRT1"]
     assert notes["agreement"].startswith("geNorm and NormFinder agree")
     assert "NormFinder's best pair too" in space.axes["normaliser"].unavailable[0][1]
-    assert notes["global_mean"]["n_genes"] == 64
+    assert notes["global_mean"]["n_genes"] == 45 and notes["global_mean"]["min_genes"] == LAB_MIN
     shift = notes["global_mean"]["group_shift"]  # the panel was chosen for this comparison
-    assert shift["fold"] == pytest.approx(0.7067, abs=1e-3) and shift["p"] < 1e-4
+    # over the 45 genes measured in every tumour (over all 64, with each tumour's own gaps, the
+    # shift was 0.707-fold and the global mean flipped 19 genes)
+    assert shift["fold"] == pytest.approx(0.8456, abs=1e-3) and shift["p"] < 0.01
     screen = model.screens["normaliser"]
     assert len(screen.flipped["normfinder_pair"]) == 3
-    assert len(screen.flipped["global_mean"]) == 19
+    assert len(screen.flipped["global_mean"]) == 9
 
 
 def test_normaliser_card_on_the_demo(study):
@@ -51,11 +83,11 @@ def test_normaliser_card_on_the_demo(study):
     assert card.evidence["n_flipped_by_option"] == {
         "planned": 0,
         "normfinder_pair": 3,
-        "global_mean": 19,
+        "global_mean": 9,
     }
-    assert result.facts["f_n_flipped_normaliser"].value == 19
+    assert result.facts["f_n_flipped_normaliser"].value == 9
     text = render_template(card.rationale_template, result.facts, card=card).plain
-    assert "geNorm and NormFinder agree" in text and "19 of 58" in text
+    assert "geNorm and NormFinder agree" in text and "9 of 58" in text
     # 186 legacy cells + 2 other normalisers x 3 cut-offs x 2 rules: no repeated analysis
     assert result.facts["f_n_cells"].value == 186 + 12
     assert len(grid) == 198 * 58

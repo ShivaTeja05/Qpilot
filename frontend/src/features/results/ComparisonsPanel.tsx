@@ -207,7 +207,18 @@ export function ComparisonsPanel({
                   <TD numeric>
                     {count(g.n_called)} of {count(comparisons.length)}
                   </TD>
-                  {omnibus && <TD numeric>{pValue(g.omnibus_p)}</TD>}
+                  {omnibus && (
+                    <TD numeric>
+                      <span title={g.omnibus_words || undefined}>
+                        {pValue(g.omnibus_p)}
+                        {g.omnibus_words ? (
+                          <span className="ml-1 text-[11px] text-muted">
+                            ({g.omnibus_groups_used} of {view.omnibus_groups.length} groups)
+                          </span>
+                        ) : null}
+                      </span>
+                    </TD>
+                  )}
                 </TR>
               ))}
             </TBody>

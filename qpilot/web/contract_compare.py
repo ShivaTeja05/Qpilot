@@ -83,6 +83,14 @@ class ComparisonGeneRow(BaseModel):
         default=None,
         description="Welch's one-way ANOVA p across omnibus_groups (orientation, never a call).",
     )
+    omnibus_groups_used: int | None = Field(
+        default=None,
+        description="How many of omnibus_groups the ANOVA used for this gene (a group with "
+        "fewer than two values is left out).",
+    )
+    omnibus_words: str = Field(
+        default="", description="When a group was left out: how many, in words; else empty."
+    )
 
 
 class ComparisonNote(BaseModel):

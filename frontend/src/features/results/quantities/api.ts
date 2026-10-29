@@ -37,6 +37,7 @@ export type AssayView = Awaited<ReturnType<typeof getAssay>>;
 export type CurveDetail = AssayView["curves"][number];
 export type UnitQuantity = AssayView["units"][number];
 export type Limit = CurveSummary["lod"];
+export type Suspect = CurveSummary["suspects"][number];
 export type CopiesAnswer = Awaited<ReturnType<typeof getCopies>>;
 export type MoleculeKind = "dsDNA" | "ssDNA" | "RNA";
 export interface CopiesQuery {
@@ -116,5 +117,25 @@ export function useRecordReaction(key: string, studyId: string) {
       r.status === "unchanged"
         ? "Already recorded: nothing changed"
         : { title: "Reaction input recorded", description: r.message },
+  });
+}
+
+/**
+ * The rule proposes leaving out each standard that looks wrong (science review J2): one
+ * `curve.exclude_well` per well, waiting in Curves for a person to accept or reject.
+ */
+export function useProposeStandards(key: string, studyId: string) {
+  return useWrite<void, { status: string; message: string }>({
+    workspaceKey: key,
+    mutationFn: () =>
+      unwrap(
+        api.POST("/api/studies/{study_id}/quantities/standards", {
+          params: { path: { study_id: studyId } },
+        }),
+      ),
+    success: (r) =>
+      r.status === "nothing"
+        ? r.message
+        : { title: "Proposed: you decide in Curves", description: r.message },
   });
 }

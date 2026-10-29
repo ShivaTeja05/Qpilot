@@ -408,13 +408,19 @@ def run_review(
 
 
 def repeat_plan_store(
-    store: Any, study_id: str, *, include: Literal["consequential", "all"] = "consequential"
+    store: Any,
+    study_id: str,
+    *,
+    include: Literal["consequential", "all"] = "consequential",
+    expected_share: float | None = None,
 ) -> RepeatPlan:
     """The repeat plan of a stored study at the analysis in use (read-only).
 
     Reads what the page reads: Trace's context and the Run Gate at each Decision Card's applied
     option (the gate is computed here: about half a minute on the demo the first time), and, for
     a study of a Studio session, the session's record of the wells a person left out.
+    ``expected_share`` is the lab's own line for "no amplification where one was expected"
+    (default :data:`qpilot.qpcr.repeat.EXPECTED_SHARE`, 90 % of the sample's own group).
 
     Raises:
         StudyNotFound: No such study.
@@ -424,7 +430,7 @@ def repeat_plan_store(
     """
     from qpilot.qpcr import trace as trace_engine
     from qpilot.qpcr.gate_rules import resolve_pack
-    from qpilot.qpcr.repeat import build_plan, left_out_from_inbox
+    from qpilot.qpcr.repeat import EXPECTED_SHARE, build_plan, left_out_from_inbox
     from qpilot.web.results_views import session_of_study
     from qpilot.web.routers.gate import analysis_choice, report_for
 
@@ -433,7 +439,16 @@ def repeat_plan_store(
     gate = report_for(store, study_id)
     sid = session_of_study(store, study_id)
     left = left_out_from_inbox(store.proposals(sid).accepted(), ctx) if sid else {}
-    return build_plan(study_id, ctx, gate=gate, pack=resolve_pack(), left_out=left, include=include)
+    share = EXPECTED_SHARE if expected_share is None else expected_share
+    return build_plan(
+        study_id,
+        ctx,
+        gate=gate,
+        pack=resolve_pack(),
+        left_out=left,
+        include=include,
+        expected_share=share,
+    )
 
 
 # ---------- rendering ----------

@@ -41,11 +41,13 @@
 |---|---|---|
 | no counted peak | `no_product` | pass (`ntc_clean`) |
 | a counted peak (main or extra) within the tolerance of the product | `product` (contamination candidate) | warn (`ntc_product`) |
-| peaks only below the product | `dimer` (primer-dimer candidate) | pass (`ntc_dimer`) |
-| a main peak above the product | `other_product` | warn |
+| peaks only at least `dimer_min_below_c` (3 °C) below the product | `dimer` (primer-dimer candidate) | pass (`ntc_dimer`) |
+| a main peak above the product, or a peak below it but closer than `dimer_min_below_c` | `other_product` (another product: a shorter non-specific product or a variant amplicon can melt a degree or two below the intended one) | warn |
 | a peak, product Tm not known | `unclassified` | not applicable (`no_expected_tm`) |
 
 Study wells that did not amplify are not judged (one "not applicable" per plate × target says how many samples); no-RT and no-amplification controls are not judged by their melt (G-NRT and G-NAC weigh them). A G-MELT verdict is given per study sample × target × plate (the worst of its amplified wells: `tm_off`, then `no_peak`, then `extra_peak`) and per no-template sample. The flagged study wells are the consequence test's option `exclude_flagged`; a control is not a study sample, so its finding has no option of its own. Without melt curves G-MELT is "not applicable: no_melt_data" (once for the study, or once per plate without them); for a target whose dye the file declares a probe chemistry, "probe_chemistry"; for readings too far apart, "coarse_melt".
+
+**How far below is a primer-dimer (science review J5, applied 29 Oct 2026; pack 1.4.0).** Primer-dimers melt well below most products, often in the 70s °C (Ririe et al. 1997 show the separation), but a shorter non-specific product or a variant amplicon can melt only a degree or two below the intended one. Until pack 1.3.0 any distance counted: a no-template peak 1.1 °C below the product passed as a primer-dimer and G-NTC-1 graded the control's amplification a warning only. A peak now counts as a primer-dimer candidate only when every counted peak (main and extra) is at least `dimer_min_below_c` (default 3 °C, lab-editable in a copy of the pack) below the product's Tm; a closer one is `other_product` (warn), and G-NTC-1 treats it as possible contamination (fail when it amplified near the samples), as it does any other product. The other thresholds are unchanged and sourced as above: rdmlpython's 1.0 °C true-peak window and 5 % cut-off, and the noise floor relative to the assay's typical product, which keeps noise in an empty no-template well from counting as peaks.
 
 **G-NTC-1.** When a plate has melt curves, G-NTC-1 (no-template control amplification near the study samples) uses the class of the no-template wells that amplified: every one a primer-dimer candidate → `tainted_dimer` (warn: "primer-dimers are more likely than template"); a product, another product, or a well that cannot be classified → `tainted` (fail), as without melt data. A plate without melt curves gets exactly the reason and verdict it got before (scientist spec: unclassified is treated as contamination).
 

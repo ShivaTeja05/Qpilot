@@ -19,8 +19,17 @@ card for the study, an assay picker when there are several.
   and SD of Cq, the quantity it reads back as, and the CV.
 * **The numbers**: slope, efficiency with its 95 % confidence interval, R², the levels, the LOD
   (empirical, and modelled by a logistic fit when levels are partly detected), the LOQ, where the
-  standards' quantities came from, and what MIQE would question (efficiency outside 90–110 %,
-  R² below 0.98).
+  standards' quantities came from, what Taylor et al. 2010 would question (efficiency outside
+  90–110 %, R² below 0.98), and the curve's g with which interval a quantity gets: the usual one,
+  or Fieller's exact one when g is above 0.05 (a weak curve, where the usual one is too narrow).
+  With fewer than 20 wells per level the LOD's words say that 95 % means every well, and that
+  ten replicates around the limit make it firmer (Forootan 2017; Klymus 2020).
+* **Standards that look wrong**: a standard whose Cq breaks the order of the series (earlier
+  than most wells with ten-fold more template, or later than most with ten-fold less) or that
+  sits more than 3.5 residual SDs off its line is listed under the curve, with what the curve
+  would be without it (efficiency, R², LOQ). qPilot never leaves a standard out: **Propose
+  leaving these out** files one proposal per well in Curves, and you accept or reject each with a
+  reason (`POST /api/studies/{id}/quantities/standards`).
 * **Every biological unit**: wells detected, mean Cq, the quantity per reaction with its 95 %
   prediction interval, its group (a groups design), and notes in words: *above the top standard*,
   *below the lowest standard* (extrapolated), *below the limit of quantification*, *below the

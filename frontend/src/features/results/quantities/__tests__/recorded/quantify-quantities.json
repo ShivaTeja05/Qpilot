@@ -11,7 +11,7 @@
  },
  "reaction": null,
  "can_set_reaction": true,
- "inbox_head": "e5267fcb7ad88b8602bca6e729a374ac8b134d2ff2f428b7be538600302d11ba",
+ "inbox_head": "ada8ec1e61d2823d475fdaee5b0690306a5a1a1f964bccdf2cf48892938a0267",
  "assays": [
   {
    "target": "Cov2",
@@ -39,7 +39,7 @@
      "lod": {
       "quantity": 10.0,
       "method": "lowest_standard",
-      "words": "every standard level was detected in at least 95 % of its wells: the limit of detection is at or below the lowest standard",
+      "words": "every standard level was detected in at least 95 % of its wells: the limit of detection is at or below the lowest standard; with 3 wells per level, 95 % of a level's wells means all of them, so this is the lowest level where no well failed (the modelled limit, when shown, is the better estimate). Run at least 10 replicates at the levels around the limit (Forootan et al. 2017; Klymus et al. 2020)",
       "at_most": true
      },
      "lod_model": null,
@@ -51,7 +51,10 @@
      },
      "quantity_source": "design",
      "warnings": [],
-     "n_unknowns": 21
+     "n_unknowns": 21,
+     "g": 0.0016662263086938108,
+     "exact_interval": false,
+     "suspects": []
     }
    ],
    "n_units": 27,
@@ -88,7 +91,7 @@
      "lod": {
       "quantity": 10.0,
       "method": "lowest_standard",
-      "words": "every standard level was detected in at least 95 % of its wells: the limit of detection is at or below the lowest standard",
+      "words": "every standard level was detected in at least 95 % of its wells: the limit of detection is at or below the lowest standard; with 3 wells per level, 95 % of a level's wells means all of them, so this is the lowest level where no well failed (the modelled limit, when shown, is the better estimate). Run at least 10 replicates at the levels around the limit (Forootan et al. 2017; Klymus et al. 2020)",
       "at_most": true
      },
      "lod_model": null,
@@ -100,9 +103,12 @@
      },
      "quantity_source": "design",
      "warnings": [
-      "efficiency 124.0 % is outside 90 % to 110 % (MIQE)"
+      "efficiency 124.0 % is outside 90 % to 110 % (Taylor et al. 2010)"
      ],
-     "n_unknowns": 23
+     "n_unknowns": 23,
+     "g": 0.002101671454364789,
+     "exact_interval": false,
+     "suspects": []
     }
    ],
    "n_units": 27,
@@ -121,6 +127,9 @@
  "method_card": "methods/absolute_quantification.md",
  "references": [
   "Forootan A, Sjöback R, Björkman J, Sjögreen B, Linz L, Kubista M. Methods to determine limit of detection and limit of quantification in quantitative real-time PCR (qPCR). Biomol Detect Quantif. 2017;12:1-6. doi:10.1016/j.bdq.2017.04.001",
+  "Klymus KE, Merkes CM, Allison MJ, et al. Reporting the limits of detection and quantification for environmental DNA assays. Environmental DNA. 2020;2(3):271-282. doi:10.1002/edn3.29",
+  "Taylor S, Wakem M, Dijkman G, Alsarraj M, Nguyen M. A practical approach to RT-qPCR: publishing data that conform to the MIQE guidelines. Methods. 2010;50(4):S1-S5. doi:10.1016/j.ymeth.2010.01.005",
+  "Fieller EC. Some problems in interval estimation. J R Stat Soc B. 1954;16(2):175-185",
   "Bustin SA, Benes V, Garson JA, et al. The MIQE guidelines: minimum information for publication of quantitative real-time PCR experiments. Clin Chem. 2009;55(4):611-622. doi:10.1373/clinchem.2008.112797",
   "Miller JN, Miller JC. Statistics and Chemometrics for Analytical Chemistry, 6th ed. Pearson; 2010. Section 5.6 (inverse prediction from a calibration line)",
   "Thermo Fisher Scientific. DNA and RNA molecular weights and conversions (reference information)."

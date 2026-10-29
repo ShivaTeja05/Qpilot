@@ -41,6 +41,11 @@ class MeltParamsView(BaseModel):
         description="A peak lower than this share of the assay's typical product peak is noise."
     )
     min_wells: int = Field(description="Study wells needed to take the expected Tm from them.")
+    dimer_min_below_c: float = Field(
+        default=3.0,
+        description="A no-template control's peak is a primer-dimer candidate only this far "
+        "(°C) or more below the product's Tm; closer, it is another product.",
+    )
 
 
 class MeltPeakView(BaseModel):

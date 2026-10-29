@@ -33,12 +33,16 @@ Model (Eq. A): `y_igj = α_ig + β_gj + ε_igj` for the log2 quantity of gene *i
 | Stability value (Eq. C) | With `v = σ²_ig / n_g`: `ρ_ig = γ²·|d_ig| / (γ² + v) + √(v + γ²·v / (γ² + v))` — the posterior mean shift plus one posterior SD; `ρ_i` = mean over the groups. Lower is steadier |
 | Best pair | The average of two genes has the average of their posterior shifts and a quarter of the sum of their posterior variances: `ρ_ij = mean_g(|d̃_ig + d̃_jg| / 2 + √((p_ig + p_jg) / 4))`; the pair with the lowest value. Genes whose shifts cancel can beat the two individually steadiest genes |
 
-Without groups (one group), `d = 0` and `γ² = 0`: the stability value is `√(σ²/n)` and the best pair is
-the two steadiest genes.
+Without groups (one group), `d = 0` and `γ² = 0`: the stability value is `√(σ²/n)` (the standard error of
+the gene's mean, the paper's equation with γ² = 0) and the best pair is the two steadiest genes. The ranking is
+NormFinder's; a lab comparing the *values* with the NormFinder program's own ungrouped output should check
+that program's scale first (science review J11).
 
 **qPilot's choices where the paper is silent** (each reported, never hidden): an unbiased variance estimate
 below 0 (sampling noise with few genes) counts as 0 in the stability value and the gene is named
-(`clamped`); a unit missing any candidate is left out (NormFinder needs complete data), as is a unit without
+(`clamped`), in the warnings too ("the within-group variance of … came out below zero in some group …
+which makes them look steadier than the data show"; science review J11: with small groups this happens
+often, for 4 of 6 genes on K. phaffii's groups of three, and makes those genes look steadiest); a unit missing any candidate is left out (NormFinder needs complete data), as is a unit without
 a group and a group with fewer than two units. The groups are every group of a confirmed design, or the
 expression-defined split's high group and the rest. The paper's own requirements are shown as plain warnings:
 at least 8 samples per group, at least 3 candidates (5–10 recommended), candidates with no expected difference
@@ -76,16 +80,25 @@ Decision Card (`numbers.normaliser`). Choosing an option never changes which ref
 the card is decided by a person.
 
 **Global mean.** Each gene's `log2 N0` is centred on its own mean over the units, and a unit's normaliser is
-the mean of its genes that have a value (D'haene et al. 2012: each gene weighs the same even when values are
-missing; with no missing value it is Mestdagh's plain mean up to a constant that cancels). **Threshold:**
-offered from **50 genes** with values in at least two units. This is qPilot's own default, not a published
-number: Mestdagh et al. write that the global mean "is only valid if a large number of" genes is profiled
-(they profiled 366–448) and give no minimum. Below it the option is not offered and the reason says so in
-plain words. The card also reports whether the global mean itself moves between the groups against the
-reference genes in use: a panel chosen for the comparison moves its own mean.
+the mean of the genes (D'haene et al. 2012: each gene weighs the same; Mestdagh's plain mean up to a constant
+that cancels). **Which genes** (science review J7, applied 29 Oct 2026): only those with a value in **every
+compared unit**, the common set ("expressed in all samples" normalisation). Values are not missing at random:
+a gene is undetermined in a unit because it is low there, so averaging each unit's own genes (as until then)
+raised the normaliser of a unit with gaps (one missing the lowest tenth of its genes by about 0.2 residual
+SD, φ(1.28)/0.9) and lowered every gene of it by as much. The card says how many genes the mean used.
+**Threshold:** offered from **50 genes of the common set** (`GLOBAL_MEAN_MIN_GENES`, a lab may set its own:
+`normaliser.plan(min_genes=…)`). This is qPilot's own default, not a published number: Mestdagh et al. write
+that the global mean "is only valid if a large number of" genes is profiled (they profiled 366–448) and give
+no minimum; qbase+'s documentation is often quoted as "more than about 50 genes", not verified here. Below it
+the option is not offered and the reason says so in plain words ("only 45 of the 64 genes measured have a
+value in every compared unit …"). The card also reports whether the global mean itself moves between the
+groups against the reference genes in use: a panel chosen for the comparison moves its own mean.
 
 **On the demo study** (asked for with all options): `genorm_pair` is not offered (the same pair as
-NormFinder's); NormFinder's pair alone changes 3 of 58 calls (DPYSL3, PAICS, PDE4DIP); the global mean of 64
-genes alone changes 19 of 58. Against the five reference genes, the global mean is 0.71× in the MYCN-high group
-(p = 6.1 × 10⁻⁶): the panel was chosen for this comparison, which is why the global mean is not a neutral
-yardstick here. The grid has 186 + 12 = 198 analyses (no repeated cell).
+NormFinder's); NormFinder's pair alone changes 3 of 58 calls (DPYSL3, PAICS, PDE4DIP). The **global mean is
+not offered**: 45 of the 64 genes have a value in every compared tumour, fewer than 50. With a lab's own
+minimum of 40 (`tests/numbers/test_norm_demo.py`) it is, over those 45 genes: it alone changes 9 of 58 calls
+(over all 64 genes with each tumour's own gaps, before J7, it changed 19), and against the five reference genes
+it is 0.85× in the MYCN-high group (p = 0.008; it was 0.71×): the panel was chosen for this comparison, which
+is why the global mean is not a neutral yardstick here. The grid has 186 + 12 = 198 analyses (no repeated
+cell) with the global mean, 186 + 6 = 192 without it.

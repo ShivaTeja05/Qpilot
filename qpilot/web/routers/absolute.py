@@ -8,6 +8,10 @@
   (template µL, input ng), for quantities per µL and per ng: a ``choice.reaction_input``
   made and accepted by the person in one act, in the session's hash-chained inbox; the design
   changes, so the study is analysed again (the blind stages stay confirmed);
+* ``POST /api/studies/{id}/quantities/standards``: the rule files one ``curve.exclude_well``
+  proposal per standard that looks wrong (its Cq breaks the series' order, or its studentized
+  residual is beyond ±3.5), each with what leaving it out does to the curve; a person accepts or
+  rejects each in Curves (science review J2). Nothing is left out by this call;
 * ``GET /api/tools/copies``: ng of a standard to copies (dsDNA, ssDNA, RNA) and its dilution
   series, for preparing standards (the Design page's helper; no study needed).
 
@@ -28,6 +32,7 @@ from qpilot.web.contract_absolute import (
     QuantitiesView,
     ReactionRecorded,
     ReactionRequest,
+    StandardsProposed,
 )
 
 router = APIRouter(tags=["results"])
@@ -36,6 +41,10 @@ NO_ASSAY = "This study has no standard curve for this assay."
 UNAVAILABLE = (
     "The quantities cannot be shown: {reason}. They are computed from the study's input file, "
     "as the analysis was."
+)
+ONLY_SESSION_STANDARDS = (
+    "Standards are left out in a Studio session's decision record; this study was analysed "
+    "outside one, so open its file in qPilot to decide."
 )
 ONLY_SESSION = (
     "What one reaction held is recorded in a Studio session's decision record; this study was "
@@ -66,6 +75,14 @@ def get_quantities(study_id: str, ctx: Ctx) -> QuantitiesView:
     except QuantitiesUnavailable as err:
         raise _unavailable(err) from err
     if sid is not None:  # the page sends it back when it records the reaction input
+        from qpilot.web.absolute_views import waiting_standards
+
+        waiting = waiting_standards(ctx.studio, sid)
+        if waiting:  # a suspect standard whose proposal waits for a person says so
+            for assay in view.assays:
+                for curve in assay.curves:
+                    for s in curve.suspects:
+                        s.proposed = s.key in waiting
         view = view.model_copy(update={"inbox_head": ctx.studio.head(sid)})
     return view
 
@@ -123,6 +140,37 @@ def post_reaction(study_id: str, body: ReactionRequest, ctx: Ctx) -> ReactionRec
         head=outcome.head,
         message="Recorded. The study is analysed again with it; the quantities per µL and per ng "
         "follow.",
+    )
+
+
+@router.post("/studies/{study_id}/quantities/standards", response_model=StandardsProposed)
+def post_standards(study_id: str, ctx: Ctx) -> StandardsProposed:
+    """The rule proposes leaving out each standard that looks wrong; a person decides each."""
+    from qpilot.qpcr.absolute_study import QuantitiesUnavailable
+    from qpilot.web.absolute_views import propose_standards
+    from qpilot.web.routers.results import writable
+
+    sid = writable(ctx, study_id)
+    if sid is None:
+        raise api_error(409, "studio", ONLY_SESSION_STANDARDS)
+    try:
+        status, head, filed, waiting = propose_standards(ctx.studio, ctx.store, study_id, sid)
+    except QuantitiesUnavailable as err:
+        raise _unavailable(err) from err
+    except ValueError as err:
+        raise api_error(409, "studio", str(err)) from err
+    n = len(filed)
+    if n:
+        message = (
+            f"{n} proposal{'s' * (n != 1)} to leave a standard out wait in Curves: accept or "
+            "reject each, with a reason. Nothing is left out until you do."
+        )
+    elif waiting:
+        message = "The proposals for these standards already wait in Curves."
+    else:
+        message = "No standard of this study looks wrong: nothing to propose."
+    return StandardsProposed(
+        status=status, head=head, proposed=filed, waiting=waiting, message=message
     )
 
 

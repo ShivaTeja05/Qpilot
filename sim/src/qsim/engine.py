@@ -205,13 +205,14 @@ class Engine:
         undetermined &= w.present & ~missing
         usable = w.present & ~missing & ~undetermined & ~np.isnan(values)
         if combine == "outlier":
-            usable &= ~replicate_outliers(w.cq, w.eff_assay, usable)
+            usable &= ~replicate_outliers(w.cq, w.eff_assay, usable, w.std_slope, w.std_intercept)
         elif combine not in COMBINE:
             raise ValueError(f"unknown replicate rule {combine!r}")
         # undetermined only when no well has a value and one never amplified; a sample whose
         # every well is left out (flagged, excluded, dropped) has no value and is never filled in
         unit_und = undetermined.any(axis=2) & ~usable.any(axis=2)
-        combined = _combine(values, usable, "median" if combine == "median" else "mean")
+        how = "median" if combine == "median" else "mean"
+        combined = _combine(values, usable, how, w.sub)
         items = self._item_cols
         target = combined[:, items]
         und = unit_und[:, items]
@@ -223,7 +224,7 @@ class Engine:
             with np.errstate(divide="ignore", invalid="ignore"):
                 sub = self._plate_nq - 40.0 * np.log2(eff)
             filled = np.where(undetermined, sub, values)
-            target = _combine(filled, usable | undetermined, "mean")[:, items]
+            target = _combine(filled, usable | undetermined, "mean", w.sub)[:, items]
         elif nondetect != "drop":
             raise ValueError(f"unknown non-detect rule {nondetect!r}")
         return combined, target
@@ -342,8 +343,15 @@ def _quantities(s, efficiency: str) -> tuple[np.ndarray, np.ndarray]:
     return values, eff
 
 
-def _combine(values: np.ndarray, use: np.ndarray, how: str) -> np.ndarray:
-    """Per sample and gene, the mean (or median) of the wells in ``use``; NaN where none is."""
+def _combine(
+    values: np.ndarray, use: np.ndarray, how: str, sub: np.ndarray | None = None
+) -> np.ndarray:
+    """Per sample and gene, the mean (or median) of the wells in ``use``; NaN where none is.
+
+    With ``sub`` (each well's sample within its unit) the mean of a unit with several samples
+    is the mean of its samples' means, as qPilot's (science review J10); a unit with one sample
+    keeps the plain mean of its wells.
+    """
     if how == "median":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)  # all-NaN slices: no value
@@ -351,15 +359,29 @@ def _combine(values: np.ndarray, use: np.ndarray, how: str) -> np.ndarray:
     n = use.sum(axis=2)
     total = np.where(use, values, 0.0).sum(axis=2)
     with np.errstate(divide="ignore", invalid="ignore"):
-        return np.where(n > 0, total / n, np.nan)
+        flat = np.where(n > 0, total / n, np.nan)
+    if sub is None:
+        return flat
+    same = (sub[:, :, :, None] == sub[:, :, None, :]) & use[:, :, None, :]
+    n_same = same.sum(axis=3)  # per well: the used wells of its own sample
+    with np.errstate(divide="ignore", invalid="ignore"):
+        share = np.where(use, 1.0 / n_same, 0.0)
+        n_samples = share.sum(axis=2)  # each sample counts once
+        weight = np.where(use, share / n_samples[:, :, None], 0.0)
+        two_level = np.where(use, values * weight, 0.0).sum(axis=2)
+    return np.where(n_samples > 1 + 1e-9, two_level, flat)
 
 
-def range_tolerance(n: np.ndarray, mean_cq: np.ndarray, eff: np.ndarray) -> np.ndarray:
-    """G-REP's expected Cq range of ``n`` replicate wells, without a standard curve.
+def range_tolerance(
+    n: np.ndarray, mean_cq: np.ndarray, eff: np.ndarray, copies: np.ndarray | None = None
+) -> np.ndarray:
+    """G-REP's expected Cq range of ``n`` replicate wells (``qpilot.qpcr.gate_rules``).
 
-    The 95th percentile of the range of ``n`` normal values whose SD is pipetting alone
-    (CV 0.15) on the cycle scale, ``q95(n) * 0.15 / ln(E)``; from Cq 30 to 35 at least two
-    cycles, because low copy numbers are possible (``qpilot.qpcr.gate_rules.replicate_spread``).
+    The 95th percentile of the range of ``n`` normal values whose SD combines pipetting (CV
+    0.15) and, where the plate's standard curve gives the wells' ``copies``, Poisson sampling:
+    ``q95(n) * sqrt(0.15^2 + 1/N) / ln(E)`` (science review J10: the audit had the pipetting
+    term only, so at low copy numbers it could leave out a well G-REP accepts). Without copies,
+    from Cq 30 to 35 at least two cycles, because low copy numbers are possible.
     """
     from qpilot.qpcr.gate_rules import range_quantile
 
@@ -367,17 +389,37 @@ def range_tolerance(n: np.ndarray, mean_cq: np.ndarray, eff: np.ndarray) -> np.n
     for m in np.unique(n[n >= 2]):
         q[n == m] = range_quantile(int(m))
     e = np.where(np.isfinite(eff) & (eff > 1.0), eff, 2.0)
-    tol = q * PIPETTING_CV / np.log(e)
+    if copies is None:
+        known = np.zeros(n.shape, dtype=bool)
+        inv_n = np.zeros(n.shape)
+    else:
+        c = np.asarray(copies, dtype=float)
+        known = np.isfinite(c) & (c > 0)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            inv_n = np.where(known, 1.0 / np.where(known, c, 1.0), 0.0)
+    tol = q * np.sqrt(PIPETTING_CV**2 + inv_n) / np.log(e)
     with np.errstate(invalid="ignore"):
-        low_copy = (mean_cq > COPIES_UNKNOWN_MAX_CQ) & (mean_cq <= STOCHASTIC_MIN_CQ)
+        low_copy = ~known & (mean_cq > COPIES_UNKNOWN_MAX_CQ) & (mean_cq <= STOCHASTIC_MIN_CQ)
     return np.where(low_copy, np.maximum(tol, LOW_COPY_TOLERANCE), tol)
 
 
-def replicate_outliers(cq: np.ndarray, eff: np.ndarray, use: np.ndarray) -> np.ndarray:
+#: Two Cq deviations this close (cycles) are a tie, as G-REP's (``gate_rules.TIE_CYCLES``).
+TIE_CYCLES = 1e-6
+
+
+def replicate_outliers(
+    cq: np.ndarray,
+    eff: np.ndarray,
+    use: np.ndarray,
+    slope: np.ndarray | None = None,
+    intercept: np.ndarray | None = None,
+) -> np.ndarray:
     """Wells to leave out: per sample and gene with three or more wells in ``use`` whose Cq range
     is above :func:`range_tolerance`, the well farthest from their median Cq (G-REP's
-    ``drop_outlier_well``). With two wells neither can be called the outlier, and above Cq 35
-    the spread is sampling, so nothing is left out there."""
+    ``drop_outlier_well``). With two wells neither can be called the outlier, nor with a tie
+    for the farthest (G-REP 1.4.0), and above Cq 35 without a standard curve the spread is
+    sampling, so nothing is left out there. ``slope`` and ``intercept`` (per well, the plate's
+    standard curve) give the copies of G-REP's Poisson term."""
     n = use.sum(axis=2)
     c = np.where(use, cq, np.nan)
     with warnings.catch_warnings():
@@ -386,10 +428,20 @@ def replicate_outliers(cq: np.ndarray, eff: np.ndarray, use: np.ndarray) -> np.n
         spread = np.nanmax(c, axis=2) - np.nanmin(c, axis=2)
         mean_cq = np.nanmean(c, axis=2)
         e = np.nanmedian(np.where(use, eff, np.nan), axis=2)
+        copies = None
+        if slope is not None and intercept is not None:
+            m = np.nanmedian(np.where(use, slope, np.nan), axis=2)
+            b = np.nanmedian(np.where(use, intercept, np.nan), axis=2)
+            with np.errstate(invalid="ignore", divide="ignore", over="ignore"):
+                copies = np.where(np.isfinite(m) & (m < 0), 10 ** ((mean_cq - b) / m), np.nan)
+    known = np.zeros(n.shape, dtype=bool) if copies is None else np.isfinite(copies) & (copies > 0)
+    dev = np.where(use, np.abs(c - median[:, :, None]), -math.inf)
+    top = dev.max(axis=2)
+    single = (dev >= top[:, :, None] - TIE_CYCLES).sum(axis=2) == 1
     with np.errstate(invalid="ignore"):
-        judged = (n >= 3) & (mean_cq <= STOCHASTIC_MIN_CQ)
-        outside = judged & (spread > range_tolerance(n, mean_cq, e))
-    far = np.argmax(np.where(use, np.abs(c - median[:, :, None]), -math.inf), axis=2)
+        judged = (n >= 3) & (known | (mean_cq <= STOCHASTIC_MIN_CQ)) & single
+        outside = judged & (spread > range_tolerance(n, mean_cq, e, copies))
+    far = np.argmax(dev, axis=2)
     out = np.zeros(use.shape, dtype=bool)
     np.put_along_axis(out, far[:, :, None], outside[:, :, None], axis=2)
     return out & use

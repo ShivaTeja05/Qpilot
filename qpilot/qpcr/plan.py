@@ -1,14 +1,18 @@
 """Before the first plate: how many samples a design needs and what it cannot detect (Dev 2).
 
-Pure arithmetic over ``qpilot.schemas`` and the standard library. Two-sample comparison on the
-log2 normalised scale with a normal approximation plus the usual +1 small-sample correction:
+Two-sample comparison on the log2 normalised scale. The samples a *test* needs (``n_needed``)
+are exact: the smallest equal group size whose two-sided Student t test reaches the power, from
+the non-central t distribution (scipy; science review J4: the normal approximation plus one,
+``2 (z_{1-alpha/2} + z_{power})^2 sigma^2 / delta^2 + 1``, was the same in 15 of 24 settings and
+one sample short in 9, all at n <= 11). The detectable fold change keeps the normal form:
 
-    n per group  = 2 (z_{1-alpha/2} + z_{power})^2 sigma^2 / delta^2 + 1,   delta = log2(fc)
     MDE (log2)   = (z_{1-alpha/2} + z_{power}) * sigma * sqrt(2 / n)
 
-The formulas are normal approximations (optimistic for very small groups). The message also
-reports a seeded simulation of qPilot's actual rule (Welch t-test and the 2-fold call), which is
-the number to trust for small n.
+What a scientist wants is the **call**, not only p < alpha: qPilot calls a change when p < alpha
+**and** the measured change reaches the 2-fold line. :func:`plan` therefore headlines the samples
+per group at which qPilot's own rule calls the change with the chosen power (:func:`n_for_call`,
+a seeded simulation of the Welch test and the 2-fold line) and gives the test-only number beside
+it.
 
 ``sigma`` is the standard deviation **between biological replicates on the log2 normalised
 scale** (from a pilot or an earlier Analysis Record). Using the SD of technical replicate Cq
@@ -59,7 +63,8 @@ MAX_CQ = 60.0  # no cycling protocol in use runs past this many cycles
 SUBJECT_STEP = 2  # the comparison sentence adds this many subjects to each group
 # Expected Cq -> well noise (see cq_well_noise and methods/replicate_budget.md). The Cq at which a
 # single template copy crosses the threshold: an unsourced, lab-editable default; the intercept
-# of your own standard curve (the Cq at log10 copies = 0) is the value to give.
+# of your own standard curve (the Cq at log10 copies = 0) is the value to give, and qPilot takes
+# it from a study's standard curve in copies when there is one (cq_one_copy_from; review J0).
 CQ_ONE_COPY = 35.0
 # MIQE (Bustin et al. 2009, Clin Chem 55:611-622): with Poisson sampling, 3 copies per reaction
 # is the lowest load that puts at least one copy in 95 % of reactions.
@@ -96,10 +101,39 @@ def fold_words(min_log2fc: float = 1.0, alpha: float = 0.05) -> str:
     )
 
 
-def n_needed(fc: float, sd_log2: float, alpha: float = 0.05, power: float = 0.80) -> int:
-    """Samples per group to detect a fold change ``fc`` (either direction) with ``power``."""
+def n_needed_normal(fc: float, sd_log2: float, alpha: float = 0.05, power: float = 0.80) -> int:
+    """The normal approximation plus one (Guenther 1981's +1 for the t): the former headline."""
     delta = abs(math.log2(fc))
     return math.ceil(2 * _z_sum(alpha, power) ** 2 * sd_log2**2 / delta**2 + 1)
+
+
+def t_power(n: int, fc: float, sd_log2: float, alpha: float = 0.05) -> float:
+    """Power of the two-sided two-sample Student t test with ``n`` per group (non-central t)."""
+    from scipy import stats
+
+    df = 2 * n - 2
+    nc = abs(math.log2(fc)) / (sd_log2 * math.sqrt(2 / n))
+    crit = float(stats.t.ppf(1 - alpha / 2, df))
+    return float(stats.nct.sf(crit, df, nc) + stats.nct.cdf(-crit, df, nc))
+
+
+@lru_cache(maxsize=16_384)
+def n_needed(fc: float, sd_log2: float, alpha: float = 0.05, power: float = 0.80) -> int:
+    """Samples per group for a two-sided t test to detect ``fc`` (either direction) with ``power``.
+
+    Exact: the smallest equal group size (at least 2) whose Student t test, from the non-central
+    t distribution, reaches ``power`` (science review J4). Searched from the normal approximation
+    (:func:`n_needed_normal`), which it never differs from by more than a few samples; above
+    :data:`MAX_N_PER_GROUP` that approximation is returned (no real design is that large).
+    """
+    n = max(2, n_needed_normal(fc, sd_log2, alpha, power))
+    if n > MAX_N_PER_GROUP:
+        return n
+    while n > 2 and t_power(n - 1, fc, sd_log2, alpha) >= power:
+        n -= 1
+    while t_power(n, fc, sd_log2, alpha) < power and n < MAX_N_PER_GROUP:
+        n += 1
+    return n
 
 
 def mde_fold(n_per_group: int, sd_log2: float, alpha: float = 0.05, power: float = 0.80) -> float:
@@ -146,6 +180,34 @@ def copies_per_well(cq: float, cq_one_copy: float = CQ_ONE_COPY, efficiency: flo
     return float(efficiency ** (cq_one_copy - cq))
 
 
+def cq_one_copy_from(curves: Sequence[Any]) -> tuple[float, str] | None:
+    """The Cq at which one copy crosses, from a study's standard curves in copies (review J0).
+
+    A curve's intercept is its Cq at log10 quantity 0: one copy when its standards are counted in
+    copies. The median over the fitted plate curves in copies (``StandardCurve`` of
+    :mod:`qpilot.qpcr.absolute`), else over those whose unit nobody stated (read as copies, and
+    said so), with the words saying where it came from; ``None`` when the study has no such curve
+    (then :data:`CQ_ONE_COPY`, an assumption, stands). A curve in ng or another unit is never used.
+    """
+    fitted = [c for c in curves if c.fit is not None and c.scope == "plate"]
+    found = [c for c in fitted if c.unit == "copies"]
+    stated = bool(found)
+    if not found:
+        found = [c for c in fitted if not c.unit]
+    if not found:
+        return None
+    values = sorted(float(c.fit.intercept) for c in found)
+    mid = len(values) // 2
+    median = values[mid] if len(values) % 2 else (values[mid - 1] + values[mid]) / 2
+    if len(found) == 1:
+        where = f"the intercept of your standard curve {found[0].id}"
+    else:
+        where = f"the median intercept of your {len(found)} standard curves"
+    if not stated:
+        where += ", whose standards' unit is not stated and is read as copies"
+    return float(median), where
+
+
 def poisson_sd_log2(copies: float) -> float:
     """SD on the log2 scale of a well's starting copies from Poisson sampling alone.
 
@@ -161,7 +223,10 @@ def poisson_sd_log2(copies: float) -> float:
 
 
 def cq_well_noise(
-    expected_cq: float, sd_well: float | None, cq_one_copy: float = CQ_ONE_COPY
+    expected_cq: float,
+    sd_well: float | None,
+    cq_one_copy: float = CQ_ONE_COPY,
+    cq_one_copy_source: str | None = None,
 ) -> dict[str, Any]:
     """The well SD a target expected at ``expected_cq`` has at least, and the one the plan uses.
 
@@ -180,17 +245,26 @@ def cq_well_noise(
         "sd_well_given": sd_well,
         "sd_well_used": used,
         "below_lod": copies < LOD_COPIES,
+        "cq_one_copy_source": cq_one_copy_source,
     }
 
 
 def _cq_sentences(noise: dict[str, Any]) -> list[str]:
     copies = noise["copies_per_well"]
     load = f"{copies:.3g} copies" if copies >= 1 else "less than one copy"
-    text = (
-        f"At Cq {noise['expected_cq']:g} a well holds about {load} of template (if one copy "
-        f"crosses at Cq {noise['cq_one_copy']:g}, at perfect doubling), so Poisson sampling "
-        f"alone scatters wells by {noise['sd_well_poisson']:.3g} log2 units"
+    source = noise.get("cq_one_copy_source")
+    one = (
+        f"one copy crosses at Cq {noise['cq_one_copy']:.3g}: {source}; at perfect doubling"
+        if source
+        else f"if one copy crosses at Cq {noise['cq_one_copy']:g}, at perfect doubling"
     )
+    text = (
+        f"At Cq {noise['expected_cq']:g} a well holds about {load} of template ({one}), so "
+        f"Poisson sampling alone scatters wells by at least {noise['sd_well_poisson']:.3g} log2 "
+        "units"
+    )
+    if copies < LOD_COPIES:  # J0: below about 3 copies the delta method understates the spread
+        text += " (a lower bound: below about three copies many wells hold none)"
     given = noise["sd_well_given"]
     if given is None:
         text += "; the plan uses that as the well SD."
@@ -728,12 +802,17 @@ def _budget(
     alpha: float,
     power: float,
     cq_one_copy: float = CQ_ONE_COPY,
+    cq_one_copy_source: str | None = None,
 ) -> dict[str, Any]:
     """The replicate budget: effective SD, the comparison, the cheapest design and notes.
 
     An expected Cq sets the well SD's floor (:func:`cq_well_noise`); the sentences say so.
     """
-    noise = None if expected_cq is None else cq_well_noise(expected_cq, sd_well, cq_one_copy)
+    noise = (
+        None
+        if expected_cq is None
+        else cq_well_noise(expected_cq, sd_well, cq_one_copy, cq_one_copy_source)
+    )
     notes = _missing_sd_notes(sd_rt, sd_well if noise is None else noise["sd_well_used"])
     if noise is not None:
         sd_well = noise["sd_well_used"]
@@ -836,6 +915,7 @@ def plan(
     cost_well: float | None = None,
     expected_cq: float | None = None,
     cq_one_copy: float | None = None,
+    cq_one_copy_source: str | None = None,
 ) -> PlanResult:
     """Check a design before it is run.
 
@@ -873,6 +953,8 @@ def plan(
             (MIQE's detection limit) the target is in ``cannot_detect``.
         cq_one_copy: the Cq at which one copy crosses the threshold (your standard curve's
             intercept); default :data:`CQ_ONE_COPY`. Used only with ``expected_cq``.
+        cq_one_copy_source: where ``cq_one_copy`` came from, in words (a study's standard
+            curve: :func:`cq_one_copy_from`); the sentence says it.
 
     Raises:
         ValueError: an input outside what any real design has.
@@ -913,6 +995,7 @@ def plan(
             alpha=alpha,
             power=power,
             cq_one_copy=one_copy,
+            cq_one_copy_source=cq_one_copy_source if cq_one_copy is not None else None,
         )
     noise = None if expected_cq is None else cq_well_noise(expected_cq, sd_well, one_copy)
     if noise is not None:
@@ -929,11 +1012,26 @@ def plan(
         )
     sd = effective_sd(sd_log2, sd_rt, sd_well, n_rt, n_tech)
     need = n_needed(fc, sd, alpha, power)
+    for_call = n_for_call(fc, sd, power, alpha, min_log2fc)
     mde = mde_fold(n_per_group, sd, alpha, power) if n_per_group else None
     target = max(fc, 1 / fc)
     shown = _fold(target)
     cannot = []
-    message = f"For a {shown}-fold change you need {need} per group."
+    line = _fold(2.0**min_log2fc)
+    test_only = (
+        f"for p < {alpha:g} alone (the usual power calculation: a two-sided t test, exact) "
+        f"{need} per group"
+    )
+    if for_call is not None:
+        message = (
+            f"For qPilot to call a {shown}-fold change in {power:.0%} of studies (p < {alpha:g} "
+            f"and at least {line}-fold) you need {for_call} per group; {test_only}."
+        )
+    else:
+        message = (
+            f"No group size lets qPilot call a {shown}-fold change in {power:.0%} of studies (a "
+            f"call needs the measured change to reach {line}-fold); {test_only}."
+        )
     if mde is not None:
         message = (
             f"At this noise, {n_per_group} per group detects at least {mde:.1f}-fold. " + message
@@ -943,7 +1041,6 @@ def plan(
                 f"A {shown}-fold change: with {n_per_group} per group the smallest change "
                 f"detected with {power:.0%} power is {mde:.1f}-fold."
             )
-    line = _fold(2.0**min_log2fc)
     if noise is not None and noise["below_lod"]:
         cannot.append(
             f"A target at Cq {expected_cq:g}: a well holds about "
@@ -976,6 +1073,7 @@ def plan(
         )
     return PlanResult(
         n_needed=need,
+        n_for_call=for_call,
         mde_fold=mde,
         cannot_detect=cannot,
         rules=rules,

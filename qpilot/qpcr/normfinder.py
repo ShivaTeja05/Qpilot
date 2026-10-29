@@ -233,7 +233,9 @@ def normfinder(
     rank = {gene: i for i, gene in enumerate(candidates)}
     pairs.sort(key=lambda item: (item[1], rank[item[0][0]], rank[item[0][1]]))
     best_pair, pair_value = pairs[0]
-    warnings = _warnings(k, dict(zip(group_names, counts, strict=True)), groups is not None)
+    warnings = _warnings(
+        k, dict(zip(group_names, counts, strict=True)), groups is not None, clamped
+    )
     return NormFinderResult(
         candidates=candidates,
         stability=stability,
@@ -258,8 +260,15 @@ def normfinder(
     )
 
 
-def _warnings(k: int, sizes: Mapping[str, int], asked_groups: bool) -> tuple[str, ...]:
-    """The paper's requirements this study does not meet, in plain words."""
+def _warnings(
+    k: int, sizes: Mapping[str, int], asked_groups: bool, clamped: Sequence[str] = ()
+) -> tuple[str, ...]:
+    """The paper's requirements this study does not meet, in plain words.
+
+    ``clamped`` are the candidates whose within-group variance came out negative in some group
+    and counts as 0 there (the paper is silent; science review J11): with small groups this
+    happens often and makes those genes look steadiest, so they are named.
+    """
     out = []
     small = sorted(name for name, size in sizes.items() if size < MIN_PER_GROUP)
     if small and len(sizes) >= 2:
@@ -272,6 +281,13 @@ def _warnings(k: int, sizes: Mapping[str, int], asked_groups: bool) -> tuple[str
         out.append(
             f"the paper asks for at least {MIN_PER_GROUP} samples; this study has fewer, so the "
             "stability values are rough"
+        )
+    if clamped:
+        names = ", ".join(clamped)
+        out.append(
+            f"the within-group variance of {names} came out below zero in some group (an "
+            "unbiased estimate from few samples can) and is counted as zero there, which makes "
+            f"{'it' if len(clamped) == 1 else 'them'} look steadier than the data show"
         )
     if k < RECOMMENDED_CANDIDATES:
         out.append(

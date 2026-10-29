@@ -133,7 +133,7 @@ def test_a_lightcycler96_4plex_with_an_ipc_from_design_to_the_run_gate(sclient):
     (ipc_line,) = [e for e in gate["evaluations"] if e["rule_id"] == "G-IPC"]
     assert ipc_line["target"] == "IPC" and ipc_line["verdict"] == "pass"
     assert "expected Cq is 36.27" in ipc_line["reason"]["plain"]
-    assert gate["pack"]["version"] == "1.3.0"
+    assert gate["pack"]["version"] == "1.4.0"
 
     plate = sclient.get(f"/api/sessions/{sid}/plate").json()
     assert plate["multiplex"] is True

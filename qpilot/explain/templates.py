@@ -430,8 +430,9 @@ def _normaliser(facts: Facts, card: DecisionCard | None, gene: str | None) -> st
     text += _axis_flips(facts, "norm", "planned")
     if "global_mean" in _axis_options(facts, "norm") and "f_gm_n_genes" in facts:
         text += (
-            f"The global mean is the mean of {_t('f_gm_n_genes')} genes; it is valid only when "
-            "the genes measured were not chosen for this comparison. "
+            f"The global mean is the mean of {_t('f_gm_n_genes')} genes, those with a value in "
+            "every compared unit; it is valid only when the genes measured were not chosen for "
+            "this comparison. "
         )
     return text + _flips_sentence(facts, "f_n_flipped_normaliser")
 

@@ -216,12 +216,36 @@ def _plan_arguments(parser: argparse.ArgumentParser) -> None:
         help="the Cq at which one copy crosses the threshold, i.e. your standard curve's "
         "intercept (default 35, a lab-editable assumption); used with --cq",
     )
+    budget.add_argument(
+        "--curve-from",
+        metavar="FILE",
+        default=None,
+        help="take the one-copy Cq from this RDML file's or export's standard curve in copies "
+        "(its intercept); used with --cq when --cq-one-copy is not given",
+    )
     parser.add_argument("--json", action="store_true", help="print JSON")
 
 
 def _plan(args: argparse.Namespace) -> int:
     from qpilot.qpcr.plan import plan
 
+    one_copy, source = args.cq_one_copy, None
+    if args.curve_from and args.cq is not None and one_copy is None:
+        from qpilot.qpcr.absolute_study import quantify_file
+        from qpilot.qpcr.plan import cq_one_copy_from
+
+        try:
+            taken = cq_one_copy_from(quantify_file(args.curve_from).curves)
+        except Exception as err:  # a file that cannot be read: say so, plan nothing
+            print(f"qpilot plan: cannot read the standard curve: {err}", file=sys.stderr)
+            return 2
+        if taken is None:
+            print(
+                "qpilot plan: the file has no standard curve in copies; give --cq-one-copy",
+                file=sys.stderr,
+            )
+            return 2
+        one_copy, source = taken
     try:
         out = plan(
             fc=args.fc,
@@ -240,7 +264,8 @@ def _plan(args: argparse.Namespace) -> int:
             cost_rt=args.cost_rt,
             cost_well=args.cost_well,
             expected_cq=args.cq,
-            cq_one_copy=args.cq_one_copy,
+            cq_one_copy=one_copy,
+            cq_one_copy_source=source,
         )
     except ValueError as err:
         print(f"qpilot plan: {err}", file=sys.stderr)

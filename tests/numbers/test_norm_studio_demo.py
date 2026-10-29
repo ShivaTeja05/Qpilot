@@ -31,12 +31,21 @@ PAIR = ("ALUsq(Eurogentec)", "HPRT1")
 
 @pytest.fixture(scope="module")
 def tested(tmp_path_factory):
+    from qpilot.qpcr.axes import normaliser as norm_axis
+
     if not DEMO_RDML.exists():
         pytest.skip("demo dataset not cached; run `qpilot fetch-demo`")
-    store = StudyStore(tmp_path_factory.mktemp("studies"))
-    design = vermeulen_design().model_copy(update={"amp_calls": STUDIO_AMP_CALLS, "axes": ASKED})
-    study_id = store.ensure_study(DEMO_RDML, design=design)
-    return store, study_id, design
+    # The global mean uses only genes with a value in every compared tumour (science review J7):
+    # 45 of the demo's 64, below qPilot's 50. A lab may set its own minimum; 40 here keeps the
+    # global mean's paths (its card option, the export and Trace refusing it) under test.
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(norm_axis, "GLOBAL_MEAN_MIN_GENES", 40)
+        store = StudyStore(tmp_path_factory.mktemp("studies"))
+        design = vermeulen_design().model_copy(
+            update={"amp_calls": STUDIO_AMP_CALLS, "axes": ASKED}
+        )
+        study_id = store.ensure_study(DEMO_RDML, design=design)
+        yield store, study_id, design
 
 
 def _decide(store, study_id, option, reason):
@@ -69,7 +78,7 @@ def test_results_and_the_reference_panel(tested):
     norm = next(a for a in view.axes if a.name == "normaliser")
     assert norm.status == "swept" and norm.card_id == "card_normaliser"
     flips = {o.id: o.flips.value for o in norm.options if o.flips is not None}
-    assert flips == {"normfinder_pair": 3, "global_mean": 19}
+    assert flips == {"normfinder_pair": 3, "global_mean": 9}  # 19 over all 64 genes, before J7
     assert any("agree on the best pair" in n.plain for n in norm.notes)
     interrun = next(a for a in view.axes if a.name == "interrun")
     assert interrun.status == "not_applicable"

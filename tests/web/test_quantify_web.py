@@ -216,3 +216,56 @@ def test_the_exports_of_a_quantification(world, qs3, fmt):
     done = wait_job(c, r.json()["job"])
     assert done["status"] == "done", done
     assert done["result"]["download"]["url"]
+
+
+def test_standards_that_look_wrong_are_proposed_never_left_out(world, qs3, monkeypatch):
+    """Science review J2: the rule files one curve.exclude_well per suspect standard; a person
+    decides. Each curve says its g and whether unknowns get the exact interval."""
+    import dataclasses
+
+    from qpilot.qpcr import absolute as ab
+    from qpilot.web import absolute_views as av
+
+    c, study, sid = world["client"], qs3["study"], qs3["sid"]
+    view = c.get(f"/api/studies/{study}/quantities").json()
+    curves = [cv for a in view["assays"] for cv in a["curves"] if cv["fitted"]]
+    assert curves and all(cv["g"] is not None and cv["g"] >= 0 for cv in curves)
+    assert all(cv["exact_interval"] == (cv["g"] > 0.05) for cv in curves)
+    assert not any(cv["suspects"] for cv in curves)  # QS3's standards all look right
+    assert c.post(f"/api/studies/{study}/quantities/standards").json()["status"] == "nothing"
+    # a standard of this plate made to look wrong (as A8 of the eDNA curve does: Cq 9.9 at 2.4
+    # copies), to follow the proposal a person then decides
+    found = av.computed(world["store"], study)
+    curve = next(cv for cv in found.result.curves if cv.scope == "plate" and cv.fit is not None)
+    point = next(p for p in curve.points if p.detected)
+    odd = ab.Suspect(point.run_id, point.well, point.sample, point.quantity, 9.9, ("order",),
+                     "its Cq 9.9 is earlier than every standard with more template", -7.3,
+                     1.14, (0.86, 1.68), 0.743, None, None)  # fmt: skip
+    marked = dataclasses.replace(curve, suspects=(odd,))
+    curves_now = tuple(marked if cv is curve else cv for cv in found.result.curves)
+    result = dataclasses.replace(found.result, curves=curves_now)
+    patched = type(found)(result, found.groups, found.notes)
+    monkeypatch.setattr(av, "computed", lambda store, study_id: patched)
+    suspects = {odd.key}
+    r = c.post(f"/api/studies/{study}/quantities/standards")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert set(body["proposed"]) == suspects and body["waiting"] == []
+    assert body["status"] == ("proposed" if suspects else "nothing")
+    listed = c.get(f"/api/sessions/{sid}/proposals", params={"stage": "curves"}).json()
+    mine = [
+        p for p in listed["proposals"] if p["made_by"].get("provider") == "qpilot-standard-curve"
+    ]
+    assert {p["subject"] for p in mine} == suspects
+    assert all(p["status"] == "proposed" and p["payload"] == {"excluded": True} for p in mine)
+    again = c.post(f"/api/studies/{study}/quantities/standards").json()
+    assert again["proposed"] == [] and set(again["waiting"]) == suspects  # never filed twice
+    shown = c.get(f"/api/studies/{study}/quantities").json()
+    flags = [s["proposed"] for a in shown["assays"] for cv in a["curves"] for s in cv["suspects"]]
+    assert all(flags)
+    for p in mine:  # leave the session as the other tests expect it
+        head = c.get(f"/api/sessions/{sid}/proposals", params={"stage": "curves"}).json()["head"]
+        c.post(
+            f"/api/sessions/{sid}/proposals/{p['id']}/reject",
+            json={"reason": "the plate map says the well is fine", "expected_head": head},
+        )
