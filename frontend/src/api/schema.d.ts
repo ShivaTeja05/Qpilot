@@ -13324,6 +13324,12 @@ export type components = {
                 [key: string]: number;
             };
             /**
+             * Expected Share
+             * @description A sample's missing value is a reason to repeat it when the gene amplified in at least this share of the other samples of its own group (lab-editable).
+             * @default 0.9
+             */
+            expected_share: number;
+            /**
              * Gate Lines
              * @description The Run Gate per plate (none unread).
              */
@@ -21341,6 +21347,8 @@ export interface operations {
     get_repeat: {
         parameters: {
             query?: {
+                /** @description The lab's own line for 'no amplification where one was expected': the share of the other samples of a sample's group the gene amplified in (default 0.9). */
+                expected_share?: number | null;
                 include?: string;
             };
             header?: never;
@@ -21374,6 +21382,7 @@ export interface operations {
     get_repeat_csv: {
         parameters: {
             query?: {
+                expected_share?: number | null;
                 include?: string;
             };
             header?: never;

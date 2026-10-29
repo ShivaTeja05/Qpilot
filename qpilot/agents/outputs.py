@@ -624,6 +624,9 @@ class RepeatPlanOut(_Open):
     not_repeated: list[dict[str, Any]] | None = None
     wells: list[dict[str, Any]] | None = None
     csv: str | None = Field(None, description="The repeat plate as the planner's CSV.")
+    expected_share: float | None = Field(
+        None, description="The lab's line for 'no amplification where one was expected'."
+    )
     decision: str = Field(description="Re-running is a person's call; nothing here decides it.")
     saved: bool
     response_format: ResponseFormat = "detailed"

@@ -204,3 +204,17 @@ def test_a_repeat_layout_keeps_each_sample_whole_and_splits_plates_when_it_must(
     with pytest.raises(lay.LayoutError, match="384-well plates"):
         many = tuple(("S1", "", f"T{i}") for i in range(40))
         lay.make_repeat_layout(lay.RepeatSpec(reactions=many, refs=("R1",), replicates=2))
+
+
+def test_the_expected_share_is_the_labs_to_set(called):
+    """Science review J3: 90 % of the sample's own group by default, lab-editable."""
+    from tests.web.conftest import get_settled
+
+    c, study = called["client"], called["study"]
+    assert repeat(c, study)["plan"]["expected_share"] == 0.9
+    url = f"/api/studies/{study}/review/repeat"
+    r = get_settled(c, url, params={"expected_share": 0.75})
+    assert r.status_code == 200, r.text
+    assert r.json()["plan"]["expected_share"] == 0.75
+    assert r.json()["csv_url"].endswith("&expected_share=0.75")
+    assert c.get(url, params={"expected_share": 1.5}).status_code == 422

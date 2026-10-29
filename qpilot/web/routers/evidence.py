@@ -420,10 +420,17 @@ def post_sign_off(study_id: str, body: SignOffBody, ctx: Ctx) -> SignOffDone:
 # ---- what to repeat and why ------------------------------------------------------------------
 
 
-def repeat_plan(ctx: AppContext, study_id: str, sid: str | None, include: str) -> Any:
-    """The study's repeat plan at the analysis in use (kept per state; 409 while it loads)."""
+def repeat_plan(
+    ctx: AppContext, study_id: str, sid: str | None, include: str, share: float | None = None
+) -> Any:
+    """The study's repeat plan at the analysis in use (kept per state; 409 while it loads).
+
+    ``share``: the lab's own "expected to amplify" line (default 90 % of the sample's group).
+    """
     from qpilot.qpcr.gate_rules import resolve_pack
-    from qpilot.qpcr.repeat import RepeatError, build_plan, left_out_from_inbox
+    from qpilot.qpcr.repeat import EXPECTED_SHARE, RepeatError, build_plan, left_out_from_inbox
+
+    share = EXPECTED_SHARE if share is None else float(share)
     from qpilot.web.routers import gate as gate_router
     from qpilot.web.routers import where as where_router
 
@@ -434,6 +441,7 @@ def repeat_plan(ctx: AppContext, study_id: str, sid: str | None, include: str) -
         inbox,
         gate_router.links_version(ctx.store, study_id),
         include,
+        share,
     )
     with _lock:
         if key in _plans:
@@ -450,6 +458,7 @@ def repeat_plan(ctx: AppContext, study_id: str, sid: str | None, include: str) -
             pack=resolve_pack(),
             left_out=left,
             include="all" if include == "all" else "consequential",
+            expected_share=share,
         )
     except RepeatError as err:
         raise api_error(
@@ -471,16 +480,26 @@ def get_repeat(
     study_id: str,
     ctx: Ctx,
     include: str = Query(default="consequential", pattern="^(consequential|all)$"),
+    expected_share: float | None = Query(
+        default=None,
+        gt=0,
+        le=1,
+        description=(
+            "The lab's own line for 'no amplification where one was expected': the share of "
+            "the other samples of a sample's group the gene amplified in (default 0.9)."
+        ),
+    ),
 ) -> RepeatView:
     """What to repeat and why, ranked by consequence, and the repeat plate (read-only)."""
     sid = _study(ctx, study_id)
-    plan = repeat_plan(ctx, study_id, sid, include)
+    plan = repeat_plan(ctx, study_id, sid, include, expected_share)
+    share = "" if expected_share is None else f"&expected_share={expected_share:g}"
     return RepeatView(
         study_id=study_id,
         session=sid,
         include="all" if include == "all" else "consequential",
         plan=plan,
-        csv_url=f"/api/studies/{study_id}/review/repeat.csv?include={include}",
+        csv_url=f"/api/studies/{study_id}/review/repeat.csv?include={include}{share}",
         csv_name=_csv_name(study_id),
         note=REPEAT_NOTE,
     )
@@ -495,10 +514,11 @@ def get_repeat_csv(
     study_id: str,
     ctx: Ctx,
     include: str = Query(default="consequential", pattern="^(consequential|all)$"),
+    expected_share: float | None = Query(default=None, gt=0, le=1),
 ) -> Response:
     """The repeat plate as the planner's CSV (plate, well, sample, group, target, type)."""
     sid = _study(ctx, study_id)
-    plan = repeat_plan(ctx, study_id, sid, include)
+    plan = repeat_plan(ctx, study_id, sid, include, expected_share)
     if not plan.wells:
         raise api_error(404, "not_found", "Nothing points at a reaction to re-run.")
     return Response(

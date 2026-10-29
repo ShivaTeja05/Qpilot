@@ -14,9 +14,13 @@ conclusions:
 * **samples in no comparison** (Trace's S7: an empty reference or marker well), with what
   bringing one back would do (its one empty reference read from the sample's other references);
 * **no amplification where one was expected**: a study well with no quantity although the gene
-  amplified in at least :data:`EXPECTED_SHARE` of the other compared samples (an unsourced,
-  lab-editable default: below it, not amplifying may be the biology), and technical replicates
-  that did not amplify while the others did;
+  amplified in at least :data:`EXPECTED_SHARE` of the other compared samples **of the sample's
+  own group** (an unsourced, lab-editable default, ``build_plan(expected_share=...)``: below it,
+  not amplifying may be the biology), counted only when that group has at least
+  :data:`MIN_GROUP_OTHERS` other samples (science review J3: counted across groups, a gene that
+  is off in a small group, a knockout or a sex-specific gene, put every sample of that group on
+  the repeat plate as a technical failure); and technical replicates that did not amplify while
+  the others did;
 * **Trace's places to look** for every compared gene (S1-S6), with what each option there does.
 
 Each item is one sample x gene (a whole sample for a tube place or a sample set aside) with
@@ -54,8 +58,11 @@ if TYPE_CHECKING:
     from qpilot.qpcr.trace import TraceContext
 
 #: A gene is expected to amplify in a sample when it amplified in at least this share of the
-#: other compared samples (unsourced, lab-editable default).
+#: other compared samples of the sample's own group (unsourced, lab-editable default).
 EXPECTED_SHARE = 0.9
+#: ... and only when that group has at least this many other compared samples (science review
+#: J3); with fewer, a sample is not flagged: two or three samples say nothing about the biology.
+MIN_GROUP_OTHERS = 3
 #: Places per gene read from Trace (its most a page shows).
 TRACE_TOP = 20
 MIN_REPLICATES = 2
@@ -169,6 +176,13 @@ class RepeatPlan(BaseModel):
     notes: list[str]
     warnings: list[str]
     counts: dict[str, int] = Field(description="Items by consequence.")
+    expected_share: float = Field(
+        default=EXPECTED_SHARE,
+        description=(
+            "A sample's missing value is a reason to repeat it when the gene amplified in at "
+            "least this share of the other samples of its own group (lab-editable)."
+        ),
+    )
 
     def csv(self) -> str:
         """The repeat plate as the planner's CSV (plate, well, sample, group, target, type)."""
@@ -427,7 +441,7 @@ def _absent(plan: _Plan) -> None:
             )
 
 
-def _no_amplification(plan: _Plan) -> None:
+def _no_amplification(plan: _Plan, share: float = EXPECTED_SHARE) -> None:
     ctx = plan.ctx
     w = ctx.wells
     used = {ctx.units[i] for i in np.flatnonzero(ctx.used)}
@@ -439,23 +453,32 @@ def _no_amplification(plan: _Plan) -> None:
     capped = (ctx.cell or {}).get("undetermined") == "cap"
     ok = study["n0"].notna().rename("ok")
     cells = ok.groupby([study["target"], study["unit"]]).agg(["sum", "size"])
-    detected = (cells["sum"] > 0).groupby(level=0).sum()
-    n_units = cells["sum"].groupby(level=0).size()
+    group_of = {str(u): _group(ctx, str(u)) for u in cells.index.get_level_values(1).unique()}
+    # per target and group: how many units it amplified in, of how many (J3: the sample's own
+    # group, never the other groups, whose biology may differ)
+    in_group: dict[tuple[str, str], list[int]] = {}
+    for (target, unit), n_ok_unit in cells["sum"].items():
+        tally = in_group.setdefault((str(target), group_of[str(unit)]), [0, 0])
+        tally[0] += int(n_ok_unit > 0)
+        tally[1] += 1
     keys_of: dict[tuple[str, str], list[str]] = {}
     for key, target, unit in zip(empty.index, empty["target"], empty["unit"], strict=True):
         keys_of.setdefault((str(target), str(unit)), []).append(str(key))
     for (target, unit), keys in sorted(keys_of.items()):
         n_ok, n_wells = (int(x) for x in cells.loc[(target, unit)])
-        n_other = int(n_units[target]) - 1
-        if n_other < 1:
-            continue
+        group = group_of.get(unit, "")
         if n_ok == 0:
-            others = int(detected[target])
-            if others / n_other < EXPECTED_SHARE:
-                continue  # the gene often does not amplify: that may be the biology
+            if not group:
+                continue  # a sample in neither compared group: no group to count within
+            others, n_group = in_group[(target, group)]
+            n_other = n_group - 1
+            if n_other < MIN_GROUP_OTHERS:
+                continue  # too few samples in its group to say a value was expected
+            if others / n_other < share:
+                continue  # the gene often does not amplify in this group: maybe the biology
             words = (
                 f"{target} did not amplify in this sample, while it amplified in {others} of the "
-                f"{n_other} other compared samples"
+                f"{n_other} other compared samples of its group ({group})"
             )
             words += (
                 ": its value is set to the lowest one seen (capped)."
@@ -614,6 +637,7 @@ def build_plan(
     plate_size: int | None = None,
     include: Literal["consequential", "all"] = "consequential",
     seed: int = 0,
+    expected_share: float = EXPECTED_SHARE,
 ) -> RepeatPlan:
     """The repeat plan of one study at the analysis ``ctx`` traces (pure; nothing is written).
 
@@ -628,10 +652,15 @@ def build_plan(
         include: Which items go on the repeat plate: ``consequential`` (default: every item
             but those that change no call) or ``all``.
         seed: The repeat plate's random order.
+        expected_share: The share of the other samples of a sample's own group a gene must have
+            amplified in for its not amplifying to be a reason to repeat it (lab-editable;
+            default :data:`EXPECTED_SHARE`, 90 %).
 
     Raises:
-        RepeatError: The repeat plate cannot be laid out.
+        RepeatError: The repeat plate cannot be laid out, or ``expected_share`` is not a share.
     """
+    if isinstance(expected_share, bool) or not (0 < float(expected_share) <= 1):
+        raise RepeatError("the expected share is a number above 0 and at most 1 (0.9 is 90 %)")
     plan = _Plan(ctx)
     notes: list[str] = []
     gate_lines = _gate(plan, gate, pack) if gate is not None else []
@@ -639,7 +668,7 @@ def build_plan(
         notes.append("The Run Gate was not read for this plan: its findings are not in it.")
     _set_aside(plan, left_out or {})
     _absent(plan)
-    _no_amplification(plan)
+    _no_amplification(plan, float(expected_share))
     flagged = _trace(plan)
     ranked = sorted(
         plan.items.values(),
@@ -768,6 +797,7 @@ def build_plan(
         notes=notes,
         warnings=cautions,
         counts=counts,
+        expected_share=float(expected_share),
     )
 
 
@@ -823,6 +853,7 @@ __all__: Sequence[str] = (
     "CONSEQUENCES",
     "CONSEQUENCE_WORDS",
     "EXPECTED_SHARE",
+    "MIN_GROUP_OTHERS",
     "GatePlateLine",
     "LeftOut",
     "RepeatPlateWell",
