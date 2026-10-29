@@ -1,4 +1,4 @@
-import { AlertTriangle, KeyRound, RefreshCw, WifiOff } from "lucide-react";
+import { AlertTriangle, Clock, KeyRound, RefreshCw, WifiOff } from "lucide-react";
 import type { ReactNode } from "react";
 import { ApiError } from "@/api/client";
 import { DEMO_HEADING } from "@/demo/words";
@@ -23,6 +23,7 @@ const HEADING: Record<string, string> = {
   empty_file: "The file is empty",
   no_model: "No model answers",
   cross_origin: "Refused: this request came from another page",
+  rate_limited: "The shared sandbox is busy",
 };
 
 /** A heading for an error, from its code (a refusal reads differently from a failure). */
@@ -58,7 +59,8 @@ export function TickText({ text }: { text: string }) {
 /**
  * A calm panel for a failed request. Understands {@link ApiError}: `needsKey` (401) says to open
  * the link qPilot printed; `stale` (409) says the view was re-read; `offline` says the server is
- * not answering. `onRetry` adds a "Try again" button.
+ * not answering; `rate_limited` (429, the public sandbox) says to wait, in the server's own words.
+ * `onRetry` adds a "Try again" button.
  */
 export function ErrorPanel({
   error,
@@ -97,6 +99,9 @@ export function ErrorPanel({
   } else if (api?.code === "offline") {
     icon = <WifiOff aria-hidden />;
     heading = title ?? "qPilot is not answering";
+    tone = "border-warn/30 bg-warn-soft/50";
+  } else if (api?.code === "rate_limited") {
+    icon = <Clock aria-hidden />;
     tone = "border-warn/30 bg-warn-soft/50";
   }
   return (
