@@ -37,9 +37,6 @@ jobs:
     name: test (${{ matrix.os }}, py${{ matrix.python }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
-    # Windows is new in this matrix: it reports every run but does not block a merge until its
-    # first green run. Then delete the next line (docs/release.md, "Windows").
-    continue-on-error: ${{ matrix.os == 'windows-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -92,7 +89,6 @@ jobs:
     needs: package
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
-    continue-on-error: ${{ matrix.os == 'windows-latest' }} # as for the tests above
     strategy:
       fail-fast: false
       matrix:
