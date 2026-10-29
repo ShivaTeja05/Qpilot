@@ -76,16 +76,25 @@ Decision Card (`numbers.normaliser`). Choosing an option never changes which ref
 the card is decided by a person.
 
 **Global mean.** Each gene's `log2 N0` is centred on its own mean over the units, and a unit's normaliser is
-the mean of its genes that have a value (D'haene et al. 2012: each gene weighs the same even when values are
-missing; with no missing value it is Mestdagh's plain mean up to a constant that cancels). **Threshold:**
-offered from **50 genes** with values in at least two units. This is qPilot's own default, not a published
-number: Mestdagh et al. write that the global mean "is only valid if a large number of" genes is profiled
-(they profiled 366–448) and give no minimum. Below it the option is not offered and the reason says so in
-plain words. The card also reports whether the global mean itself moves between the groups against the
-reference genes in use: a panel chosen for the comparison moves its own mean.
+the mean of the genes (D'haene et al. 2012: each gene weighs the same; Mestdagh's plain mean up to a constant
+that cancels). **Which genes** (science review J7, applied 29 Oct 2026): only those with a value in **every
+compared unit**, the common set ("expressed in all samples" normalisation). Values are not missing at random:
+a gene is undetermined in a unit because it is low there, so averaging each unit's own genes (as until then)
+raised the normaliser of a unit with gaps (one missing the lowest tenth of its genes by about 0.2 residual
+SD, φ(1.28)/0.9) and lowered every gene of it by as much. The card says how many genes the mean used.
+**Threshold:** offered from **50 genes of the common set** (`GLOBAL_MEAN_MIN_GENES`, a lab may set its own:
+`normaliser.plan(min_genes=…)`). This is qPilot's own default, not a published number: Mestdagh et al. write
+that the global mean "is only valid if a large number of" genes is profiled (they profiled 366–448) and give
+no minimum; qbase+'s documentation is often quoted as "more than about 50 genes", not verified here. Below it
+the option is not offered and the reason says so in plain words ("only 45 of the 64 genes measured have a
+value in every compared unit …"). The card also reports whether the global mean itself moves between the
+groups against the reference genes in use: a panel chosen for the comparison moves its own mean.
 
 **On the demo study** (asked for with all options): `genorm_pair` is not offered (the same pair as
-NormFinder's); NormFinder's pair alone changes 3 of 58 calls (DPYSL3, PAICS, PDE4DIP); the global mean of 64
-genes alone changes 19 of 58. Against the five reference genes, the global mean is 0.71× in the MYCN-high group
-(p = 6.1 × 10⁻⁶): the panel was chosen for this comparison, which is why the global mean is not a neutral
-yardstick here. The grid has 186 + 12 = 198 analyses (no repeated cell).
+NormFinder's); NormFinder's pair alone changes 3 of 58 calls (DPYSL3, PAICS, PDE4DIP). The **global mean is
+not offered**: 45 of the 64 genes have a value in every compared tumour, fewer than 50. With a lab's own
+minimum of 40 (`tests/numbers/test_norm_demo.py`) it is, over those 45 genes: it alone changes 9 of 58 calls
+(over all 64 genes with each tumour's own gaps, before J7, it changed 19), and against the five reference genes
+it is 0.85× in the MYCN-high group (p = 0.008; it was 0.71×): the panel was chosen for this comparison, which
+is why the global mean is not a neutral yardstick here. The grid has 186 + 12 = 198 analyses (no repeated
+cell) with the global mean, 186 + 6 = 192 without it.

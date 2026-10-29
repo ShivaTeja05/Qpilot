@@ -264,7 +264,7 @@ consistent"; it is outside both blind confirmations (they never re-open for it).
   choices on the other cards are carried (above). A
   study analysed outside Studio shows `qpilot run --efficiency all` instead. Method card:
   `methods/efficiency_model.md`. **Also test other normalisers** (`normaliser` axis: the chosen
-  reference genes, NormFinder's or geNorm's best pair, the global mean from 50 genes;
+  reference genes, NormFinder's or geNorm's best pair, the global mean from 50 genes measured in every compared unit (science review J7);
   `qpcr/axes/normaliser.py`) and **Also test corrections between plates** (`interrun` axis:
   inter-run calibrator, factor correction; `qpcr/interrun.py`) work the same way
   (`FurtherChoices.tsx`, `web/axes_views.py`, cards `numbers.normaliser` / `numbers.interrun`,
