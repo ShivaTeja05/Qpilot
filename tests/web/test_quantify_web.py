@@ -206,3 +206,13 @@ def test_compare_only_sections_answer_plainly(world, qs3):
         r = c.get(url)
         assert r.status_code == 409 and r.json()["error"]["code"] == "quantify", (url, r.text)
         assert "compares no groups" in r.json()["error"]["message"]
+
+
+@pytest.mark.parametrize("fmt", ["xlsx", "csv", "md", "passport", "supplement"])
+def test_the_exports_of_a_quantification(world, qs3, fmt):
+    c, study = world["client"], qs3["study"]
+    r = c.post(f"/api/studies/{study}/report/export", json={"format": fmt})
+    assert r.status_code == 202, r.text
+    done = wait_job(c, r.json()["job"])
+    assert done["status"] == "done", done
+    assert done["result"]["download"]["url"]
