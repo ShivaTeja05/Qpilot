@@ -8,6 +8,9 @@
  * too; nothing is hand-written. Where a section asks for one of many things (a plate, a gene's
  * curve calls, a trace plate), every one is also asked for through the page's own fetch, under
  * the same key the section would use.
+ *
+ * WALK_VERBOSE=1 also logs the optional controls (clicked with `quiet`) that were not there, to
+ * find the words that changed in the page.
  */
 
 /** Read an API answer through the page (recorded by the shim, or answered from a recording). */
@@ -57,6 +60,77 @@ export async function fetchAll(page, paths, concurrency = 6) {
   );
 }
 
+/** How many places Trace's "Where to look" asks for first, and at most (WhereToLook.tsx). */
+const WHERE_TOP = 3;
+const WHERE_MAX = 20;
+
+/**
+ * "Where to look" for many genes, samples or wells (`{kind, id}`), as the panel asks: the first
+ * three places, then, where more were found, "Show all" (at most twenty). Returns how many roots
+ * were answered, and the samples named by the first places (a person clicks them to trace them).
+ */
+export async function fetchWhere(page, study, roots, concurrency = 6) {
+  return page.evaluate(
+    async ({ study, roots, concurrency, top, max }) => {
+      const queue = [...roots];
+      const samples = new Set();
+      let answered = 0;
+      let more = 0;
+      const ask = async (root, n) => {
+        const q = new URLSearchParams({ [root.kind]: root.id, top: String(n) });
+        for (let i = 0; i < 60; i += 1) {
+          const r = await fetch(`/api/studies/${study}/where-to-look?${q}`, {
+            credentials: "same-origin",
+          }).catch(() => null);
+          if (r && (r.status === 409 || r.status === 503)) {
+            await r.arrayBuffer().catch(() => null);
+            await new Promise((ok) => setTimeout(ok, 1500));
+            continue;
+          }
+          // Read the body: the request only finishes (and is recorded) once it is read.
+          const body = r ? await r.json().catch(() => null) : null;
+          return r?.ok ? body : null;
+        }
+        return null;
+      };
+      const worker = async () => {
+        while (queue.length) {
+          const root = queue.shift();
+          const view = await ask(root, top);
+          if (!view) continue;
+          answered += 1;
+          for (const p of view.places ?? []) if (p.sample) samples.add(String(p.sample));
+          const total = (view.places?.length ?? 0) + (view.n_more ?? 0);
+          if ((view.n_more ?? 0) > 0 && view.places.length < max) {
+            if (await ask(root, Math.min(max, total))) more += 1;
+          }
+        }
+      };
+      await Promise.all(Array.from({ length: concurrency }, worker));
+      return { answered, more, samples: [...samples].sort() };
+    },
+    { study, roots, concurrency, top: WHERE_TOP, max: WHERE_MAX },
+  );
+}
+
+/** Click a download link (the page saves the file from its recording); true if it was saved. */
+export async function saveLink(page, link, what, log) {
+  const target = link.first();
+  if (!(await target.count()) || !(await target.isVisible().catch(() => false))) {
+    log(`  (not there: ${what})`);
+    return false;
+  }
+  const done = page.waitForEvent("download", { timeout: 30_000 }).catch(() => null);
+  try {
+    await target.scrollIntoViewIfNeeded({ timeout: 5000 });
+    await target.click({ timeout: 10_000 });
+  } catch (e) {
+    log(`  (could not click ${what}: ${String(e).split("\n")[0]})`);
+    return false;
+  }
+  return Boolean(await done);
+}
+
 export function helpers({ page, base, settle, log, state }) {
   const misses = new Set();
 
@@ -94,14 +168,17 @@ export function helpers({ page, base, settle, log, state }) {
       !(await target.isVisible().catch(() => false)) ||
       !(await target.isEnabled().catch(() => false))
     ) {
-      if (!quiet) log(`  (not there: ${what})`);
+      if (!quiet || process.env.WALK_VERBOSE) log(`  (not there: ${what})`);
       return false;
     }
     try {
-      await target.scrollIntoViewIfNeeded({ timeout: 5000 });
+      // Centre it: Playwright's own scroll can leave it under the sticky top bar.
+      await target.evaluate((el) => el.scrollIntoView({ block: "center", inline: "nearest" }));
       await target.click({ timeout: quiet ? 3000 : 10_000 });
     } catch (e) {
       log(`  (could not click ${what}: ${String(e).split("\n")[0]})`);
+      // A menu left open covers the rest of the page: close it.
+      await page.keyboard.press("Escape");
       return false;
     }
     await settle();
@@ -216,7 +293,7 @@ const STEPS = [
       log(`  ${ok}/${runs.length} plates`);
       // The decided proposals (read-only once the stage is confirmed), and a few of them opened.
       await click(role(page, "button", /^Decided in this stage/), "Decided in this stage");
-      const rows = page.locator("main [aria-expanded=false]");
+      const rows = page.locator("main [aria-expanded=false]:not([role=combobox])");
       for (let i = 0; i < Math.min(await rows.count(), 6); i += 1)
         await click(rows.nth(i), `decided row ${i + 1}`, { quiet: true });
       // The plate picker, as a person uses it.
@@ -238,6 +315,13 @@ const STEPS = [
         targets.map((g) => `/api/sessions/${sid}/curve-calls?gene=${encodeURIComponent(g)}`),
       );
       log(`  ${ok}/${targets.length} genes' curve calls`);
+      // The melt stage of every plate (Curves asks for it as a plate opens; a file without melt
+      // curves answers "has_melt: false").
+      const melt = await fetchAll(
+        page,
+        plate.runs.map((r) => `/api/sessions/${sid}/melt?run=${encodeURIComponent(r.run_id)}`),
+      );
+      log(`  ${melt}/${plate.runs.length} plates' melt answers`);
       const runs = plate.runs.filter((r) => r.in_design).map((r) => r.run_id);
       for (const r of runs.slice(0, 3)) {
         await go(S("curves", r));
@@ -250,7 +334,7 @@ const STEPS = [
   },
   {
     name: "results",
-    run: async ({ page, go, click, everyTab, openDetails, S, study }) => {
+    run: async ({ page, go, click, everyTab, openDetails, S, study, log }) => {
       await go(S("results"));
       await everyTab();
       await openDetails();
@@ -258,32 +342,141 @@ const STEPS = [
       for (const c of cards.cards ?? []) await go(S("results", "card", c.id));
       await go(S("results", "confirm"));
       await go(S("results"));
-      const expand = page.locator("main button[aria-expanded=false]");
+      const expand = page.locator("main button[aria-expanded=false]:not([role=combobox])");
       for (let i = 0; i < Math.min(await expand.count(), 8); i += 1)
         await click(expand.nth(i), `results disclosure ${i + 1}`, { quiet: true });
+      // The comparison picker (a study with several comparisons): each one, as a person picks it.
+      const picker = page.getByRole("radiogroup", { name: /comparison/i }).getByRole("radio");
+      for (let i = 0; i < (await picker.count()); i += 1)
+        await click(picker.nth(i), `comparison ${i + 1}`, { quiet: true });
+      // The robustness map and the genes table: the filters a person sets.
+      for (const name of [/^▲ Up/, /^▼ Down/, /^— No call/, /^All$/])
+        await click(page.getByRole("radio", { name }), String(name), { quiet: true });
+      // The reference genes (geNorm and NormFinder side by side) and the study's panels.
+      await apiGet(page, `/api/studies/${study}/references`);
+      await apiGet(page, `/api/studies/${study}/comparisons`);
+      await apiGet(page, `/api/studies/${study}/evidence`);
+      // Quantities: every assay's standard curve is one read (the picker asks for it by name);
+      // then the picker as a person uses it, on the assay that has a fitted standard curve.
+      const quantities = await apiGet(page, `/api/studies/${study}/quantities`);
+      const assays = quantities.assays ?? [];
+      const ok = await fetchAll(
+        page,
+        assays.map((a) => `/api/studies/${study}/quantities/${encodeURIComponent(a.target)}`),
+      );
+      log(`  ${ok}/${assays.length} assays' standard curves`);
+      const fitted = assays.find((a) => a.curves?.some((c) => c.fitted));
+      const picked = [fitted?.target, assays.find((a) => a.target !== fitted?.target)?.target];
+      for (const target of picked.filter(Boolean)) {
+        await click(role(page, "combobox", /^Assay/), "the assay picker", { quiet: true });
+        await click(page.getByRole("option", { name: target, exact: true }), `assay ${target}`, {
+          quiet: true,
+        });
+      }
+      await click(page.getByRole("radio", { name: /^Flagged \d+/ }), "Flagged units", {
+        quiet: true,
+      });
+      await click(page.getByRole("radio", { name: /^All \d+/ }), "All units", { quiet: true });
     },
   },
   {
     name: "gate",
-    run: async ({ page, go, click, openDetails, S }) => {
+    run: async ({ page, go, click, openDetails, S, log }) => {
       await go(S("gate"));
       await openDetails();
-      const rules = page.locator("main button[aria-expanded=false]");
+      const rules = page.locator("main button[aria-expanded=false]:not([role=combobox])");
       for (let i = 0; i < Math.min(await rules.count(), 10); i += 1)
         await click(rules.nth(i), `gate rule ${i + 1}`, { quiet: true });
+      // The check list, as a person filters it: each verdict, then every line that warns or
+      // fails opened (G-NTC, G-STD, G-REP, G-MELT, G-IPC, G-RT, G-INSTR lines read their detail).
+      for (const name of [
+        /^Fail \(/,
+        /^Warn \(/,
+        /^Pass \(/,
+        /^Not applicable \(/,
+        /^Warn or fail/,
+      ])
+        await click(page.getByRole("radio", { name }), String(name), { quiet: true });
+      const lines = page.locator("main li button[aria-expanded=false]:not([role=combobox])");
+      let opened = 0;
+      for (let i = 0; i < 40 && (await lines.count()); i += 1) {
+        if (!(await click(lines.first(), `check line ${i + 1}`, { quiet: true }))) break;
+        opened += 1;
+      }
+      log(`  ${opened} check lines opened`);
+      // One rule at a time, whatever its verdict (the melt and internal-positive-control lines
+      // among them: a file without melt curves or an internal control says so).
+      await click(page.getByRole("radio", { name: /^All$/ }), "every verdict");
+      const menu = role(page, "combobox", /^Show checks of one rule/);
+      for (const rule of [
+        /^G-MELT\b/,
+        /^G-IPC\b/,
+        /^G-RT\b/,
+        /^G-INSTR\b/,
+        /^G-STD\b/,
+        /^Every rule/,
+      ]) {
+        await click(menu, "the rule menu");
+        if (!(await click(page.getByRole("option", { name: rule }), `rule ${rule}`)))
+          await page.keyboard.press("Escape");
+        else if (String(rule) !== String(/^Every rule/))
+          for (let i = 0; i < 2; i += 1)
+            await click(lines.first(), `${rule} line ${i + 1}`, { quiet: true });
+      }
+      // What to repeat (the Run Review has its whole plan): the plate it offers here.
+      const plate = page.getByRole("link", { name: /^Download the repeat plate/ });
+      log(`  ${(await saveLink(page, plate, "the repeat plate", log)) ? 1 : 0} repeat plate saved`);
     },
   },
   {
     name: "genes",
-    run: async ({ page, go, click, S, genes }) => {
+    run: async ({ page, go, click, S, study, genes, state, log }) => {
+      // The figures that get a PNG too (300 dpi, about 130 kB each): the headline genes.
+      const review = await apiGet(page, `/api/studies/${study}/review`);
+      const headline = new Set((review.headline ?? []).map((h) => h.gene));
       await go(S("gene"));
+      let saved = 0;
       for (const g of genes) {
         await go(S("gene", g));
         // A sample's curve (from its plate's pack) and the jump links.
         await click(role(page, "button", /^View as table/), `${g}: samples as a table`, {
           quiet: true,
         });
+        // The figure: a picture from the API (shown from its recording), then its files.
+        const figure = page.locator("#gene-figure");
+        const shown = await page
+          .waitForFunction(
+            () => {
+              const img = document.querySelector("#gene-figure img");
+              return Boolean(img && img.complete && img.naturalWidth > 0);
+            },
+            null,
+            { timeout: 20_000 },
+          )
+          .then(() => true)
+          .catch(() => false);
+        if (!shown) state.errors.push(`[genes] ${g}: the figure did not load`);
+        // The other analysis (a person who chose differently from the recommendation).
+        if (
+          await click(figure.getByRole("radio", { name: /^Recommended/ }), `${g}: Recommended`, {
+            quiet: true,
+          })
+        )
+          await click(figure.getByRole("radio", { name: /^As decided/ }), `${g}: As decided`, {
+            quiet: true,
+          });
+        for (const format of headline.has(g) ? ["svg", "csv", "png"] : ["svg", "csv"])
+          if (
+            await saveLink(
+              page,
+              figure.locator(`a[download][href*="format=${format}"]`),
+              `${g}: ${format}`,
+              log,
+            )
+          )
+            saved += 1;
       }
+      log(`  ${saved} figure files saved`);
     },
   },
   {
@@ -326,6 +519,60 @@ const STEPS = [
       await click(role(page, "button", /^Show all \d+/), "Show all (where to look)", {
         quiet: true,
       });
+      // Where to look, as a person asks it: a gene from the menu, a sample typed, a well typed.
+      const overview = await apiGet(page, `/api/studies/${study}/trace`);
+      const trace = overview.trace;
+      const wellsOf = (rows) =>
+        (rows ?? []).flatMap((r) => (r.wells ?? []).map((w) => `${w.plate}:${w.well}`));
+      const wells = [...new Set([...wellsOf(trace.suspects), ...wellsOf(trace.left_out)])].sort();
+      const suspects = [...new Set((trace.suspects ?? []).map((s) => String(s.unit)))].sort();
+      await click(role(page, "combobox", /^Gene/), "the gene menu", { quiet: true });
+      await click(page.getByRole("option", { name: genes[0], exact: true }), `trace ${genes[0]}`, {
+        quiet: true,
+      });
+      await click(role(page, "button", /^Show all \d+/), "Show all (a gene's places)", {
+        quiet: true,
+      });
+      await click(page.getByRole("radio", { name: /^A sample/ }), "A sample", { quiet: true });
+      await page
+        .getByRole("textbox", { name: /^Sample/ })
+        .fill(suspects[0] ?? "")
+        .catch(() => {});
+      await click(role(page, "button", /^Trace$/), "Trace the sample", { quiet: true });
+      await click(role(page, "button", /^Show all \d+/), "Show all (a sample's places)", {
+        quiet: true,
+      });
+      await click(page.getByRole("radio", { name: /^A well/ }), "A well", { quiet: true });
+      await page
+        .getByRole("textbox", { name: /^Well/ })
+        .fill(wells[0] ?? "")
+        .catch(() => {});
+      await click(role(page, "button", /^Trace$/), "Trace the well", { quiet: true });
+      await click(role(page, "button", /^Show all \d+/), "Show all (a well's places)", {
+        quiet: true,
+      });
+      // Every gene (its first places, then "Show all"), then the samples the first places name
+      // and the samples the overview lists, then every well it lists.
+      const byGene = await fetchWhere(
+        page,
+        study,
+        genes.map((id) => ({ kind: "gene", id })),
+      );
+      const samples = [...new Set([...byGene.samples, ...suspects])].sort();
+      const bySample = await fetchWhere(
+        page,
+        study,
+        samples.map((id) => ({ kind: "sample", id })),
+      );
+      const byWell = await fetchWhere(
+        page,
+        study,
+        wells.map((id) => ({ kind: "well", id })),
+      );
+      log(
+        `  where to look: ${byGene.answered} genes, ${bySample.answered} samples, ` +
+          `${byWell.answered} wells (${byGene.more + bySample.more + byWell.more} with "Show all")`,
+      );
       const plate = await apiGet(page, `/api/sessions/${sid}/plate`);
       const ok = await fetchAll(
         page,
@@ -370,11 +617,30 @@ const STEPS = [
     run: async ({ page, go, click, openDetails, S, study, log }) => {
       await go(S("report"));
       await openDetails();
+      // Run Review: its own address, the repeat plan (every item, the whole plate) and the plate.
+      await go(S("report", "run-review"));
+      await openDetails();
+      await click(role(page, "button", /^Show all \d+ items/), "Show all items", { quiet: true });
+      const plate = page.getByRole("link", { name: /^Download the repeat plate/ });
+      let files = (await saveLink(page, plate, "the repeat plate", log)) ? 1 : 0;
+      const every = page.getByRole("checkbox", { name: /Put every item on the plate/ });
+      if (await click(every, "every item on the plate", { quiet: true })) {
+        await click(role(page, "button", /^Show all \d+ items/), "Show all items", {
+          quiet: true,
+        });
+        if (await saveLink(page, plate, "the repeat plate (every item)", log)) files += 1;
+        await click(every, "back to the consequential items", { quiet: true });
+      }
+      log(`  ${files} repeat plates saved`);
+      await go(S("report"));
+      // The journal supplement (a 25 MB zip) is left out: it is far too large to publish.
       for (const label of [
         /^Write the Markdown/,
         /^Write the printable page/,
         /^Write the passport/,
         /^Write the workbook/,
+        /^Write the CSV tables/,
+        /^Write the figures/,
       ]) {
         await click(role(page, "button", label), String(label));
       }
@@ -385,7 +651,7 @@ const STEPS = [
         sizes[e.download.name] = e.download.bytes;
         if (e.record) sizes[e.record.download.name] = e.record.download.bytes;
       }
-      log(`  ${await clickDownloads(page, sizes)} report files downloaded`);
+      log(`  ${await clickDownloads(page, sizes, 6e6)} report files downloaded`);
     },
   },
   {

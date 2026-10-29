@@ -22,7 +22,10 @@ the engine's answer, recorded once.
   "set these samples aside", Ask, the report's files), is answered from its recording;
 - anything else (deciding a card, accepting a proposal, opening a file, settings) is refused in
   plain words: *This online demo is read-only. Install qPilot to analyse your own files*;
-- a view that was not recorded says so, with the same link.
+- a view that was not recorded says so, with the same link;
+- a picture the API serves (the Gene page's figure is an `<img src="/api/...">`) is fetched through
+  the recordings too and shown from a blob; a download (the figure's SVG, PNG and data, the
+  report's files, Run Review's repeat plate) is saved from its recording.
 
 There is no event stream (the live dot reads "Demo"), Open's file card explains that opening a
 file needs qPilot on your own computer, and a slim banner names the study and links to GitHub.
@@ -45,7 +48,12 @@ Chromium while recording, writes this folder, then serves it the way Vercel will
 again. It fails if any request has no recording, if any request leaves the site, or on any
 console error. Local paths in the answers are rewritten to qPilot's defaults (`~/.cache/qpilot`),
 and an answer that still holds a user name, a home or temporary path is never published (it is
-dropped and listed). The recorded files are not committed: run the script to make them.
+dropped and listed). A 200 answer with no body fails the run: the recorder's browser cannot read
+the body of a response the page consumed as a blob, which left every file of the 21 Oct 2026 site
+empty; the page reads bytes with `arrayBuffer()` for that reason. The recorded files are not
+committed: run the script to make them. The walk also visits Where to look (every gene, the
+samples and wells it names), every assay's standard curve, every gene's figure and the Run
+Review's repeat plan; the journal supplement (25 MB) is left out.
 
 `node scripts/static-demo/record.mjs --verify` checks the folder as it is;
 `node scripts/static-demo/serve.mjs ../site 7961` serves it locally.

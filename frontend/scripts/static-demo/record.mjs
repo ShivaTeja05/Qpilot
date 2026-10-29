@@ -416,6 +416,9 @@ function assemble(recordings, curves, work) {
   const leaks = (text) => secrets.filter((x) => text.includes(x));
   const entries = {};
   const dropped = [];
+  // A 200 answer with no body is a recording that failed (the browser could not give the body
+  // of a response the page read as a blob: every file of the 21 Oct 2026 site was empty).
+  const empty = [];
   let raw = 0;
   let stored = 0;
   const sorted = [...recordings.entries()].sort(([, a], [, b]) =>
@@ -424,6 +427,7 @@ function assemble(recordings, curves, work) {
   for (const [key, r] of sorted) {
     const type = r.type.split(";")[0].trim();
     let data = r.data;
+    if (r.status === 200 && data.length === 0) empty.push(`${r.method} ${r.path}${r.query}`);
     if (TEXT.test(type)) {
       let text = scrub(data.toString("utf8"));
       if (type === "application/json" && text) text = JSON.stringify(JSON.parse(text));
@@ -490,7 +494,8 @@ function assemble(recordings, curves, work) {
     `site/ assembled: ${Object.keys(entries).length} answers + ${curveFiles} curve packs, ` +
       `${(raw / 1e6).toFixed(1)} MB of answers stored as ${(stored / 1e6).toFixed(1)} MB gzipped`,
   );
-  return { count: Object.keys(entries).length, raw, stored, dropped };
+  for (const e of empty.slice(0, 20)) log("  EMPTY ANSWER:", e);
+  return { count: Object.keys(entries).length, raw, stored, dropped, empty };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -581,10 +586,11 @@ function loadSnapshot(dir) {
 }
 
 async function main() {
+  let emptied = [];
   const snapshot = option("--assemble", "");
   if (snapshot) {
     const { recordings, curves } = loadSnapshot(snapshot);
-    assemble(recordings, curves, dirname(snapshot));
+    emptied = assemble(recordings, curves, dirname(snapshot)).empty;
   } else if (flag("--repage")) repage();
   else if (!flag("--verify")) {
     const seed = process.env.QPILOT_DEMO_SEED;
@@ -608,7 +614,7 @@ async function main() {
       }
       const curves = flag("--no-curves") ? {} : await recordCurves(base, stats.sid);
       saveSnapshot(join(work, "snapshot"), recordings, curves);
-      assemble(recordings, curves, work);
+      emptied = assemble(recordings, curves, work).empty;
       if (problems.length) log(`${problems.length} answers were still loading (see above)`);
       done = true;
     } finally {
@@ -619,10 +625,14 @@ async function main() {
     }
   }
   const { failures } = await verify();
+  if (emptied.length) {
+    log(`FAILED: ${emptied.length} recorded answers are empty (see EMPTY ANSWER above)`);
+    process.exitCode = 1;
+  }
   if (failures.length) {
     log("FAILED: the site does not answer everything the walk asked for");
     process.exitCode = 1;
-  } else {
+  } else if (!emptied.length) {
     log("OK: every request answered from the recordings, nothing left the site, no console error");
   }
 }
