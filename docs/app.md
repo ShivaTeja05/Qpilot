@@ -559,7 +559,8 @@ lines. Theme. Fresh demo. The never-does lines and the version.
 * Errors: `{"error": {"code", "message", "details"}}`; codes used by the page: `no_token` (401),
   `not_found` (404), `blind` (403), `stale` (409, `details.head` is the current head),
   `studio` (409, a Studio refusal in words), `refused` (403, not allowed for this actor),
-  `bad_request` (422), `too_large` (413), `cross_origin` (403).
+  `bad_request` (422), `too_large` (413), `cross_origin` (403), and on the public sandbox only
+  `sandbox_full` (507) and `rate_limited` (429, with `Retry-After`; `docs/sandbox.md`).
 * Writes carry `expected_head` (the head the view showed); the answer carries the new head.
 * Slow work answers `202 {"job": JobView}`; follow with `useJob(id)`; the result is on the job.
 * A view still being prepared answers `409 loading` / `503 warming` with the job preparing it.

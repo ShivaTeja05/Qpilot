@@ -37,6 +37,7 @@ connecting an AI agent. The repository's [README](../README.md) is the overview.
 | [agents.md](agents.md) | the 33 MCP tools, what each refuses, models inside qPilot, the harness |
 | [app.md](app.md) | the page's build spec: principles, sections, design system, API conventions |
 | [release.md](release.md) | how a release is made |
+| [sandbox.md](sandbox.md) | the public sandbox: the limit per visitor, who a visitor is behind a proxy, how to tune it |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | how to contribute |
 | [../THREAT_MODEL.md](../THREAT_MODEL.md) and [../SECURITY.md](../SECURITY.md) | threats, mitigations, reporting a vulnerability |
 | [security-review-2026-10.md](security-review-2026-10.md) | the October 2026 security review of this round's features (RT-EX-001 to 015) |
