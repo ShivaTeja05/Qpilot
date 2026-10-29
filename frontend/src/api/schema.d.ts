@@ -14631,6 +14631,12 @@ export type components = {
             cq: number | null;
             /** Detected */
             detected: boolean;
+            /**
+             * Note
+             * @description Why a well with a Cq is not used, in words.
+             * @default
+             */
+            note: string;
             /** Quantity */
             quantity: number;
             /** Residual */
@@ -16203,6 +16209,12 @@ export type components = {
             curve: string | null;
             /** Detected */
             detected: boolean;
+            /**
+             * Note
+             * @description Why a well with a Cq is not used, in words.
+             * @default
+             */
+            note: string;
             /** Quantity */
             quantity: number | null;
             /** Run Id */

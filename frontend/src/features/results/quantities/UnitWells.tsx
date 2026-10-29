@@ -52,7 +52,7 @@ export function UnitWells({ unit, sid }: { unit: UnitQuantity; sid: string | nul
               <span className="text-muted">{w.sample}</span>
               <span className="tabular">Cq {w.cq == null ? "none" : fixed(w.cq, 2)}</span>
               <span className={w.detected ? "text-fg" : "text-muted"}>
-                {w.detected ? "detected" : "not detected"}
+                {w.detected ? "detected" : w.note || "not detected"}
               </span>
               <span className="tabular text-muted">
                 {w.quantity != null ? `alone: ${fmtQuantity(w.quantity)}` : ""}

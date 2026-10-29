@@ -363,6 +363,7 @@ class StandardPoint:
     detected: bool
     residual: float | None = None  # Cq minus the line, detected wells only
     back_quantity: float | None = None  # read back from the curve
+    note: str = ""  # why a well with a Cq is not on the curve (NOT_USED), in words
 
 
 @dataclass(frozen=True)
@@ -448,6 +449,7 @@ class UnknownWell:
     detected: bool
     curve: str | None
     quantity: float | None  # this well alone, read from its curve
+    note: str = ""  # why a well with a Cq does not count as detected (NOT_USED), in words
 
 
 @dataclass(frozen=True)
@@ -530,15 +532,64 @@ def detected_wells(
 ) -> pd.Series:
     """Whether each well counts as detected: a Cq, LinRegPCR's call, the rule, a person's call.
 
-    LinRegPCR's own amplification call or a quantity from it marks a signal; the study's primary
-    amplification rule (a Cq cut-off, the Curve Judge) and a person's well calls then apply as
-    they do to relative quantities (:func:`qpilot.qpcr.amp_call.amplified`).
+    LinRegPCR's own amplification call marks a signal: a well it calls *no amplification* is not
+    detected even when it gives it a quantity and a Cq (a flat curve; science review J1: on the
+    eDNA standard curve three such wells made the efficiency 154 % and R² 0.41, 87 % and 0.996
+    without them). A table with no call (a Cq table) falls back on the quantity. The study's
+    primary amplification rule (a Cq cut-off, the Curve Judge) then applies as it does to
+    relative quantities (:func:`qpilot.qpcr.amp_call.amplified`), and a person's well call has
+    the last word (any well with a Cq). Relative quantification is not changed by this.
     """
     has_cq = table["cq"].notna()
-    called = table["amplification"].eq(True) if "amplification" in table.columns else False
-    signal = has_cq & (table["n0"].notna() | called)
+    signal = has_cq & linregpcr_signal(table)
     probe = table.assign(n0=np.where(signal, 1.0, np.nan))
-    return amplified(probe, rule_id, calls) & has_cq
+    detected = amplified(probe, rule_id, None) & has_cq
+    if calls:
+        from qpilot.qpcr.amp_call import well_keys
+
+        override = well_keys(table).map(calls)
+        detected = detected.where(override.isna(), override.eq(True) & has_cq)
+    return detected.astype(bool)
+
+
+def linregpcr_signal(table: pd.DataFrame) -> pd.Series:
+    """LinRegPCR's call where it made one (``amplification``), else whether it gave a quantity."""
+    quantity = table["n0"].notna()
+    if "amplification" not in table.columns:
+        return quantity
+    call = table["amplification"]
+    known = call.notna()
+    return (known & call.eq(True)) | (~known & quantity)
+
+
+#: Why a well with a Cq does not count as detected, in words (standards and unknowns).
+NOT_USED = {
+    "no_amplification": "no amplification (LinRegPCR's call): not used",
+    "rule": "past the amplification rule's Cq cut-off: not used",
+    "person": "a person called it not amplified: not used",
+}
+
+
+def not_used_why(
+    table: pd.DataFrame, detected: pd.Series, rule_id: str, calls: Mapping[str, bool] | None
+) -> pd.Series:
+    """Why each well with a Cq is not detected (a :data:`NOT_USED` key; "" otherwise)."""
+    from qpilot.qpcr.amp_call import well_keys
+
+    has_cq = table["cq"].notna().to_numpy()
+    signal = linregpcr_signal(table).to_numpy()
+    called = well_keys(table).map(calls or {}).to_numpy() if calls else np.full(len(table), None)
+    out = []
+    for i, det in enumerate(detected.to_numpy(dtype=bool)):
+        if det or not has_cq[i]:
+            out.append("")
+        elif called[i] is False:
+            out.append("person")
+        elif not signal[i]:
+            out.append("no_amplification")
+        else:
+            out.append("rule")
+    return pd.Series(out, index=table.index, dtype=object)
 
 
 def name_quantity(sample: str) -> float | None:
@@ -752,6 +803,7 @@ def _curve(
                 detected=bool(det[i]),
                 residual=residual,
                 back_quantity=back,
+                note=NOT_USED.get(str(getattr(row, "abs_why", "") or ""), ""),
             )
         )
     levels = _levels(points, fit)
@@ -846,7 +898,11 @@ def quantify(
     work = table
     if EXCLUDED in work.columns:
         work = work[~work[EXCLUDED].astype(bool)]
-    work = work.assign(abs_det=detected_wells(work, rule_id, calls).to_numpy())
+    detected = detected_wells(work, rule_id, calls)
+    work = work.assign(
+        abs_det=detected.to_numpy(),
+        abs_why=not_used_why(work, detected, rule_id, calls).to_numpy(),
+    )
     std = work[work["sample_type"] == "std"]
     q, source, unit = standard_quantities(std, quantities, declared)
     std = std.assign(abs_q=q, abs_source=source, abs_unit=unit)
@@ -946,6 +1002,9 @@ def _unknowns(
     sample_of = unknown["sample"].astype(str).to_numpy()
     cq_of = unknown["cq"].to_numpy(dtype=float)
     det_of = unknown["abs_det"].to_numpy(dtype=bool) & np.isfinite(cq_of)
+    why_of = (
+        unknown["abs_why"].to_numpy() if "abs_why" in unknown.columns else np.full(len(run), "")
+    )
     chosen: list[StandardCurve | None] = []
     other_of = np.zeros(len(run), dtype=bool)
     for i, (t, r) in enumerate(zip(target_of, run, strict=True)):
@@ -983,6 +1042,7 @@ def _unknowns(
                     detected=detected,
                     curve=curve.id if curve is not None else None,
                     quantity=float(single[i]) if np.isfinite(single[i]) else None,
+                    note=NOT_USED.get(str(why_of[i] or ""), ""),
                 )
             )
         n_detected = int(det_of[idx].sum())

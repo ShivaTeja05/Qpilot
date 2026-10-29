@@ -1,6 +1,6 @@
 {
  "study_id": "035292c88520",
- "head": "cc8fa4dedc0389e23484b5aa3ed01e86b27fa3270a0b303504c2df9c50aabae5",
+ "head": "b058d603f4d5176651a058e953c5f4d3cc2304b7a528a6a95e1999ff5b5bbde4",
  "cards": [
   {
    "card": {
@@ -100,7 +100,7 @@
          "class_from": "below_loq",
          "class_to": "not_detected",
          "item": "PMMoV · PR-231103-NEG-R1",
-         "quantity_from": 0.425775132760001,
+         "quantity_from": 0.426049938340809,
          "quantity_to": null,
          "target": "PMMoV",
          "unit": "PR-231103-NEG-R1"
@@ -407,7 +407,7 @@
        "class_to": "not_detected",
        "words_from": "detected, below the limit of quantification",
        "words_to": "not detected",
-       "quantity_from": 0.425775132760001,
+       "quantity_from": 0.426049938340809,
        "quantity_to": null
       }
      ],
@@ -475,7 +475,7 @@
     "decision": "loq_cv_35",
     "reason": "Decided automatically: no option on this card changes what is reported for any sample (its class, or its number by more than 2-fold).",
     "decided_by": "system",
-    "decided_at": "2026-10-28T22:43:56Z"
+    "decided_at": "2026-10-29T00:47:37Z"
    },
    "title": "How precise a quantity must be to be reported",
    "status_line": "Decided automatically: no option on this card changes what is reported for any sample (its class, or its number by more than 2-fold).",

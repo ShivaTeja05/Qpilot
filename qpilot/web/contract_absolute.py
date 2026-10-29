@@ -48,6 +48,7 @@ class StandardPointView(BaseModel):
     detected: bool
     residual: float | None
     back_quantity: float | None
+    note: str = Field(default="", description="Why a well with a Cq is not used, in words.")
 
 
 class BandPoint(BaseModel):
@@ -112,6 +113,7 @@ class UnknownWellView(BaseModel):
     detected: bool
     curve: str | None
     quantity: float | None
+    note: str = Field(default="", description="Why a well with a Cq is not used, in words.")
 
 
 class UnitQuantity(BaseModel):

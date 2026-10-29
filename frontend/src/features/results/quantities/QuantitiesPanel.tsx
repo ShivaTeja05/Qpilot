@@ -32,6 +32,7 @@ import {
   useAssay,
   useQuantities,
   useRecordReaction,
+  type CurveDetail,
   type CurveSummary,
   type Limit,
   type QuantitiesView,
@@ -99,6 +100,27 @@ function CurveNumbers({ curve, unit }: { curve: CurveSummary; unit: string }) {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+/** Standard wells with a Cq that are not on the curve, and why (LinRegPCR's call, a rule). */
+function NotUsed({ curve }: { curve: CurveDetail }) {
+  const left = curve.points.filter((p) => !p.detected && p.note);
+  if (!left.length) return null;
+  return (
+    <div className="text-[12.5px] text-fg" data-testid="standards-not-used">
+      <p className="font-medium">
+        {left.length} standard well{left.length === 1 ? "" : "s"} with a Cq not on the curve:
+      </p>
+      <ul className="mt-1 space-y-0.5 text-muted">
+        {left.map((p) => (
+          <li key={`${p.run_id}/${p.well}`}>
+            <span className="font-mono text-fg">{p.well}</span> ({p.sample}, Cq {fixed(p.cq, 2)}
+            ): {p.note}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -466,6 +488,7 @@ export function QuantitiesPanel({
                     <Badge tone="info">Pooled over {curve.runs.join(", ")}</Badge>
                   )}
                   <CurveNumbers curve={curve} unit={detail.unit} />
+                  <NotUsed curve={curve} />
                   {summary && (
                     <p className="text-[12px] text-muted">
                       {summary.n_quantified} of {summary.n_units} units quantified,{" "}

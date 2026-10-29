@@ -248,6 +248,7 @@ def assay_view(store: StudyStore, study_id: str, target: str) -> AssayQuantities
                         detected=p.detected,
                         residual=_num(p.residual),
                         back_quantity=_num(p.back_quantity),
+                        note=p.note,
                     )
                     for p in c.points
                 ],
@@ -296,6 +297,7 @@ def assay_view(store: StudyStore, study_id: str, target: str) -> AssayQuantities
                     detected=w.detected,
                     curve=w.curve,
                     quantity=_num(w.quantity),
+                    note=w.note,
                 )
                 for w in u.wells
             ],

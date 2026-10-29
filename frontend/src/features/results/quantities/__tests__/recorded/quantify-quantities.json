@@ -11,6 +11,7 @@
  },
  "reaction": null,
  "can_set_reaction": true,
+ "inbox_head": "e5267fcb7ad88b8602bca6e729a374ac8b134d2ff2f428b7be538600302d11ba",
  "assays": [
   {
    "target": "Cov2",

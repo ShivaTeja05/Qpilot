@@ -55,7 +55,8 @@
      "cq": 23.4816,
      "detected": true,
      "residual": -0.22135999999999711,
-     "back_quantity": 116555.42231081103
+     "back_quantity": 116555.42231081103,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -65,7 +66,8 @@
      "cq": 23.5533,
      "detected": true,
      "residual": -0.14965999999999724,
-     "back_quantity": 110912.92575326895
+     "back_quantity": 110912.92575326895,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -75,7 +77,8 @@
      "cq": 23.2274,
      "detected": true,
      "residual": -0.475559999999998,
-     "back_quantity": 138974.59983294283
+     "back_quantity": 138974.59983294283,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -85,7 +88,8 @@
      "cq": 27.1828,
      "detected": true,
      "residual": 0.15274333333333345,
-     "back_quantity": 8996.862941147565
+     "back_quantity": 8996.862941147565,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -95,7 +99,8 @@
      "cq": 27.0816,
      "detected": true,
      "residual": 0.05154333333333483,
-     "back_quantity": 9649.571190149407
+     "back_quantity": 9649.571190149407,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -105,7 +110,8 @@
      "cq": 27.1703,
      "detected": true,
      "residual": 0.14024333333333416,
-     "back_quantity": 9075.031347134349
+     "back_quantity": 9075.031347134349,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -115,7 +121,8 @@
      "cq": 30.5235,
      "detected": true,
      "residual": 0.1663466666666693,
-     "back_quantity": 891.2559754164646
+     "back_quantity": 891.2559754164646,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -125,7 +132,8 @@
      "cq": 30.7525,
      "detected": true,
      "residual": 0.39534666666667206,
-     "back_quantity": 760.6303949970443
+     "back_quantity": 760.6303949970443,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -135,7 +143,8 @@
      "cq": 30.4872,
      "detected": true,
      "residual": 0.1300466666666722,
-     "back_quantity": 913.9298623326731
+     "back_quantity": 913.9298623326731,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -145,7 +154,8 @@
      "cq": 33.9476,
      "detected": true,
      "residual": 0.26335000000000264,
-     "back_quantity": 83.33873510555524
+     "back_quantity": 83.33873510555524,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -155,7 +165,8 @@
      "cq": 34.3541,
      "detected": true,
      "residual": 0.6698500000000038,
-     "back_quantity": 62.902558224448306
+     "back_quantity": 62.902558224448306,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -165,7 +176,8 @@
      "cq": 33.7203,
      "detected": true,
      "residual": 0.036050000000003024,
-     "back_quantity": 97.53595198759882
+     "back_quantity": 97.53595198759882,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -175,7 +187,8 @@
      "cq": 36.7666,
      "detected": true,
      "residual": -0.24474666666666423,
-     "back_quantity": 11.845724661673692
+     "back_quantity": 11.845724661673692,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -185,7 +198,8 @@
      "cq": 36.5503,
      "detected": true,
      "residual": -0.46104666666666105,
-     "back_quantity": 13.758569139460038
+     "back_quantity": 13.758569139460038,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -195,7 +209,8 @@
      "cq": 36.5582,
      "detected": true,
      "residual": -0.4531466666666617,
-     "back_quantity": 13.683551403841513
+     "back_quantity": 13.683551403841513,
+     "note": ""
     }
    ],
    "levels": [
@@ -534,7 +549,8 @@
      "cq": null,
      "detected": false,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": null
+     "quantity": null,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -543,7 +559,8 @@
      "cq": null,
      "detected": false,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": null
+     "quantity": null,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -552,7 +569,8 @@
      "cq": null,
      "detected": false,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": null
+     "quantity": null,
+     "note": ""
     }
    ],
    "reported": "not_detected",
@@ -584,7 +602,8 @@
      "cq": 31.9289,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 336.9706881832334
+     "quantity": 336.9706881832334,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -593,7 +612,8 @@
      "cq": 31.4984,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 453.9251204318494
+     "quantity": 453.9251204318494,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -602,7 +622,8 @@
      "cq": 31.5667,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 432.9680092886161
+     "quantity": 432.9680092886161,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -634,7 +655,8 @@
      "cq": 31.3731,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 495.04500198458055
+     "quantity": 495.04500198458055,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -643,7 +665,8 @@
      "cq": 31.3052,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 518.8631930055525
+     "quantity": 518.8631930055525,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -652,7 +675,8 @@
      "cq": 31.5711,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 431.65157954750356
+     "quantity": 431.65157954750356,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -684,7 +708,8 @@
      "cq": 34.5305,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 55.67357495828739
+     "quantity": 55.67357495828739,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -693,7 +718,8 @@
      "cq": 34.3952,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 61.138558618058134
+     "quantity": 61.138558618058134,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -702,7 +728,8 @@
      "cq": 34.5814,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 53.74653684618348
+     "quantity": 53.74653684618348,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -734,7 +761,8 @@
      "cq": 34.6556,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 51.056231874958605
+     "quantity": 51.056231874958605,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -743,7 +771,8 @@
      "cq": 34.5272,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 55.80086937081962
+     "quantity": 55.80086937081962,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -752,7 +781,8 @@
      "cq": 34.201,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 69.9333615748134
+     "quantity": 69.9333615748134,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -784,7 +814,8 @@
      "cq": 32.2798,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 264.3168168502423
+     "quantity": 264.3168168502423,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -793,7 +824,8 @@
      "cq": 32.1849,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 282.2592366709296
+     "quantity": 282.2592366709296,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -802,7 +834,8 @@
      "cq": 32.7071,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 196.6502497973957
+     "quantity": 196.6502497973957,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -834,7 +867,8 @@
      "cq": 32.7419,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 191.97069295415366
+     "quantity": 191.97069295415366,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -843,7 +877,8 @@
      "cq": 33.1542,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 144.31553202902396
+     "quantity": 144.31553202902396,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -852,7 +887,8 @@
      "cq": 32.7331,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 193.14340401057456
+     "quantity": 193.14340401057456,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -884,7 +920,8 @@
      "cq": 34.9074,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 42.89109748218847
+     "quantity": 42.89109748218847,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -893,7 +930,8 @@
      "cq": 34.6814,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 50.15269215411242
+     "quantity": 50.15269215411242,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -902,7 +940,8 @@
      "cq": 34.4453,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 59.055047326484114
+     "quantity": 59.055047326484114,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -934,7 +973,8 @@
      "cq": 32.5527,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 218.82721320408763
+     "quantity": 218.82721320408763,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -943,7 +983,8 @@
      "cq": 33.1232,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 147.44515545272745
+     "quantity": 147.44515545272745,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -952,7 +993,8 @@
      "cq": 32.4715,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 231.4765455794684
+     "quantity": 231.4765455794684,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -984,7 +1026,8 @@
      "cq": 32.5638,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 217.1526269394782
+     "quantity": 217.1526269394782,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -993,7 +1036,8 @@
      "cq": 32.5168,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 224.3321496833349
+     "quantity": 224.3321496833349,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1002,7 +1046,8 @@
      "cq": 32.4357,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 237.28327330771663
+     "quantity": 237.28327330771663,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -1041,7 +1086,8 @@
      "cq": null,
      "detected": false,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": null
+     "quantity": null,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1050,7 +1096,8 @@
      "cq": null,
      "detected": false,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": null
+     "quantity": null,
+     "note": ""
     }
    ],
    "reported": "not_detected",
@@ -1082,7 +1129,8 @@
      "cq": 34.1632,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 71.78697636525033
+     "quantity": 71.78697636525033,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1091,7 +1139,8 @@
      "cq": 34.3844,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 61.597242277116614
+     "quantity": 61.597242277116614,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1100,7 +1149,8 @@
      "cq": 34.251,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 67.55481156480208
+     "quantity": 67.55481156480208,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -1132,7 +1182,8 @@
      "cq": 34.675,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 50.37532367263853
+     "quantity": 50.37532367263853,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1141,7 +1192,8 @@
      "cq": 33.8841,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 87.08284598290118
+     "quantity": 87.08284598290118,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1150,7 +1202,8 @@
      "cq": 33.8361,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 90.02426967411938
+     "quantity": 90.02426967411938,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -1182,7 +1235,8 @@
      "cq": 32.9666,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 164.32308207073027
+     "quantity": 164.32308207073027,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1191,7 +1245,8 @@
      "cq": 33.4584,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 116.91816947834344
+     "quantity": 116.91816947834344,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1200,7 +1255,8 @@
      "cq": 33.0155,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 158.85506734112502
+     "quantity": 158.85506734112502,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -1239,7 +1295,8 @@
      "cq": null,
      "detected": false,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": null
+     "quantity": null,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1248,7 +1305,8 @@
      "cq": null,
      "detected": false,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": null
+     "quantity": null,
+     "note": ""
     }
    ],
    "reported": "not_detected",
@@ -1280,7 +1338,8 @@
      "cq": 33.4717,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 115.8469296501198
+     "quantity": 115.8469296501198,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1289,7 +1348,8 @@
      "cq": 33.8706,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 87.90026931037768
+     "quantity": 87.90026931037768,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1298,7 +1358,8 @@
      "cq": 33.679,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 100.3639978244579
+     "quantity": 100.3639978244579,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -1330,7 +1391,8 @@
      "cq": 32.7488,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 191.05616335679397
+     "quantity": 191.05616335679397,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1339,7 +1401,8 @@
      "cq": 32.1331,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 292.56157985129005
+     "quantity": 292.56157985129005,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1348,7 +1411,8 @@
      "cq": 32.4858,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 229.19701170108058
+     "quantity": 229.19701170108058,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -1380,7 +1444,8 @@
      "cq": 33.4487,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 117.7056912225391
+     "quantity": 117.7056912225391,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1389,7 +1454,8 @@
      "cq": 33.3644,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 124.7770944141111
+     "quantity": 124.7770944141111,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1398,7 +1464,8 @@
      "cq": 33.5669,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 108.46034761806126
+     "quantity": 108.46034761806126,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -1437,7 +1504,8 @@
      "cq": null,
      "detected": false,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": null
+     "quantity": null,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1446,7 +1514,8 @@
      "cq": null,
      "detected": false,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": null
+     "quantity": null,
+     "note": ""
     }
    ],
    "reported": "not_detected",
@@ -1478,7 +1547,8 @@
      "cq": 34.4844,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 57.4784481148549
+     "quantity": 57.4784481148549,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1487,7 +1557,8 @@
      "cq": 34.8484,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 44.67868041377796
+     "quantity": 44.67868041377796,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1496,7 +1567,8 @@
      "cq": 34.5191,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 56.11455462216714
+     "quantity": 56.11455462216714,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -1528,7 +1600,8 @@
      "cq": 33.196,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 140.20050192905947
+     "quantity": 140.20050192905947,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1537,7 +1610,8 @@
      "cq": 33.0597,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 154.06933818892142
+     "quantity": 154.06933818892142,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1546,7 +1620,8 @@
      "cq": 32.5724,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 215.86401535548393
+     "quantity": 215.86401535548393,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -1578,7 +1653,8 @@
      "cq": 33.1724,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 142.5091796070478
+     "quantity": 142.5091796070478,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1587,7 +1663,8 @@
      "cq": 33.4094,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 120.95102760325317
+     "quantity": 120.95102760325317,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1596,7 +1673,8 @@
      "cq": 33.829,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 90.46771048352973
+     "quantity": 90.46771048352973,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -1635,7 +1713,8 @@
      "cq": null,
      "detected": false,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": null
+     "quantity": null,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1644,7 +1723,8 @@
      "cq": null,
      "detected": false,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": null
+     "quantity": null,
+     "note": ""
     }
    ],
    "reported": "not_detected",
@@ -1676,7 +1756,8 @@
      "cq": 35.0573,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 38.66454130975271
+     "quantity": 38.66454130975271,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1685,7 +1766,8 @@
      "cq": 35.3779,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 30.970810596721545
+     "quantity": 30.970810596721545,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1694,7 +1776,8 @@
      "cq": 33.7566,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 95.11616110781839
+     "quantity": 95.11616110781839,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -1726,7 +1809,8 @@
      "cq": 32.7444,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 191.63883703988247
+     "quantity": 191.63883703988247,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1735,7 +1819,8 @@
      "cq": 32.5416,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 220.5147131469571
+     "quantity": 220.5147131469571,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1744,7 +1829,8 @@
      "cq": 32.1943,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 280.4289698428966
+     "quantity": 280.4289698428966,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -1776,7 +1862,8 @@
      "cq": 34.0769,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 76.20512721583265
+     "quantity": 76.20512721583265,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1785,7 +1872,8 @@
      "cq": 34.2678,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 66.77391491328747
+     "quantity": 66.77391491328747,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1794,7 +1882,8 @@
      "cq": 33.5525,
      "detected": true,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": 109.54664716839399
+     "quantity": 109.54664716839399,
+     "note": ""
     }
    ],
    "reported": "quantified",
@@ -1833,7 +1922,8 @@
      "cq": null,
      "detected": false,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": null
+     "quantity": null,
+     "note": ""
     },
     {
      "run_id": "2023-11-14_Cov2_Copy",
@@ -1842,7 +1932,8 @@
      "cq": null,
      "detected": false,
      "curve": "Cov2 @ 2023-11-14_Cov2_Copy",
-     "quantity": null
+     "quantity": null,
+     "note": ""
     }
    ],
    "reported": "not_detected",
