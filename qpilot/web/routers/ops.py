@@ -139,6 +139,10 @@ TOOL_ACCESS: dict[str, tuple[ToolAccess, str]] = {
         "Nothing: each unit's value of a gene and the wells behind it, as the engine computed it.",
     ),
     "qpcr_melt": ("read", "Nothing: the melt curves are read from the file and judged."),
+    "qpcr_quantities": (
+        "read",
+        "Nothing: each sample's quantity is read from the standard curves, not stored.",
+    ),
     "qpcr_repeat_plan": (
         "read",
         "Nothing: what to repeat and why, and the repeat plate. Re-running is a person's call.",
