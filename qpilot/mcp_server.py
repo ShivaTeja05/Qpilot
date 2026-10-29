@@ -57,8 +57,8 @@ import logging
 import os
 import re
 import sys
-from collections.abc import Callable, Iterator, Mapping
-from pathlib import Path
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from pathlib import Path, PurePath, PureWindowsPath
 from typing import Any, Literal
 
 from pydantic import ValidationError
@@ -146,17 +146,47 @@ KIND_TO_DIMENSION: dict[str, str | None] = {
 }
 
 
+#: Windows folders a server may be started in that are the system's, not a lab's data (a client
+#: can start servers in ``C:\Windows\System32``): environment variable, and the usual place.
+WINDOWS_SYSTEM_FOLDERS = (
+    ("SystemRoot", "C:\\Windows"),
+    ("ProgramFiles", "C:\\Program Files"),
+    ("ProgramFiles(x86)", "C:\\Program Files (x86)"),
+    ("ProgramData", "C:\\ProgramData"),
+)
+
+
+def system_folders() -> list[PurePath]:
+    """The Windows system folders (:data:`WINDOWS_SYSTEM_FOLDERS`); none elsewhere."""
+    if os.name != "nt":
+        return []
+    return [PureWindowsPath(os.environ.get(var) or usual) for var, usual in WINDOWS_SYSTEM_FOLDERS]
+
+
+def too_wide(cwd: PurePath, home: PurePath, system: Sequence[PurePath] = ()) -> bool:
+    r"""True when ``cwd`` (resolved) may not be a data root of its own.
+
+    The filesystem root, a drive (``C:\``) or a network share (``\\server\share``), the home
+    folder or any folder containing it (``C:\Users``), or a folder inside one of ``system``.
+    Windows paths compare without regard to case, as Windows does.
+    """
+    if cwd == type(cwd)(cwd.anchor) or home.is_relative_to(cwd):
+        return True
+    return any(cwd.is_relative_to(folder) for folder in system)
+
+
 def implicit_cwd_root(cwd: Path | None = None, home: Path | None = None) -> Path | None:
     """The current directory as a data root when ``QPILOT_DATA_ROOTS`` is unset, or None.
 
     An MCP client picks the server's working directory (Claude Desktop starts servers in ``/``,
     others in the home folder), so the current directory counts only when it is a folder of its
-    own: never the filesystem root (or a drive), the home folder, or any folder that contains
-    the home folder. Otherwise every sheet on the disk would be readable through the tools.
+    own: never the filesystem root (or a drive or network share), the home folder, any folder
+    that contains the home folder, or (on Windows) a system folder (:func:`too_wide`). Otherwise
+    every sheet on the disk would be readable through the tools.
     """
     cwd = (cwd or Path.cwd()).resolve()
     home = (home or Path.home()).resolve()
-    if cwd == Path(cwd.anchor) or home.is_relative_to(cwd):
+    if too_wide(cwd, home, system_folders()):
         return None
     return cwd
 

@@ -8,11 +8,13 @@ from __future__ import annotations
 
 import os
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
+from types import SimpleNamespace
 
 import anyio
 import pytest
 
+from qpilot import mcp_server
 from qpilot.core.store import StudyStore
 from qpilot.mcp_server import (
     QpilotTools,
@@ -21,7 +23,9 @@ from qpilot.mcp_server import (
     data_roots,
     implicit_cwd_root,
     roots_notice,
+    too_wide,
 )
+from tests.homes import home_env, set_home
 
 
 @pytest.fixture
@@ -29,7 +33,7 @@ def home(tmp_path, monkeypatch):
     """A private home folder (with a qPilot cache) and no QPILOT_DATA_ROOTS."""
     folder = tmp_path / "home" / "pat"
     (folder / ".cache" / "qpilot").mkdir(parents=True)
-    monkeypatch.setenv("HOME", str(folder))
+    set_home(monkeypatch, folder)
     monkeypatch.delenv("QPILOT_DATA_ROOTS", raising=False)
     return folder
 
@@ -85,6 +89,51 @@ def test_implicit_root_rule_on_plain_paths(tmp_path):
     assert implicit_cwd_root(tmp_path / "elsewhere", home) == (tmp_path / "elsewhere").resolve()
 
 
+W = PureWindowsPath
+WINDOWS_SYSTEM = [W("C:/Windows"), W("C:/Program Files"), W("C:/ProgramData")]
+
+
+@pytest.mark.parametrize(
+    "cwd",
+    [
+        "C:\\",
+        "D:\\",
+        "c:\\",
+        "C:\\Users",
+        "c:\\users\\PAT",  # Windows names ignore case
+        "C:\\Windows\\System32",  # where some clients start a server
+        "C:\\Program Files\\Lab App",
+        "C:\\ProgramData\\Vendor",
+        "\\\\labserver\\share",  # a network share's root
+        "\\\\labserver\\share\\",
+    ],
+)
+def test_windows_roots_drives_shares_and_system_folders_are_too_wide(cwd):
+    assert too_wide(W(cwd), W("C:/Users/Pat"), WINDOWS_SYSTEM)
+
+
+@pytest.mark.parametrize(
+    "cwd", ["C:\\Users\\Pat\\qpcr", "D:\\lab\\runs", "\\\\labserver\\share\\qpcr"]
+)
+def test_a_windows_folder_of_its_own_is_not_too_wide(cwd):
+    assert not too_wide(W(cwd), W("C:/Users/Pat"), WINDOWS_SYSTEM)
+
+
+def test_posix_rule_has_no_system_folders():
+    home = PurePosixPath("/home/pat")
+    assert too_wide(PurePosixPath("/"), home) and too_wide(PurePosixPath("/home"), home)
+    assert not too_wide(PurePosixPath("/home/pat/qpcr"), home)
+    if os.name != "nt":
+        assert mcp_server.system_folders() == []
+
+
+def test_system_folders_follow_the_windows_environment(monkeypatch):
+    windows = SimpleNamespace(name="nt", environ={"SystemRoot": "E:\\WINNT"})
+    monkeypatch.setattr(mcp_server, "os", windows)
+    folders = mcp_server.system_folders()
+    assert folders[0] == W("e:/winnt") and W("C:/Program Files (x86)") in folders
+
+
 def test_inspect_cannot_read_a_sheet_from_the_home_folder(home, monkeypatch, tmp_studies_dir):
     """The repro of RT-001: cwd '/', a demo-like file in the cache, a sheet elsewhere."""
     rdml = home / ".cache" / "qpilot" / "plate.rdml"
@@ -102,7 +151,7 @@ def test_serve_says_which_folders_it_shares(home, tmp_path, tmp_studies_dir):
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
 
-    env = {**os.environ, "HOME": str(home), "QPILOT_STUDIES_DIR": str(tmp_studies_dir)}
+    env = {**os.environ, **home_env(home), "QPILOT_STUDIES_DIR": str(tmp_studies_dir)}
     env.pop("QPILOT_DATA_ROOTS", None)
     params = StdioServerParameters(
         command=sys.executable, args=["-m", "qpilot.mcp_server"], env=env, cwd="/"
