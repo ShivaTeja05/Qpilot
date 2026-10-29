@@ -65,6 +65,8 @@ Changelog = "https://github.com/ShivaTeja05/Qpilot/blob/main/CHANGELOG.md"
 dev = [
   "pytest",
   "pytest-socket",
+  # the science review's independent oracles (validation/excellence, tests/science)
+  "statsmodels",
   "ruff",
   "mypy",
   "pre-commit",
