@@ -16,6 +16,7 @@ import uuid
 from collections import OrderedDict
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -30,6 +31,13 @@ MAX_KEPT = 200
 #: more than the slowest background job can hold (the view preparation's gate run), so a
 #: person's job never queues behind work they did not ask for.
 WORKERS = 4
+#: Who is asking, while a request runs (set by the public sandbox's rate limit, see
+#: :mod:`qpilot.web.ratelimit`; ``None`` on a person's own computer and outside any request).
+#: A job started meanwhile remembers it as its ``owner``.
+REQUESTER: ContextVar[str | None] = ContextVar("qpilot_requester", default=None)
+#: ``admission(kind, owner, active)``: called, under the runner's lock, before a new job is
+#: made; it may raise to refuse it. ``active`` lists the jobs that are queued or running.
+Admission = Callable[[str, "str | None", "list[Job]"], None]
 
 
 class JobError(Exception):
@@ -52,6 +60,7 @@ class Job:
     key: str | None
     typical_s: float | None
     tag: str | None = None
+    owner: str | None = None  # who asked (the public sandbox's visitor), never shown
     status: JobStatus = "queued"
     step: str = ""
     fraction: float | None = None
@@ -105,6 +114,9 @@ class JobRunner:
         self._background = ThreadPoolExecutor(max_workers=1, thread_name_prefix="qpilot-prep")
         self._jobs: OrderedDict[str, Job] = OrderedDict()
         self._lock = threading.Lock()
+        #: The public sandbox's check on who may start more work (None: anyone, as on a
+        #: person's own computer).
+        self.admission: Admission | None = None
 
     def submit(
         self,
@@ -122,7 +134,8 @@ class JobRunner:
 
         The same ``kind`` for the same ``key`` (and ``tag``, e.g. one proposal) while one runs
         returns the running job instead of starting it twice. ``background`` work (nobody asked
-        for it) runs on its own thread and never takes a worker from the pool.
+        for it) runs on its own thread and never takes a worker from the pool. On the public
+        sandbox, ``admission`` may refuse a new job (a visitor's share of the workers is used).
         """
         with self._lock:
             if dedupe:
@@ -134,6 +147,9 @@ class JobRunner:
                         and job.status in ("queued", "running")
                     ):
                         return job
+            owner = REQUESTER.get()
+            if self.admission is not None and not background:
+                self.admission(kind, owner, self._active_locked())
             job = Job(
                 id=uuid.uuid4().hex[:16],
                 kind=kind,
@@ -141,12 +157,16 @@ class JobRunner:
                 key=key,
                 typical_s=typical_s,
                 tag=tag,
+                owner=owner,
             )
             self._jobs[job.id] = job
             self._forget_finished()
         self._publish(job)
         (self._background if background else self._pool).submit(self._run, job, fn)
         return job
+
+    def _active_locked(self) -> list[Job]:
+        return [j for j in self._jobs.values() if j.status in ("queued", "running")]
 
     def _forget_finished(self) -> None:
         """Keep at most MAX_KEPT jobs, forgetting finished ones first (never a running one)."""

@@ -7,6 +7,12 @@ on every start: the public demo study (Vermeulen 2009 / Ruijter 2013, CC BY 4.0,
 pinned) is downloaded, walked through Studio by the scripted person of ``qpilot studio demo
 --check`` and audited, in the background, while the page is up.
 
+Each visitor may read 240 times a minute, write 20 times a minute, upload 6 files in 10 minutes,
+run 3 analyses at once and keep 6 live streams open; everyone together gets 8 analyses at once
+(``qpilot/web/ratelimit.py``, ``docs/sandbox.md``). A visitor is the address Vercel's proxy saw:
+Vercel overwrites ``X-Forwarded-For`` with it, so the leftmost entry is believed, and any peer
+is the platform's own proxy because the container can only be reached through it.
+
 ZeroGPU needs one ``@spaces.GPU`` function to start; qPilot never asks for a GPU, so no quota is
 used.
 """
@@ -34,6 +40,18 @@ ENV = {
     # 20x that in memory), and the sandbox turns read-only below 1 GB of free disk
     "QPILOT_MAX_UNPACKED_MB": "128",
     "QPILOT_MIN_FREE_MB": "1024",
+    # a limit per visitor (RT-EX-015); docs/sandbox.md says what each setting means
+    "QPILOT_RATE_READS": "240/min",
+    "QPILOT_RATE_WRITES": "20/min",
+    "QPILOT_RATE_UPLOADS": "6/10min",
+    "QPILOT_RATE_JOBS": "3",
+    "QPILOT_RATE_JOBS_ALL": "8",
+    "QPILOT_RATE_STREAMS": "6",
+    # the visitor is the address Vercel's proxy saw (it overwrites X-Forwarded-For); every peer
+    # is the platform's ingress, which is the only way to reach the container
+    "QPILOT_TRUSTED_PROXIES": "*",
+    "QPILOT_CLIENT_IP_HEADER": "x-forwarded-for",
+    "QPILOT_PROXY_HOPS": "leftmost",
     "QPILOT_CACHE_DIR": str(DATA / "cache"),
     "QPILOT_STUDIES_DIR": str(DATA / "studies"),
     "MPLBACKEND": "Agg",
@@ -114,7 +132,15 @@ def main() -> None:
     app = gr.mount_gradio_app(app, stub, path="/gradio", ssr_mode=False)
     _report_ready_to_zerogpu()
     threading.Thread(target=_prepare_demo, name="qpilot-demo", daemon=True).start()
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", "7860")), log_level="info")
+    # proxy_headers=False: qPilot reads X-Forwarded-For itself (QPILOT_TRUSTED_PROXIES), so
+    # uvicorn must not rewrite the peer address first
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", "7860")),
+        log_level="info",
+        proxy_headers=False,
+    )
 
 
 if __name__ == "__main__":

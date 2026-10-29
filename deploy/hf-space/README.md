@@ -19,7 +19,8 @@ published method, and shows which of your analysis choices could change your con
 choices stay with a person. **Research use only. Not for clinical or diagnostic use.**
 
 This Space runs qPilot's own server as a **public sandbox**: shared by every visitor, reset when
-the Space restarts, no language model, uploads up to 25 MB. Don't upload confidential data. To
+the Space restarts, no language model, uploads up to 25 MB, a fair-use limit per visitor (a page
+that says the sandbox is busy gives the wait). Don't upload confidential data. To
 keep your data on your computer, install qPilot and run `qpilot app`
 ([source](https://github.com/ShivaTeja05/Qpilot)).
 
