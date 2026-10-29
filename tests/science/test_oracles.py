@@ -190,6 +190,20 @@ def test_normfinder_equals_the_papers_equations(wells, grouped, candidates):
         assert found.gamma2 == pytest.approx(mine["gamma2"], abs=1e-15)
 
 
+def test_normfinder_names_the_genes_whose_variance_it_counted_as_zero(wells):
+    """Science review J11: with K. phaffii's groups of three, an unbiased within-group variance
+    comes out negative for four of the six genes; the warning names them."""
+    values = co.unit_values(wells)
+    cand = list(values.columns)
+    groups = {u: kp.condition(u) for u in values.index}
+    found = normfinder(values, cand, groups)
+    assert len(found.clamped) == 4
+    (said,) = [w for w in found.warnings if "came out below zero" in w]
+    assert all(gene in said for gene in found.clamped)
+    assert said.endswith("look steadier than the data show")
+    assert any("at least 8 samples per group" in w for w in found.warnings)
+
+
 # ---- replicates in the robustness audit ---------------------------------------------------------
 
 

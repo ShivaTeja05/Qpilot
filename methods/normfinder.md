@@ -33,12 +33,16 @@ Model (Eq. A): `y_igj = α_ig + β_gj + ε_igj` for the log2 quantity of gene *i
 | Stability value (Eq. C) | With `v = σ²_ig / n_g`: `ρ_ig = γ²·|d_ig| / (γ² + v) + √(v + γ²·v / (γ² + v))` — the posterior mean shift plus one posterior SD; `ρ_i` = mean over the groups. Lower is steadier |
 | Best pair | The average of two genes has the average of their posterior shifts and a quarter of the sum of their posterior variances: `ρ_ij = mean_g(|d̃_ig + d̃_jg| / 2 + √((p_ig + p_jg) / 4))`; the pair with the lowest value. Genes whose shifts cancel can beat the two individually steadiest genes |
 
-Without groups (one group), `d = 0` and `γ² = 0`: the stability value is `√(σ²/n)` and the best pair is
-the two steadiest genes.
+Without groups (one group), `d = 0` and `γ² = 0`: the stability value is `√(σ²/n)` (the standard error of
+the gene's mean, the paper's equation with γ² = 0) and the best pair is the two steadiest genes. The ranking is
+NormFinder's; a lab comparing the *values* with the NormFinder program's own ungrouped output should check
+that program's scale first (science review J11).
 
 **qPilot's choices where the paper is silent** (each reported, never hidden): an unbiased variance estimate
 below 0 (sampling noise with few genes) counts as 0 in the stability value and the gene is named
-(`clamped`); a unit missing any candidate is left out (NormFinder needs complete data), as is a unit without
+(`clamped`), in the warnings too ("the within-group variance of … came out below zero in some group …
+which makes them look steadier than the data show"; science review J11: with small groups this happens
+often, for 4 of 6 genes on K. phaffii's groups of three, and makes those genes look steadiest); a unit missing any candidate is left out (NormFinder needs complete data), as is a unit without
 a group and a group with fewer than two units. The groups are every group of a confirmed design, or the
 expression-defined split's high group and the rest. The paper's own requirements are shown as plain warnings:
 at least 8 samples per group, at least 3 candidates (5–10 recommended), candidates with no expected difference
