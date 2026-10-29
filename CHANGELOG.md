@@ -380,6 +380,11 @@ Methods paragraph on them.
 - Setting the design and recording the reaction input require the decision-record head the page
   showed (`expected_head`), so a stale page cannot overwrite a newer decision (RT-EX-012);
   GitHub Actions are pinned by commit SHA (RT-EX-013).
+- **The public sandbox limits each visitor** (RT-EX-015, [`docs/sandbox.md`](docs/sandbox.md)): a
+  hosted server (`QPILOT_HOSTED=1`) limits reads, writes, uploads, running jobs and live streams per
+  visitor, with sandbox-wide caps behind them, and answers `429` with `Retry-After` and how long to
+  wait in plain words. A visitor is the socket peer, or the forwarded address only from a proxy in
+  `QPILOT_TRUSTED_PROXIES`. The page and `qpilot app` on your own computer are never limited.
 - RT-UI-025: every refusal of an RDML file says its own reason, never a traceback.
 - A hostile Prism project (a DOCTYPE, external links, an oversized file) is refused.
 - The new MCP tools obey the blind rule (`results_hidden` until a person confirms the design and
