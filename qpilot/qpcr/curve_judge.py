@@ -81,6 +81,12 @@ N_CYCLES = 40
 CYC_COLUMNS: tuple[str, ...] = tuple(f"Cyc{i}" for i in range(1, N_CYCLES + 1))
 THRESHOLD = 0.5
 MAX_MODEL_BYTES = 32 * 1024 * 1024
+#: Added to the refusal when the only change is LF turned into CRLF (a Git checkout on Windows
+#: that ignored the repository's ``.gitattributes``): the file is still refused, by its bytes.
+CRLF_HINT = (
+    " (its line ends were changed to CRLF, as a Git checkout on Windows without the repository's "
+    ".gitattributes does: check the file out again, or reinstall qPilot)"
+)
 NOT_VALIDATED = "not validated for this instrument"
 KEY_NAME = "run_id/well"
 FINGERPRINT_KEYS: tuple[str, ...] = ("instrument", "dye", "target_type", "cycles")
@@ -306,9 +312,11 @@ def load_model(
         raise ModelIntegrityError("model file is too large")
     actual = hashlib.sha256(payload).hexdigest()
     if actual != pinned:
+        # Still refused: the pin is on the bytes. Only the message says what the change was.
+        crlf = b"\r\n" in payload and hashlib.sha256(payload.replace(b"\r\n", b"\n")).hexdigest()
         raise ModelIntegrityError(
             f"model.json SHA-256 {actual[:12]}… does not match model.sha256 {pinned[:12]}…; "
-            "refusing to load a modified model"
+            "refusing to load a modified model" + (CRLF_HINT if crlf == pinned else "")
         )
     if expected_sha256 is not None and actual != expected_sha256:
         raise ModelIntegrityError(
