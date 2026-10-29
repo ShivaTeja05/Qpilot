@@ -103,7 +103,41 @@ def _header(c: Ctx) -> ReportHeader:
     )
 
 
+def _quantify_summary(c: Ctx):  # noqa: ANN202 - ReportText
+    """A study that quantifies samples: what is reported for its samples, by class."""
+    from qpilot.qpcr.quantify_study import CLASS_WORDS, CLASSES, class_of
+    from qpilot.report.methods import study_quantities
+
+    r = c.result
+    plates = c.count("n_plates", r.n_plates, "results.json:/n_plates")
+    parts: list = [
+        f"{plates} {noun(r.n_plates, 'plate')}, a quantification: each sample's quantity is read "
+        "from a standard curve, and no groups are compared. "
+    ]
+    found = study_quantities(c)
+    if found is None or not found.unknowns:
+        parts.append("No sample could be read from a standard curve.")
+        return c.t(*parts)
+    counts = {k: 0 for k in CLASSES}
+    for u in found.unknowns:
+        counts[class_of(u)] += 1
+    n = c.count("qn_items", len(found.unknowns), "quantities:/unknowns@len", "{:,}")
+    listed = [
+        f"{c.count(f'qn_{k}', counts[k], f'quantities:/unknowns@{k}', '{:,}')} {CLASS_WORDS[k]}"
+        for k in reversed(CLASSES)
+        if counts[k]
+    ]
+    parts.append(
+        f"Of {n} sample results (one assay of one biological unit each): " + "; ".join(listed) + "."
+    )
+    return c.t(*parts)
+
+
 def _summary(c: Ctx):  # noqa: ANN202 - ReportText
+    from qpilot.qpcr.quantify_study import is_quantify_result
+
+    if is_quantify_result(c.result):
+        return _quantify_summary(c)
     r = c.result
     a, b = c.group_names
     plates = c.count("n_plates", r.n_plates, "results.json:/n_plates")

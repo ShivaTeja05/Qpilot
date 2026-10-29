@@ -48,6 +48,7 @@ class StandardPointView(BaseModel):
     detected: bool
     residual: float | None
     back_quantity: float | None
+    note: str = Field(default="", description="Why a well with a Cq is not used, in words.")
 
 
 class BandPoint(BaseModel):
@@ -112,6 +113,7 @@ class UnknownWellView(BaseModel):
     detected: bool
     curve: str | None
     quantity: float | None
+    note: str = Field(default="", description="Why a well with a Cq is not used, in words.")
 
 
 class UnitQuantity(BaseModel):
@@ -131,6 +133,12 @@ class UnitQuantity(BaseModel):
     per_ng: float | None = None
     flags: list[FlagView]
     wells: list[UnknownWellView]
+    reported: str = Field(
+        default="",
+        description="What is reported for it (a class id: quantified, above_top, below_lowest, "
+        "below_loq, below_lod, no_curve, not_detected).",
+    )
+    reported_words: str = Field(default="", description="The class in words.")
 
 
 class AssaySummary(BaseModel):
@@ -141,6 +149,9 @@ class AssaySummary(BaseModel):
     n_units: int
     n_quantified: int
     n_flagged: int
+    by_class: dict[str, int] = Field(
+        default={}, description="Units by what is reported for them (class id -> count)."
+    )
 
 
 class NotQuantified(BaseModel):
@@ -192,6 +203,19 @@ class QuantitiesView(BaseModel):
     notes: list[str] = []
     method_card: str
     references: list[str]
+    purpose: Literal["compare", "quantify"] = Field(
+        default="compare",
+        description="quantify: the study quantifies samples (no groups compared); the quantities "
+        "are its result, at the analysis in use (its cards' options).",
+    )
+    analysis: list[str] = Field(
+        default=[],
+        description="A quantification study: the analysis in use in words (which wells count "
+        "as detected, the LOQ line), and whether a person changed it.",
+    )
+    classes: list[FlagView] = Field(
+        default=[], description="Every class a sample can be reported as, in order, in words."
+    )
 
 
 class AssayQuantities(BaseModel):

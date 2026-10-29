@@ -365,3 +365,47 @@ def test_cli_quantify_with_person_quantities_for_level_labels(capsys):
     printed = capsys.readouterr().out
     assert "Cov2 @" in printed and "quantities from design" in printed
     assert "D-231018-Negative Ctrl\tCov2\t0/3" in printed and "not detected in any well" in printed
+
+
+# ---- science review J1: a well LinRegPCR calls "no amplification" is not a detected standard ----
+
+EDNA = CORPUS / "rdml" / "quantstudio7pro-rdml-1.2-edna"
+
+
+def test_flat_standard_wells_are_not_on_the_curve():
+    """QuantStudio 7 Pro eDNA standard curve: A7, A8 and D9 are flat (LinRegPCR: no
+    amplification) yet carry a Cq; on the curve they made it 154 %, R² 0.41."""
+    from qpilot.qpcr.absolute_study import quantify_file
+
+    result = quantify_file(EDNA / "SupplementaryMaterials2_qPCR_ConcentrationStandardCurve.rdml")
+    (curve,) = [c for c in result.curves if c.fit is not None]
+    assert curve.target == "BRK2"
+    assert curve.fit.efficiency == pytest.approx(0.871, abs=0.001)
+    assert curve.fit.r2 == pytest.approx(0.996, abs=0.0005)
+    low, high = curve.fit.efficiency_ci
+    assert 0.84 < low < high < 0.91
+    left = {p.well: p for p in curve.points if not p.detected and p.cq is not None}
+    assert {"A7", "A8", "D9"} <= set(left)
+    for well in ("A7", "A8", "D9"):
+        assert left[well].note == ab.NOT_USED["no_amplification"]
+        assert left[well].residual is None and left[well].back_quantity is None
+    assert all(p.note == "" for p in curve.points if p.detected)
+
+
+def test_a_person_has_the_last_word_on_a_flat_well():
+    table = pd.DataFrame(
+        {
+            "run_id": ["r", "r", "r"],
+            "well": ["A1", "A2", "A3"],
+            "cq": [30.0, 31.0, None],
+            "n0": [1e-9, 1e-9, None],
+            "amplification": [True, False, False],
+        }
+    )
+    assert ab.detected_wells(table).tolist() == [True, False, False]
+    assert ab.detected_wells(table, calls={"r/A2": True}).tolist() == [True, True, False]
+    assert ab.detected_wells(table, calls={"r/A1": False}).tolist() == [False, False, False]
+    why = ab.not_used_why(table, ab.detected_wells(table), "linregpcr", None)
+    assert why.tolist() == ["", "no_amplification", ""]
+    cq_table = table.drop(columns=["amplification"])  # a Cq table: no call, the quantity
+    assert ab.detected_wells(cq_table).tolist() == [True, True, False]

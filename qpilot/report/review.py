@@ -521,6 +521,8 @@ def audit_checks(rv: Review) -> None:
     """The audit: absent, out of date, genes to check first, a clustered plate layout."""
     c = rv.c
     a = c.inputs.audit
+    if a is None and c.quantify:
+        return  # the audit compares groups; a quantification's choices are on its cards
     if a is None:
         rv.flag(
             "no_audit", "note", "No robustness audit yet",
@@ -639,8 +641,54 @@ def review(c: Ctx) -> ReviewView:
     )
 
 
+def _quantify_limitations(c: Ctx) -> list[Limitation]:
+    """The limitations of a study that quantifies samples."""
+    out: list[tuple[str, list[Part]]] = [
+        (
+            "research_use",
+            [
+                "Research use only; not for clinical or diagnostic use: a quantity here is not a "
+                "viral load reported to a patient or a regulator."
+            ],
+        ),
+        (
+            "standards",
+            [
+                "Every quantity is only as right as the standards' own quantities and their "
+                "dilution: an error there moves every number by the same factor."
+            ],
+        ),
+        (
+            "limits",
+            [
+                "The limits of detection and quantification come from the standards of this run "
+                "(a few replicates per level), not from a validation study; below them a number "
+                "is shown but not reported as a quantity."
+            ],
+        ),
+        (
+            "matrix",
+            [
+                "The standards are measured in clean template; inhibition in a sample's matrix "
+                "(wastewater, tissue) can lower its quantity, and no inhibition control is read "
+                "here."
+            ],
+        ),
+        (
+            "record",
+            [
+                "The Analysis Record is tamper-evident, not tamper-proof: verifying it shows any "
+                "change, but cannot prove who made it."
+            ],
+        ),
+    ]
+    return [Limitation(id=i, text=c.t(*parts)) for i, parts in out]
+
+
 def limitations(c: Ctx) -> list[Limitation]:
     """The study's limitations in plain words."""
+    if c.quantify:
+        return _quantify_limitations(c)
     out: list[tuple[str, list[Part]]] = [
         (
             "research_use",

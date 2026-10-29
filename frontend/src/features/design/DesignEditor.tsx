@@ -23,6 +23,7 @@ import { isWarming, Warming, type QuoteLookup } from "@/ui/proposal";
 import { ComparisonPanel } from "./ComparisonPanel";
 import { EMPTY_DRAFT, type Draft, type EditorView } from "./draft";
 import { PastePanel } from "./PastePanel";
+import { PurposePanel, purposeNow } from "./PurposePanel";
 import { ReviewDialog } from "./ReviewDialog";
 import { SamplesPanel, type Proposed } from "./SamplesPanel";
 import { SheetPanel } from "./SheetPanel";
@@ -93,6 +94,7 @@ export function DesignEditor({
                 curves and the results wait for it to be confirmed again).
               </p>
             ) : null}
+            <PurposePanel view={view} draft={draft} onDraft={onDraft} />
             <Tabs value={tab} onValueChange={(v) => onTab(v as EditorTab)}>
               <TabsList label="What to set">
                 <TabsTrigger value="targets" count={view.targets.length}>
@@ -140,6 +142,12 @@ export function DesignEditor({
                 />
               </TabsContent>
               <TabsContent value="comparison">
+                {purposeNow(view, draft) === "quantify" ? (
+                  <p className="mb-3 rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-muted">
+                    Not needed: this study quantifies samples and compares no groups. A comparison
+                    set here is kept aside, and used again only if the study compares groups.
+                  </p>
+                ) : null}
                 <ComparisonPanel
                   view={view}
                   draft={draft}

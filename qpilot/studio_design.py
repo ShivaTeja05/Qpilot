@@ -63,8 +63,32 @@ GROUP_KIND = "design.group"
 UNIT_KIND = "design.bio_unit"
 SERIES_KIND = "design.dilution_series"
 COMPARISON_KIND = "design.comparison"
+PURPOSE_KIND = "design.purpose"
 #: The design items a person sets on the page (the comparison is written last, see set_design).
-SET_KINDS = (TARGET_ROLE_KIND, ROLE_KIND, SERIES_KIND, GROUP_KIND, UNIT_KIND, COMPARISON_KIND)
+SET_KINDS = (
+    TARGET_ROLE_KIND,
+    ROLE_KIND,
+    SERIES_KIND,
+    PURPOSE_KIND,
+    GROUP_KIND,
+    UNIT_KIND,
+    COMPARISON_KIND,
+)
+PURPOSES = ("compare", "quantify")
+#: What a study can be for, in the person's words (value, label, what it means).
+PURPOSE_WORDS: tuple[tuple[str, str, str], ...] = (
+    (
+        "compare",
+        "Compare groups",
+        "how a gene differs between groups of samples, normalised to reference genes",
+    ),
+    (
+        "quantify",
+        "Quantify samples",
+        "how much of each target every sample holds, read from a standard curve (a viral "
+        "load, copies of a construct, a library); no groups compared, no reference gene needed",
+    ),
+)
 TARGET_ROLES = ("ref", "toi", "ignore")
 #: Optional keys of a comparison a person sets: the further comparisons and their correction
 #: (``qpilot.qpcr.designs.comparison_plan`` reads them; the engine checks them).
@@ -221,6 +245,8 @@ class DesignSoFar:
     target_roles: dict[str, str] = field(default_factory=dict)
     comparison: dict[str, str] | None = None
     preset: str | None = None
+    #: What the study is for (``design.purpose``): ``compare`` (the default) or ``quantify``.
+    purpose: str = "compare"
     #: A person's several comparisons (the accepted comparison's plan keys), when it has them.
     plan: dict[str, Any] | None = None
     #: Accepted pairings (``design.pair``): sample -> pair key, and the pairing's name.
@@ -264,6 +290,8 @@ def so_far(accepted: Iterable[Proposal]) -> DesignSoFar:
                 out.pairs.pop(p.subject, None)
         elif p.kind == "design.preset":
             out.preset = str(d.get("preset"))
+        elif p.kind == PURPOSE_KIND:
+            out.purpose = "quantify" if d.get("purpose") == "quantify" else "compare"
     return out
 
 
@@ -326,6 +354,11 @@ def normalise(item: DesignItem, facts: Any) -> DesignItem:
     kind, subject, payload = item.kind, str(item.subject), dict(item.payload)
     if kind not in SET_KINDS:
         raise DesignEditError(f"{kind} is not a design item a person sets on this page")
+    if kind == PURPOSE_KIND:
+        purpose = payload.get("purpose")
+        if purpose not in PURPOSES:
+            raise DesignEditError("a study compares groups or quantifies samples")
+        return DesignItem(kind, "purpose", {"purpose": purpose})
     if kind == TARGET_ROLE_KIND:
         if subject not in targets:
             raise DesignEditError(f"there is no target {subject!r} in this file")
@@ -399,6 +432,8 @@ def _current(
     found = latest_values.get((item.kind, item.subject))
     if found is not None:
         return found
+    if item.kind == PURPOSE_KIND:
+        return {"purpose": "compare"}
     if item.kind == ROLE_KIND:
         return {"role": declared_role(facts, item.subject)}
     if item.kind == GROUP_KIND:
@@ -429,7 +464,7 @@ def _candidate(sid: str, item: DesignItem) -> Proposal:
     evidence_kind = "target" if item.kind == TARGET_ROLE_KIND else "sample"
     if item.kind in (SERIES_KIND,):
         refs = list(item.payload["samples"])[:50]
-    elif item.kind == COMPARISON_KIND:
+    elif item.kind in (COMPARISON_KIND, PURPOSE_KIND):
         refs = []
     else:
         refs = [item.subject]
@@ -736,6 +771,11 @@ class EditorState:
     plan: dict[str, Any] | None = None
     pair_by: str | None = None
     n_paired: int = 0
+    #: What the study is for: ``compare`` (groups; the default) or ``quantify`` (samples).
+    purpose: str = "compare"
+    #: Standard samples on the plate and those with a quantity (names and types only: blind).
+    n_standards: int = 0
+    n_standards_with_quantity: int = 0
 
 
 def state(studio: Studio, sid: str) -> EditorState:
@@ -814,6 +854,8 @@ def state(studio: Studio, sid: str) -> EditorState:
     groups = Counter(g for s, g in design.groups.items() if g is not None and s in studied)
     units = Counter(u for u in design.units.values() if u is not None)
     needs = _needs(studio, sid, view, design, targets, groups, n_waiting)
+    standards = [r for r in samples if r.role == "std"]
+    declared_q = {s for s, entries in facts.sample_quantities.items() if entries}
     return EditorState(
         head=view.head,
         samples=samples,
@@ -828,6 +870,11 @@ def state(studio: Studio, sid: str) -> EditorState:
         plan=design.plan,
         pair_by=design.pair_by if design.pairs else None,
         n_paired=sum(1 for s in design.pairs if s in studied),
+        purpose=design.purpose,
+        n_standards=len(standards),
+        n_standards_with_quantity=sum(
+            1 for r in standards if r.quantity is not None or r.sample in declared_q
+        ),
     )
 
 
@@ -840,9 +887,15 @@ def _needs(
     groups: Mapping[str, int],
     n_waiting: int,
 ) -> list[Need]:
-    """What the design still needs, each with the control on the page that gives it."""
-    if design.preset is not None:
+    """What the design still needs, each with the control on the page that gives it.
+
+    A study that quantifies samples needs no reference gene, no groups and no comparison
+    (said once, as not applicable); it needs standards with quantities instead.
+    """
+    if design.purpose == "quantify":
         needs: list[Need] = []
+    elif design.preset is not None:
+        needs = []
     else:
         roles = {t.target: t.role for t in targets}
         needs = []
@@ -897,8 +950,15 @@ def _needs(
     for blocker in assembly.blockers:
         if blocker.startswith(("no comparison yet", "no reference genes yet")):
             continue  # said above, with the control that gives it
+        if blocker.startswith(STANDARDS_BLOCKERS):
+            needs.append(Need("standards", _sentence(blocker), "samples"))
+            continue
         needs.append(Need("engine", _sentence(blocker), "engine"))
     return needs
+
+
+#: The blockers of a quantification design (``qpcr.quantify_study.standards_needed``).
+STANDARDS_BLOCKERS = ("no standards yet", "no standards with a quantity yet", "the standards are")
 
 
 # ---- the sample-sheet template and attaching a sheet -------------------------------------------

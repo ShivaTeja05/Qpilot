@@ -3476,6 +3476,14 @@ export type components = {
          * @description One assay: its curves and how many units were quantified or flagged.
          */
         AssaySummary: {
+            /**
+             * By Class
+             * @description Units by what is reported for them (class id -> count).
+             * @default {}
+             */
+            by_class: {
+                [key: string]: number;
+            };
             /** Curves */
             curves: components["schemas"]["CurveSummary"][];
             /** N Flagged */
@@ -5482,10 +5490,22 @@ export type components = {
             /** Label */
             label: string;
             /**
+             * N Quantities Changed
+             * @description How many sample results this option reports differently.
+             * @default 0
+             */
+            n_quantities_changed: number;
+            /**
              * Not Recommended
              * @description E.g. a single control gene (MIQE).
              */
             not_recommended: boolean;
+            /**
+             * Quantities
+             * @description A quantification study's card: the sample results this option reports differently from the recommended one (at most 60 listed).
+             * @default []
+             */
+            quantities: components["schemas"]["QuantityChange"][];
             /** Recommended */
             recommended: boolean;
             /**
@@ -7302,14 +7322,17 @@ export type components = {
          *     fold change = group_a relative to group_b, the reference group); several comparisons add
          *     ``comparisons`` (``[{group_a, group_b}, ...]``, the first is ``group_a``/``group_b``),
          *     ``pattern`` (``vs_control``, ``all_pairs`` or ``chosen``), ``control``, ``correction``
-         *     (``holm``, ``dunnett``, ``tukey`` or ``none``) and ``pair_by`` (the accepted pairing's name).
+         *     (``holm``, ``dunnett``, ``tukey`` or ``none``) and ``pair_by`` (the accepted pairing's name);
+         *     ``design.purpose`` ``{"purpose": "compare"|"quantify"}`` (subject ``purpose``): what the study
+         *     is for (compare groups, the default; or quantify samples from a standard curve: no
+         *     comparison and no reference gene needed).
          */
         DesignEditItem: {
             /**
              * Kind
              * @enum {string}
              */
-            kind: "design.target_role" | "design.well_role" | "design.group" | "design.bio_unit" | "design.dilution_series" | "design.comparison";
+            kind: "design.target_role" | "design.well_role" | "design.group" | "design.bio_unit" | "design.dilution_series" | "design.comparison" | "design.purpose";
             /** Payload */
             payload?: {
                 [key: string]: unknown;
@@ -7365,6 +7388,18 @@ export type components = {
              * @default 0
              */
             n_paired: number;
+            /**
+             * N Standards
+             * @description Standard samples on the plate.
+             * @default 0
+             */
+            n_standards: number;
+            /**
+             * N Standards With Quantity
+             * @description Standard samples with a quantity (the file's or a person's).
+             * @default 0
+             */
+            n_standards_with_quantity: number;
             /** Needs */
             needs: components["schemas"]["DesignNeed"][];
             /**
@@ -7377,6 +7412,19 @@ export type components = {
              * @description A built-in design a person accepted (the demo's).
              */
             preset?: string | null;
+            /**
+             * Purpose
+             * @description What the study is for: compare groups (the default) or quantify samples from a standard curve (no comparison, no reference gene).
+             * @default compare
+             * @enum {string}
+             */
+            purpose: "compare" | "quantify";
+            /**
+             * Purposes
+             * @description What a study can be for, in words (compare, quantify).
+             * @default []
+             */
+            purposes: components["schemas"]["EditorOption"][];
             /** Sample Types */
             sample_types: components["schemas"]["EditorOption"][];
             /** Samples */
@@ -11120,7 +11168,7 @@ export type components = {
              * Kind
              * @enum {string}
              */
-            kind: "design.target_role" | "design.well_role" | "design.group" | "design.bio_unit" | "design.dilution_series" | "design.comparison";
+            kind: "design.target_role" | "design.well_role" | "design.group" | "design.bio_unit" | "design.dilution_series" | "design.comparison" | "design.purpose";
             /** Payload */
             payload: {
                 [key: string]: unknown;
@@ -12319,7 +12367,7 @@ export type components = {
              * Kind
              * @enum {string}
              */
-            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.pair" | "design.dilution_series" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "curve.import_trust" | "choice.axis" | "choice.reaction_input" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
+            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.pair" | "design.dilution_series" | "design.purpose" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "curve.import_trust" | "choice.axis" | "choice.reaction_input" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
             /**
              * Level
              * @default Low
@@ -12686,6 +12734,12 @@ export type components = {
          * @description The study's absolute quantification: every assay with standards.
          */
         QuantitiesView: {
+            /**
+             * Analysis
+             * @description A quantification study: the analysis in use in words (which wells count as detected, the LOQ line), and whether a person changed it.
+             * @default []
+             */
+            analysis: string[];
             /** Assays */
             assays: components["schemas"]["AssaySummary"][];
             /**
@@ -12699,6 +12753,12 @@ export type components = {
              * @default false
              */
             can_set_reaction: boolean;
+            /**
+             * Classes
+             * @description Every class a sample can be reported as, in order, in words.
+             * @default []
+             */
+            classes: components["schemas"]["FlagView"][];
             /**
              * Groups Shown
              * @description Units carry their design group (a groups design).
@@ -12719,6 +12779,13 @@ export type components = {
              * @default []
              */
             notes: string[];
+            /**
+             * Purpose
+             * @description quantify: the study quantifies samples (no groups compared); the quantities are its result, at the analysis in use (its cards' options).
+             * @default compare
+             * @enum {string}
+             */
+            purpose: "compare" | "quantify";
             reaction?: components["schemas"]["ReactionView"] | null;
             /** References */
             references: string[];
@@ -12735,6 +12802,37 @@ export type components = {
              * @default
              */
             why: string;
+        };
+        /**
+         * QuantityChange
+         * @description One sample result an option of a quantification study's card reports differently.
+         */
+        QuantityChange: {
+            /**
+             * Class From
+             * @description What the recommended option reports (a class id).
+             */
+            class_from: string;
+            /**
+             * Class To
+             * @description What this option reports.
+             */
+            class_to: string;
+            /** Quantity From */
+            quantity_from?: number | null;
+            /** Quantity To */
+            quantity_to?: number | null;
+            /** Target */
+            target: string;
+            /**
+             * Unit
+             * @description The biological unit (the sample when it has none).
+             */
+            unit: string;
+            /** Words From */
+            words_from: string;
+            /** Words To */
+            words_to: string;
         };
         /**
          * QuarantineEntry
@@ -14533,6 +14631,12 @@ export type components = {
             cq: number | null;
             /** Detected */
             detected: boolean;
+            /**
+             * Note
+             * @description Why a well with a Cq is not used, in words.
+             * @default
+             */
+            note: string;
             /** Quantity */
             quantity: number;
             /** Residual */
@@ -15911,6 +16015,18 @@ export type components = {
             per_ul?: number | null;
             /** Quantity */
             quantity: number | null;
+            /**
+             * Reported
+             * @description What is reported for it (a class id: quantified, above_top, below_lowest, below_loq, below_lod, no_curve, not_detected).
+             * @default
+             */
+            reported: string;
+            /**
+             * Reported Words
+             * @description The class in words.
+             * @default
+             */
+            reported_words: string;
             /** Samples */
             samples: string[];
             /** Unit */
@@ -16093,6 +16209,12 @@ export type components = {
             curve: string | null;
             /** Detected */
             detected: boolean;
+            /**
+             * Note
+             * @description Why a well with a Cq is not used, in words.
+             * @default
+             */
+            note: string;
             /** Quantity */
             quantity: number | null;
             /** Run Id */
@@ -16620,6 +16742,13 @@ export type components = {
             next_step: components["schemas"]["NextStep"];
             /** Proposals Head */
             proposals_head?: string | null;
+            /**
+             * Purpose
+             * @description What the study is for: compare groups (the default), or quantify samples from a standard curve (no groups compared; Results shows the quantities).
+             * @default compare
+             * @enum {string}
+             */
+            purpose: "compare" | "quantify";
             /** Results Visible */
             results_visible: boolean;
             /**

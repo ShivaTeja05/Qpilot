@@ -1,0 +1,1217 @@
+{
+ "head": "b9f0eb1629bd8d1f4bf229ed2773f5954402ee9e3391a8d9708a08d715b95a9b",
+ "samples": [
+  {
+   "sample": "PR-231026-DNI-R1",
+   "text_id": "t_e8145e2cae5a",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/A1",
+    "2023-11-14_Cov2_Copy/A2",
+    "2023-11-14_Cov2_Copy/A3",
+    "2023-11-14_PMMoV_VIC/A1",
+    "2023-11-14_PMMoV_VIC/A2",
+    "2023-11-14_PMMoV_VIC/A3"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231101-DNI-R1",
+   "text_id": "t_60a95cc50cfb",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/A4",
+    "2023-11-14_Cov2_Copy/A5",
+    "2023-11-14_Cov2_Copy/A6",
+    "2023-11-14_PMMoV_VIC/A4",
+    "2023-11-14_PMMoV_VIC/A5",
+    "2023-11-14_PMMoV_VIC/A6"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "D-231018-NorthB",
+   "text_id": "t_60856114bdd8",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/A7",
+    "2023-11-14_Cov2_Copy/A8",
+    "2023-11-14_Cov2_Copy/A9",
+    "2023-11-14_PMMoV_VIC/A7",
+    "2023-11-14_PMMoV_VIC/A8",
+    "2023-11-14_PMMoV_VIC/A9"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231103-DNI-R1",
+   "text_id": "t_3186528ccef4",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/A10",
+    "2023-11-14_Cov2_Copy/A11",
+    "2023-11-14_Cov2_Copy/A12",
+    "2023-11-14_PMMoV_VIC/A10",
+    "2023-11-14_PMMoV_VIC/A11",
+    "2023-11-14_PMMoV_VIC/A12"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231026-DSI-R1",
+   "text_id": "t_c9ba0d615a19",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/B1",
+    "2023-11-14_Cov2_Copy/B2",
+    "2023-11-14_Cov2_Copy/B3",
+    "2023-11-14_PMMoV_VIC/B1",
+    "2023-11-14_PMMoV_VIC/B2",
+    "2023-11-14_PMMoV_VIC/B3"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231101-DSI-R1",
+   "text_id": "t_163deb47945e",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/B4",
+    "2023-11-14_Cov2_Copy/B5",
+    "2023-11-14_Cov2_Copy/B6",
+    "2023-11-14_PMMoV_VIC/B4",
+    "2023-11-14_PMMoV_VIC/B5",
+    "2023-11-14_PMMoV_VIC/B6"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "D-231018-SouthB",
+   "text_id": "t_c51e3e8767f3",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/B7",
+    "2023-11-14_Cov2_Copy/B8",
+    "2023-11-14_Cov2_Copy/B9",
+    "2023-11-14_PMMoV_VIC/B7",
+    "2023-11-14_PMMoV_VIC/B8",
+    "2023-11-14_PMMoV_VIC/B9"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231103-DSI-R1",
+   "text_id": "t_2ed3dca9d326",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/B10",
+    "2023-11-14_Cov2_Copy/B11",
+    "2023-11-14_Cov2_Copy/B12",
+    "2023-11-14_PMMoV_VIC/B10",
+    "2023-11-14_PMMoV_VIC/B11",
+    "2023-11-14_PMMoV_VIC/B12"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231026-DCS-R1",
+   "text_id": "t_06cee4f8c2e8",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/C1",
+    "2023-11-14_Cov2_Copy/C2",
+    "2023-11-14_Cov2_Copy/C3",
+    "2023-11-14_PMMoV_VIC/C1",
+    "2023-11-14_PMMoV_VIC/C2",
+    "2023-11-14_PMMoV_VIC/C3"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231101-DCS-R1",
+   "text_id": "t_2b78776dcb64",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/C4",
+    "2023-11-14_Cov2_Copy/C5",
+    "2023-11-14_Cov2_Copy/C6",
+    "2023-11-14_PMMoV_VIC/C4",
+    "2023-11-14_PMMoV_VIC/C5",
+    "2023-11-14_PMMoV_VIC/C6"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "D-231018-SS-B",
+   "text_id": "t_c5978fede61e",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/C7",
+    "2023-11-14_Cov2_Copy/C8",
+    "2023-11-14_Cov2_Copy/C9",
+    "2023-11-14_PMMoV_VIC/C7",
+    "2023-11-14_PMMoV_VIC/C8",
+    "2023-11-14_PMMoV_VIC/C9"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231103-DCS-R1",
+   "text_id": "t_96ac25206d5b",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/C10",
+    "2023-11-14_Cov2_Copy/C11",
+    "2023-11-14_Cov2_Copy/C12",
+    "2023-11-14_PMMoV_VIC/C10",
+    "2023-11-14_PMMoV_VIC/C11",
+    "2023-11-14_PMMoV_VIC/C12"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231031-DNI-R1",
+   "text_id": "t_07d72d258d6f",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/D1",
+    "2023-11-14_Cov2_Copy/D2",
+    "2023-11-14_Cov2_Copy/D3",
+    "2023-11-14_PMMoV_VIC/D1",
+    "2023-11-14_PMMoV_VIC/D2",
+    "2023-11-14_PMMoV_VIC/D3"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "D-231018-NorthA",
+   "text_id": "t_c0b468e84fa6",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/D4",
+    "2023-11-14_Cov2_Copy/D5",
+    "2023-11-14_Cov2_Copy/D6",
+    "2023-11-14_PMMoV_VIC/D4",
+    "2023-11-14_PMMoV_VIC/D5",
+    "2023-11-14_PMMoV_VIC/D6"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231102-DNI-R1",
+   "text_id": "t_4195d692df66",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/D7",
+    "2023-11-14_Cov2_Copy/D8",
+    "2023-11-14_Cov2_Copy/D9",
+    "2023-11-14_PMMoV_VIC/D7",
+    "2023-11-14_PMMoV_VIC/D8",
+    "2023-11-14_PMMoV_VIC/D9"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "Std 1",
+   "text_id": "t_2992c55473b9",
+   "declared_type": "std",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/D10",
+    "2023-11-14_Cov2_Copy/D11",
+    "2023-11-14_Cov2_Copy/D12",
+    "2023-11-14_PMMoV_VIC/D10",
+    "2023-11-14_PMMoV_VIC/D11",
+    "2023-11-14_PMMoV_VIC/D12"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "std",
+   "quantity": 100000.0,
+   "series": "STD",
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231031-DSI-R1",
+   "text_id": "t_bb2000f73192",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/E1",
+    "2023-11-14_Cov2_Copy/E2",
+    "2023-11-14_Cov2_Copy/E3",
+    "2023-11-14_PMMoV_VIC/E1",
+    "2023-11-14_PMMoV_VIC/E2",
+    "2023-11-14_PMMoV_VIC/E3"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "D-231018-SouthA",
+   "text_id": "t_9fee2e81aee2",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/E4",
+    "2023-11-14_Cov2_Copy/E5",
+    "2023-11-14_Cov2_Copy/E6",
+    "2023-11-14_PMMoV_VIC/E4",
+    "2023-11-14_PMMoV_VIC/E5",
+    "2023-11-14_PMMoV_VIC/E6"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231102-DSI-R1",
+   "text_id": "t_b1654d7a8166",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/E7",
+    "2023-11-14_Cov2_Copy/E8",
+    "2023-11-14_Cov2_Copy/E9",
+    "2023-11-14_PMMoV_VIC/E7",
+    "2023-11-14_PMMoV_VIC/E8",
+    "2023-11-14_PMMoV_VIC/E9"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "Std 2",
+   "text_id": "t_727af17e2464",
+   "declared_type": "std",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/E10",
+    "2023-11-14_Cov2_Copy/E11",
+    "2023-11-14_Cov2_Copy/E12",
+    "2023-11-14_PMMoV_VIC/E10",
+    "2023-11-14_PMMoV_VIC/E11",
+    "2023-11-14_PMMoV_VIC/E12"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "std",
+   "quantity": 10000.0,
+   "series": "STD",
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231031-DCS-R1",
+   "text_id": "t_5adc8f49b79a",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/F1",
+    "2023-11-14_Cov2_Copy/F2",
+    "2023-11-14_Cov2_Copy/F3",
+    "2023-11-14_PMMoV_VIC/F1",
+    "2023-11-14_PMMoV_VIC/F2",
+    "2023-11-14_PMMoV_VIC/F3"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "D-231018-SS-A",
+   "text_id": "t_f682827d5ec7",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/F4",
+    "2023-11-14_Cov2_Copy/F5",
+    "2023-11-14_Cov2_Copy/F6",
+    "2023-11-14_PMMoV_VIC/F4",
+    "2023-11-14_PMMoV_VIC/F5",
+    "2023-11-14_PMMoV_VIC/F6"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231102-DCS-R1",
+   "text_id": "t_db226dfcf65e",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/F7",
+    "2023-11-14_Cov2_Copy/F8",
+    "2023-11-14_Cov2_Copy/F9",
+    "2023-11-14_PMMoV_VIC/F7",
+    "2023-11-14_PMMoV_VIC/F8",
+    "2023-11-14_PMMoV_VIC/F9"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "Std 3",
+   "text_id": "t_19af5e6cd60f",
+   "declared_type": "std",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/F10",
+    "2023-11-14_Cov2_Copy/F11",
+    "2023-11-14_Cov2_Copy/F12",
+    "2023-11-14_PMMoV_VIC/F10",
+    "2023-11-14_PMMoV_VIC/F11",
+    "2023-11-14_PMMoV_VIC/F12"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "std",
+   "quantity": 1000.0,
+   "series": "STD",
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231026-NEG-R1",
+   "text_id": "t_90355d90714b",
+   "declared_type": "unkn",
+   "n_wells": 4,
+   "wells": [
+    "2023-11-14_Cov2_Copy/G1",
+    "2023-11-14_Cov2_Copy/H1",
+    "2023-11-14_PMMoV_VIC/G1",
+    "2023-11-14_PMMoV_VIC/H1"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231031-NEG-R1",
+   "text_id": "t_8aab79847981",
+   "declared_type": "unkn",
+   "n_wells": 4,
+   "wells": [
+    "2023-11-14_Cov2_Copy/G2",
+    "2023-11-14_Cov2_Copy/H2",
+    "2023-11-14_PMMoV_VIC/G2",
+    "2023-11-14_PMMoV_VIC/H2"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231101-NEG-R1",
+   "text_id": "t_6b2982812ca0",
+   "declared_type": "unkn",
+   "n_wells": 4,
+   "wells": [
+    "2023-11-14_Cov2_Copy/G3",
+    "2023-11-14_Cov2_Copy/H3",
+    "2023-11-14_PMMoV_VIC/G3",
+    "2023-11-14_PMMoV_VIC/H3"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231102-NEG-R1",
+   "text_id": "t_f15235f8300f",
+   "declared_type": "unkn",
+   "n_wells": 4,
+   "wells": [
+    "2023-11-14_Cov2_Copy/G4",
+    "2023-11-14_Cov2_Copy/H4",
+    "2023-11-14_PMMoV_VIC/G4",
+    "2023-11-14_PMMoV_VIC/H4"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "PR-231103-NEG-R1",
+   "text_id": "t_01506e8d65eb",
+   "declared_type": "unkn",
+   "n_wells": 4,
+   "wells": [
+    "2023-11-14_Cov2_Copy/G5",
+    "2023-11-14_Cov2_Copy/H5",
+    "2023-11-14_PMMoV_VIC/G5",
+    "2023-11-14_PMMoV_VIC/H5"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "2023-11-14_Cov2_Copy_G6",
+   "text_id": "t_7d8d662f214f",
+   "declared_type": "ntc",
+   "n_wells": 1,
+   "wells": [
+    "2023-11-14_Cov2_Copy/G6"
+   ],
+   "targets": [
+    "Cov2"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "ntc",
+   "quantity": null,
+   "series": null,
+   "locked": "a control (no template, no RT or no amplification) in the file or by a decision; a control keeps its type and joins no group",
+   "waiting": [
+    "design.well_role"
+   ]
+  },
+  {
+   "sample": "D-231018-Negative Ctrl",
+   "text_id": "t_49aa85d21472",
+   "declared_type": "unkn",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/G7",
+    "2023-11-14_Cov2_Copy/G8",
+    "2023-11-14_Cov2_Copy/G9",
+    "2023-11-14_PMMoV_VIC/G7",
+    "2023-11-14_PMMoV_VIC/G8",
+    "2023-11-14_PMMoV_VIC/G9"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "unkn",
+   "quantity": null,
+   "series": null,
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "Std 4",
+   "text_id": "t_03d0ed061e3b",
+   "declared_type": "std",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/G10",
+    "2023-11-14_Cov2_Copy/G11",
+    "2023-11-14_Cov2_Copy/G12",
+    "2023-11-14_PMMoV_VIC/G10",
+    "2023-11-14_PMMoV_VIC/G11",
+    "2023-11-14_PMMoV_VIC/G12"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "std",
+   "quantity": 100.0,
+   "series": "STD",
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "2023-11-14_Cov2_Copy_H6",
+   "text_id": "t_bd8f53b49923",
+   "declared_type": "ntc",
+   "n_wells": 1,
+   "wells": [
+    "2023-11-14_Cov2_Copy/H6"
+   ],
+   "targets": [
+    "Cov2"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "ntc",
+   "quantity": null,
+   "series": null,
+   "locked": "a control (no template, no RT or no amplification) in the file or by a decision; a control keeps its type and joins no group",
+   "waiting": [
+    "design.well_role"
+   ]
+  },
+  {
+   "sample": "Std 5",
+   "text_id": "t_deec71a1d482",
+   "declared_type": "std",
+   "n_wells": 6,
+   "wells": [
+    "2023-11-14_Cov2_Copy/H10",
+    "2023-11-14_Cov2_Copy/H11",
+    "2023-11-14_Cov2_Copy/H12",
+    "2023-11-14_PMMoV_VIC/H10",
+    "2023-11-14_PMMoV_VIC/H11",
+    "2023-11-14_PMMoV_VIC/H12"
+   ],
+   "targets": [
+    "Cov2",
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "std",
+   "quantity": 10.0,
+   "series": "STD",
+   "locked": null,
+   "waiting": []
+  },
+  {
+   "sample": "2023-11-14_PMMoV_VIC_G6",
+   "text_id": "t_2635bd5e709d",
+   "declared_type": "ntc",
+   "n_wells": 1,
+   "wells": [
+    "2023-11-14_PMMoV_VIC/G6"
+   ],
+   "targets": [
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "ntc",
+   "quantity": null,
+   "series": null,
+   "locked": "a control (no template, no RT or no amplification) in the file or by a decision; a control keeps its type and joins no group",
+   "waiting": [
+    "design.well_role"
+   ]
+  },
+  {
+   "sample": "2023-11-14_PMMoV_VIC_H6",
+   "text_id": "t_b8d7030e5532",
+   "declared_type": "ntc",
+   "n_wells": 1,
+   "wells": [
+    "2023-11-14_PMMoV_VIC/H6"
+   ],
+   "targets": [
+    "PMMoV"
+   ],
+   "experiments": [
+    "qpilot_import"
+   ],
+   "role": "ntc",
+   "quantity": null,
+   "series": null,
+   "locked": "a control (no template, no RT or no amplification) in the file or by a decision; a control keeps its type and joins no group",
+   "waiting": [
+    "design.well_role"
+   ]
+  }
+ ],
+ "membership": [
+  {
+   "sample": "PR-231026-DNI-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231101-DNI-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "D-231018-NorthB",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231103-DNI-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231026-DSI-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231101-DSI-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "D-231018-SouthB",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231103-DSI-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231026-DCS-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231101-DCS-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "D-231018-SS-B",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231103-DCS-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231031-DNI-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "D-231018-NorthA",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231102-DNI-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "Std 1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231031-DSI-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "D-231018-SouthA",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231102-DSI-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "Std 2",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231031-DCS-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "D-231018-SS-A",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231102-DCS-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "Std 3",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231026-NEG-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231031-NEG-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231101-NEG-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231102-NEG-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "PR-231103-NEG-R1",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "2023-11-14_Cov2_Copy_G6",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "D-231018-Negative Ctrl",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "Std 4",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "2023-11-14_Cov2_Copy_H6",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "Std 5",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "2023-11-14_PMMoV_VIC_G6",
+   "group": null,
+   "unit": null
+  },
+  {
+   "sample": "2023-11-14_PMMoV_VIC_H6",
+   "group": null,
+   "unit": null
+  }
+ ],
+ "targets": [
+  {
+   "target": "Cov2",
+   "text_id": "t_28ba4d823fec",
+   "declared_type": "toi",
+   "n_wells": 93,
+   "runs": [
+    "2023-11-14_Cov2_Copy"
+   ],
+   "role": null,
+   "waiting": []
+  },
+  {
+   "target": "PMMoV",
+   "text_id": "t_0bff776fb46b",
+   "declared_type": "toi",
+   "n_wells": 93,
+   "runs": [
+    "2023-11-14_PMMoV_VIC"
+   ],
+   "role": null,
+   "waiting": []
+  }
+ ],
+ "groups": {},
+ "units": {},
+ "comparison": null,
+ "comparison_plan": null,
+ "pair_by": null,
+ "n_paired": 0,
+ "preset": null,
+ "experiments": [
+  "qpilot_import"
+ ],
+ "needs": [
+  {
+   "code": "waiting",
+   "words": "4 proposals still wait for a decision: decide them in the inbox, or set the item yourself (your choice settles a waiting proposal on the same item)",
+   "where": "inbox"
+  }
+ ],
+ "waiting": 4,
+ "confirmed": false,
+ "sample_types": [
+  {
+   "value": "unkn",
+   "label": "Study sample",
+   "hint": "measured and compared; it can join a group"
+  },
+  {
+   "value": "std",
+   "label": "Standard",
+   "hint": "a known quantity (copies or a relative dilution) on a standard curve"
+  },
+  {
+   "value": "ntc",
+   "label": "No-template control (NTC)",
+   "hint": "water instead of template; should not amplify"
+  },
+  {
+   "value": "nrt",
+   "label": "No-RT control",
+   "hint": "RNA without reverse transcription; checks for genomic DNA"
+  },
+  {
+   "value": "nac",
+   "label": "No-amplification control",
+   "hint": "no polymerase or no primers; should not amplify"
+  },
+  {
+   "value": "pos",
+   "label": "Positive control",
+   "hint": "a sample known to carry the target"
+  },
+  {
+   "value": "ntp",
+   "label": "No-target-present control",
+   "hint": "a real sample known to lack the target"
+  },
+  {
+   "value": "opt",
+   "label": "Calibrator",
+   "hint": "a calibrator measured on the plate (inter-run or optical); kept out of the groups, and qPilot does not correct between plates with it"
+  }
+ ],
+ "target_roles": [
+  {
+   "value": "ref",
+   "label": "Reference gene",
+   "hint": "the other genes are normalised to it (housekeeping gene)"
+  },
+  {
+   "value": "toi",
+   "label": "Gene of interest",
+   "hint": "compared between the groups"
+  },
+  {
+   "value": "ignore",
+   "label": "Leave out",
+   "hint": "not part of this study: none of its wells is used"
+  }
+ ],
+ "has_sheet": false,
+ "sheet_name": null,
+ "template_url": "/api/sessions/e1572115c27f/design/template.csv",
+ "purpose": "quantify",
+ "purposes": [
+  {
+   "value": "compare",
+   "label": "Compare groups",
+   "hint": "how a gene differs between groups of samples, normalised to reference genes"
+  },
+  {
+   "value": "quantify",
+   "label": "Quantify samples",
+   "hint": "how much of each target every sample holds, read from a standard curve (a viral load, copies of a construct, a library); no groups compared, no reference gene needed"
+  }
+ ],
+ "n_standards": 5,
+ "n_standards_with_quantity": 5
+}

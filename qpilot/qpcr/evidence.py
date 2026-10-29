@@ -957,6 +957,15 @@ def _file_evidence(source: Any) -> RdmlEvidence:
     return found
 
 
+#: Why a study that quantifies samples has no ledger (its items are about comparing groups).
+QUANTIFY_LEDGER = (
+    "this study quantifies samples and compares no groups, and the ledger's items (reference "
+    "genes, biological units per group, between-plate calibration) are about comparisons; the "
+    "Controls page (NTC, no-RT, standards, melt) and the Quantities view (LOD, LOQ, each "
+    "sample's interval) say what this run can and cannot tell you"
+)
+
+
 def evidence_store(
     store: Any, study_id: str, *, rawness: Mapping[str, Any] | None = None
 ) -> EvidenceLedger:
@@ -989,6 +998,8 @@ def evidence_store(
             "run the study again from its file"
         )
     design = store.design(study_id)
+    if design is not None and design.purpose == "quantify":
+        raise EvidenceError(QUANTIFY_LEDGER)
     settings = StudySettings.from_design(design) if design is not None else StudySettings()
     curves = analyse_study(source, settings.experiment_id, settings.candidates, settings.curves)
     model = build_model(curves, settings)

@@ -32,6 +32,9 @@ kind                        subject            payload
 ``design.pair``             sample id          ``{"pair": str}``: the donor, animal, passage or
                                                batch that pairs the sample's unit
 ``design.dilution_series``  series name        ``{"experiment_id": str, "samples": {id: qty}}``
+``design.purpose``          ``purpose``        ``{"purpose": "compare" | "quantify"}``: what the
+                                               study is for (compare groups, the default; or
+                                               quantify samples from a standard curve)
 ``curve.call_rule``         ``amp_call``       ``{"rule": AmpCallRule.id}``
 ``curve.well_call``         ``run_id/well``    ``{"amplified": bool}``
 ``curve.exclude_well``      ``run_id/well``    ``{"excluded": bool}`` (``false`` puts it back)
@@ -111,6 +114,7 @@ ProposalKind = Literal[
     "design.comparison",
     "design.pair",
     "design.dilution_series",
+    "design.purpose",
     "curve.call_rule",
     "curve.well_call",
     "curve.exclude_well",
@@ -481,6 +485,12 @@ class StudyDesign(BaseModel):
     default for both) is left out of :meth:`canonical`, so the design hash and every existing
     study id stay what they were. ``reaction_input`` (:class:`ReactionInput`, set after the
     results are visible: ``choice.reaction_input``) is ``None`` by default and left out too.
+
+    ``purpose`` is what the study is for: ``None`` (the default, left out of the hash) compares
+    groups, as every study before it; ``"quantify"`` quantifies samples from a standard curve
+    (:mod:`qpilot.qpcr.quantify_study`): no comparison and no reference genes are needed, the
+    groups (optional) only sort and label the samples, and the result is each sample's quantity.
+    A quantification design is ``mode="groups"`` with no comparison.
     """
 
     design_id: str = "custom"
@@ -500,13 +510,19 @@ class StudyDesign(BaseModel):
     axes: dict[str, tuple[str, ...]] | None = None
     comparisons: ComparisonPlan | None = None
     reaction_input: ReactionInput | None = None
+    purpose: Literal["quantify"] | None = None
     note: str = ""
 
     @model_validator(mode="after")
     def _consistent(self) -> StudyDesign:
         if self.mode == "marker_split" and self.marker_split is None:
             raise ValueError("mode 'marker_split' needs marker_split")
-        if self.mode == "groups":
+        if self.purpose == "quantify":
+            if self.mode != "groups" or self.marker_split is not None:
+                raise ValueError("a quantification design is mode 'groups' (no marker split)")
+            if self.comparison is not None or self.comparisons is not None:
+                raise ValueError("a quantification design compares no groups")
+        elif self.mode == "groups":
             if self.comparison is None:
                 raise ValueError("mode 'groups' needs a comparison")
             groups = {s.group for s in self.samples.values() if s.group}

@@ -45,3 +45,18 @@ register_card_kind(
     "capture",
     always_human=True,
 )
+# quantonly (ex/quantonly): a study whose purpose is to quantify samples (qpcr/quantify_study.py).
+# Each card is a choice that can change what is reported for a sample (its class: quantified,
+# below the LOQ or the LOD, not detected; or its number by more than 2-fold).
+register_card_kind(
+    "quantity.amp_call",
+    "Which wells count as detected, for the quantities",
+    "quantity",
+    dimension="amp_call",
+)
+register_card_kind(
+    "quantity.loq_cv",
+    "How precise a quantity must be to be reported",
+    "quantity",
+    dimension="loq_cv",
+)

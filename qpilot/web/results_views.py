@@ -58,6 +58,7 @@ from qpilot.web.contract import (
     OptionComparisonEffects,
     OptionEffect,
     PendingRequest,
+    QuantityChange,
     ResultsSummary,
     ResultsView,
     RuleView,
@@ -1088,6 +1089,7 @@ def card_view(
                 for g, r in o.per_gene.items()
             ],
             by_comparison=by_option.get(o.id, []),
+            **quantity_effects(card, o.id),
         )
         for o in card.options
     ]
@@ -1120,6 +1122,34 @@ def card_view(
         comparisons=comparisons,
         study_wide=STUDY_WIDE if comparisons else None,
     )
+
+
+def quantity_effects(card: DecisionCard, option_id: str) -> dict[str, Any]:
+    """A quantification study's card: what one option reports differently (else nothing)."""
+    from qpilot.qpcr.quantify_study import CLASS_WORDS
+
+    per = (
+        (card.evidence.get("per_option") or {}).get(option_id)
+        if card.kind.startswith("quantity.")
+        else None
+    )
+    if not isinstance(per, dict):
+        return {}
+    rows = [
+        QuantityChange(
+            target=str(c["target"]),
+            unit=str(c["unit"]),
+            class_from=str(c["class_from"]),
+            class_to=str(c["class_to"]),
+            words_from=CLASS_WORDS.get(str(c["class_from"]), str(c["class_from"])),
+            words_to=CLASS_WORDS.get(str(c["class_to"]), str(c["class_to"])),
+            quantity_from=_number(c.get("quantity_from")),
+            quantity_to=_number(c.get("quantity_to")),
+        )
+        for c in per.get("changed") or ()
+        if isinstance(c, dict)
+    ]
+    return {"quantities": rows, "n_quantities_changed": int(per.get("n_changed") or 0)}
 
 
 def card_comparisons(

@@ -254,6 +254,11 @@ class WorkspaceView(BaseModel):
         description="What qPilot read from the instrument export this session was opened from "
         "(None: opened from an RDML file).",
     )
+    purpose: Literal["compare", "quantify"] = Field(
+        default="compare",
+        description="What the study is for: compare groups (the default), or quantify samples "
+        "from a standard curve (no groups compared; Results shows the quantities).",
+    )
 
 
 class Opened(BaseModel):
@@ -925,6 +930,19 @@ class OptionComparisonEffects(BaseModel):
     effects: list[OptionEffect]
 
 
+class QuantityChange(BaseModel):
+    """One sample result an option of a quantification study's card reports differently."""
+
+    target: str
+    unit: str = Field(description="The biological unit (the sample when it has none).")
+    class_from: str = Field(description="What the recommended option reports (a class id).")
+    class_to: str = Field(description="What this option reports.")
+    words_from: str
+    words_to: str
+    quantity_from: float | None = None
+    quantity_to: float | None = None
+
+
 class CardOptionView(BaseModel):
     """One option of a Decision Card."""
 
@@ -939,6 +957,14 @@ class CardOptionView(BaseModel):
         default=[],
         description="A study with several comparisons: this option's consequences in each other "
         "comparison (the first comparison's are `effects`).",
+    )
+    quantities: list[QuantityChange] = Field(
+        default=[],
+        description="A quantification study's card: the sample results this option reports "
+        "differently from the recommended one (at most 60 listed).",
+    )
+    n_quantities_changed: int = Field(
+        default=0, description="How many sample results this option reports differently."
     )
 
 

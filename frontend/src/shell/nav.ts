@@ -32,6 +32,22 @@ const stageOf = (frame: Frame, name: Stage["stage"]) => frame.stages.find((s) =>
 
 const BLIND_REASON = "Blind until the design and the curves are confirmed";
 
+/**
+ * Sections that compare groups: a study that quantifies samples (its design's purpose) has
+ * nothing for them, and says so instead of an empty page. Its quantities, controls, report and
+ * record are on Results, Controls, Report and Record.
+ */
+export const COMPARE_ONLY: ReadonlySet<SectionId> = new Set<SectionId>([
+  "gene",
+  "audit",
+  "trace",
+  "claims",
+  "prism",
+  "planner",
+]);
+export const QUANTIFY_REASON =
+  "Not for a quantification run: this study compares no groups (each sample's quantity and its wells are on Results)";
+
 /** The state of every section for a workspace frame (or the global sections without one). */
 export function sectionStates(
   frame: Frame | null | undefined,
@@ -69,6 +85,10 @@ export function sectionStates(
     if (section.needsResults && !frame.results_visible) {
       s.reachable = false;
       s.lockReason = isSession ? BLIND_REASON : "No results for this study yet";
+    }
+    if (frame.purpose === "quantify" && COMPARE_ONLY.has(section.id)) {
+      s.reachable = false;
+      s.lockReason = QUANTIFY_REASON;
     }
     switch (section.id) {
       case "design": {

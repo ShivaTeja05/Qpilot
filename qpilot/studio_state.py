@@ -272,6 +272,19 @@ def _d_reaction(subject: str, d: Mapping[str, Any]) -> str:
     return "Each reaction held " + " and ".join(parts) + f": quantities per µL and per ng{unit}"
 
 
+def _d_purpose(subject: str, d: Mapping[str, Any]) -> str:
+    if d["purpose"] == "quantify":
+        return (
+            "This study quantifies samples from a standard curve (how much of each target is "
+            "there); no groups are compared and no reference gene is needed"
+        )
+    if d["purpose"] == "compare":
+        return (
+            "This study compares groups (fold changes between them, normalised to reference genes)"
+        )
+    raise ValueError(d["purpose"])
+
+
 def _d_axis(subject: str, d: Mapping[str, Any]) -> str:
     from qpilot.qpcr.axes import get_axis
 
@@ -340,6 +353,7 @@ _DESCRIBERS: dict[str, Callable[[str, Mapping[str, Any]], str]] = {
     "design.comparison": _d_comparison,
     "design.pair": _d_pair,
     "design.dilution_series": _d_series,
+    "design.purpose": _d_purpose,
     "curve.call_rule": _d_rule,
     "curve.well_call": _d_well,
     "curve.exclude_well": _d_exclude,

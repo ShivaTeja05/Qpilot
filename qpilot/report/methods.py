@@ -423,6 +423,8 @@ def _card_clause(c: Ctx, card) -> list[Part]:  # noqa: ANN001 - DecisionCard
 
 def comparison(c: Ctx, cite: Cites) -> list[Part]:
     """Groups and the comparison: the test, the rule, the calls."""
+    if c.quantify:  # no groups compared: the quantities paragraph and its choices say it all
+        return []
     r = c.result
     rule = r.conclusion_rule
     alpha = f"{rule.get('alpha', 0.05):g}"
@@ -556,6 +558,29 @@ def _several(c: Ctx, cite: Cites, found, alpha: str, fold: str) -> list[Part]:  
                 f" {tok(f'f_cmp{i}_label')}: {tok(f'f_cmp{i}_n_up')} up and "
                 f"{tok(f'f_cmp{i}_n_down')} down."
             )
+    return parts
+
+
+def quantity_choices(c: Ctx, cite: Cites) -> list[Part]:
+    """A quantification study's choices: which wells count as detected, and the LOQ line."""
+    if not c.quantify or not c.has("f_qn_items", "f_qn_fold"):
+        return []
+    rules = c.count("qn_rules", int(c.facts.value("f_n_rules")), "facts.json:/f_n_rules")
+    parts: list[Part] = [
+        f"Every sample result was quantified again under each of {rules} rules for which wells "
+        "count as detected (LinRegPCR's own call, and Cq cut-offs) and under a stricter limit "
+        "of quantification (a smaller read-back coefficient of variation); a choice waited for "
+        "a person only when another option changed what is reported for a sample (its class, "
+        f"or its number by more than {tok('f_qn_fold')})"
+    ]
+    for dim, words in (
+        ("amp_call", "which wells count as detected"),
+        ("loq_cv", "the limit of quantification"),
+    ):
+        fid = f"f_qn_changed_{dim}"
+        if c.has(fid):
+            parts.append(f"; {words} changed {tok(fid)} of {tok('f_qn_items')} sample results")
+    parts.append(".")
     return parts
 
 
@@ -796,8 +821,12 @@ def study_quantities(c: Ctx) -> Any:
     source = c.inputs.source
     if source is None:
         return None
+    from qpilot.qpcr.quantify_study import analysis_in_use, is_quantify
+
+    design = c.inputs.design
+    choice = analysis_in_use(design, c.inputs.cards) if is_quantify(design) else None
     try:
-        found = for_study(c.inputs.study_id, c.result.input_sha256, source, c.inputs.design)
+        found = for_study(c.inputs.study_id, c.result.input_sha256, source, design, choice)
     except (QuantitiesUnavailable, OSError, ValueError):
         return None
     return found.result if found.result.curves else None
@@ -865,6 +894,7 @@ PARAGRAPHS = (
     ("normalisation", "Reference genes and normalisation", normalisation),
     ("comparison", "Groups and comparison", comparison),
     ("robustness", "Robustness to analysis choices", robustness),
+    ("quantity_choices", "Analysis choices for the quantities", quantity_choices),
     ("decisions", "Analysis decisions", decisions),
     ("audit", "Robustness audit", audit),
     ("software", "Software and reporting", software),

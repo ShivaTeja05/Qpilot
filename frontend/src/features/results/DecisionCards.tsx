@@ -39,6 +39,7 @@ import {
   type CardsView,
   type DecisionDone,
 } from "./api";
+import { QuantityChanges } from "./quantities/QuantityChanges";
 import { FactSource, FactText } from "./FactText";
 
 const MAX_REASON = 500;
@@ -509,6 +510,7 @@ function DecisionCardItem({
                             <EffectChips effects={effectsOf(o)} />
                           </span>
                         )}
+                        <QuantityChanges option={o} />
                         {(o.by_comparison ?? [])
                           .filter((b) => b.effects.length > 0)
                           .map((b) => (

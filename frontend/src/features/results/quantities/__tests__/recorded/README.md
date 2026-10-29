@@ -16,3 +16,19 @@ python frontend/src/features/results/quantities/__tests__/recorded/record_quanti
 - `quantities-cov2.json` — `GET /api/studies/{id}/quantities/Cov2` (the curve's points, levels
   and prediction band; every sample's copies with its interval and flags).
 - `copies.json` — `GET /api/tools/copies?ng=1&length=3000&step=10&levels=4`.
+
+## A quantification run (purpose: quantify samples)
+
+Recorded with `record_quantify.py` (in-process, a fresh study store, no model): the same
+QuantStudio 3 export, but the person's purpose is _quantify samples_ (no groups, no reference
+gene) and the standards are a ten-fold series from 100,000 copies; both blind stages confirmed.
+
+```bash
+python frontend/src/features/results/quantities/__tests__/recorded/record_quantify.py
+```
+
+- `quantify-quantities.json`, `quantify-cov2.json` — the Quantities view (with each unit's class).
+- `quantify-cards.json` — the quantity cards (which wells count as detected waits for a person:
+  Cq ≤ 35 reports 9 of 54 sample results differently).
+- `quantify-frame.json` — the session's frame (`purpose: quantify`).
+- `../../../design/recorded/editor-quantify.json` — the Design editor after the person's choice.

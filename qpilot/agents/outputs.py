@@ -552,6 +552,31 @@ class UnitsOut(_Open):
     response_format: ResponseFormat = "detailed"
 
 
+class QuantitiesOut(_Open):
+    """``qpcr_quantities``: standard curves, LOD/LOQ and each sample's quantity (absolute)."""
+
+    study_id: str
+    purpose: str = Field(
+        description="quantify: the study quantifies samples (no groups compared); compare: a "
+        "study comparing groups whose plates also carry standards."
+    )
+    available: bool
+    why: str = ""
+    unit: str
+    analysis: list[str] = Field(
+        default=[], description="A quantification study: the analysis in use, in words."
+    )
+    assays: list[dict[str, Any]]
+    not_quantified: list[dict[str, Any]] = []
+    target: str | None = None
+    units: list[dict[str, Any]] | None = Field(
+        None,
+        description="With target: every biological unit's quantity per reaction, its 95 % "
+        "prediction interval, what is reported for it (its class) and its wells.",
+    )
+    text: str
+
+
 class MeltOut(_Open):
     """``qpcr_melt``: each well's melt call, each assay's expected Tm, some wells' peaks."""
 
@@ -724,6 +749,7 @@ __all__ = [
     "MeltOut",
     "PlanOut",
     "PrismDiffOut",
+    "QuantitiesOut",
     "PrismPreviewOut",
     "ProposalsOut",
     "ProposeOut",

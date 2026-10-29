@@ -5,7 +5,7 @@
  * flags in words. A person can record what one reaction held, for quantities per µL and per ng.
  * Every number is the API's (qpilot/qpcr/absolute.py); the page only formats it.
  */
-import { FlaskRound, TriangleAlert } from "lucide-react";
+import { ChevronDown, ChevronRight, FlaskRound, TriangleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
 import { fixed } from "@/lib/format";
 import {
@@ -32,6 +32,7 @@ import {
   useAssay,
   useQuantities,
   useRecordReaction,
+  type CurveDetail,
   type CurveSummary,
   type Limit,
   type QuantitiesView,
@@ -46,6 +47,7 @@ import {
   unitWords,
 } from "./format";
 import { StandardCurveChart } from "./StandardCurveChart";
+import { UnitWells } from "./UnitWells";
 
 const SHOWN_ROWS = 200;
 
@@ -102,6 +104,27 @@ function CurveNumbers({ curve, unit }: { curve: CurveSummary; unit: string }) {
   );
 }
 
+/** Standard wells with a Cq that are not on the curve, and why (LinRegPCR's call, a rule). */
+function NotUsed({ curve }: { curve: CurveDetail }) {
+  const left = curve.points.filter((p) => !p.detected && p.note);
+  if (!left.length) return null;
+  return (
+    <div className="text-[12.5px] text-fg" data-testid="standards-not-used">
+      <p className="font-medium">
+        {left.length} standard well{left.length === 1 ? "" : "s"} with a Cq not on the curve:
+      </p>
+      <ul className="mt-1 space-y-0.5 text-muted">
+        {left.map((p) => (
+          <li key={`${p.run_id}/${p.well}`}>
+            <span className="font-mono text-fg">{p.well}</span> ({p.sample}, Cq {fixed(p.cq, 2)}
+            ): {p.note}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 const SOURCE_WORDS: Record<string, string> = {
   design: "the Design page (a person)",
   file: "the input file",
@@ -113,15 +136,30 @@ function UnitsTable({
   unit,
   groups,
   reaction,
+  quantify = false,
+  sid = null,
 }: {
   units: UnitQuantity[];
   unit: string;
   groups: boolean;
   reaction: { perUl: boolean; perNg: boolean };
+  /** A study that quantifies samples: what is reported for each, and its wells on a click. */
+  quantify?: boolean;
+  sid?: string | null;
 }) {
   const [which, setWhich] = useState<"all" | "flagged">("all");
+  const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const flagged = units.filter((u) => u.flags.length);
   const rows = which === "flagged" ? flagged : units;
+  const columns =
+    7 + (groups ? 1 : 0) + (quantify ? 1 : 0) + (reaction.perUl ? 1 : 0) + (reaction.perNg ? 1 : 0);
+  const toggle = (name: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -150,6 +188,7 @@ function UnitsTable({
             <TR>
               <TH>Unit</TH>
               {groups && <TH>Group</TH>}
+              {quantify && <TH>Reported as</TH>}
               <TH numeric>Wells detected</TH>
               <TH numeric>Mean Cq</TH>
               <TH numeric>Quantity</TH>
@@ -160,10 +199,34 @@ function UnitsTable({
             </TR>
           </THead>
           <TBody>
-            {rows.slice(0, SHOWN_ROWS).map((u) => (
+            {rows.slice(0, SHOWN_ROWS).map((u) => [
               <TR key={u.unit}>
-                <TD className="font-medium">{u.unit}</TD>
+                <TD className="font-medium">
+                  {quantify ? (
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 text-left hover:underline"
+                      aria-expanded={open.has(u.unit)}
+                      aria-label={`${u.unit}: its wells`}
+                      onClick={() => toggle(u.unit)}
+                    >
+                      {open.has(u.unit) ? (
+                        <ChevronDown className="size-3.5 text-muted" aria-hidden />
+                      ) : (
+                        <ChevronRight className="size-3.5 text-muted" aria-hidden />
+                      )}
+                      {u.unit}
+                    </button>
+                  ) : (
+                    u.unit
+                  )}
+                </TD>
                 {groups && <TD>{u.group ?? "—"}</TD>}
+                {quantify && (
+                  <TD className="text-[12.5px]" data-class={u.reported}>
+                    {u.reported_words}
+                  </TD>
+                )}
                 <TD numeric>{fmtWells(u.n_detected, u.n_wells)}</TD>
                 <TD numeric>{fixed(u.mean_cq, 2)}</TD>
                 <TD numeric>{fmtQuantity(u.quantity)}</TD>
@@ -171,8 +234,15 @@ function UnitsTable({
                 {reaction.perUl && <TD numeric>{fmtQuantity(u.per_ul)}</TD>}
                 {reaction.perNg && <TD numeric>{fmtQuantity(u.per_ng)}</TD>}
                 <TD className="text-[12px] text-muted">{u.flags.map((f) => f.words).join("; ")}</TD>
-              </TR>
-            ))}
+              </TR>,
+              quantify && open.has(u.unit) ? (
+                <TR key={`${u.unit}:wells`} className="bg-sunken/50">
+                  <TD colSpan={columns}>
+                    <UnitWells unit={u} sid={sid} />
+                  </TD>
+                </TR>
+              ) : null,
+            ])}
           </TBody>
         </Table>
       </div>
@@ -312,9 +382,15 @@ function ReactionForm({
 export function QuantitiesPanel({
   workspaceKey,
   studyId,
+  quantify = false,
+  sid = null,
 }: {
   workspaceKey: string;
   studyId: string;
+  /** The study quantifies samples: its main result (classes, wells on a click). */
+  quantify?: boolean;
+  /** The Studio session (curves of wells), when there is one. */
+  sid?: string | null;
 }) {
   const view = useQuantities(workspaceKey, studyId);
   const assays = useMemo(() => view.data?.assays ?? [], [view.data]);
@@ -412,6 +488,7 @@ export function QuantitiesPanel({
                     <Badge tone="info">Pooled over {curve.runs.join(", ")}</Badge>
                   )}
                   <CurveNumbers curve={curve} unit={detail.unit} />
+                  <NotUsed curve={curve} />
                   {summary && (
                     <p className="text-[12px] text-muted">
                       {summary.n_quantified} of {summary.n_units} units quantified,{" "}
@@ -427,6 +504,8 @@ export function QuantitiesPanel({
                 unit={detail.unit}
                 groups={data.groups_shown}
                 reaction={reaction}
+                quantify={quantify}
+                sid={sid}
               />
             )}
           </>

@@ -20,6 +20,7 @@ const GO: Record<string, { label: string; to: NeedPlace }> = {
   gene: { label: "Mark the genes of interest", to: "targets" },
   groups: { label: "Set the groups", to: "samples" },
   comparison: { label: "Choose the comparison", to: "comparison" },
+  standards: { label: "Give the standards their quantities", to: "samples" },
   waiting: { label: "Show the waiting proposals", to: "inbox" },
 };
 

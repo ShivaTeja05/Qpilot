@@ -687,8 +687,12 @@ def quantity_tables(store: StudyStore, study_id: str) -> tuple[Table, ...]:
     path = store.source(study_id)
     if path is None:
         return ()
+    from qpilot.qpcr.quantify_study import analysis_in_use, is_quantify
+
+    design = store.design(study_id)
+    choice = analysis_in_use(design, store.cards(study_id)) if is_quantify(design) else None
     try:
-        found = for_study(study_id, store.get(study_id).input_sha256, path, store.design(study_id))
+        found = for_study(study_id, store.get(study_id).input_sha256, path, design, choice)
     except (QuantitiesUnavailable, OSError, ValueError):
         return ()
     result = found.result

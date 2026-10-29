@@ -127,6 +127,7 @@ SPECS: dict[str, ToolSpec] = {
     "qpcr_comparisons": _read("Read every comparison of a study", o.StudyComparisonsOut),
     "qpcr_units": _read("Read each unit's value, with its wells", o.UnitsOut),
     "qpcr_melt": _read("Read the melt-curve calls", o.MeltOut),
+    "qpcr_quantities": _read("Read each sample's quantity from the standards", o.QuantitiesOut),
     "qpcr_repeat_plan": _read("Read what to repeat and why", o.RepeatPlanOut),
     # Writes a new file (never over one) from the engine's output into the study's export folder
     # and, when asked, a copy into a folder inside the data roots. It changes no result and

@@ -264,6 +264,27 @@ _prepared: set[tuple[str, str]] = set()  # (store root, study id) prepared in th
 _prepared_lock = threading.Lock()
 
 
+#: A study that quantifies samples (no groups compared) has no flips, Trace, audit, planner or
+#: claims; its quantities are prepared instead.
+QUANTIFY_VIEWS: tuple[tuple[str, str], ...] = (
+    ("cards", "the results"),
+    ("quantities", "the quantities"),
+    ("gate", "the controls on every plate"),
+    ("report", "the report"),
+)
+
+
+def _views_of(ctx: AppContext, study_id: str) -> tuple[tuple[str, str], ...]:
+    """The views to prepare for one study (fewer for a study that quantifies samples)."""
+    from qpilot.qpcr.quantify_study import is_quantify
+
+    try:
+        quantify = is_quantify(ctx.store.design(study_id))
+    except Exception:  # an unreadable study: its views say so when opened
+        quantify = False
+    return QUANTIFY_VIEWS if quantify else STUDY_VIEWS
+
+
 def _current_study(ctx: AppContext, sid: str) -> str | None:
     from qpilot.web.views import session_meta
 
@@ -296,7 +317,7 @@ def prepare_views(ctx: AppContext, app: Any, study_ids: list[str]) -> Any:
     steps = [
         (study, f"/api/studies/{study}/{view}", words)
         for study in todo
-        for view, words in STUDY_VIEWS
+        for view, words in _views_of(ctx, study)
     ]
     if first:
         steps += [("", path, words) for path, words in GLOBAL_VIEWS]
