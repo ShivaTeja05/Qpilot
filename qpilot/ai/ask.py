@@ -386,6 +386,8 @@ def answer_facts(ctx: _Context, tool: str, out: dict[str, Any]) -> tuple[dict, d
         view = {"message_has_numbers": True}
         if out.get("n_needed") is not None:
             view["n_per_group_needed"] = tok("f_ans_n_needed", out["n_needed"])
+        if out.get("n_for_call") is not None:  # the headline: samples for qPilot's own call
+            view["n_per_group_for_a_call"] = tok("f_ans_n_for_call", out["n_for_call"])
         if out.get("mde_fold") is not None:
             view["smallest_detectable_fold"] = tok("f_ans_mde_fold", out["mde_fold"], "{:.1f}", "×")
         sims = out.get("simulated") or {}
@@ -547,7 +549,14 @@ def template_answer(ctx: _Context, tool: str, out: dict[str, Any], view: dict) -
     if tool == "qpcr_plan":
         if "n_per_group_needed" not in view:
             return "Give the spread between biological replicates to get a sample size."
-        text = "You need {{f_ans_n_needed}} per group"
+        if "n_per_group_for_a_call" in view:
+            text = (
+                "For qPilot's rule (p < 0.05 and at least 2-fold) to call a real change of this "
+                "size you need {{f_ans_n_for_call}} per group; for p < 0.05 alone, "
+                "{{f_ans_n_needed}} per group"
+            )
+        else:
+            text = "You need {{f_ans_n_needed}} per group for p < 0.05"
         if "qpilot_rule_calls_it_at_needed_n" in view:
             text += (
                 "; at that size qPilot's rule (p < 0.05 and at least 2-fold) calls a real change "

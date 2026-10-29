@@ -211,6 +211,7 @@ ANSWER_FACTS = {
     "f_ans_n_reactions": "reactions",
     "f_ans_n_genes": "genes in this study",
     "f_ans_n_needed": "samples needed per group",
+    "f_ans_n_for_call": "samples per group for qPilot's rule to call it",
     "f_ans_mde_fold": "smallest change the planned design detects",
     "f_ans_needed_called": "how often qPilot's rule calls it at the needed size",
     "f_ans_planned_called": "how often qPilot's rule calls it at the planned size",

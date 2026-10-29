@@ -396,7 +396,7 @@ The terminal does the same: `qpilot export xlsx|csv|figures|supplement --out FIL
 * **How many samples, and what they can detect**: move the sliders (the change worth finding, the power, the samples per group) and choose the genes of the next experiment; every number is qPilot's plan arithmetic and a simulation of qPilot's own rule. The plan starts at **2.5×**, because a true 2-fold change measures below 2-fold about half the time, so the 2-fold rule would call it only about half the time however many samples you run.
 * **Plates you have** (optional) lays the plan out on your plates.
 
-Before the first plate, `qpilot plan --fc 2.5 --sd 0.5 --n 6` does the same from the terminal; `--sd-rt`, `--sd-well`, `--n-rt` and `--n-tech` add the replicate budget (biological, RT and technical replicates in one formula), and `--cq` sets the well noise from Poisson sampling at that Cq. Method card: [methods/replicate_budget.md](../methods/replicate_budget.md).
+Before the first plate, `qpilot plan --fc 2.5 --sd 0.5 --n 6` does the same from the terminal; `--sd-rt`, `--sd-well`, `--n-rt` and `--n-tech` add the replicate budget (biological, RT and technical replicates in one formula), and `--cq` sets the well noise from Poisson sampling at that Cq (`--curve-from FILE` takes the Cq of one copy from that file's standard curve instead of assuming 35). The answer leads with the samples per group at which qPilot's own rule calls the change (p < 0.05 and at least 2-fold), and gives the samples a t test alone needs beside it. Method card: [methods/replicate_budget.md](../methods/replicate_budget.md).
 
 ## 19. Prism
 

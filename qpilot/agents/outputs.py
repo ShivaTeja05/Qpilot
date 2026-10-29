@@ -267,7 +267,14 @@ class GateOut(_Open):
 class PlanOut(_Open):
     """``qpcr_plan``: samples per group and what a design cannot detect."""
 
-    n_needed: int | None
+    n_needed: int | None = Field(
+        description="Per group for a two-sided t test (p alone), exact (non-central t)."
+    )
+    n_for_call: int | None = Field(
+        None,
+        description="Per group for qPilot's own rule (p and the 2-fold line) to call the change "
+        "with the power asked: the headline. Null when no group size reaches it.",
+    )
     mde_fold: Num
     cannot_detect: list[str]
     rules: list[str]

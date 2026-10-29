@@ -251,10 +251,14 @@ class PlanResult(BaseModel):
     """Design check before an experiment: samples needed and what the design cannot detect.
 
     ``budget`` is the replicate budget (RT and technical replicates, costs); it is ``None``
-    unless a replicate or cost input was given (``qpilot.qpcr.plan.plan``).
+    unless a replicate or cost input was given (``qpilot.qpcr.plan.plan``). ``n_needed`` is
+    the samples per group a two-sided t test needs (exact, non-central t); ``n_for_call`` the
+    samples per group at which qPilot's own rule (p and the 2-fold line) calls the change with
+    the power asked, the plan's headline (``None``: no group size does, or no SD was given).
     """
 
     n_needed: int | None
+    n_for_call: int | None = None
     mde_fold: float | None
     cannot_detect: list[str]
     rules: list[str]

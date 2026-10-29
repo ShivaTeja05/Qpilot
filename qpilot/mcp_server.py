@@ -1115,6 +1115,8 @@ class QpilotTools(CapabilityTools):
         cost_rt: float | None = None,
         cost_well: float | None = None,
         expected_cq: float | None = None,
+        cq_one_copy: float | None = None,
+        study_id: str | None = None,
     ) -> dict[str, Any]:
         """Before the first plate: samples per group needed and what a design cannot detect.
 
@@ -1127,7 +1129,27 @@ class QpilotTools(CapabilityTools):
         wells of one RT reaction), ``n_rt`` RT reactions per subject and ``n_tech`` wells per RT
         reaction (whole numbers, 1 to 10), and the three costs for the cheapest design. With any
         of these, ``sd_log2`` is the SD between subjects alone; the answer gains ``budget``.
+        ``n_for_call`` is the headline: the samples per group at which qPilot's own rule (p and
+        the 2-fold line) calls the change with ``power``; ``n_needed`` the samples a t test
+        alone needs (exact). ``expected_cq`` sets the well SD's Poisson floor; the Cq at which
+        one copy crosses is ``cq_one_copy``, else the intercept of ``study_id``'s standard
+        curve in copies when the study has one, else 35 (an assumption).
         """
+        source = None
+        if expected_cq is not None and cq_one_copy is None and study_id is not None:
+            found = self._readable(study_id)
+            if isinstance(found, dict):
+                return found
+            from qpilot.qpcr.absolute_study import QuantitiesUnavailable
+            from qpilot.qpcr.plan import cq_one_copy_from
+            from qpilot.web.absolute_views import computed
+
+            try:
+                taken = cq_one_copy_from(computed(self.store, found[0]).result.curves)
+            except QuantitiesUnavailable as err:
+                return refuse(Code.INTEGRITY_FAILED, str(err))
+            if taken is not None:
+                cq_one_copy, source = taken
         try:
             out = plan(
                 fc=fc,
@@ -1146,6 +1168,8 @@ class QpilotTools(CapabilityTools):
                 cost_rt=cost_rt,
                 cost_well=cost_well,
                 expected_cq=expected_cq,
+                cq_one_copy=cq_one_copy,
+                cq_one_copy_source=source,
             )
         except (ValueError, TypeError, ArithmeticError) as err:
             return refuse(Code.INVALID_ARGUMENT, str(err))
