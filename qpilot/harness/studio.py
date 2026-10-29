@@ -552,6 +552,32 @@ def _session(env: StudioEnv) -> list[str]:
     return [p.id for p in env.store.proposals(session).proposals(status="proposed")]
 
 
+#: The one served tool whose name says "export" that sends, accepts or applies nothing:
+#: ``qpcr_export`` writes a NEW file from the engine's own output (never over a file, never inside
+#: the study store), changes no result and decides nothing, and answers ``results_hidden`` for a
+#: Studio session until a person confirmed the design and the curves (tests/mcp/test_exports.py).
+#: Any other tool named for an export, a send or a decision still fails the ``mcp_tools`` attempt.
+FILE_ONLY_TOOLS = ("qpcr_export",)
+
+
+def _writes_a_new_file_only(tool: str) -> bool:
+    """``tool`` is on the reviewed list and the server still describes it as an export.
+
+    The tool must also be neither read-only nor destructive in its spec, so a tool that changes
+    falls off the list.
+    """
+    from qpilot.agents.surface import SPECS
+
+    spec = SPECS.get(tool)
+    return (
+        tool in FILE_ONLY_TOOLS
+        and spec is not None
+        and spec.kind == "export"
+        and not spec.read_only
+        and not spec.destructive
+    )
+
+
 def _attempt(attempt: str, env: StudioEnv, pending: list[str]) -> tuple[list[str], int, int]:
     """Run one attempt; (what got through, ban violations, fields a model proposed)."""
     from qpilot.core.proposals import ProposalError
@@ -567,7 +593,11 @@ def _attempt(attempt: str, env: StudioEnv, pending: list[str]) -> tuple[list[str
     model_fields = 0
     if attempt == "mcp_tools":
         words = ("accept", "apply", "confirm", "export", "send", "edit", "reject", "approve")
-        through = [t for t in served_tool_names() if any(w in t for w in words)]
+        through = [
+            t
+            for t in served_tool_names()
+            if any(w in t for w in words) and not _writes_a_new_file_only(t)
+        ]
     elif attempt == "mcp_claims_accepted":
         out = tools.qpcr_propose(
             env.study_id,

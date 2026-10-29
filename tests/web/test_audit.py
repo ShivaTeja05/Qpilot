@@ -21,6 +21,7 @@ from fastapi.testclient import TestClient
 from qpilot.core.store import StudyStore
 from qpilot.integration import simulator as sim
 from qpilot.web.context import make_context
+from qpilot.web.contract_audit import AuditScope
 from qpilot.web.routers import audit as audit_router
 from qpilot.web.server import create_app
 
@@ -566,7 +567,14 @@ def test_before_a_run_the_check_says_what_it_would_cover(seeded, tmp_path):
         assert body["status"] == "none" and body["checking"] is None
         assert body["check"]["applicable"] is True and body["check"]["reason"] is None
         scope = dict(body["check"]["scope"])
-        assert scope.pop("technical_replicates") is None  # one well per unit and gene
+        # The saved manifest leaves out what a study does not have; the page's scope names every
+        # optional field and says None. Each such field the manifest omits must be None, and
+        # everything else must match the manifest exactly (a new optional field is covered by the
+        # contract, not by this test).
+        optional = {n for n, f in AuditScope.model_fields.items() if not f.is_required()}
+        assert {"technical_replicates", "comparisons"} <= optional
+        for name in optional - manifest["scope"].keys():
+            assert scope.pop(name) is None, name  # one well per unit and gene; one comparison
         assert scope == manifest["scope"]
     _close(ctx)
 
