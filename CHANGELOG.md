@@ -17,12 +17,22 @@ a paper needs. The rule is unchanged: the software never makes a choice that can
 change a conclusion; a person does, with a reason, in the hash-chained record.
 
 On the demo study every design hash, study id and the locked demo output are unchanged, except
-where a feature adds to them on purpose: the Run Gate pack is now `research-default` 1.3.0 (one
-G-MELT and one G-IPC "not applicable" line), MIQE 5.19 reads the melt rule's sentence, MIQE 5.14 is answered
+where a feature adds to them on purpose: the Run Gate pack is now `research-default` 1.4.0 (one
+G-MELT and one G-IPC "not applicable" line; 1.4.0's rule changes give the demo the same verdicts), MIQE 5.19 reads the melt rule's sentence, MIQE 5.14 is answered
 from the standard curves, and the exports gain the Standard curves and Quantities tables and a
 Methods paragraph on them.
 
 ### Added
+- **The science review's offered options** (29 Oct 2026, [`docs/science-review-2026-10.md`](docs/science-review-2026-10.md)):
+  the amplification rule **"LinRegPCR's call, its 'no amplification' respected"**
+  (`linregpcr_call`; offered by the curves stage when a file has such wells, with how many; the
+  demo has 11 and no call changes); **standards that look wrong** (the series' order broken, or
+  a studentized residual beyond ±3.5) listed under their curve with the curve without them, and
+  **Propose leaving these out** files one `curve.exclude_well` per well for a person to decide
+  (`POST /api/studies/{id}/quantities/standards`); **Fisher's exact test** on the detection counts
+  of a gene detected in one group only (orientation, never a call); the LOD's words say how many
+  wells per level stand behind it (ten replicates around the limit recommended); NormFinder's
+  warning names the genes whose negative variance it counted as zero.
 
 #### Getting files in
 - **Real lab files open** (`qpilot/io/`, `qpilot/io/connectors/`): RDML archives whatever their
@@ -309,8 +319,31 @@ Methods paragraph on them.
   every new method recomputed by an independent oracle on real lab files (`validation/excellence/`,
   `tests/science/`): Welch, paired t, Holm, BH and Welch's ANOVA to 1e-15, Dunnett and Tukey,
   NormFinder, inter-run calibration and factor correction against the papers, melt against CFX
-  Manager's own −dF/dT, the audit's replicate rules. Its judgement calls (thresholds set without a
-  source, which wells count as detected on a standard curve) are listed for a person to decide.
+  Manager's own −dF/dT, the audit's replicate rules. Its judgement calls (J0–J12) were then
+  applied as the review recommends (29 Oct 2026; each J's "Applied" line in the review says what
+  and where):
+  - **Plan next / `qpilot plan` / `qpcr_plan` lead with the samples per group for qPilot's call**
+    (p < 0.05 and at least 2-fold, `n_for_call`), with the samples a t test alone needs beside it,
+    now exact (non-central t; the normal approximation was one sample short in 9 of 24 settings:
+    2-fold at SD 0.5 needs 6, not 5). The Cq of one copy comes from a standard curve when there is
+    one (`qpilot plan --curve-from FILE`, `qpcr_plan(study_id=…)`), else 35; the Poisson floor is
+    said to be a lower bound below 3 copies.
+  - **Run Gate pack `research-default` 1.4.0**: a no-template peak is a primer-dimer candidate only
+    3 °C or more below the product (`dimer_min_below_c`, lab-editable; closer is another product);
+    G-REP proposes no single well when the farthest wells tie (duplicates; 20.0/20.5/21.0); G-STD
+    cites Taylor et al. 2010 for 90–110 % and R² 0.98. The demo's gate is unchanged.
+  - **What to repeat**: "no amplification where one was expected" counts within the sample's own
+    group (at least three others there); the 90 % is lab-editable (`?expected_share=`,
+    `qpcr_repeat_plan(expected_share=)`).
+  - **The global mean** uses only the genes measured in every compared unit (a gene missing in a
+    unit is usually low there); 50 of them are needed. On the demo 45 of 64 are, so the opt-in
+    global mean is no longer offered there.
+  - **A unit of several samples** is the mean of its samples' means (a sample in three wells no
+    longer weighs three times one in one); one sample per unit, and the demo, are unchanged. The
+    audit combines them the same way, and its drop-outlier rule uses G-REP's tolerance (with the
+    Poisson term from the plate's standard curve) and tie rule.
+  - **Dunnett and Tukey** leave a group of capped values only out of the pooled variance; Welch's
+    ANOVA says per gene when it left a group out.
 - **Plan next starts at 2.5×**, above the 2-fold call line, and says why; plans are faster.
   `qpilot plan` and MCP `qpcr_plan` default to 2.5× too. `qpilot plan --cq/--expected-cq
   [--cq-one-copy]` sets the well noise from Poisson sampling at that Cq
@@ -330,9 +363,10 @@ Methods paragraph on them.
   the audit's reasonable set, with "Why two counts?"), one name per group, plate and study,
   "Decided by you", plurals without "(s)", folded refuted Curve Judge calls and Decision Cards
   that fit a phone's width.
-- Run Gate pack `research-default` 1.3.0 (1.2.0: G-MELT, and G-NTC-1 reads the melt of a
-  no-template control; 1.3.0: G-IPC, and G-NTC-1 leaves internal controls alone). The seven
-  rules of 1.0.0 give the same verdicts on the demo.
+- Run Gate pack `research-default` 1.4.0 (1.2.0: G-MELT, and G-NTC-1 reads the melt of a
+  no-template control; 1.3.0: G-IPC, and G-NTC-1 leaves internal controls alone; 1.4.0: the
+  science review's G-MELT, G-REP and G-STD changes). The seven rules of 1.0.0 give the same
+  verdicts on the demo.
 - **Names are the lab's own**: groups, units, samples and genes keep any letters, digits, spaces
   and signs (`LPS + inhibitor`, `IL-6/ctrl`, `Day 3 (50 µM)`, `KO#2`, `α-syn`; at most 64
   characters) on the Design page and in every export; file names are derived safely (an ASCII
@@ -349,6 +383,9 @@ Methods paragraph on them.
 - A standard curve no longer includes wells LinRegPCR calls "no amplification" (they carried a
   quantity): on the QuantStudio 7 Pro eDNA curve three flat wells gave 154 % efficiency, R² 0.41;
   now 87.1 %, R² 0.9962 (science review J1).
+- A quantity read from a weak standard curve gets the exact (Fieller) 95 % interval when the
+  curve's g is above 0.05; the classical one was too narrow and off-centre there (eDNA curve, g
+  0.21: [−0.56, 6.17] log10 instead of [−0.20, 5.80]). Every curve shows its g (science review J2).
 - A study with three or more groups gets its report again; "The confirmed design" on the Design
   page shows the latest decisions.
 - Trace's what-ifs on a paired or Holm-corrected study are the engine's own evaluation (they were
