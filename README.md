@@ -416,7 +416,7 @@ pytest -q                         # everything, after qpilot fetch-demo
 cd frontend && npm ci && npm run typecheck && npm run lint && npm test && npm run build   # the page
 ```
 
-CI runs lint, `pip-audit`, the unit tests on Ubuntu (Python 3.11–3.13), macOS and Windows, and a smoke test of the installed wheel on every pull request (Windows does not block a merge yet). Contributions: [`CONTRIBUTING.md`](CONTRIBUTING.md).
+CI runs lint, `pip-audit`, the unit tests on Ubuntu (Python 3.11–3.13), macOS and Windows (3.11 and 3.12), and a smoke test of the installed wheel on all three on every pull request; each blocks a merge. Contributions: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Built and borrowed
 

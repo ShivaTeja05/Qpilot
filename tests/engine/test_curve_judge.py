@@ -86,6 +86,19 @@ def test_modified_model_is_refused(model_copy):
         cj.load_model(model, sha)
 
 
+def test_a_crlf_checkout_is_refused_and_named(model_copy):
+    """LF turned into CRLF (Git on Windows without .gitattributes): refused, and the reason said."""
+    model, sha = model_copy
+    model.write_bytes(model.read_bytes().replace(b"\n", b"\r\n"))
+    with pytest.raises(cj.ModelIntegrityError, match="does not match") as err:
+        cj.load_model(model, sha)
+    assert cj.CRLF_HINT in str(err.value)
+    model.write_bytes(model.read_bytes().replace(b'"split_conditions":[', b'"split_conditions":[9'))
+    with pytest.raises(cj.ModelIntegrityError) as err:  # CRLF and an edit: no such excuse
+        cj.load_model(model, sha)
+    assert cj.CRLF_HINT not in str(err.value)
+
+
 @pytest.mark.parametrize("pin", ["", "not-a-digest\n", "ABC" * 30])
 def test_bad_or_missing_pin_is_refused(model_copy, pin):
     model, sha = model_copy

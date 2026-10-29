@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 
 from qpilot.mcp_server import check_path, check_sheet, data_roots
+from tests.homes import set_home
 
 
 @pytest.fixture
@@ -49,7 +50,7 @@ def test_a_server_started_in_the_home_folder_does_not_open_the_whole_home_folder
     home = tmp_path / "home"
     (home / ".cache" / "qpilot").mkdir(parents=True)
     sheet = _secret_sheet(home / "Documents")
-    monkeypatch.setenv("HOME", str(home))
+    set_home(monkeypatch, home)
     monkeypatch.chdir(home)
     assert home.resolve() not in data_roots()
     with pytest.raises(PermissionError):

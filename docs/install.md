@@ -65,7 +65,7 @@ Things to know on Windows:
 * **Quotes in PowerShell.** Put a path with spaces in double quotes: `qpilot check sheet "C:\Lab Data\my sheet.xlsx"`.
 * **Setting a variable** for this window: `$env:QPILOT_STUDIES_DIR = "C:\qpilot\studies"`; for good: `setx QPILOT_STUDIES_DIR "C:\qpilot\studies"` (then open a new window).
 * **Antivirus / OneDrive.** A program that scans or syncs a file the moment it is written can make Windows refuse a rename for a moment; qPilot retries for about two seconds. Keep the store out of a synced folder if you can (see section 5).
-* **This is new ground.** The code is written to run on Windows and the test suite and the installed-package check run on Windows in CI, but no maintainer has yet used it on a real instrument PC. If something misbehaves, `qpilot doctor` output and the message are what we need.
+* **Tested in CI, not yet on an instrument PC.** Every change runs the whole test suite on Windows (Python 3.11 and 3.12) and installs the package on Windows and runs its checks, including Studio's on the demo; a Windows failure blocks a merge and a release. No maintainer has yet used it on a real instrument PC. If something misbehaves, `qpilot doctor` output and the message are what we need.
 
 ## 3. macOS and Linux notes
 

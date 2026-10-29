@@ -83,7 +83,7 @@ REFUSED = {
 
 
 def test_every_corpus_set_is_listed():
-    sets = {str(p.parent.relative_to(CORPUS)) for p in CORPUS.rglob("MANIFEST.yaml")}
+    sets = {p.parent.relative_to(CORPUS).as_posix() for p in CORPUS.rglob("MANIFEST.yaml")}
     assert sets == set(OPENS) | set(REFUSED)
 
 

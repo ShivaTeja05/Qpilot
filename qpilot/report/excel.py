@@ -378,7 +378,10 @@ def write_new(out: Path, data: bytes) -> None:
 
     Through a temporary file in the same folder, then linked into place: the link fails when the
     name exists, whatever appeared there since it was checked (``os.replace`` would overwrite).
-    A file system without hard links gets the same rule from an exclusive create.
+    A file system without hard links gets the same rule another way: on Windows a rename (which
+    never replaces a name there, and never follows one), elsewhere an exclusive create that does
+    not follow a link (``O_NOFOLLOW``; Windows has none, and would create the file a dangling link
+    points to).
 
     Raises:
         FileExistsError: ``out`` exists (a file, a folder or a link); nothing was written.
@@ -394,9 +397,12 @@ def write_new(out: Path, data: bytes) -> None:
         except FileExistsError:
             raise
         except OSError:  # no hard links here (some network or FAT drives)
-            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
-            with os.fdopen(os.open(out, flags | getattr(os, "O_BINARY", 0), 0o644), "wb") as fh:
-                fh.write(data)
+            if os.name == "nt":
+                os.rename(tmp, out)  # FileExistsError when the name is there, a link included
+            else:
+                flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+                with os.fdopen(os.open(out, flags, 0o644), "wb") as fh:
+                    fh.write(data)
     finally:
         Path(tmp).unlink(missing_ok=True)
 
