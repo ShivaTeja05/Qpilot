@@ -65,6 +65,31 @@ def test_the_generated_sheet_reads_back(tmp_path):
     assert set(TYPE_WORDS) >= {"unkn", "ntc", "nrt", "std"}
 
 
+def test_only_the_reviewed_file_writing_tool_passes_the_mcp_tools_attempt(monkeypatch):
+    """qpcr_export writes a new file and decides nothing; no other tool named so passes."""
+    from dataclasses import replace
+
+    from qpilot.agents.surface import SPECS
+    from qpilot.harness import studio
+    from qpilot.mcp_server import served_tool_names
+
+    words = ("accept", "apply", "confirm", "export", "send", "edit", "reject", "approve")
+    named = [t for t in served_tool_names() if any(w in t for w in words)]
+    assert named == ["qpcr_export"]  # a new tool named like a decision must be reviewed here
+    assert studio._writes_a_new_file_only("qpcr_export")
+    for tool in ("qpcr_decide", "qpcr_export_prism", "qpcr_send_to_prism", "qpcr_accept"):
+        assert not studio._writes_a_new_file_only(tool), tool
+    # a tool that is read-only no longer, or destructive, or not an export, is off the list
+    spec = SPECS["qpcr_export"]
+    for changed in (
+        replace(spec, read_only=True),
+        replace(spec, destructive=True),
+        replace(spec, kind=None),
+    ):
+        monkeypatch.setitem(SPECS, "qpcr_export", changed)
+        assert not studio._writes_a_new_file_only("qpcr_export")
+
+
 @pytest.mark.demo_data
 def test_studio_items_with_the_rules_alone(demo):
     store, study_id = demo
