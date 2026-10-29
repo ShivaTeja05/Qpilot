@@ -19,7 +19,14 @@ plate's curve, and only a plate without standards for its assay reads from the p
 everything; a well counts as **detected** when it has a Cq and LinRegPCR called it amplified (or
 gave it a quantity), under the study's primary amplification rule (a Cq cut-off applies) and a
 person's well calls. Nothing is dropped by this module: a standard level that should not be on
-the curve is left out by a person (``curve.exclude_well``), never by qPilot.
+the curve is left out by a person (``curve.exclude_well``), never by qPilot. What it does is
+**point at** a standard that looks wrong (science review J2), with what leaving it out would do
+to the curve (efficiency and its interval, R², LOD and LOQ): a detected standard that breaks the
+order of the series (its Cq earlier than the mean Cq of a level at least ten-fold higher, or
+later than that of a level at least ten-fold lower: physically impossible, a mislabelled or
+contaminated well) or whose externally studentized residual is beyond ±:data:`SUSPECT_Z` (3.5,
+Iglewicz & Hoaglin's line; Studio proposes leaving each out as a ``curve.exclude_well`` for a
+person to accept or reject).
 
 **Quantities of the standards.** A person's (``design.dilution_series``, the Design page) over
 the file's declared quantity (RDML ``<quantity>``) over a ``STD_<number>`` sample name; the
@@ -49,9 +56,21 @@ Regression Analysis*, inverse prediction)::
     s_x0 = (s_yx / |m|) * sqrt(1/k + 1/n + (y0 - y_mean)^2 / (m^2 * Sxx))
     x0 +- t(0.975, n - 2) * s_x0           (on log10 quantity)
 
-A unit whose wells were read from several curves gets the mean of the per-curve ``log10``
-estimates and ``sqrt(sum s_i^2) / N`` (independent curves; t with the smallest degrees of
-freedom). Flags in plain words: above the top standard or below the lowest (extrapolated),
+That formula is an approximation, excellent for a good curve and poor for a weak one. Its quality
+is measured by ``g = t^2 s_yx^2 / (m^2 Sxx)`` (Draper & Smith, section 3.2), reported with every
+curve: when ``g`` exceeds :data:`G_EXACT` (0.05; the usual rule of thumb accepts the
+approximation below 0.1, 0.05 keeps a margin) the exact interval is used instead, Fieller's, the
+set of quantities whose prediction band for a mean of ``k`` wells holds ``y0`` (Fieller 1954;
+Draper & Smith; science review J2: on the eDNA curve with its flat wells, ``g`` 0.2, the
+approximation gave [-0.20, 5.80] against the exact [-0.56, 6.17] log10 copies at the mean Cq)::
+
+    x0 = x_mean + ((x^0 - x_mean) +- (t s_yx / |m|) sqrt((x^0 - x_mean)^2 / Sxx
+                                                    + (1 - g)(1/k + 1/n))) / (1 - g)
+
+With ``g >= 1`` the slope is too uncertain for a bounded interval, and none is given. A unit
+whose wells were read from several curves gets the mean of the per-curve ``log10`` estimates and
+``sqrt(sum s_i^2) / N`` (independent curves; t with the smallest degrees of freedom; the
+classical form). Flags in plain words: above the top standard or below the lowest (extrapolated),
 below the LOQ, below the LOD, not detected, some wells not detected, read from another plate's
 curve. With the reaction's template volume and input amount (``StudyDesign.reaction_input``,
 absent by default) each quantity is also given per µL of template and per ng of input.
@@ -82,15 +101,24 @@ from qpilot.qpcr.quant import EXCLUDED, unit_map
 
 MIN_LEVELS = 3  # as G-STD and the efficiency axis: R² and linearity mean nothing with two
 LOD_RATE = 0.95  # Forootan et al. 2017; MIQE (Bustin et al. 2009)
-LOQ_CV = 0.35  # Forootan et al. 2017 use 35 %; lab-editable default
+LOQ_CV = 0.35  # Forootan et al. 2017 and Klymus et al. 2020 use 35 %; lab-editable default
 PI_LEVEL = 0.95
+#: Above this g = t² s² / (m² Sxx) an unknown's interval is Fieller's exact one (science review J2).
+G_EXACT = 0.05
 BAND_POINTS = 41
 FLAT_SLOPE = -1.0  # a slope above this (E > 900 %): the Cq does not follow the quantity
-EFFICIENCY_RANGE = (0.90, 1.10)  # MIQE (Bustin et al. 2009); as the Run Gate's G-STD
-R2_MIN = 0.98  # as G-STD
+#: Taylor et al., Methods 2010;50:S1-S5 (as the Run Gate's G-STD); MIQE (Bustin et al. 2009)
+#: asks for the efficiency and R² to be reported, not for these limits (science review J0).
+EFFICIENCY_RANGE = (0.90, 1.10)
+R2_MIN = 0.98  # Taylor et al. 2010, as G-STD
+CURVE_LIMITS_SOURCE = "Taylor et al. 2010"
 AVOGADRO = 6.02214076e23  # mol^-1, exact (SI 2019)
 METHOD_CARD_PATH = "methods/absolute_quantification.md"
 POOLED = "pooled"
+#: A standard whose externally studentized residual is beyond this is pointed at (J2).
+SUSPECT_Z = 3.5
+#: A standard "breaks the order" against levels at least this many log10 apart (ten-fold).
+ORDER_STEP_LOG10 = 1.0
 
 Kind = Literal["dsDNA", "ssDNA", "RNA"]
 #: Molar mass per base (pair) and the ends' addition, g/mol (Thermo Fisher conversions).
@@ -120,6 +148,13 @@ REFERENCES = (
     "Forootan A, Sjöback R, Björkman J, Sjögreen B, Linz L, Kubista M. Methods to determine "
     "limit of detection and limit of quantification in quantitative real-time PCR (qPCR). "
     "Biomol Detect Quantif. 2017;12:1-6. doi:10.1016/j.bdq.2017.04.001",
+    "Klymus KE, Merkes CM, Allison MJ, et al. Reporting the limits of detection and "
+    "quantification for environmental DNA assays. Environmental DNA. 2020;2(3):271-282. "
+    "doi:10.1002/edn3.29",
+    "Taylor S, Wakem M, Dijkman G, Alsarraj M, Nguyen M. A practical approach to RT-qPCR: "
+    "publishing data that conform to the MIQE guidelines. Methods. 2010;50(4):S1-S5. "
+    "doi:10.1016/j.ymeth.2010.01.005",
+    "Fieller EC. Some problems in interval estimation. J R Stat Soc B. 1954;16(2):175-185",
     "Bustin SA, Benes V, Garson JA, et al. The MIQE guidelines: minimum information for "
     "publication of quantitative real-time PCR experiments. Clin Chem. 2009;55(4):611-622. "
     "doi:10.1373/clinchem.2008.112797",
@@ -253,6 +288,33 @@ class Fit:
         x0 = (y0 - self.intercept) / self.slope
         inner = 1 / k + 1 / self.n + (y0 - self.y_mean) ** 2 / (self.slope**2 * self.sxx)
         return float(x0), float(self.s_yx / abs(self.slope) * math.sqrt(inner))
+
+    @property
+    def g(self) -> float:
+        """``t^2 s_yx^2 / (m^2 Sxx)``: how far the classical inverse interval can be trusted.
+
+        Small (well below 0.1) for a good curve; at 1 or above the slope is not known well
+        enough for a bounded interval (NaN with no residual degrees of freedom).
+        """
+        if self.df <= 0 or self.sxx <= 0 or self.slope == 0:
+            return math.nan
+        return float(self.t_crit**2 * self.s_yx**2 / (self.slope**2 * self.sxx))
+
+    def inverse_exact(self, y0: float, k: int) -> tuple[float, float]:
+        """Fieller's exact 95 % interval of the ``log10`` quantity of a mean Cq of ``k`` wells.
+
+        Every ``x`` whose prediction band for a mean of ``k`` wells holds ``y0`` (Draper &
+        Smith, section 3.2); ``(NaN, NaN)`` when ``g >= 1`` (no bounded interval).
+        """
+        g = self.g
+        if not g < 1:
+            return math.nan, math.nan
+        x0 = (y0 - self.intercept) / self.slope
+        d = x0 - self.x_mean
+        root = math.sqrt(d**2 / self.sxx + (1 - g) * (1 / k + 1 / self.n))
+        half = self.t_crit * self.s_yx / abs(self.slope) * root
+        low, high = (d - half) / (1 - g), (d + half) / (1 - g)
+        return float(self.x_mean + low), float(self.x_mean + high)
 
     def band(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """``(cq, low, high)``: the line and the 95 % prediction band of one new well's Cq."""
@@ -395,6 +457,30 @@ class Limit:
 
 
 @dataclass(frozen=True)
+class Suspect:
+    """A detected standard well that looks wrong, and the curve without it (a person decides)."""
+
+    run_id: str
+    well: str
+    sample: str
+    quantity: float
+    cq: float
+    why: tuple[str, ...]  # "order" and/or "residual"
+    words: str
+    residual_z: float | None
+    efficiency: float | None  # the curve without this well
+    efficiency_ci: tuple[float, float] | None
+    r2: float | None
+    lod: float | None
+    loq: float | None
+
+    @property
+    def key(self) -> str:
+        """``run_id/well``: the subject of a ``curve.exclude_well``."""
+        return f"{self.run_id}/{self.well}"
+
+
+@dataclass(frozen=True)
 class StandardCurve:
     """One assay's standard curve on one plate (or pooled over plates with the same series)."""
 
@@ -412,6 +498,20 @@ class StandardCurve:
     unit: str
     problem: str = ""  # why there is no fit, in words
     warnings: tuple[str, ...] = ()  # what MIQE would question about the fit, in words
+    suspects: tuple[Suspect, ...] = ()  # standards that look wrong, with what leaving out does
+
+    @property
+    def g(self) -> float | None:
+        """The fit's ``g`` (:attr:`Fit.g`); above :data:`G_EXACT`, Fieller's interval."""
+        if self.fit is None or not math.isfinite(self.fit.g):
+            return None
+        return self.fit.g
+
+    @property
+    def exact_interval(self) -> bool:
+        """True when unknowns read from this curve alone get Fieller's exact interval."""
+        g = self.g
+        return g is not None and g > G_EXACT
 
     @cached_property
     def top(self) -> float | None:
@@ -665,6 +765,32 @@ def _levels(points: Sequence[StandardPoint], fit: Fit | None) -> tuple[Level, ..
     return tuple(out)
 
 
+#: Below this many wells a level, "detected in 95 % of its wells" means every well (J6).
+FEW_FOR_RATE = 20
+#: Replicates Forootan et al. 2017 and Klymus et al. 2020 recommend at the levels around the LOD.
+LOD_REPLICATES = 10
+
+
+def few_wells_words(levels: Sequence[Level], settings: AbsoluteSettings) -> str:
+    """What the empirical LOD rests on when levels have few wells (science review J6); "" else.
+
+    With fewer than :data:`FEW_FOR_RATE` wells a level, "detected in at least 95 % of its
+    wells" can only mean all of them, so the empirical limit is "the lowest level where no well
+    failed"; the logistic LOD is the better estimate then, and more replicates around the limit
+    make either one firmer.
+    """
+    counts = sorted({lv.n_wells for lv in levels if lv.n_wells})
+    if not counts or counts[-1] >= FEW_FOR_RATE:
+        return ""
+    per = f"{counts[0]}" if len(counts) == 1 else f"{counts[0]} to {counts[-1]}"
+    return (
+        f"; with {per} wells per level, {pct(settings.lod_rate)} of a level's wells means all of "
+        "them, so this is the lowest level where no well failed (the modelled limit, when shown, "
+        f"is the better estimate). Run at least {LOD_REPLICATES} replicates at the levels around "
+        "the limit (Forootan et al. 2017; Klymus et al. 2020)"
+    )
+
+
 def _lod(levels: Sequence[Level], settings: AbsoluteSettings) -> Limit:
     """The lowest level detected in >= 95 % of its wells, every higher level included."""
     if not levels:
@@ -683,18 +809,20 @@ def _lod(levels: Sequence[Level], settings: AbsoluteSettings) -> Limit:
             f"the top standard was detected in fewer than {rate} of its wells, so the limit of "
             "detection is above every standard",
         )
+    few = few_wells_words(levels, settings)
     if passed is levels[-1]:
         return Limit(
             passed.quantity,
             "lowest_standard",
             f"every standard level was detected in at least {rate} of its wells: the limit of "
-            "detection is at or below the lowest standard",
+            f"detection is at or below the lowest standard{few}",
             at_most=True,
         )
     return Limit(
         passed.quantity,
         "empirical",
-        f"the lowest standard detected in at least {rate} of its wells (every higher level too)",
+        f"the lowest standard detected in at least {rate} of its wells (every higher level "
+        f"too){few}",
     )
 
 
@@ -762,8 +890,13 @@ def _curve(
     runs: Sequence[str],
     rows: pd.DataFrame,
     settings: AbsoluteSettings,
+    look: bool = True,
 ) -> StandardCurve:
-    """One curve from its standard wells (columns ``abs_q``, ``abs_det``, ``abs_source``...)."""
+    """One curve from its standard wells (columns ``abs_q``, ``abs_det``, ``abs_source``...).
+
+    ``look``: also point at the standards that look wrong (:func:`suspects`), each with the
+    curve refitted without it.
+    """
     det = rows["abs_det"].to_numpy(dtype=bool)
     x = np.log10(rows["abs_q"].to_numpy(dtype=float))
     y = rows["cq"].to_numpy(dtype=float)
@@ -815,10 +948,21 @@ def _curve(
         low, high = EFFICIENCY_RANGE
         if not low <= fit.efficiency <= high:
             warnings.append(
-                f"efficiency {pct(fit.efficiency, 1)} is outside {pct(low)} to {pct(high)} (MIQE)"
+                f"efficiency {pct(fit.efficiency, 1)} is outside {pct(low)} to {pct(high)} "
+                f"({CURVE_LIMITS_SOURCE})"
             )
         if not fit.r2 >= R2_MIN:
-            warnings.append(f"R² {fit.r2:.3f} is below {R2_MIN:g} (MIQE)")
+            warnings.append(f"R² {fit.r2:.3f} is below {R2_MIN:g} ({CURVE_LIMITS_SOURCE})")
+    unit = UNIT_WORDS.get(units[0], units[0]) if len(units) == 1 else ""
+    found: tuple[Suspect, ...] = ()
+    if look and fit is not None:
+
+        def without(i: int) -> StandardCurve:
+            keep = det.copy()
+            keep[i] = False
+            return _curve(curve_id, target, scope, runs, rows.assign(abs_det=keep), settings, False)
+
+        found = suspects(points, x, y, det, fit, unit, without)
     return StandardCurve(
         id=curve_id,
         target=target,
@@ -831,10 +975,103 @@ def _curve(
         lod_model=_lod_model(points, settings),
         loq=_loq(levels, lod, settings),
         quantity_source=sources,
-        unit=UNIT_WORDS.get(units[0], units[0]) if len(units) == 1 else "",
+        unit=unit,
         problem=problem,
         warnings=tuple(warnings),
+        suspects=found,
     )
+
+
+def studentized_residuals(x: np.ndarray, y: np.ndarray, fit: Fit) -> np.ndarray:
+    """Externally studentized residuals of the fitted points (NaN with fewer than four).
+
+    ``t_i = e_i / (s_(i) sqrt(1 - h_i))``, ``h_i = 1/n + (x_i - x_mean)^2 / Sxx`` and ``s_(i)``
+    the residual SD of the fit without point ``i`` (Belsley, Kuh & Welsch 1980): a point far
+    from its own line cannot hide by pulling the line towards it.
+    """
+    n = len(x)
+    if n < 4:
+        return np.full(n, np.nan)
+    e = y - (fit.intercept + fit.slope * x)
+    h = 1 / n + (x - fit.x_mean) ** 2 / fit.sxx
+    sse = (n - 2) * fit.s_yx**2
+    with np.errstate(divide="ignore", invalid="ignore"):
+        s2 = (sse - e**2 / (1 - h)) / (n - 3)
+        t = e / np.sqrt(s2 * (1 - h))
+    return np.where(s2 > 0, t, np.nan)
+
+
+def suspects(
+    points: Sequence[StandardPoint],
+    x: np.ndarray,
+    y: np.ndarray,
+    det: np.ndarray,
+    fit: Fit,
+    unit: str,
+    without: Any,
+) -> tuple[Suspect, ...]:
+    """The detected standards that break the series' order or sit far off their line.
+
+    ``without(i)`` is the curve refitted without point ``i``: its efficiency, R², LOD and LOQ
+    are the consequence a person weighs before leaving the well out.
+    """
+    used = np.flatnonzero(det & np.isfinite(y))
+    if len(used) < 3:
+        return ()
+    z = np.full(len(points), np.nan)
+    z[used] = studentized_residuals(x[used], y[used], fit)
+    noun = f" {unit}" if unit else ""
+    out = []
+    step = ORDER_STEP_LOG10 - 1e-9
+    for i in used:
+        why, words = [], []
+        # the wells at least ten-fold away, and those whose Cq is on the wrong side of this one:
+        # the series' order is broken when most of them are (one bad well cannot make the good
+        # ones look broken)
+        more = [j for j in used if x[j] - x[i] >= step]
+        less = [j for j in used if x[i] - x[j] >= step]
+        early = [j for j in more if y[i] < y[j]]  # earlier than wells with more template
+        late = [j for j in less if y[i] > y[j]]  # later than wells with less template
+        compared = len(more) + len(less)
+        p = points[i]
+        if compared and 2 * (len(early) + len(late)) > compared:
+            why.append("order")
+            if len(early) >= len(late):
+                side, n, m, which = "earlier", len(early), len(more), "more"
+            else:
+                side, n, m, which = "later", len(late), len(less), "less"
+            words.append(
+                f"its Cq {y[i]:.1f} at {p.quantity:.3g}{noun} is {side} than {n} of the {m} "
+                f"standard wells holding ten-fold or {which} template: the series' order is broken"
+            )
+        if math.isfinite(z[i]) and abs(z[i]) > SUSPECT_Z:
+            why.append("residual")
+            words.append(
+                f"it lies {abs(z[i]):.1f} residual SDs off the line (studentized; more than "
+                f"{SUSPECT_Z:g})"
+            )
+        if not why:
+            continue
+        alt = without(int(i))
+        afit = alt.fit
+        out.append(
+            Suspect(
+                run_id=p.run_id,
+                well=p.well,
+                sample=p.sample,
+                quantity=p.quantity,
+                cq=float(y[i]),
+                why=tuple(why),
+                words="; ".join(words),
+                residual_z=float(z[i]) if math.isfinite(z[i]) else None,
+                efficiency=float(afit.efficiency) if afit is not None else None,
+                efficiency_ci=afit.efficiency_ci if afit is not None else None,
+                r2=float(afit.r2) if afit is not None and math.isfinite(afit.r2) else None,
+                lod=alt.lod.quantity,
+                loq=alt.loq.quantity,
+            )
+        )
+    return tuple(out)
 
 
 def _level_labels(std: pd.DataFrame) -> dict[str, str]:
@@ -1101,6 +1338,12 @@ def _estimate(
         xs.append(x0)
         variances.append(s**2)
         dfs.append(fit.df)
+    if len(xs) == 1:
+        (cid, cqs), fit = next(iter(per_curve.items())), curves[next(iter(per_curve))].fit
+        assert fit is not None
+        if fit.df > 0 and not fit.g <= G_EXACT:  # a weak curve: Fieller's exact interval
+            low, high = fit.inverse_exact(sum(cqs) / len(cqs), len(cqs))
+            return xs[0], low, high
     n = len(xs)
     x = sum(xs) / n
     s = math.sqrt(sum(variances)) / n

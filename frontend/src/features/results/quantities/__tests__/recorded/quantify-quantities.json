@@ -100,7 +100,7 @@
      },
      "quantity_source": "design",
      "warnings": [
-      "efficiency 124.0 % is outside 90 % to 110 % (MIQE)"
+      "efficiency 124.0 % is outside 90 % to 110 % (Taylor et al. 2010)"
      ],
      "n_unknowns": 23
     }

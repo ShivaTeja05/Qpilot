@@ -2548,6 +2548,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/quantities/standards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Standards
+         * @description The rule proposes leaving out each standard that looks wrong; a person decides each.
+         */
+        post: operations["post_standards"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/record": {
         parameters: {
             query?: never;
@@ -6804,8 +6824,19 @@ export type components = {
             efficiency_high?: number | null;
             /** Efficiency Low */
             efficiency_low?: number | null;
+            /**
+             * Exact Interval
+             * @description Unknowns read from this curve alone get Fieller's interval.
+             * @default false
+             */
+            exact_interval: boolean;
             /** Fitted */
             fitted: boolean;
+            /**
+             * G
+             * @description t² s² / (slope² Sxx): above 0.05 an unknown's interval is Fieller's exact one, not the classical approximation.
+             */
+            g?: number | null;
             /** Id */
             id: string;
             /** Intercept */
@@ -6861,6 +6892,12 @@ export type components = {
             scope: "plate" | "pooled";
             /** Slope */
             slope?: number | null;
+            /**
+             * Suspects
+             * @description Detected standards that look wrong (never left out by qPilot).
+             * @default []
+             */
+            suspects: components["schemas"]["SuspectView"][];
             /** Target */
             target: string;
             /** Top */
@@ -6903,8 +6940,19 @@ export type components = {
             efficiency_high?: number | null;
             /** Efficiency Low */
             efficiency_low?: number | null;
+            /**
+             * Exact Interval
+             * @description Unknowns read from this curve alone get Fieller's interval.
+             * @default false
+             */
+            exact_interval: boolean;
             /** Fitted */
             fitted: boolean;
+            /**
+             * G
+             * @description t² s² / (slope² Sxx): above 0.05 an unknown's interval is Fieller's exact one, not the classical approximation.
+             */
+            g?: number | null;
             /** Id */
             id: string;
             /** Intercept */
@@ -6956,6 +7004,12 @@ export type components = {
             scope: "plate" | "pooled";
             /** Slope */
             slope?: number | null;
+            /**
+             * Suspects
+             * @description Detected standards that look wrong (never left out by qPilot).
+             * @default []
+             */
+            suspects: components["schemas"]["SuspectView"][];
             /** Target */
             target: string;
             /** Top */
@@ -14661,6 +14715,31 @@ export type components = {
             well: string;
         };
         /**
+         * StandardsProposed
+         * @description What asking to leave the suspect standards out filed (a person decides each).
+         */
+        StandardsProposed: {
+            /** Head */
+            head: string;
+            /** Message */
+            message: string;
+            /**
+             * Proposed
+             * @description run_id/well of each proposal filed now.
+             */
+            proposed: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "proposed" | "nothing";
+            /**
+             * Waiting
+             * @description Already proposed and waiting for a person.
+             */
+            waiting: string[];
+        };
+        /**
          * StepConclusions
          * @description The calls at one step, and what changed from the step before.
          */
@@ -14749,6 +14828,60 @@ export type components = {
             stage: "design" | "curves" | "choices" | "prism" | "other";
             /** Title */
             title: string;
+        };
+        /**
+         * SuspectView
+         * @description A detected standard that looks wrong, with the curve refitted without it (J2).
+         *
+         *     qPilot never leaves it out: a person does, on the ``curve.exclude_well`` proposal the rule
+         *     files (``POST …/quantities/standards``) or in Curves.
+         */
+        SuspectView: {
+            /** Cq */
+            cq: number;
+            /**
+             * Efficiency
+             * @description The curve without this well.
+             */
+            efficiency?: number | null;
+            /** Efficiency High */
+            efficiency_high?: number | null;
+            /** Efficiency Low */
+            efficiency_low?: number | null;
+            /**
+             * Key
+             * @description run_id/well: the subject of the curve.exclude_well proposal.
+             */
+            key: string;
+            /** Lod */
+            lod?: number | null;
+            /** Loq */
+            loq?: number | null;
+            /**
+             * Proposed
+             * @description Its proposal waits for a person.
+             * @default false
+             */
+            proposed: boolean;
+            /** Quantity */
+            quantity: number;
+            /** R2 */
+            r2?: number | null;
+            /** Residual Z */
+            residual_z?: number | null;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Well */
+            well: string;
+            /**
+             * Why
+             * @description order: its Cq is on the wrong side of most standard wells ten-fold or more away; residual: its studentized residual is beyond ±3.5.
+             */
+            why: ("order" | "residual")[];
+            /** Words */
+            words: string;
         };
         /**
          * SystemView
@@ -21004,6 +21137,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReactionRecorded"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_standards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardsProposed"];
                 };
             };
             /** @description Validation Error */

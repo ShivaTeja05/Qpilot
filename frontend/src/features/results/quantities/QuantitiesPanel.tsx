@@ -30,12 +30,14 @@ import {
 } from "@/ui";
 import {
   useAssay,
+  useProposeStandards,
   useQuantities,
   useRecordReaction,
   type CurveDetail,
   type CurveSummary,
   type Limit,
   type QuantitiesView,
+  type Suspect,
   type UnitQuantity,
 } from "./api";
 import {
@@ -82,6 +84,16 @@ function CurveNumbers({ curve, unit }: { curve: CurveSummary; unit: string }) {
       : []),
     ["Limit of quantification", limitText(curve.loq)],
     ["Quantities from", SOURCE_WORDS[curve.quantity_source] ?? curve.quantity_source],
+    ...(curve.g != null
+      ? [
+          [
+            "A quantity's interval",
+            curve.exact_interval
+              ? `exact (Fieller): this curve's g is ${fixed(curve.g, 3)}, above 0.05, where the usual approximation is too narrow`
+              : `the usual (classical) one: this curve's g is ${fixed(curve.g, 4)}, well below 0.05`,
+          ] as [string, string],
+        ]
+      : []),
   ];
   return (
     <div className="space-y-2">
@@ -99,6 +111,80 @@ function CurveNumbers({ curve, unit }: { curve: CurveSummary; unit: string }) {
             </li>
           ))}
         </ul>
+      )}
+    </div>
+  );
+}
+
+function limitsAfter(s: Suspect, unit: string): string {
+  const parts: string[] = [];
+  if (s.efficiency != null) {
+    const ci =
+      s.efficiency_low != null && s.efficiency_high != null
+        ? ` (${fmtEfficiency(s.efficiency_low)}–${fmtEfficiency(s.efficiency_high)})`
+        : "";
+    parts.push(`efficiency ${fmtEfficiency(s.efficiency)}${ci}`);
+  }
+  if (s.r2 != null) parts.push(`R² ${fixed(s.r2, 3)}`);
+  parts.push(s.loq != null ? `LOQ ${fmtStandard(s.loq)} ${unitWords(unit)}` : "no LOQ");
+  return parts.join(", ");
+}
+
+/**
+ * Standards that look wrong (science review J2): a Cq on the wrong side of most standards ten-fold
+ * or more away, or a studentized residual beyond ±3.5. qPilot never leaves one out; the rule can
+ * propose it, and a person accepts or rejects each proposal in Curves.
+ */
+function Suspects({
+  curve,
+  unit,
+  proposed,
+  canPropose,
+  workspaceKey,
+  studyId,
+}: {
+  curve: CurveDetail;
+  unit: string;
+  proposed: Set<string>;
+  canPropose: boolean;
+  workspaceKey: string;
+  studyId: string;
+}) {
+  const write = useProposeStandards(workspaceKey, studyId);
+  if (!curve.suspects.length) return null;
+  const open = curve.suspects.filter((s) => !proposed.has(s.key));
+  return (
+    <div className="space-y-1.5 text-[12.5px] text-fg" data-testid="standards-suspect">
+      <p className="font-medium">
+        {curve.suspects.length} standard well{curve.suspects.length === 1 ? "" : "s"} that look
+        wrong:
+      </p>
+      <ul className="space-y-1 text-muted">
+        {curve.suspects.map((s) => (
+          <li key={s.key}>
+            <span className="font-mono text-fg">{s.well}</span> ({s.sample}): {s.words}. Without it:{" "}
+            {limitsAfter(s, unit)}.
+            {proposed.has(s.key) ? (
+              <Badge tone="info" className="ml-1.5">
+                Waiting for you in Curves
+              </Badge>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+      <p className="text-muted">
+        qPilot never leaves a standard out: a person decides, with a reason.
+      </p>
+      {canPropose && open.length > 0 && (
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={write.isPending}
+          onClick={() => write.mutate()}
+        >
+          Propose leaving {open.length === 1 ? "it" : `these ${open.length}`} out (you decide in
+          Curves)
+        </Button>
       )}
     </div>
   );
@@ -489,6 +575,20 @@ export function QuantitiesPanel({
                   )}
                   <CurveNumbers curve={curve} unit={detail.unit} />
                   <NotUsed curve={curve} />
+                  <Suspects
+                    curve={curve}
+                    unit={detail.unit}
+                    proposed={
+                      new Set(
+                        (summary?.curves.find((c) => c.id === curve.id)?.suspects ?? [])
+                          .filter((s) => s.proposed)
+                          .map((s) => s.key),
+                      )
+                    }
+                    canPropose={data.can_set_reaction}
+                    workspaceKey={workspaceKey}
+                    studyId={studyId}
+                  />
                   {summary && (
                     <p className="text-[12px] text-muted">
                       {summary.n_quantified} of {summary.n_units} units quantified,{" "}
