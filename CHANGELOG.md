@@ -294,7 +294,7 @@ Methods paragraph on them.
   lives; offline installs.
 - **Releases** ([`docs/release.md`](docs/release.md), `.github/workflows/release.yml`): a tag builds
   the wheel and sdist, smoke-tests the installed wheel and makes a GitHub Release; PyPI Trusted
-  Publishing is skipped until the repository variable `PYPI_PUBLISH` is `true`.
+  A `v*` tag publishes; an admin stops it with the repository variable `PYPI_PUBLISH` = `false`.
 - **CI on Ubuntu, macOS and Windows** with a smoke test of the installed wheel
   (`scripts/smoke_installed.py`).
 - **End-to-end tests on real lab files with no model** (`frontend/e2e/`): a LightCycler 96 plate,

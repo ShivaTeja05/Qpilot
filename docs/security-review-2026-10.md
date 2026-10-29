@@ -77,7 +77,7 @@ plain ASCII file name, else an ASCII slug and a short hash). `tests/web/test_uni
   writes nothing and never queues a person's job.
 * **CI.** No `pull_request_target`, no event text spliced into a script, read-only by default,
   `contents: write` only for the GitHub Release job, `id-token: write` only for the publishers
-  behind an environment, PyPI only from a `v*` tag with `PYPI_PUBLISH` set
+  behind an environment, PyPI only from a `v*` tag, switched off by `PYPI_PUBLISH` = `false`
   (`tests/redteam/test_workflows.py`).
 
 ## For the public sandbox

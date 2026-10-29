@@ -114,9 +114,9 @@ def test_release_checkouts_leave_no_token_behind():
                 assert (step.get("with") or {}).get("persist-credentials") is False, job_name
 
 
-def test_pypi_is_published_only_from_a_tag_and_only_when_switched_on():
+def test_pypi_is_published_only_from_a_tag_and_can_be_switched_off():
     job = _load("release.yml")["jobs"]["pypi"]
-    assert "github.ref_type == 'tag'" in job["if"] and "vars.PYPI_PUBLISH == 'true'" in job["if"]
+    assert "github.ref_type == 'tag'" in job["if"] and "vars.PYPI_PUBLISH != 'false'" in job["if"]
     assert job["environment"]["name"] == "pypi"
 
 

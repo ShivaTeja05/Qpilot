@@ -1,6 +1,6 @@
 # Releasing qPilot
 
-A release is two files, a **wheel** (`qpilot-X.Y.Z-py3-none-any.whl`, what `pip` installs, about 3 MB) and an **sdist** (`qpilot-X.Y.Z.tar.gz`, the sources it is built from), published to **PyPI** and attached to a **GitHub Release**. Everything is done by `.github/workflows/release.yml` when a tag `vX.Y.Z` is pushed. The workflow is **inert until you set it up once** (section 1): until then a tag builds, checks and creates the GitHub Release, and the PyPI job is skipped. Nothing here publishes anything by itself, logs in anywhere or pushes a tag.
+A release is two files, a **wheel** (`qpilot-X.Y.Z-py3-none-any.whl`, what `pip` installs, about 3 MB) and an **sdist** (`qpilot-X.Y.Z.tar.gz`, the sources it is built from), published to **PyPI** and attached to a **GitHub Release**. Everything is done by `.github/workflows/release.yml` when a tag `vX.Y.Z` is pushed. PyPI accepts the upload only once its Trusted Publisher is set up (section 1); an admin can stop publishing at any time with the repository variable `PYPI_PUBLISH` = `false`, and a tag then still builds, checks and creates the GitHub Release. Nothing here publishes anything by itself, logs in anywhere or pushes a tag.
 
 For users: [install.md](install.md).
 
@@ -15,7 +15,7 @@ PyPI uses **Trusted Publishing**: PyPI is told "this GitHub repository, this wor
    * Workflow filename: `release.yml`
    * Environment name: `pypi`
 3. **GitHub environment.** Repository Settings, Environments, New environment `pypi`. Recommended: tick **Required reviewers** and add yourself, so a tag waits for one click before anything reaches PyPI, and under **Deployment branches and tags** choose *Selected branches and tags* with the tag rule `v*`, so only a version tag can publish. Protect the tags too (Settings, Rules, a tag ruleset on `v*`: only maintainers create them), since anyone who can push a `v*` tag starts a release.
-4. **Switch it on.** Settings, Secrets and variables, Actions, **Variables**, New repository variable: `PYPI_PUBLISH` = `true`. (Without it the PyPI job is skipped. Remove it to stop publishing.)
+4. **The switch.** A `v*` tag publishes by default (the PyPI side refuses anything until step 2 is done). To stop publishing, an admin sets Settings, Secrets and variables, Actions, **Variables**: `PYPI_PUBLISH` = `false`; delete it to publish again. GitHub creates the `pypi` environment on the first release run if it does not exist; add the protection rules of step 3 afterwards if you want them.
 5. **Rehearsal, optional but wise.** A version number on PyPI can never be used twice, even after deleting the files. Do steps 2 and 3 again on <https://test.pypi.org/manage/account/publishing/> with the environment name `testpypi`, then Actions, release, **Run workflow**, `publish_to` = `testpypi`. It builds, checks, smoke-tests on three systems and uploads to TestPyPI. Install the result with `pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple qpilot`.
 
 ## 2. Making a release

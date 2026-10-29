@@ -5,11 +5,10 @@ name: release
 # and runs the demo's Studio checks from it, then (1) publishes to PyPI through Trusted
 # Publishing and (2) attaches both files to a GitHub Release.
 #
-# Nothing is published until you set it up once (docs/release.md, "One-time setup"):
-#   * PyPI: add this repository as a Trusted Publisher of the project (no token is ever stored);
-#   * GitHub: create the environment `pypi`, and the repository variable PYPI_PUBLISH = true.
-# Until PYPI_PUBLISH is set, a tag still builds, checks and creates the GitHub Release; the PyPI
-# job is skipped. "Run workflow" (workflow_dispatch) builds and checks without a tag or a release;
+# PyPI accepts the upload only from this repository's workflow, environment `pypi` (Trusted
+# Publishing: docs/release.md, "One-time setup"; no token is ever stored). A `v*` tag publishes;
+# an admin stops publishing with the repository variable PYPI_PUBLISH = false (the tag then still
+# builds, checks and creates the GitHub Release). "Run workflow" (workflow_dispatch) builds and checks without a tag or a release;
 # choosing `testpypi` rehearses the upload on test.pypi.org (environment `testpypi`).
 
 on:
@@ -136,8 +135,8 @@ jobs:
 
   pypi:
     name: publish to PyPI
-    # Inert until the repository variable PYPI_PUBLISH is "true" (docs/release.md, "One-time setup").
-    if: github.ref_type == 'tag' && vars.PYPI_PUBLISH == 'true'
+    # Only a tag publishes; an admin switches it off with PYPI_PUBLISH = false (docs/release.md).
+    if: github.ref_type == 'tag' && vars.PYPI_PUBLISH != 'false'
     needs: [build, smoke]
     runs-on: ubuntu-latest
     environment:
