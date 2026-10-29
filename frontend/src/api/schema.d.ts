@@ -7623,6 +7623,11 @@ export type components = {
             /** Dcq Sd */
             dcq_sd?: number | null;
             /**
+             * Fisher P
+             * @description Fisher's exact test (two-sided) on detected / not detected by group: orientation on the presence/absence difference, never a call.
+             */
+            fisher_p?: number | null;
+            /**
              * Group
              * @description The group it was detected in; null: in neither.
              */

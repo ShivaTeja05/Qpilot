@@ -1116,8 +1116,13 @@ def detected_only_dcq(model: StudyModel) -> dict[str, dict[str, Any]]:
     biological unit of the group it was detected in (mean Cq of the unit's wells that count as
     amplified under the primary rule, as the spreadsheet route builds it,
     :func:`qpilot.qpcr.routes.cq_matrix`), then the mean and SD over those units. No fold change
-    is computed: the other group has no measured amount.
+    is computed: the other group has no measured amount. ``fisher_p`` is the detection counts'
+    own test, Fisher's exact test (two-sided) on detected / not detected by group (science review
+    J8: 6 of 6 against 0 of 6 is p = 0.002), so a presence/absence difference is not mistaken for
+    "nothing found"; it is orientation, never a call (no conclusion, card or grid reads it).
     """
+    from scipy.stats import fisher_exact
+
     from qpilot.qpcr.routes import cq_matrix
 
     space = model.space
@@ -1139,7 +1144,11 @@ def detected_only_dcq(model: StudyModel) -> dict[str, dict[str, Any]]:
             "n_absent": only.n_absent,
             "dcq": None,
             "dcq_sd": None,
+            "fisher_p": None,
         }
+        if only.group is not None:
+            table = [[only.n_detected, only.n_group - only.n_detected], [0, only.n_absent]]
+            entry["fisher_p"] = float(fisher_exact(table, alternative="two-sided").pvalue)
         members = groups.get(only.group) if only.group is not None else None
         if members and gene in cq.columns and refs:
             rows = cq.loc[cq.index.isin(members)]
@@ -2048,6 +2057,8 @@ def _extra_facts(add: Callable[..., None], extras: _Extras, settings: StudySetti
             add(f"f_dcq_only_{s}", only["dcq"], "{:.2f}", path=f"{path}.dcq")
         if only.get("dcq_sd") is not None:
             add(f"f_dcq_sd_only_{s}", only["dcq_sd"], "{:.2f}", path=f"{path}.dcq_sd")
+        if only.get("fisher_p") is not None:
+            add(f"f_fisher_p_only_{s}", only["fisher_p"], "{:.2g}", path=f"{path}.fisher_p")
     if extras.groups is not None:
         add("f_group_a", extras.groups[0], path="design.comparison.group_a")
         add("f_group_b", extras.groups[1], path="design.comparison.group_b")

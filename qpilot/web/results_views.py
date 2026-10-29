@@ -663,6 +663,7 @@ def withheld(result: StudyResult) -> list[WithheldGene]:
                     n_absent=int(found.get("n_absent", 0)),
                     dcq=_finite(found.get("dcq")),
                     dcq_sd=_finite(found.get("dcq_sd")),
+                    fisher_p=_finite(found.get("fisher_p")),
                 )
             out.append(WithheldGene(gene=gene, reason=str(fact.value), detected_only=view))
     return sorted(out, key=lambda w: w.gene)

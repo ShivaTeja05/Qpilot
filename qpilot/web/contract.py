@@ -818,6 +818,11 @@ class DetectedOnlyView(BaseModel):
     n_absent: int
     dcq: float | None = Field(default=None, description="Mean ΔCq of the detected group.")
     dcq_sd: float | None = None
+    fisher_p: float | None = Field(
+        default=None,
+        description="Fisher's exact test (two-sided) on detected / not detected by group: "
+        "orientation on the presence/absence difference, never a call.",
+    )
 
 
 class WithheldGene(BaseModel):

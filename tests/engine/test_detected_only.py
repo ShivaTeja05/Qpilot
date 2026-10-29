@@ -49,6 +49,35 @@ def test_detected_only_in_one_group_is_withheld_with_its_words_and_dcq():
     assert facts["f_dcq_only_t1"].value == pytest.approx(expected, abs=1e-6)
     assert facts["f_dcq_sd_only_t1"].value == pytest.approx(0.5, abs=1e-6)
     assert "T2" in result.contrasts  # the other gene is compared as before
+    # science review J8: the detection counts' own test, orientation only (3 of 3 vs 0 of 3)
+    assert facts["f_fisher_p_only_t1"].value == pytest.approx(0.1, abs=1e-12)
+    assert not any(c.kind == "detected_only" for c in cards)
+
+
+def test_fishers_test_on_the_detection_counts_is_orientation_only():
+    """6 of 6 against 0 of 6 is p = 0.002 (Fisher's exact test, two-sided): a presence/absence
+    difference is not 'nothing found', and still no fold change or call is made of it."""
+    from qpilot.qpcr.space import DetectedOnly
+    from qpilot.qpcr.study import detected_only_dcq
+
+    class _Space:
+        detected_only = {"G": DetectedOnly("KO", "WT", 6, 6, 6)}
+        primary = {"refs": ()}
+
+    class _Model:
+        space = _Space()
+        settings = StudySettings()
+        labels = ("KO", "WT")
+        high, rest = frozenset(), frozenset()
+
+        class inputs:  # noqa: N801
+            table = pd.DataFrame(
+                columns=["run_id", "well", "sample", "sample_type", "target", "cq", "n0"]
+            )
+            units = None
+
+    out = detected_only_dcq(_Model())  # type: ignore[arg-type]
+    assert out["G"]["fisher_p"] == pytest.approx(0.0021645, abs=1e-7)
 
 
 def test_not_detected_in_either_group():
