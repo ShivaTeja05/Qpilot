@@ -1050,7 +1050,9 @@ class _Family:
         """Each comparison's pooled-variance t-test, then Dunnett's or Tukey's adjusted p.
 
         A comparison with a group none of whose values was detected (``capped``) is not
-        tested for that item, and so is not part of its family.
+        tested for that item, and so is not part of its family. Such a group is left out of
+        the pooled variance too (science review J9): its identical capped values would add
+        ``n - 1`` degrees of freedom and no spread, shrinking the SD of the other comparisons.
         """
         found: dict[int, np.ndarray] = {}
         for (a, b), m in zip(self.pairs, masks, strict=True):
@@ -1059,7 +1061,8 @@ class _Family:
         stats_by_group = [
             _group_stats(relative, valid & found[g][:, None]) for g in range(len(self.groups))
         ]
-        var, df = pooled(stats_by_group)
+        pool = [_without_capped(s, valid, capped, found[g]) for g, s in enumerate(stats_by_group)]
+        var, df = pooled(pool)
         arrays = [
             pooled_arrays(
                 items,
@@ -1079,7 +1082,7 @@ class _Family:
             n_control = stats_by_group[self.control][0]  # type: ignore[index]
             adjusted = dunnett_adjusted(t, n_treated, n_control, df)
         else:
-            k = sum((s[0] >= 2).astype(float) for s in stats_by_group)
+            k = sum((s[0] >= 2).astype(float) for s in pool)  # a capped-only group is not tested
             adjusted = tukey_adjusted(t, k, df)
         return [_with_call_p(a, adjusted[i]) for i, a in enumerate(arrays)]
 
@@ -1294,6 +1297,31 @@ def welch_arrays(
 def _any(mask: np.ndarray | None) -> np.ndarray | None:
     """``mask`` when it marks anything, else ``None`` (the arrays stay as they always were)."""
     return mask if mask is not None and bool(np.any(mask)) else None
+
+
+def _without_capped(
+    group: tuple[np.ndarray, ...],
+    valid: np.ndarray,
+    capped: np.ndarray | None,
+    members: np.ndarray,
+) -> tuple[np.ndarray, ...]:
+    """A group's ``(n, mean, var)`` with the items where it has values but none detected zeroed.
+
+    Those items' values are all the cap (one identical number): the group is not tested there
+    and must not lend the pooled variance degrees of freedom with no spread.
+    """
+    if capped is None:
+        return group
+    n, mean, var = group
+    seen = (valid & ~capped & members[:, None]).any(axis=0)
+    only_cap = (n > 0) & ~seen
+    if not only_cap.any():
+        return group
+    return (
+        np.where(only_cap, 0, n),
+        np.where(only_cap, np.nan, mean),
+        np.where(only_cap, np.nan, var),
+    )
 
 
 def _none_detected(

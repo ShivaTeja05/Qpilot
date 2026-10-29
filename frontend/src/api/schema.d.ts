@@ -6328,10 +6328,21 @@ export type components = {
              */
             n_called: number;
             /**
+             * Omnibus Groups Used
+             * @description How many of omnibus_groups the ANOVA used for this gene (a group with fewer than two values is left out).
+             */
+            omnibus_groups_used?: number | null;
+            /**
              * Omnibus P
              * @description Welch's one-way ANOVA p across omnibus_groups (orientation, never a call).
              */
             omnibus_p?: number | null;
+            /**
+             * Omnibus Words
+             * @description When a group was left out: how many, in words; else empty.
+             * @default
+             */
+            omnibus_words: string;
         };
         /**
          * ComparisonInfo

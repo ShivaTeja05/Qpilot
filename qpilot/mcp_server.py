@@ -2047,6 +2047,8 @@ def _comparison_fact_ids(facts: dict, comparison: str, gene: str) -> dict[str, s
 
 def _comparisons_view(result: StudyResult) -> dict[str, Any]:
     """``qpcr_study``'s ``comparisons``: the test, the correction and each comparison's genes."""
+    from qpilot.web.compare_views import omnibus_coverage
+
     found = result.comparisons
     assert found is not None
     out = []
@@ -2087,7 +2089,10 @@ def _comparisons_view(result: StudyResult) -> dict[str, Any]:
         "pair_by": found.pair_by,
         "comparisons": out,
         "omnibus_groups": list(found.omnibus_groups),
-        "omnibus": {g: o.model_dump(mode="json") for g, o in found.omnibus.items()},
+        "omnibus": {
+            g: {**o.model_dump(mode="json"), **omnibus_coverage(o, found.omnibus_groups)}
+            for g, o in found.omnibus.items()
+        },
     }
 
 
