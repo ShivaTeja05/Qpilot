@@ -30,6 +30,7 @@ from fastapi.testclient import TestClient
 
 from qpilot.web import folders
 from qpilot.web.security import Guard, Hosting
+from tests.homes import set_home
 from tests.web.conftest import BASE, wait_job
 
 # ---- RT-EX-005: the folder rule never says what exists outside the roots ------------------
@@ -65,9 +66,25 @@ def test_a_missing_folder_inside_a_root_is_still_named(roots):
     assert "There is no folder" in _refusal(roots, str(roots["home"] / "not-yet"))
 
 
+POSIX_SYSTEM = ("/", "/etc", "/proc/self", "/dev/zero", "/nonexistent/x")
+WINDOWS_SYSTEM = (
+    "C:\\",
+    "C:\\Windows",
+    "C:\\Windows\\System32\\config",
+    "c:\\program files",
+    "Z:\\nonexistent\\x",
+    "\\\\labserver\\share\\x",  # a network share: refused before the network is asked
+    "\\\\?\\C:\\Windows",  # the long-path form
+)
+FULL_PATH = "Give the folder's full path (for example ~/Documents/prism/sent_back)."
+
+
 def test_the_server_root_and_system_folders_are_outside(roots):
-    for text in ("/", "/etc", "/proc/self", "/dev/zero", "/nonexistent/x"):
-        assert _refusal(roots, text) == folders.OUTSIDE
+    for text in WINDOWS_SYSTEM if os.name == "nt" else POSIX_SYSTEM:
+        assert _refusal(roots, text) == folders.OUTSIDE, text
+    # The other system's forms are not full paths here: refused all the same.
+    for text in POSIX_SYSTEM if os.name == "nt" else WINDOWS_SYSTEM:
+        assert _refusal(roots, text) == FULL_PATH, text
 
 
 # ---- RT-EX-004: a hosted round trip reads the export folder only ---------------------------
@@ -113,7 +130,7 @@ def test_a_hosted_round_trip_never_reads_the_servers_home_folder(sent_mini, monk
     (home / "app").mkdir(parents=True)
     project = Path(sent["bundle"]["folder"]) / sent["project"]
     shutil.copy(project, home / "app" / project.name)
-    monkeypatch.setenv("HOME", str(home))
+    set_home(monkeypatch, home)
     url = f"/api/sessions/{sid}/prism/roundtrip"
     body = {"bundle": sent["bundle"]["id"], "folder": str(home / "app" / project.name)}
     monkeypatch.delenv("QPILOT_HOSTED", raising=False)

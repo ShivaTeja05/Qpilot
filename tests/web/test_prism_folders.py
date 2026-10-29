@@ -12,6 +12,7 @@ import pytest
 
 from qpilot.web import folders
 from qpilot.web.folders import FolderRefused, allowed_folder
+from tests.homes import set_home
 
 
 @pytest.fixture
@@ -46,7 +47,7 @@ def test_a_folder_in_home_or_exports_is_allowed(roots):
 
 
 def test_tilde_means_the_home_folder(roots, monkeypatch):
-    monkeypatch.setenv("HOME", str(roots["home"]))
+    set_home(monkeypatch, roots["home"])
     (roots["home"] / "back").mkdir()
     assert allowed(roots, "~/back") == (roots["home"] / "back").resolve()
 

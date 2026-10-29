@@ -130,7 +130,7 @@ def write_cfx(
         folder / f"{run} -  Run Information.csv",
     ]
     for path, rows in zip(paths, (amp, cq, info), strict=True):
-        path.write_text(_csv(rows), encoding="utf-8-sig")
+        path.write_text(_csv(rows), encoding="utf-8-sig", newline="")
     return paths
 
 
@@ -190,7 +190,7 @@ def write_quantstudio(
                                                  w.target, task[w.task], "SYBR", "None", ct,
                                                  "", "", w.quantity or "", "true", "0.2",
                                                  "true", "3", "15", ""]))  # fmt: skip
-    path.write_text("\r\n".join(lines) + "\r\n", encoding=encoding)
+    path.write_text("\r\n".join(lines) + "\r\n", encoding=encoding, newline="")
     return path
 
 
@@ -205,7 +205,7 @@ def write_tidy(
         for i, f in enumerate(w.fluor):
             value = f"{f}".replace(".", ",") if decimal_comma else f
             rows.append([w.well, w.sample, w.target, w.task, i + 1, value])
-    path.write_text(_csv(rows, delimiter), encoding="utf-8")
+    path.write_text(_csv(rows, delimiter), encoding="utf-8", newline="")
     return path
 
 
@@ -218,7 +218,7 @@ def write_rdes(path: Path, wells: list[Well]) -> Path:
     for w in wells:
         rows.append([w.well, w.sample or w.well, kind[w.task], w.target, "toi", w.dye,
                      -1 if w.cq is None else w.cq, *w.fluor])  # fmt: skip
-    path.write_text(_csv(rows, "\t"), encoding="utf-8")
+    path.write_text(_csv(rows, "\t"), encoding="utf-8", newline="")
     return path
 
 
@@ -232,5 +232,5 @@ def write_lc480(path: Path, wells: list[Well]) -> Path:
         for i, f in enumerate(w.fluor):
             lines.append("\t".join([w.well, w.sample, "2", "3", str(i + 1), str(60 * i),
                                     "72.00", f"{f / 100:.4f}"]))  # fmt: skip
-    path.write_text("\r\n".join(lines) + "\r\n", encoding="cp1252")
+    path.write_text("\r\n".join(lines) + "\r\n", encoding="cp1252", newline="")
     return path

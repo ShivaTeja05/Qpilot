@@ -9,6 +9,7 @@ are read from the files by the tests, never written here. The demo RDML test is 
 
 import io
 import json
+import os
 import random
 import re
 import zipfile
@@ -191,8 +192,11 @@ def test_personal_data_is_never_copied(tmp_path):
 
 def test_7500_layout_from_the_real_file(tmp_path):
     path = F.like_7500(tmp_path / "7500.eds")
+    # The name as stored (Python on Windows lists it with "/", so look at the bytes).
+    assert b"APLDBIO\\SDS\\CALIBRATIONS/background.ini" in path.read_bytes()
     with zipfile.ZipFile(path) as archive:
-        assert "APLDBIO\\SDS\\CALIBRATIONS/background.ini" in archive.namelist()
+        listed = "APLDBIO/SDS/CALIBRATIONS/background.ini" if os.name == "nt" else None
+        assert (listed or "APLDBIO\\SDS\\CALIBRATIONS/background.ini") in archive.namelist()
     ctx = read_run_context(path)
     assert ctx.run["start"] == "2007-11-10T01:46:54Z" and ctx.run["end"] == "2007-11-10T03:10:59Z"
     assert ctx.identity["model"] == "7500 Fast" and ctx.identity["software"] == "7500 Software v2.3"
@@ -490,7 +494,7 @@ def test_xml_entities_are_never_resolved(tmp_path):
     canary.write_text("CANARY-7f3a", encoding="utf-8")
     xml = (
         '<?xml version="1.0"?>\n'
-        f'<!DOCTYPE Experiment [<!ENTITY x SYSTEM "file://{canary}">]>\n'
+        f'<!DOCTYPE Experiment [<!ENTITY x SYSTEM "{canary.as_uri()}">]>\n'
         "<Experiment><RunState>&x;</RunState><InstrumentTypeId>paragon</InstrumentTypeId>"
         "</Experiment>"
     )

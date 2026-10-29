@@ -23,6 +23,7 @@ from qpilot.prism.roundtrip import (
     RoundTripError,
     is_project_path,
 )
+from qpilot.prism.script import host_platform
 from tests.prism.conftest import TOY_STUDY, accepted_exclusion, toy_inputs
 
 NS = {"p": pzfx.NAMESPACE}
@@ -122,7 +123,9 @@ def test_the_readme_gives_plain_steps_for_both_systems_and_no_repo_path(toy_expo
 def test_scripts_are_an_optional_extra(tmp_path, monkeypatch):
     inputs = toy_inputs()
     monkeypatch.setattr(_engine_export(), "demo_inputs", lambda *a, **k: inputs)
-    result = export_study(_Store(), TOY_STUDY, tmp_path / "b", platform="macos", scripts=True)
+    result = export_study(
+        _Store(), TOY_STUDY, tmp_path / "b", platform=host_platform(), scripts=True
+    )
     names = {p.name for p in result.out_dir.iterdir()}
     assert {"run.pzc", "send_back.pzc", f"qpilot_{TOY_STUDY}.pzfx"} <= names
     run = (result.out_dir / "run.pzc").read_text()
@@ -135,7 +138,9 @@ def test_scripts_are_an_optional_extra(tmp_path, monkeypatch):
 def test_the_older_scripts_only_bundle_is_unchanged(tmp_path, monkeypatch):
     inputs = toy_inputs()
     monkeypatch.setattr(_engine_export(), "demo_inputs", lambda *a, **k: inputs)
-    result = export_study(_Store(), TOY_STUDY, tmp_path / "b", platform="macos", project=False)
+    result = export_study(
+        _Store(), TOY_STUDY, tmp_path / "b", platform=host_platform(), project=False
+    )
     names = {p.name for p in result.out_dir.iterdir()}
     assert {"run.pzc", "send_back.pzc", "T.csv", "T2.csv", "sent_back"} <= names
     assert not any(n.endswith(".pzfx") for n in names)
