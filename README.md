@@ -80,7 +80,7 @@ From the instrument's raw curves to a record anyone can re-run, on the same stud
 <table>
 <tr>
 <td width="50%" valign="top"><img src="docs/images/results.png" alt="Results: the robustness map of 58 genes and the Decision Cards, each option with what it changes for the headline genes"><br><sub><b>Results</b> (demo study): every gene's call against how often it holds, and the choices that could change it, waiting for a person.</sub></td>
-<td width="50%" valign="top"><img src="docs/images/design-editor.png" alt="The Design editor: samples of a LightCycler 96 plate with their groups, and the plate map"><br><sub><b>Design, no model</b> (a LightCycler 96 file from Zenodo): select samples or wells, set groups, types and units; each change is recorded with your reason.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/design-editor.png" alt="The Design editor: what the study is for (compare groups or quantify samples), the samples of a LightCycler 96 plate with their groups, and the plate map"><br><sub><b>Design, no model</b> (a LightCycler 96 file from Zenodo): say what the study is for, select samples or wells, set groups, types and units; each change is recorded with your reason.</sub></td>
 </tr>
 <tr>
 <td valign="top"><img src="docs/images/controls-melt.png" alt="Controls: a G-MELT check opened, three wells' melt curves with one peak at 82 °C inside the expected band"><br><sub><b>Controls</b> (the same plate): a G-MELT check with its wells' melt curves and the assay's expected Tm ± 1 °C.</sub></td>
